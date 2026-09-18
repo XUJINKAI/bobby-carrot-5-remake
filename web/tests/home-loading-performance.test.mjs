@@ -3,13 +3,15 @@ import { readFile } from "node:fs/promises";
 import { test } from "vitest";
 
 test("Home 首屏按路由加载页面代码和非关键数据", async () => {
-  const [app, entry] = await Promise.all([
+  const [app, entry, loaders] = await Promise.all([
     readFile(new URL("../src/app/BobbyApp.ts", import.meta.url), "utf8"),
     readFile(new URL("../src/app.ts", import.meta.url), "utf8"),
+    readFile(new URL("../src/app/pageLoaders.ts", import.meta.url), "utf8"),
   ]);
 
   assert.doesNotMatch(app, /from ["']\.\.\/pages\//);
-  assert.match(app, /import\("\.\.\/pages\/home\/mountHomePage\.js"\)/);
+  assert.match(app, /loadHomePage\(\)/);
+  assert.match(loaders, /loadHomePage[\s\S]*\["home"\][\s\S]*mountHomePage\.js/);
   assert.match(app, /scheduleHomePrefetch\(\)/);
   assert.match(app, /prefetchMaps\(/);
   assert.doesNotMatch(app, /images\.preload\(\)/);
@@ -66,4 +68,19 @@ test("运行时 SEO 响应语言变化且静态 metadata 提供双语 fallback",
   assert.match(seo, /getWebLocale\(\) === "en"/);
   assert.match(html, /兔子波比5重制版 \| Bobby Carrot 5 Remake/);
   assert.match(html, /A modern web remake of Bobby Carrot 5/);
+});
+
+
+test("页面模块与 i18n scope 通过统一 loader 绑定", async () => {
+  const [app, loaders, i18n] = await Promise.all([
+    readFile(new URL("../src/app/BobbyApp.ts", import.meta.url), "utf8"),
+    readFile(new URL("../src/app/pageLoaders.ts", import.meta.url), "utf8"),
+    readFile(new URL("../src/i18n/webI18n.ts", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(loaders, /loadGamePage[\s\S]*\["game"\][\s\S]*mountGamePage\.js/);
+  assert.match(loaders, /loadEditorPage[\s\S]*\["editor", "game"\][\s\S]*mountEditorPage\.js/);
+  assert.doesNotMatch(app, /import\("\.\.\/pages\/game\/mountGamePage\.js"\)/);
+  assert.match(app, /loadGamePage\(\)/);
+  assert.match(i18n, /for \(const scope of scopes\) requiredScopes\.add\(scope\);[\s\S]*await Promise\.all/);
 });
