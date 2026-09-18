@@ -15,7 +15,7 @@ const translator = createTranslator({
   locale: FALLBACK_LOCALE,
   fallbackLocale: FALLBACK_LOCALE,
 });
-const activeScopes = new Set<TranslationScope>();
+const requiredScopes = new Set<TranslationScope>();
 let localeGeneration = 0;
 let desiredLocale: Locale = FALLBACK_LOCALE;
 
@@ -47,7 +47,7 @@ export async function setWebLocale(nextLocale: Locale): Promise<void> {
   desiredLocale = nextLocale;
   const generation = ++localeGeneration;
   await Promise.all(
-    [...activeScopes].map((scope) => loadAndRegister(scope, nextLocale)),
+    [...requiredScopes].map((scope) => loadAndRegister(scope, nextLocale)),
   );
   if (generation !== localeGeneration || nextLocale !== desiredLocale) return;
   translator.setLocale(nextLocale);
@@ -63,6 +63,7 @@ export async function ensureWebI18nScopes(
   scopes: readonly TranslationScope[],
   targetLocale: Locale = locale.value,
 ): Promise<void> {
+  for (const scope of scopes) requiredScopes.add(scope);
   const locales = new Set<Locale>([targetLocale]);
   if (desiredLocale !== targetLocale) locales.add(desiredLocale);
   await Promise.all(
@@ -70,7 +71,6 @@ export async function ensureWebI18nScopes(
       scopes.map((scope) => loadAndRegister(scope, candidate)),
     ),
   );
-  for (const scope of scopes) activeScopes.add(scope);
 }
 
 export function webT(
