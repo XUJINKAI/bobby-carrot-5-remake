@@ -7,7 +7,7 @@ export interface LocalizedPageLoader<T> {
 }
 
 export function localizedPageScopes(
-  ...loaders: readonly LocalizedPageLoader<unknown>[]
+  ...loaders: LocalizedPageLoader<unknown>[]
 ): TranslationScope[] {
   return [...new Set(loaders.flatMap((loader) => loader.scopes))];
 }
