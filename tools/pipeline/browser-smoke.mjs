@@ -68,7 +68,15 @@ try {
     ["本项目还在开发中"],
   );
   await interactiveDataExchangeSmoke(`${origin}/`);
-  await smoke(`${origin}/embed`, ['class="embed-page"', "BC5R Embed v1"]);
+  const mapPayload = exchangePayload(
+    fs.readFileSync(
+      path.join(root, "tools/pipeline/mechanics-smoke.json"),
+      "utf8",
+    ),
+  );
+  const embedUrl = `${origin}/embed#${mapPayload}`;
+  await smoke(embedUrl, ['class="embed-page"', "BC5R Embed v1"]);
+  await interactiveEmbedHudSmoke(embedUrl);
   await expectStatus(`${origin}/embed/v1/bc5r.js`, 200, "text/javascript");
   await smoke(
     `${origin}/explore`,
@@ -226,12 +234,6 @@ try {
   await interactiveEditorSourceSmoke(
     `${origin}/edit#map=engine-lab/00-intro`,
     { type: "all", conditions: [{ type: "exit" }] },
-  );
-  const mapPayload = exchangePayload(
-    fs.readFileSync(
-      path.join(root, "tools/pipeline/mechanics-smoke.json"),
-      "utf8",
-    ),
   );
   const { createAdventureSave, serializeAdventureSave } = await import(
     "../../adventure/dist/index.js"
@@ -490,6 +492,47 @@ async function interactiveDataExchangeSmoke(url) {
   const payload = lastJsonLine(result.stdout);
   if (!payload.confirmation)
     throw new Error(`Unexpected home import smoke result: ${JSON.stringify(payload)}`);
+}
+
+async function interactiveEmbedHudSmoke(url) {
+  const script = `
+(async () => {
+  const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+  let host = null;
+  for (let i = 0; i < 120; i += 1) {
+    host = document.querySelector('.preview');
+    if (
+      document.querySelector('[data-preview-state="ready"]') &&
+      host?.shadowRoot?.querySelector('.engine-gameplay-hud')
+    ) break;
+    await delay(50);
+  }
+  const shadow = host?.shadowRoot;
+  const hud = shadow?.querySelector('.engine-gameplay-hud');
+  const value = shadow?.querySelector('.engine-gameplay-hud-value');
+  if (!hud || !value) throw new Error('missing Embed gameplay HUD');
+  await document.fonts.ready;
+  const hudStyle = getComputedStyle(hud);
+  const valueStyle = getComputedStyle(value);
+  return JSON.stringify({
+    fontFamily: hudStyle.fontFamily,
+    fontReady: document.fonts.check('36px "Jersey 10"'),
+    fontSize: valueStyle.fontSize,
+    strokeWidth: hudStyle.webkitTextStrokeWidth,
+  });
+})()
+`;
+  const result = await runBrowserEval(url, script);
+  if (result.status !== 0)
+    throw new Error(`Embed HUD 字体检查失败：${result.stderr || result.stdout}`);
+  const payload = lastJsonLine(result.stdout);
+  if (
+    !payload.fontFamily.includes("Jersey 10") ||
+    !payload.fontReady ||
+    payload.fontSize !== "36px" ||
+    payload.strokeWidth !== "1px"
+  )
+    throw new Error(`Embed HUD 字体样式异常：${JSON.stringify(payload)}`);
 }
 async function interactiveEditorSourceSmoke(url, expectedWin) {
   const script = `

@@ -15,6 +15,10 @@ const publicBaseUrl =
       ? new URL("../../", document.currentScript.src)
       : new URL(".", document.baseURI);
 const repositoryUrl = "https://github.com/XUJINKAI/bobby-carrot-5-remake";
+const jerseyFontUrl = new URL(
+  "../../assets/ui/fonts/jersey-10/Jersey10-Regular.woff2",
+  import.meta.url,
+).href;
 
 interface ActiveFocusEmbed {
   token: symbol;
@@ -418,6 +422,7 @@ function createEmbedImageManager(): ImageManager {
 function styleElement(): HTMLStyleElement {
   const style = document.createElement("style");
   style.textContent = `
+    @font-face { font-family: "Jersey 10"; src: url(${JSON.stringify(jerseyFontUrl)}) format("woff2"); font-style: normal; font-weight: 400; font-display: swap; }
     :host { display: block; width: 100%; height: 100%; min-width: 0; min-height: 0; }
     .bc5r-embed { box-sizing: border-box; width: 100%; height: 100%; min-width: 0; min-height: 0; display: flex; flex-direction: column; overflow: hidden; border: 1px solid #254868; border-radius: 10px; font: 14px/1.4 system-ui, sans-serif; color: #eef5ff; background: #071522; box-shadow: 0 8px 24px rgba(0,0,0,.22); }
     .bc5r-frame { flex: 0 0 auto; padding: 7px 10px; display: flex; align-items: center; justify-content: space-between; gap: 10px; border-bottom: 1px solid #254868; background: #0d2b46; font-size: 12px; font-weight: 700; letter-spacing: .02em; }
@@ -437,6 +442,8 @@ function styleElement(): HTMLStyleElement {
     .bc5r-terminal-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
     .bc5r-terminal-actions button, .bc5r-terminal-actions a { border: 0; border-radius: 8px; padding: 8px 12px; cursor: pointer; font: inherit; text-decoration: none; background: #222; color: #fff; }
     .bc5r-terminal-actions a { background: #fff; color: #222; box-shadow: inset 0 0 0 1px rgba(0,0,0,.2); }
+    .engine-gameplay-hud { --engine-gameplay-hud-value-font-size: 36px; font-family: "Jersey 10", fantasy; font-weight: 400; -webkit-text-stroke: 1px #000; text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000; }
+    .engine-gameplay-hud-value { font-weight: 400; }
   `;
   return style;
 }

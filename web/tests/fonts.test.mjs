@@ -3,7 +3,7 @@ import { readFile, stat } from "node:fs/promises";
 import { test } from "vitest";
 
 const fontDirectory = new URL(
-  "../src/shared/fonts/jersey-10/",
+  "../../assets/ui/fonts/jersey-10/",
   import.meta.url,
 );
 
@@ -28,7 +28,24 @@ test("Web 入口加载共享 Jersey 10 字体定义", async () => {
 
   assert.match(fontCss, /font-family: "Jersey 10"/);
   assert.match(fontCss, /url\("\.\/Jersey10-Regular\.woff2"\) format\("woff2"\)/);
-  assert.match(appSource, /shared\/fonts\/jersey-10\/font\.css/);
+  assert.match(appSource, /assets\/ui\/fonts\/jersey-10\/font\.css/);
+});
+
+test("Embed 在 Shadow DOM 内应用 Jersey 10 HUD 主题", async () => {
+  const mountSource = await readFile(
+    new URL("../../embed/src/mount.ts", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(mountSource, /Jersey10-Regular\.woff2/);
+  assert.match(mountSource, /@font-face/);
+  assert.match(mountSource, /\.engine-gameplay-hud \{/);
+  assert.match(mountSource, /font-family: "Jersey 10", fantasy/);
+  assert.match(mountSource, /-webkit-text-stroke: 1px #000/);
+  assert.match(
+    mountSource,
+    /--engine-gameplay-hud-value-font-size: 36px/,
+  );
 });
 
 test("Web 为 Engine 游戏 HUD 应用 Jersey 10 主题", async () => {
