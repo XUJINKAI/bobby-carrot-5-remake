@@ -17,7 +17,7 @@ const settings = initializeWebSettings({
   locale: resolveBrowserLocale(browserLocales),
   screenControlEnabled: window.matchMedia("(pointer: coarse)").matches,
 });
-initializeWebI18n(settings.locale);
+await initializeWebI18n(settings.locale);
 initializeWebTheme(settings.theme);
 installRuntimeSeo();
 const root = document.querySelector<HTMLDivElement>("#app");

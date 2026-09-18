@@ -23,6 +23,7 @@ import {
   parseMapPlayUrl,
   type ExploreMapRef,
 } from "./routes.js";
+import { ensureWebI18nScopes, webT } from "../i18n/webI18n.js";
 
 interface AppRootHandle {
   openSettings(): void;
@@ -129,19 +130,26 @@ export class BobbyApp {
     const path = localRoutePath();
 
     if (path === "/") {
-      const { renderHome } = await import("../pages/home/mountHomePage.js");
+      const [{ renderHome }] = await Promise.all([
+        import("../pages/home/mountHomePage.js"),
+        ensureWebI18nScopes(["home"]),
+      ]);
       const context = this.pageContext();
       this.controller = await renderHome(context);
       this.scheduleHomePrefetch();
       return;
     }
     if (path === "/embed") {
-      const { renderEmbedPage } = await import("../pages/embed/mountEmbedPage.js");
+      const [{ renderEmbedPage }] = await Promise.all([
+        import("../pages/embed/mountEmbedPage.js"),
+        ensureWebI18nScopes(["embed"]),
+      ]);
       const context = this.pageContext();
       this.controller = renderEmbedPage(context);
       return;
     }
     if (path === "/import/v1") {
+      await ensureWebI18nScopes(["import"]);
       await this.renderImport();
       return;
     }
@@ -155,6 +163,7 @@ export class BobbyApp {
         : decodeURIComponent(path.split("/")[2] ?? "").toLowerCase();
       const [{ renderLevels }] = await Promise.all([
         import("../pages/explore/mountExplorePage.js"),
+        ensureWebI18nScopes(["explore"]),
         this.catalog.loadCollectionsIndex(),
         this.catalog.loadCollection(collection),
       ]);
@@ -162,17 +171,19 @@ export class BobbyApp {
       return;
     }
     if (path === "/settings") {
-      const { renderSettingsPage } = await import(
-        "../pages/settings/mountSettingsPage.js"
-      );
+      const [{ renderSettingsPage }] = await Promise.all([
+        import("../pages/settings/mountSettingsPage.js"),
+        ensureWebI18nScopes(["settings"]),
+      ]);
       const context = this.pageContext();
       this.controller = renderSettingsPage(context);
       return;
     }
     if (path === "/edit") {
-      const { renderEditorPage } = await import(
-        "../pages/editor/mountEditorPage.js"
-      );
+      const [{ renderEditorPage }] = await Promise.all([
+        import("../pages/editor/mountEditorPage.js"),
+        ensureWebI18nScopes(["editor", "game"]),
+      ]);
       this.controller = await renderEditorPage(this.pageContext());
       return;
     }
@@ -180,10 +191,13 @@ export class BobbyApp {
       this.navigate("/");
       return;
     }
-    await this.catalog.loadAdventure();
-    const adventurePages = await import(
-      "../pages/adventure/mountAdventurePages.js"
-    );
+    const [, adventurePages] = await Promise.all([
+      Promise.all([
+        this.catalog.loadAdventure(),
+        ensureWebI18nScopes(["adventure"]),
+      ]),
+      import("../pages/adventure/mountAdventurePages.js"),
+    ]);
     const context = this.pageContext();
     if (path === "/adventure") {
       this.controller = adventurePages.renderAdventureHome(context);
@@ -252,6 +266,7 @@ export class BobbyApp {
         const [{ serializeEditorLevel }, { renderGamePage }] = await Promise.all([
           import("@bobby/editor"),
           import("../pages/game/mountGamePage.js"),
+          ensureWebI18nScopes(["game"]),
         ]);
         sessionStorage.setItem(
           "bc5r:pending-editor-level",
@@ -278,7 +293,7 @@ export class BobbyApp {
       this.controller = imported.type === "unknown"
         ? renderImportMessage(context, {
             status: "unknown",
-            message: "无法识别这段 Bobby Carrot 5 Remake 数据。",
+            message: webT("import.unknown"),
             rawText: imported.rawText,
           })
         : renderImportMessage(context, {
@@ -314,6 +329,7 @@ export class BobbyApp {
         import("@bobby/editor"),
         import("../pages/import/mountImportPage.js"),
         import("../pages/game/mountGamePage.js"),
+        ensureWebI18nScopes(["game", "import"]),
       ]);
       const level = editor.parseEditorLevel(pending);
       sessionStorage.setItem("bc5r:pending-editor-level", pending);
@@ -332,6 +348,7 @@ export class BobbyApp {
         import("../services/catalog/exploreMaps.js"),
         import("../pages/game/mountGamePage.js"),
         this.catalog.loadCollection(ref.collection).catch(() => null),
+        ensureWebI18nScopes(["game"]),
       ]);
       const resolved = await maps.resolveMapDocument(ref);
       const currentIndex =
@@ -383,6 +400,7 @@ export class BobbyApp {
       import("../services/catalog/exploreMaps.js"),
       import("../pages/game/mountGamePage.js"),
       this.catalog.loadCollection(ref.collection),
+      ensureWebI18nScopes(["game"]),
     ]);
     const resolved = await maps.resolveMapDocument(ref);
     const verified = collection.maps.some(
