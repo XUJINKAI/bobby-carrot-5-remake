@@ -85,7 +85,7 @@ Home 是产品入口页，承担品牌展示和快速进入模式两项职责。
 
 Adventure 是主入口，Explore 和 Editor 是并列的次级入口，Import Custom Map 是明确的文件入口。
 
-首页顶栏的 GitHub 仓库入口与“开发中”状态在桌面和移动端都保持外露，Settings 与 Help 在移动端进入更多菜单。
+首页顶栏的 GitHub 仓库入口在桌面和移动端都保持外露，Settings 与 Help 在移动端进入更多菜单。
 
 Welcome Demo 使用正式 Engine 运行 Campaign Intro 的演示副本，用于展示移动、角色对白、传送门和可推动箱子。它有独立 session，不写入 Adventure Save 或 Explore 完成记录。HUD 隐藏计时与计步，状态区只提供移动提示。通关后读取 Adventure Save 的继续关卡并直接进入 Adventure；死亡时在原 Stage 中展示重玩动作。
 

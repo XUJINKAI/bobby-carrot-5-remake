@@ -37,12 +37,12 @@ export async function renderHome(
       fixed: false,
       info: [
         { text: "Bobby Carrot 5 Remake" },
+        { text: "GitHub", href: PROJECT_REPOSITORY_URL, external: true },
         {
           text: "XUJINKAI",
-          href: "https://github.com/XUJINKAI",
+          href: "https://xujinkai.net/",
           external: true,
         },
-        { text: "GitHub", href: PROJECT_REPOSITORY_URL, external: true },
       ],
     },
   });
