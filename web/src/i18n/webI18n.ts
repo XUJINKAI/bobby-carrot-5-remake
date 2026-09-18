@@ -16,6 +16,8 @@ const translator = createTranslator({
   fallbackLocale: FALLBACK_LOCALE,
 });
 const activeScopes = new Set<TranslationScope>();
+let localeGeneration = 0;
+let desiredLocale: Locale = FALLBACK_LOCALE;
 
 export type WebTranslationKey = TranslationKey;
 
@@ -28,6 +30,7 @@ export function resolveBrowserLocale(browserLocales: readonly string[]): Locale 
 }
 
 export async function initializeWebI18n(initialLocale: Locale): Promise<Locale> {
+  desiredLocale = initialLocale;
   await ensureWebI18nScopes(["shell"], initialLocale);
   translator.setLocale(initialLocale);
   locale.value = initialLocale;
@@ -40,10 +43,13 @@ export function getWebLocale(): Locale {
 }
 
 export async function setWebLocale(nextLocale: Locale): Promise<void> {
-  if (nextLocale === locale.value) return;
+  if (nextLocale === desiredLocale) return;
+  desiredLocale = nextLocale;
+  const generation = ++localeGeneration;
   await Promise.all(
     [...activeScopes].map((scope) => loadAndRegister(scope, nextLocale)),
   );
+  if (generation !== localeGeneration || nextLocale !== desiredLocale) return;
   translator.setLocale(nextLocale);
   locale.value = nextLocale;
   if (typeof document !== "undefined") document.documentElement.lang = nextLocale;
