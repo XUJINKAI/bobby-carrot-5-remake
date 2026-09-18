@@ -209,12 +209,7 @@ function importLevel(level: EditorMap): void {
   page.loadLevel(level);
   page.fileDialogOpen.value = false;
 }
-function markDownloaded(metadata: {
-  name: string;
-  author?: string;
-  note?: string;
-}): void {
-  page.updateMetadata(metadata);
+function markDownloaded(): void {
   page.document.markSaved();
 }
 
@@ -452,6 +447,7 @@ function isMobileEditor(): boolean {
       :level="page.snapshot.value.level"
       @close="page.fileDialogOpen.value = false"
       @import="importLevel"
+      @metadata="page.updateMetadata"
       @saved="markDownloaded"
     />
   </div>

@@ -39,6 +39,7 @@ editor/src
 
 当前开发阶段只接受 v1。地图核心仍是 `@bobby/model::LevelMap`；Editor authoring policy 不进入 Engine。
 地图文件弹窗默认生成压缩分享 URL，用户仍可通过“压缩”开关查看和编辑 Plain JSON。
+名称、作者与注记在 Level 面板和地图文件弹窗中共用当前 Editor Document；输入停止 200ms 后提交，并同步另一处面板与地图文件弹窗中的 JSON/BC5R1 内容。
 
 ## Surface 与 Palette
 

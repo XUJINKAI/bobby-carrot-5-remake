@@ -6,7 +6,8 @@ import type {
   EditorRuleMode,
 } from "@bobby/editor";
 import type { MapMusic } from "@bobby/model";
-import { computed, ref, watch } from "vue";
+import { computed } from "vue";
+import { useEditorMetadataDraft } from "./useEditorMetadataDraft.js";
 
 const props = defineProps<{
   level: Readonly<EditorMap>;
@@ -21,9 +22,10 @@ const emit = defineEmits<{
   rule: [kind: EditorRuleKind, enabled: boolean];
   ruleMode: [mode: EditorRuleMode];
 }>();
-const name = ref("");
-const author = ref("");
-const note = ref("");
+const { metadata } = useEditorMetadataDraft({
+  source: () => props.level.meta,
+  apply: (value) => emit("metadata", value),
+});
 const labels: Record<EditorRuleKind, string> = {
   carrots: "收集胡萝卜",
   eggs: "放置彩蛋",
@@ -53,16 +55,6 @@ const knownMusic = computed(() =>
   musicOptions.some((option) => option.value === selectedMusic.value),
 );
 
-watch(
-  () => props.level,
-  (level) => {
-    name.value = level.meta.name;
-    author.value = level.meta.author ?? "";
-    note.value = level.meta.note ?? "";
-  },
-  { immediate: true, deep: true },
-);
-
 function limit(type: "max-moves" | "max-time-seconds"): number | null {
   const item = props.level.rules?.limits?.find(
     (candidate) => candidate.type === type,
@@ -79,14 +71,6 @@ function numberValue(event: Event): number | null {
   return value ? Number(value) : null;
 }
 
-function applyMetadata(): void {
-  emit("metadata", {
-    name: name.value,
-    ...(author.value ? { author: author.value } : {}),
-    ...(note.value ? { note: note.value } : {}),
-  });
-}
-
 function applyMusic(event: Event): void {
   const value = (event.target as HTMLSelectElement).value;
   emit("music", value ? value : undefined);
@@ -100,15 +84,20 @@ function applyMusic(event: Event): void {
       <strong>地图信息</strong>
       <label class="editor-field">
         <span>名称</span>
-        <input v-model="name" @change="applyMetadata">
+        <input v-model="metadata.name" data-editor-metadata="name">
       </label>
       <label class="editor-field">
         <span>作者</span>
-        <input v-model="author" @change="applyMetadata">
+        <input v-model="metadata.author" data-editor-metadata="author">
       </label>
       <label class="editor-field">
         <span>注记</span>
-        <textarea v-model="note" maxlength="500" rows="4" @change="applyMetadata"></textarea>
+        <textarea
+          v-model="metadata.note"
+          data-editor-metadata="note"
+          maxlength="500"
+          rows="4"
+        />
       </label>
       <label class="editor-field">
         <span>背景音乐</span>

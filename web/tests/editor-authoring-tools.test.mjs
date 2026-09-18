@@ -71,6 +71,21 @@ const levelInfo = fs.readFileSync(
   new URL("../src/pages/editor/EditorLevelInfo.vue", import.meta.url),
   "utf8",
 );
+const fileDialog = fs.readFileSync(
+  new URL("../src/pages/editor/EditorFileDialog.vue", import.meta.url),
+  "utf8",
+);
+const metadataDraft = fs.readFileSync(
+  new URL("../src/pages/editor/useEditorMetadataDraft.ts", import.meta.url),
+  "utf8",
+);
+const dataExchange = fs.readFileSync(
+  new URL(
+    "../src/shared/data-exchange/DataExchangePanel.vue",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const materialTooltip = fs.readFileSync(
   new URL("../src/pages/editor/EditorMaterialTooltip.vue", import.meta.url),
   "utf8",
@@ -224,6 +239,21 @@ test("Level 规则模式开关左侧任一、右侧全部", () => {
     /data-rule-mode="any"[\s\S]*>任一<\/button>[\s\S]*data-rule-mode="all"[\s\S]*>全部<\/button>/,
   );
   assert.match(levelInfo, /mode-all[\s\S]*translateX\(100%\)/);
+});
+
+test("Level 与分享 metadata 使用输入防抖并同步地图交换内容", () => {
+  assert.match(metadataDraft, /EDITOR_METADATA_DEBOUNCE_MS = 200/);
+  assert.match(
+    metadataDraft,
+    /setTimeout\(flush, EDITOR_METADATA_DEBOUNCE_MS\)/,
+  );
+  assert.doesNotMatch(levelInfo, /@change="applyMetadata"/);
+  assert.match(levelInfo, /v-model="metadata\.name"/);
+  assert.match(fileDialog, /live-value/);
+  assert.match(fileDialog, /@downloaded="downloaded"/);
+  assert.match(page, /@metadata="page\.updateMetadata"/);
+  assert.match(dataExchange, /props\.liveValueDelayMs/);
+  assert.match(dataExchange, /await flushLiveValue\(\)/);
 });
 
 test("Inspector 使用与 Surface Palette 相同的 visual variant 网格", () => {

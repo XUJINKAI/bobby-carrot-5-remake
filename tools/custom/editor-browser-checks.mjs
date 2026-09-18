@@ -21,10 +21,119 @@ export async function verifyEditorExperience(cdp, sessionId) {
   );
   await verifyLayerReordering(cdp, sessionId);
   await verifyLevelControls(cdp, sessionId);
+  await verifyMetadataSync(cdp, sessionId);
   await verifySurfaceInspector(cdp, sessionId);
   await verifyPaletteTooltip(cdp, sessionId);
   await verifyEditorCanvasPerformance(cdp, sessionId);
   await verifyPlayControls(cdp, sessionId);
+}
+
+async function verifyMetadataSync(cdp, sessionId) {
+  await clickWhenPresent(cdp, sessionId, "#editor-level-info");
+  await waitForBrowserState(async () =>
+    Boolean(
+      await cdp.evaluate(
+        sessionId,
+        "document.querySelector('[data-editor-metadata=\"name\"]')",
+      ),
+    ),
+  );
+  const original = await cdp.evaluate(
+    sessionId,
+    `(() => {
+      return {
+        name: document.querySelector('[data-editor-metadata="name"]')?.value ?? '',
+        author: document.querySelector('[data-editor-metadata="author"]')?.value ?? '',
+        note: document.querySelector('[data-editor-metadata="note"]')?.value ?? '',
+      };
+    })()`,
+  );
+  await clickWhenPresent(cdp, sessionId, "#editor-share");
+  await waitForBrowserState(async () =>
+    Boolean(
+      await cdp.evaluate(
+        sessionId,
+        "document.querySelector('[data-editor-share-metadata=\"name\"]') && document.querySelector('.data-exchange-text')?.value",
+      ),
+    ),
+  );
+  await cdp.evaluate(
+    sessionId,
+    `(() => {
+      const checkbox = document.querySelector('.data-exchange-check input[type="checkbox"]');
+      if (checkbox?.checked) checkbox.click();
+    })()`,
+  );
+  await waitForBrowserState(async () =>
+    (await cdp.evaluate(
+      sessionId,
+      "document.querySelector('.data-exchange-text')?.value.trimStart().startsWith('{')",
+    )) === true,
+  );
+  const expected = {
+    name: "防抖联动地图",
+    author: "联动作者",
+    note: "第一行\n第二行",
+  };
+  await cdp.evaluate(
+    sessionId,
+    `(values => {
+      for (const [key, value] of Object.entries(values)) {
+        const input = document.querySelector('[data-editor-share-metadata="' + key + '"]');
+        input.value = value;
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+    })(${JSON.stringify(expected)})`,
+  );
+  await waitForBrowserState(async () => {
+    const metadata = await cdp.evaluate(
+      sessionId,
+      `(() => {
+        try {
+          return JSON.parse(document.querySelector('.data-exchange-text')?.value ?? '').meta;
+        } catch {
+          return null;
+        }
+      })()`,
+    );
+    return JSON.stringify(metadata) === JSON.stringify(expected);
+  });
+  await cdp.evaluate(
+    sessionId,
+    "document.querySelector('.editor-dialog [aria-label=\"关闭\"]')?.click(); true",
+  );
+  await waitForBrowserState(async () =>
+    !await cdp.evaluate(
+      sessionId,
+      "Boolean(document.querySelector('.editor-dialog'))",
+    ),
+  );
+  await waitForBrowserState(async () => {
+    const current = await editorLevelMetadata(cdp, sessionId);
+    return JSON.stringify(current) === JSON.stringify(expected);
+  });
+  await clickWhenPresent(cdp, sessionId, "#editor-undo");
+  await waitForBrowserState(async () => {
+    const current = await editorLevelMetadata(cdp, sessionId);
+    return JSON.stringify(current) === JSON.stringify(original);
+  });
+  await clickWhenPresent(cdp, sessionId, "#editor-redo");
+  await waitForBrowserState(async () => {
+    const current = await editorLevelMetadata(cdp, sessionId);
+    return JSON.stringify(current) === JSON.stringify(expected);
+  });
+  await clickWhenPresent(cdp, sessionId, "#editor-inspector");
+}
+
+async function editorLevelMetadata(cdp, sessionId) {
+  return cdp.evaluate(
+    sessionId,
+    `(() => ({
+      name: document.querySelector('[data-editor-metadata="name"]')?.value ?? '',
+      author: document.querySelector('[data-editor-metadata="author"]')?.value ?? '',
+      note: document.querySelector('[data-editor-metadata="note"]')?.value ?? '',
+    }))()`,
+  );
 }
 
 async function verifyLevelControls(cdp, sessionId) {

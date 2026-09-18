@@ -95,7 +95,7 @@ const emit = defineEmits<{
   ruleMode: [mode: EditorRuleMode];
   maxMoves: [value: number | null];
   maxTime: [value: number | null];
-  metadata: [value: { name: string; author?: string }];
+  metadata: [value: { name: string; author?: string; note?: string }];
   music: [value: MapMusic | undefined];
   playRestart: [];
   playStop: [];
