@@ -1,17 +1,23 @@
 import type { TranslationScope } from "@bobby/i18n";
-import { ensureWebI18nScopes } from "../i18n/webI18n.js";
+import { preloadWebI18nScopes } from "../i18n/webI18n.js";
+
+export interface LocalizedPageLoader<T> {
+  (): Promise<T>;
+  readonly scopes: readonly TranslationScope[];
+}
 
 function createLocalizedPageLoader<T>(
   scopes: readonly TranslationScope[],
   importer: () => Promise<T>,
-): () => Promise<T> {
-  return async () => {
+): LocalizedPageLoader<T> {
+  const load = async (): Promise<T> => {
     const [page] = await Promise.all([
       importer(),
-      ensureWebI18nScopes(scopes),
+      preloadWebI18nScopes(scopes),
     ]);
     return page;
   };
+  return Object.assign(load, { scopes });
 }
 
 export const loadHomePage = createLocalizedPageLoader(
