@@ -15,6 +15,7 @@ import { resolveMapDocument } from "../../services/catalog/exploreMaps.js";
 import { loadEditorAutosave } from "../../storage/editorDraftStorage.js";
 import EditorPage from "./EditorPage.vue";
 import { configureEditorShell } from "./editorShell.js";
+import { webT } from "../../i18n/webI18n.js";
 import "../../../../editor/style.css";
 
 export async function renderEditorPage(
@@ -29,7 +30,7 @@ export async function renderEditorPage(
       const resolved = await resolveMapDocument(mapRef);
       level = fromLevelMap(
         resolved.level,
-        `${resolved.document.meta.name} · 副本`,
+        `${resolved.document.meta.name} · ${webT("editor.copySuffix")}`,
       );
       window.history.replaceState(
         window.history.state,
