@@ -1,0 +1,37 @@
+import type { ShellTranslationKey } from "./zh-CN.js";
+
+const catalog = {
+  "brand.name": "Bobby Carrot 5 Remake",
+  "shell.music": "Music",
+  "shell.musicInteractionTip": "Click the page to play music",
+  "shell.settings": "Settings",
+  "shell.help": "Help",
+  "shell.moreActions": "More actions",
+  "shell.openGithub": "Open GitHub repository",
+  "shell.back": "Back",
+  "shell.previousLevel": "Previous level",
+  "shell.nextLevel": "Next level",
+  "shell.restart": "Restart",
+  "shell.undo": "Undo",
+  "shell.redo": "Redo",
+  "shell.editMap": "Edit map",
+  "shell.openInEditor": "Open in editor",
+  "shell.record": "Record",
+  "shell.recordReplay": "Record replay test input",
+  "shell.screenJoystick": "On-screen joystick",
+  "nav.home": "Home",
+  "nav.adventure": "Adventure",
+  "nav.explore": "Explore",
+  "nav.editor": "Editor",
+  "context.import": "Import Data",
+  "context.embed": "Embed",
+  "common.close": "Close",
+  "common.cancel": "Cancel",
+  "common.import": "Import",
+  "common.importFile": "Import file",
+  "common.compress": "Compress",
+  "common.copy": "Copy",
+  "common.download": "Download",
+} satisfies Record<ShellTranslationKey, string>;
+
+export default catalog;
