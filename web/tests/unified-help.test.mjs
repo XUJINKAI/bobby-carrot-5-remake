@@ -19,7 +19,7 @@ test("Help 只在打开时加载对应 scope", async () => {
     new URL("../src/app/AppRoot.vue", import.meta.url),
     "utf8",
   );
-  assert.match(source, /ensureWebI18nScopes\(\["help"\]\)/);
+  assert.match(source, /acquireWebI18nScopes\(\["help"\]\)/);
   assert.match(source, /webT\("help\.html"\)/);
 });
 
