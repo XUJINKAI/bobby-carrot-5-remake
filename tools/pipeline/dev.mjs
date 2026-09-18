@@ -8,6 +8,7 @@ const requestedMode = process.argv[2] ?? "web",
   noBuild = process.argv.includes("--no-build"),
   staticOnly = process.argv.includes("--static");
 if (!noBuild) {
+  run("npm", ["run", "build", "--workspace=@bobby/i18n"]);
   run(process.execPath, ["tools/cli.mjs", "assets", "prepare", "--dev"]);
   run(tscCommand(), ["-b", "engine", "--force"]);
   run(process.execPath, ["tools/replay/mark-verified-maps.mjs"]);
