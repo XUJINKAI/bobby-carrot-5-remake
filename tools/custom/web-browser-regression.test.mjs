@@ -325,15 +325,25 @@ async function verifyAdventureDeveloperTools(cdp, url) {
   );
   await verifyReplaySaveButton(cdp, sessionId);
 
-  await cdp.evaluate(
-    sessionId,
-    "document.querySelector('[data-replay-action=\"load-builtin\"]')?.click(); true",
-  );
   await waitFor(async () =>
-    ["内置过法已载入", "Built-in solution loaded"].includes(
+    Boolean(
       await cdp.evaluate(
         sessionId,
-        "document.querySelector('[data-replay-verification]')?.textContent ?? ''",
+        `(() => {
+          const load = document.querySelector('[data-replay-action="load-builtin"]');
+          const verification = document.querySelector('[data-replay-verification]');
+          const text = verification?.textContent ?? '';
+          if (
+            load &&
+            !load.disabled &&
+            ['等待录制', 'Waiting for recording'].includes(text)
+          ) {
+            load.click();
+          }
+          return ['内置过法已载入', 'Built-in solution loaded'].includes(
+            verification?.textContent ?? '',
+          );
+        })()`,
       ),
     ),
   );
