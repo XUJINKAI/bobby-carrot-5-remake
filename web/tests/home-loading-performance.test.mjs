@@ -84,3 +84,20 @@ test("页面模块与 i18n scope 通过统一 loader 绑定", async () => {
   assert.match(app, /loadGamePage\(\)/);
   assert.match(i18n, /for \(const scope of scopes\) requiredScopes\.add\(scope\);[\s\S]*await Promise\.all/);
 });
+
+
+test("Adventure special scene 与 locale 设置都服从统一 i18n 流程", async () => {
+  const [app, settings] = await Promise.all([
+    readFile(new URL("../src/app/BobbyApp.ts", import.meta.url), "utf8"),
+    readFile(new URL("../src/app/settings/useGlobalSettings.ts", import.meta.url), "utf8"),
+  ]);
+
+  const sceneRenderer =
+    app.match(/private async renderAdventureScene[\s\S]*?\n  }\n\n  private scheduleHomePrefetch/)?.[0] ?? "";
+  assert.match(sceneRenderer, /loadGamePage\(\)/);
+  assert.doesNotMatch(sceneRenderer, /ensureWebI18nScopes/);
+  assert.match(
+    settings,
+    /await setWebLocale\(locale\);\s+if \(getWebLocale\(\) !== locale\) return;\s+updateWebSettings/,
+  );
+});
