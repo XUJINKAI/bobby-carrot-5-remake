@@ -20,5 +20,16 @@ const catalog = {
   "home.demoEnteringAdventure": "Entering Adventure…",
   "home.demoDead": "Bobby is in trouble. Restart to try again.",
   "home.demoDeathReason": "Bobby could not continue.",
+  "home.demoWelcome": "Welcome to Bobby Carrot 5 Remake",
+  "home.demoTryAgain": "Try again",
+  "home.intro.title": "Bobby Carrot 5 Remake",
+  "home.intro.lead": "Bringing Bobby Carrot 5 to the modern web, starting from the original levels, artwork, and mechanics.",
+  "home.intro.classicTitle": "Recreate the Classic",
+  "home.intro.classicDescription": "Recreate the original adventure experience with 400 levels and 80 bonus levels, including systems such as the Beaver Shop.",
+  "home.intro.editorTitle": "Map Editor",
+  "home.intro.editorDescription": "The enhanced map editor supports both original mechanics and new ones, including Sokoban-style crates and portals.",
+  "home.intro.shareTitle": "Share Anywhere",
+  "home.intro.shareDescription": "Share maps through links, files, or web embeds, including embedding your own creations directly into your website.",
+  "home.intro.legalNote": "Project code and original documentation follow the repository license. Rights to original Bobby Carrot assets are described in THIRD_PARTY_ASSETS.md.",
 } satisfies Record<HomeTranslationKey, string>;
 export default catalog;

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { HomeViewState } from "./types.js";
 import AppIcon from "../../shared/icons/AppIcon.vue";
+import { webT } from "../../i18n/webI18n.js";
 
 defineProps<{ state: HomeViewState }>();
 const emit = defineEmits<{
@@ -17,7 +18,7 @@ function reportCanvas(element: unknown): void {
 <template>
   <article class="home-demo-panel">
     <div class="home-demo-toolbar">
-      <span>欢迎来到兔子波比5重制版</span>
+      <span>{{ webT("home.demoWelcome") }}</span>
     </div>
     <div class="home-demo-stage">
       <section class="game-stage">
@@ -26,11 +27,11 @@ function reportCanvas(element: unknown): void {
         </div>
         <div v-if="state.demoResult" class="result-overlay">
           <div class="result-card">
-            <h2>再试一次</h2>
+            <h2>{{ webT("home.demoTryAgain") }}</h2>
             <p>{{ state.deathReason }}</p>
             <div class="result-actions">
               <button class="ghost-btn" @click="emit('restart')">
-                重新开始
+                {{ webT("shell.restart") }}
               </button>
             </div>
           </div>
@@ -42,8 +43,8 @@ function reportCanvas(element: unknown): void {
       <button
         class="home-demo-screen-control"
         type="button"
-        title="屏幕摇杆"
-        aria-label="屏幕摇杆"
+        :title="webT('shell.screenJoystick')"
+        :aria-label="webT('shell.screenJoystick')"
         :aria-pressed="state.screenControlEnabled"
         @click="emit('screenControl')"
       >

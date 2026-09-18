@@ -19,6 +19,17 @@ const catalog = {
   "home.demoEnteringAdventure": "正在进入冒险模式…",
   "home.demoDead": "Bobby 遇到了危险，可以重新开始。",
   "home.demoDeathReason": "Bobby 没能继续前进。",
+  "home.demoWelcome": "欢迎来到兔子波比5重制版",
+  "home.demoTryAgain": "再试一次",
+  "home.intro.title": "《兔子波比5》重制版",
+  "home.intro.lead": "从原版关卡、美术与机关出发，把兔子波比 5 重新带到现代 Web。",
+  "home.intro.classicTitle": "复刻经典",
+  "home.intro.classicDescription": "还原原版冒险体验，复刻400个关卡+80个奖励关，海狸商店等机制也悉数还原。",
+  "home.intro.editorTitle": "地图编辑器",
+  "home.intro.editorDescription": "增强的地图编辑器不仅可以创建原版机制的地图，还有很多新的机制提供，例如推箱子和传送门。",
+  "home.intro.shareTitle": "尽情分享",
+  "home.intro.shareDescription": "提供多种分享方式，例如链接、文件、网页内嵌，你可以将自己创建的地图嵌入自己的网页中。",
+  "home.intro.legalNote": "项目代码与原创文档遵循仓库许可证；原版 Bobby Carrot 资产的权利边界以 THIRD_PARTY_ASSETS.md 为准。",
 } as const;
 export type HomeTranslationKey = keyof typeof catalog;
 export default catalog;
