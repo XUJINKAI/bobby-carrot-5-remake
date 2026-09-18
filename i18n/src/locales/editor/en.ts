@@ -16,5 +16,6 @@ const catalog = {
   "editor.undoPlay": "Undo Play Test",
   "editor.redoPlay": "Redo Play Test",
   "editor.issueCount": "{count} issues",
+  "editor.copySuffix": "Copy",
 } satisfies Record<EditorTranslationKey, string>;
 export default catalog;
