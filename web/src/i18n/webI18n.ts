@@ -20,6 +20,7 @@ let routeScopes = new Set<TranslationScope>();
 const transientScopes = new Map<TranslationScope, number>();
 let localeGeneration = 0;
 let desiredLocale: Locale = FALLBACK_LOCALE;
+let localeTransition: { locale: Locale; promise: Promise<void> } | null = null;
 
 export type WebTranslationKey = TranslationKey;
 
@@ -50,19 +51,32 @@ export function getWebLocale(): Locale {
   return locale.value;
 }
 
-export async function setWebLocale(nextLocale: Locale): Promise<void> {
-  if (nextLocale === desiredLocale) return;
+export function setWebLocale(nextLocale: Locale): Promise<void> {
+  if (nextLocale === locale.value && nextLocale === desiredLocale)
+    return Promise.resolve();
+  if (localeTransition?.locale === nextLocale)
+    return localeTransition.promise;
+
   desiredLocale = nextLocale;
   const generation = ++localeGeneration;
-  await loadScopes(activeScopes(), nextLocale);
-  if (generation !== localeGeneration || nextLocale !== desiredLocale) return;
-  translator.setLocale(nextLocale);
-  locale.value = nextLocale;
-  if (typeof document !== "undefined") document.documentElement.lang = nextLocale;
-  if (typeof window !== "undefined")
-    window.dispatchEvent(
-      new CustomEvent("web-locale-change", { detail: nextLocale }),
-    );
+  const promise = (async (): Promise<void> => {
+    await loadScopes(activeScopes(), nextLocale);
+    if (generation !== localeGeneration || nextLocale !== desiredLocale) return;
+    translator.setLocale(nextLocale);
+    locale.value = nextLocale;
+    if (typeof document !== "undefined")
+      document.documentElement.lang = nextLocale;
+    if (typeof window !== "undefined")
+      window.dispatchEvent(
+        new CustomEvent("web-locale-change", { detail: nextLocale }),
+      );
+  })();
+
+  localeTransition = { locale: nextLocale, promise };
+  void promise.finally(() => {
+    if (localeTransition?.promise === promise) localeTransition = null;
+  });
+  return promise;
 }
 
 export async function preloadWebI18nScopes(
