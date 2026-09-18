@@ -26,7 +26,7 @@ export async function renderHome(
   const { app, audio, images, navigate } = context;
 
   audio.playMusic("title");
-  configureShell({
+  const syncShell = (): void => configureShell({
     topBar: {
       visible: true,
       fixed: true,
@@ -47,6 +47,7 @@ export async function renderHome(
       ],
     },
   });
+  syncShell();
   app.replaceChildren();
   const initialScreenControlEnabled =
     getWebSettings().controls.screenControlEnabled;
@@ -163,6 +164,10 @@ export async function renderHome(
   window.addEventListener("shell-dialog-close", onDialogClose);
   window.addEventListener("screen-control-change", onScreenControlChange);
   return {
+    localeChanged(): void {
+      syncShell();
+      updateDemo();
+    },
     destroy(): void {
       shellDialogLease?.release();
       window.removeEventListener("shell-dialog-open", onDialogOpen);
