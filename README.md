@@ -1,5 +1,7 @@
 # Bobby Carrot 5 Remake
 
+[English](README_en.md)
+
 ![title](docs/screenshot/title.png)
 
 **兔子波比5** 的现代 Web 全新重制项目。
