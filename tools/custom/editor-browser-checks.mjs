@@ -122,6 +122,61 @@ async function verifyMetadataSync(cdp, sessionId) {
     const current = await editorLevelMetadata(cdp, sessionId);
     return JSON.stringify(current) === JSON.stringify(expected);
   });
+
+  // 导入另一张完整 MapDocument 时，新文档自己的 meta 必须成为 authority。
+  await clickWhenPresent(cdp, sessionId, "#editor-share");
+  await waitForBrowserState(async () =>
+    Boolean(
+      await cdp.evaluate(
+        sessionId,
+        "document.querySelector('.editor-dialog .data-exchange-text')",
+      ),
+    ),
+  );
+  await cdp.evaluate(
+    sessionId,
+    `(() => {
+      const checkbox = document.querySelector('.editor-dialog .data-exchange-check input[type="checkbox"]');
+      if (checkbox?.checked) checkbox.click();
+    })()`,
+  );
+  await waitForBrowserState(async () =>
+    (await cdp.evaluate(
+      sessionId,
+      "document.querySelector('.editor-dialog .data-exchange-text')?.value.trimStart().startsWith('{')",
+    )) === true,
+  );
+  const importedMetadata = {
+    name: "导入地图 B",
+    author: "Bob",
+    note: "B 的注记",
+  };
+  const applied = await cdp.evaluate(
+    sessionId,
+    `(metadata => {
+      const textarea = document.querySelector('.editor-dialog .data-exchange-text');
+      if (!textarea) return false;
+      const documentValue = JSON.parse(textarea.value);
+      documentValue.meta = metadata;
+      textarea.value = JSON.stringify(documentValue, null, 2);
+      textarea.dispatchEvent(new Event('input', { bubbles: true }));
+      const apply = [...document.querySelectorAll('.editor-dialog .data-exchange-toolbar button')]
+        .find((button) => button.textContent?.trim() === '应用');
+      apply?.click();
+      return Boolean(apply);
+    })(${JSON.stringify(importedMetadata)})`,
+  );
+  if (!applied) throw new Error("Editor 地图文件应用按钮不存在");
+  await waitForBrowserState(async () =>
+    !await cdp.evaluate(
+      sessionId,
+      "Boolean(document.querySelector('.editor-dialog'))",
+    ),
+  );
+  await waitForBrowserState(async () => {
+    const current = await editorLevelMetadata(cdp, sessionId);
+    return JSON.stringify(current) === JSON.stringify(importedMetadata);
+  });
   await clickWhenPresent(cdp, sessionId, "#editor-inspector");
 }
 

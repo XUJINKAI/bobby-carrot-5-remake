@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { test } from "vitest";
 import {
   mapStatusIndicator,
@@ -78,4 +79,19 @@ test("Adventure 状态明确通关验证来自自由探索模式", () => {
     ).icon,
     "map-status",
   );
+});
+
+
+test("地图状态 Tooltip 区分鼠标 hover 与点击固定状态", () => {
+  const source = readFileSync(
+    new URL("../src/shell/ShellIndicator.vue", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(source, /const hovered = ref\(false\)/);
+  assert.match(source, /const pinned = ref\(false\)/);
+  assert.match(source, /hovered\.value \|\| pinned\.value \|\| focused\.value/);
+  assert.match(source, /if \(event\.pointerType === "mouse"\) hovered\.value = true/);
+  assert.match(source, /pinned\.value = !pinned\.value/);
+  assert.match(source, /root\.value\?\.contains\(event\.target as Node\)/);
 });

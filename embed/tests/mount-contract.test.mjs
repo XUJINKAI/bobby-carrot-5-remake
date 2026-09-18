@@ -21,6 +21,10 @@ test("Embed 把 Pointer 与键盘缩放能力交给 Engine Input", async () => {
   assert.match(typesSource, /pointer\?: boolean/);
   assert.match(typesSource, /EmbedKeyboardMode = "focus" \| "global"/);
   assert.doesNotMatch(typesSource, /EmbedKeyboardMode = [^;]*false/);
+  assert.match(
+    mountSource,
+    /options\.input\?\.keyboard === "global" \? "global" : "focus"/,
+  );
   assert.match(mountSource, /options\.input\?\.pointer \?\? true/);
   assert.match(mountSource, /\bpointer,/);
   assert.match(mountSource, /zoom: true/);

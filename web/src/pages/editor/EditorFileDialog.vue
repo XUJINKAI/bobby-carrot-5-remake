@@ -69,11 +69,7 @@ function downloaded(): void {
 }
 
 function imported(level: EditorMap): void {
-  flushMetadata();
-  emit("import", {
-    ...level,
-    meta: metadataValue(metadata),
-  });
+  emit("import", level);
 }
 </script>
 

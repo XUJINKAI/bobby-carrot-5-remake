@@ -87,7 +87,7 @@ export function mount(options: BC5RMountOptions): BC5RHandle {
   root.append(styleElement(), frame, canvasWrap, info.root);
   shadow.append(root);
 
-  const keyboard = options.input?.keyboard ?? "focus";
+  const keyboard = options.input?.keyboard === "global" ? "global" : "focus";
   const joystick = resolveJoystick(options.input?.joystick ?? "auto");
   const pointer = options.input?.pointer ?? true;
   const pinchZoom = options.camera?.pinchZoom ?? true;

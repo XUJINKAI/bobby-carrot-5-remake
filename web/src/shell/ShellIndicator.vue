@@ -1,40 +1,39 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import AppIcon from "../shared/icons/AppIcon.vue";
 import type { ShellIndicator } from "./shellBridge.js";
 
 const props = defineProps<{ indicator: ShellIndicator }>();
+const root = ref<HTMLElement | null>(null);
 const button = ref<HTMLButtonElement | null>(null);
-const visible = ref(false);
-let pointerType = "";
-
-function onPointerDown(event: PointerEvent): void {
-  pointerType = event.pointerType;
-}
+const hovered = ref(false);
+const pinned = ref(false);
+const focused = ref(false);
+const visible = computed(() => hovered.value || pinned.value || focused.value);
 
 function onPointerEnter(event: PointerEvent): void {
-  if (event.pointerType === "mouse") visible.value = true;
+  if (event.pointerType === "mouse") hovered.value = true;
 }
 
 function onPointerLeave(event: PointerEvent): void {
-  if (event.pointerType === "mouse") visible.value = false;
+  if (event.pointerType === "mouse") hovered.value = false;
 }
 
 function onFocus(): void {
-  if (button.value?.matches(":focus-visible")) visible.value = true;
+  if (button.value?.matches(":focus-visible")) focused.value = true;
 }
 
 function onClick(): void {
-  if (pointerType === "mouse") return;
-  visible.value = !visible.value;
+  pinned.value = !pinned.value;
 }
 
-function onKeyDown(): void {
-  pointerType = "";
+function hidePersistent(): void {
+  pinned.value = false;
+  focused.value = false;
 }
 
 function onDocumentPointerDown(event: PointerEvent): void {
-  if (!button.value?.contains(event.target as Node)) visible.value = false;
+  if (!root.value?.contains(event.target as Node)) pinned.value = false;
 }
 
 onMounted(() => {
@@ -47,8 +46,8 @@ onBeforeUnmount(() => {
 
 <template>
   <span
+    ref="root"
     class="shell-indicator"
-    @pointerdown="onPointerDown"
     @pointerenter="onPointerEnter"
     @pointerleave="onPointerLeave"
   >
@@ -61,10 +60,9 @@ onBeforeUnmount(() => {
       :aria-label="indicator.label"
       :aria-describedby="visible ? `${indicator.id}-tooltip` : undefined"
       @focus="onFocus"
-      @blur="visible = false"
+      @blur="focused = false"
       @click="onClick"
-      @keydown="onKeyDown"
-      @keydown.esc="visible = false"
+      @keydown.esc.prevent="hidePersistent"
     >
       <AppIcon :name="indicator.icon" :size="21" />
     </button>
