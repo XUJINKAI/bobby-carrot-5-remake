@@ -330,10 +330,10 @@ async function verifyAdventureDeveloperTools(cdp, url) {
     "document.querySelector('[data-replay-action=\"load-builtin\"]')?.click(); true",
   );
   await waitFor(async () =>
-    Boolean(
+    ["内置过法已载入", "Built-in solution loaded"].includes(
       await cdp.evaluate(
         sessionId,
-        "document.querySelector('[data-replay-output]')?.value.trim().length",
+        "document.querySelector('[data-replay-verification]')?.textContent ?? ''",
       ),
     ),
   );
