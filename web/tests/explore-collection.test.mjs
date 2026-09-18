@@ -93,3 +93,37 @@ test("Explore 通用组件只消费 collection 展示合同", () => {
     false,
   );
 });
+
+
+test("Explore imperative filters follow page locale lifecycle", () => {
+  const mount = fs.readFileSync(
+    new URL("../src/pages/explore/mountExplorePage.ts", import.meta.url),
+    "utf8",
+  );
+  const filters = fs.readFileSync(
+    new URL("../src/pages/explore/levelFilters.ts", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(filters, /export interface LevelFilterController/);
+  assert.match(
+    filters,
+    /localeChanged\(\): void \{[\s\S]*renderFilterShell\(shell\);[\s\S]*applyFilters\(\);/,
+  );
+  assert.match(
+    filters,
+    /destroy\(\): void \{[\s\S]*removeEventListener\("click", onFilterClick\)[\s\S]*shell\.remove\(\)/,
+  );
+  assert.match(
+    mount,
+    /const filters = collection\.filters\.length > 0[\s\S]*mountLevelFilters\(collection, images\)/,
+  );
+  assert.match(
+    mount,
+    /localeChanged\(\): void \{[\s\S]*syncShell\(\);[\s\S]*filters\?\.localeChanged\(\)/,
+  );
+  assert.match(
+    mount,
+    /destroy\(\): void \{[\s\S]*filters\?\.destroy\(\);[\s\S]*exploreApp\.unmount\(\)/,
+  );
+});
