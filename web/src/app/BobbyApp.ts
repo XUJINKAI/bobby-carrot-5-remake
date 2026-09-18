@@ -22,7 +22,17 @@ import {
   parseMapPlayUrl,
   type ExploreMapRef,
 } from "./routes.js";
-import { ensureWebI18nScopes, webT } from "../i18n/webI18n.js";
+import { webT } from "../i18n/webI18n.js";
+import {
+  loadAdventurePages,
+  loadEditorPage,
+  loadEmbedPage,
+  loadExplorePage,
+  loadGamePage,
+  loadHomePage,
+  loadImportPage,
+  loadSettingsPage,
+} from "./pageLoaders.js";
 
 interface AppRootHandle {
   openSettings(): void;
@@ -135,26 +145,20 @@ export class BobbyApp {
     const path = localRoutePath();
 
     if (path === "/") {
-      const [{ renderHome }] = await Promise.all([
-        import("../pages/home/mountHomePage.js"),
-        ensureWebI18nScopes(["home"]),
-      ]);
+      const { renderHome } = await loadHomePage();
       const context = this.pageContext();
       this.controller = await renderHome(context);
       this.scheduleHomePrefetch();
       return;
     }
     if (path === "/embed") {
-      const [{ renderEmbedPage }] = await Promise.all([
-        import("../pages/embed/mountEmbedPage.js"),
-        ensureWebI18nScopes(["embed"]),
-      ]);
+      const { renderEmbedPage } = await loadEmbedPage();
       const context = this.pageContext();
       this.controller = renderEmbedPage(context);
       return;
     }
     if (path === "/import/v1") {
-      await ensureWebI18nScopes(["import"]);
+      await loadImportPage();
       await this.renderImport();
       return;
     }
@@ -167,8 +171,7 @@ export class BobbyApp {
         ? "original"
         : decodeURIComponent(path.split("/")[2] ?? "").toLowerCase();
       const [{ renderLevels }] = await Promise.all([
-        import("../pages/explore/mountExplorePage.js"),
-        ensureWebI18nScopes(["explore"]),
+        loadExplorePage(),
         this.catalog.loadCollectionsIndex(),
         this.catalog.loadCollection(collection),
       ]);
@@ -176,19 +179,13 @@ export class BobbyApp {
       return;
     }
     if (path === "/settings") {
-      const [{ renderSettingsPage }] = await Promise.all([
-        import("../pages/settings/mountSettingsPage.js"),
-        ensureWebI18nScopes(["settings"]),
-      ]);
+      const { renderSettingsPage } = await loadSettingsPage();
       const context = this.pageContext();
       this.controller = renderSettingsPage(context);
       return;
     }
     if (path === "/edit") {
-      const [{ renderEditorPage }] = await Promise.all([
-        import("../pages/editor/mountEditorPage.js"),
-        ensureWebI18nScopes(["editor", "game"]),
-      ]);
+      const { renderEditorPage } = await loadEditorPage();
       this.controller = await renderEditorPage(this.pageContext());
       return;
     }
@@ -197,11 +194,8 @@ export class BobbyApp {
       return;
     }
     const [, adventurePages] = await Promise.all([
-      Promise.all([
-        this.catalog.loadAdventure(),
-        ensureWebI18nScopes(["adventure"]),
-      ]),
-      import("../pages/adventure/mountAdventurePages.js"),
+      this.catalog.loadAdventure(),
+      loadAdventurePages(),
     ]);
     const context = this.pageContext();
     if (path === "/adventure") {
@@ -270,8 +264,7 @@ export class BobbyApp {
       if (imported.type === "map") {
         const [{ serializeEditorLevel }, { renderGamePage }] = await Promise.all([
           import("@bobby/editor"),
-          import("../pages/game/mountGamePage.js"),
-          ensureWebI18nScopes(["game"]),
+          loadGamePage(),
         ]);
         sessionStorage.setItem(
           "bc5r:pending-editor-level",
@@ -291,9 +284,7 @@ export class BobbyApp {
         });
         return;
       }
-      const { renderImportMessage } = await import(
-        "../pages/import/mountImportPage.js"
-      );
+      const { renderImportMessage } = await loadImportPage();
       const context = this.pageContext();
       this.controller = imported.type === "unknown"
         ? renderImportMessage(context, {
@@ -306,9 +297,7 @@ export class BobbyApp {
             data: imported,
           });
     } catch (error) {
-      const { renderImportMessage } = await import(
-        "../pages/import/mountImportPage.js"
-      );
+      const { renderImportMessage } = await loadImportPage();
       this.controller = renderImportMessage(this.pageContext(), {
         status: "error",
         message: error instanceof Error ? error.message : String(error),
@@ -332,9 +321,8 @@ export class BobbyApp {
       }
       const [editor, importPage, gamePage] = await Promise.all([
         import("@bobby/editor"),
-        import("../pages/import/mountImportPage.js"),
-        import("../pages/game/mountGamePage.js"),
-        ensureWebI18nScopes(["game", "import"]),
+        loadImportPage(),
+        loadGamePage(),
       ]);
       const level = editor.parseEditorLevel(pending);
       sessionStorage.setItem("bc5r:pending-editor-level", pending);
@@ -351,9 +339,8 @@ export class BobbyApp {
     try {
       const [maps, gamePage, collection] = await Promise.all([
         import("../services/catalog/exploreMaps.js"),
-        import("../pages/game/mountGamePage.js"),
+        loadGamePage(),
         this.catalog.loadCollection(ref.collection).catch(() => null),
-        ensureWebI18nScopes(["game"]),
       ]);
       const resolved = await maps.resolveMapDocument(ref);
       const currentIndex =
@@ -403,9 +390,8 @@ export class BobbyApp {
     if (!ref) throw new Error(`无效 Adventure map reference：${found.level.map}`);
     const [maps, gamePage, collection] = await Promise.all([
       import("../services/catalog/exploreMaps.js"),
-      import("../pages/game/mountGamePage.js"),
+      loadGamePage(),
       this.catalog.loadCollection(ref.collection),
-      ensureWebI18nScopes(["game"]),
     ]);
     const resolved = await maps.resolveMapDocument(ref);
     const verified = collection.maps.some(
@@ -447,7 +433,7 @@ export class BobbyApp {
     if (!ref) throw new Error(`无效 Adventure scene map reference：${scene.map}`);
     const [maps, gamePage, collection] = await Promise.all([
       import("../services/catalog/exploreMaps.js"),
-      import("../pages/game/mountGamePage.js"),
+      loadGamePage(),
       this.catalog.loadCollection(ref.collection),
     ]);
     const resolved = await maps.resolveMapDocument(ref);
