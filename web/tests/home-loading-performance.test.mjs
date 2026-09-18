@@ -31,7 +31,7 @@ test("Editor 样式按页面加载，Help 文案改为 i18n lazy scope", async (
   ]);
 
   assert.match(editorMount, /editor\/style\.css/);
-  assert.match(appRoot, /openWebI18nScope\\(\\["help"\\]\\)/);
+  assert.match(appRoot, /openWebI18nScope\(\["help"\]\)/);
   assert.match(catalogs, /help:[\s\S]*import\("\.\/locales\/help\/zh-CN\.js"\)/);
   assert.match(catalogs, /help:[\s\S]*import\("\.\/locales\/help\/en\.js"\)/);
 });
@@ -56,7 +56,7 @@ test("Home Save 导入按需加载 import scope", async () => {
     new URL("../src/pages/home/HomeModeMenu.vue", import.meta.url),
     "utf8",
   );
-  assert.match(source, /openWebI18nScope\\(\\["import"\\]\\)/);
+  assert.match(source, /openWebI18nScope\(\["import"\]\)/);
 });
 
 test("运行时 SEO 响应语言变化且静态 metadata 提供双语 fallback", async () => {
@@ -99,7 +99,7 @@ test("Adventure special scene 与 locale 设置都服从统一 i18n 流程", asy
   ]);
 
   const sceneRenderer =
-    app.match(/private async renderAdventureScene[\s\S]*?\n  }\n\n  private scheduleHomePrefetch/)?.[0] ?? "";
+    app.match(/private async renderAdventureScene[\s\S]*?\n  }\n\n  private activateI18nRoute/)?.[0] ?? "";
   assert.match(sceneRenderer, /loadGamePage\(\)/);
   assert.doesNotMatch(sceneRenderer, /ensureWebI18nScopes/);
   assert.match(
