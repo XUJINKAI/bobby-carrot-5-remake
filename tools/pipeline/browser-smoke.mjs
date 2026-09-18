@@ -9,6 +9,7 @@ import {
   assertMapStatusSmoke,
   mapStatusSmokeScript,
 } from "./browser-smoke/map-status.mjs";
+import { assertEmbedHudSmoke, embedHudSmokeScript } from "./browser-smoke/embed-hud.mjs";
 import { root } from "../lib/fs.mjs";
 import { serveDistRequest } from "../lib/static-server.mjs";
 const browserEnvironment = { ...process.env };
@@ -495,44 +496,10 @@ async function interactiveDataExchangeSmoke(url) {
 }
 
 async function interactiveEmbedHudSmoke(url) {
-  const script = `
-(async () => {
-  const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-  let host = null;
-  for (let i = 0; i < 120; i += 1) {
-    host = document.querySelector('.preview');
-    if (
-      document.querySelector('[data-preview-state="ready"]') &&
-      host?.shadowRoot?.querySelector('.engine-gameplay-hud')
-    ) break;
-    await delay(50);
-  }
-  const shadow = host?.shadowRoot;
-  const hud = shadow?.querySelector('.engine-gameplay-hud');
-  const value = shadow?.querySelector('.engine-gameplay-hud-value');
-  if (!hud || !value) throw new Error('missing Embed gameplay HUD');
-  await document.fonts.ready;
-  const hudStyle = getComputedStyle(hud);
-  const valueStyle = getComputedStyle(value);
-  return JSON.stringify({
-    fontFamily: hudStyle.fontFamily,
-    fontReady: document.fonts.check('36px "Jersey 10"'),
-    fontSize: valueStyle.fontSize,
-    strokeWidth: hudStyle.webkitTextStrokeWidth,
-  });
-})()
-`;
-  const result = await runBrowserEval(url, script);
+  const result = await runBrowserEval(url, embedHudSmokeScript);
   if (result.status !== 0)
     throw new Error(`Embed HUD 字体检查失败：${result.stderr || result.stdout}`);
-  const payload = lastJsonLine(result.stdout);
-  if (
-    !payload.fontFamily.includes("Jersey 10") ||
-    !payload.fontReady ||
-    payload.fontSize !== "36px" ||
-    payload.strokeWidth !== "1px"
-  )
-    throw new Error(`Embed HUD 字体样式异常：${JSON.stringify(payload)}`);
+  assertEmbedHudSmoke(lastJsonLine(result.stdout));
 }
 async function interactiveEditorSourceSmoke(url, expectedWin) {
   const script = `
