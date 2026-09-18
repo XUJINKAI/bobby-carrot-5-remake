@@ -9,7 +9,7 @@ import AppBottomBar from "../shell/AppBottomBar.vue";
 import AppTopBar from "../shell/AppTopBar.vue";
 import type { Navigate } from "./pageContracts.js";
 import type { ShellViewState } from "../shell/shellBridge.js";
-import { ensureWebI18nScopes, webT } from "../i18n/webI18n.js";
+import { acquireWebI18nScopes, webT } from "../i18n/webI18n.js";
 
 const props = defineProps<{
   shell: ShellViewState;
@@ -21,6 +21,7 @@ const content = ref<HTMLDivElement | null>(null);
 const quickSettingsOpen = ref(false);
 const helpOpen = ref(false);
 const helpHtml = ref("");
+let releaseHelpScope: (() => void) | null = null;
 const musicInteractionRequired = ref(audioInteractionRequired());
 const settings = useGlobalSettings(props.audio);
 const disposeMusicInteraction = props.audio.onMusicInteractionRequiredChange(
@@ -32,7 +33,7 @@ const disposeMusicInteraction = props.audio.onMusicInteractionRequiredChange(
 function openSettings(): void {
   settings.refresh();
   if (!quickSettingsOpen.value && !helpOpen.value) notifySurfaceOpen();
-  helpOpen.value = false;
+  dismissHelp();
   quickSettingsOpen.value = true;
 }
 
@@ -43,7 +44,7 @@ function closeSettings(): void {
 }
 
 async function openHelp(): Promise<void> {
-  await ensureWebI18nScopes(["help"]);
+  releaseHelpScope ??= await acquireWebI18nScopes(["help"]);
   helpHtml.value = webT("help.html");
   if (!helpOpen.value && !quickSettingsOpen.value) notifySurfaceOpen();
   quickSettingsOpen.value = false;
@@ -52,8 +53,14 @@ async function openHelp(): Promise<void> {
 
 function closeHelp(): void {
   if (!helpOpen.value) return;
-  helpOpen.value = false;
+  dismissHelp();
   notifySurfaceClose();
+}
+
+function dismissHelp(): void {
+  helpOpen.value = false;
+  releaseHelpScope?.();
+  releaseHelpScope = null;
 }
 
 function notifySurfaceOpen(): void {
@@ -136,7 +143,10 @@ watch(
 );
 
 defineExpose({ openSettings });
-onBeforeUnmount(disposeMusicInteraction);
+onBeforeUnmount(() => {
+  releaseHelpScope?.();
+  disposeMusicInteraction();
+});
 onMounted(() => {
   if (content.value) props.onContentReady(content.value);
 });
