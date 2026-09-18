@@ -24,14 +24,15 @@ export function replayVerificationPresentation(
     report.actual.status !== expected.finalState.status
   ) {
     return {
-      text:
-        `终局不一致 · 记录 ${expected.finalState.status} / ` +
-        `复跑 ${report.actual.status}`,
+      text: webT("game.replay.finalStateMismatch", {
+        recorded: expected.finalState.status,
+        actual: report.actual.status,
+      }),
       failed: true,
     };
   }
   return {
-    text: `复跑完成 · ${report.endTick} ticks`,
+    text: webT("game.replay.completed", { ticks: report.endTick }),
     failed: false,
   };
 }
@@ -42,9 +43,9 @@ export function validateBuiltinReplaySave(
 ): ReplayReport {
   const report = game.verifyReplay(replay);
   if (replay.finalState.status !== "won")
-    throw new Error("内置过法必须声明 won 终局");
+    throw new Error(webT("game.replay.builtinMustWin"));
   if (report.actual.status !== "won")
-    throw new Error("Replay 在当前关卡复跑后未通关");
+    throw new Error(webT("game.replay.builtinNotWon"));
   return report;
 }
 
