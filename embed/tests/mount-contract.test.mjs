@@ -19,6 +19,8 @@ test("Embed 把 Pointer 与键盘缩放能力交给 Engine Input", async () => {
   ]);
 
   assert.match(typesSource, /pointer\?: boolean/);
+  assert.match(typesSource, /EmbedKeyboardMode = "focus" \| "global"/);
+  assert.doesNotMatch(typesSource, /EmbedKeyboardMode = [^;]*false/);
   assert.match(mountSource, /options\.input\?\.pointer \?\? true/);
   assert.match(mountSource, /\bpointer,/);
   assert.match(mountSource, /zoom: true/);
@@ -33,6 +35,10 @@ test("Embed 框架使用固定首页、地图打开动作与操作提示", async
   assert.match(mountSource, /https:\/\/bc5r\.xujinkai\.net\//);
   assert.match(mountSource, /frameControls\.open\.href = playUrl/);
   assert.match(mountSource, /runtime\.game\.restart\(\)/);
+  assert.match(
+    mountSource,
+    /"bobby-transition": embedArtUrl\("b6\.png"\)/,
+  );
   assert.match(mountSource, /WASD \/ 方向键移动/);
 });
 

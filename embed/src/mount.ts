@@ -141,7 +141,7 @@ export function mount(options: BC5RMountOptions): BC5RHandle {
           camera,
           hud: true,
           input: {
-            keyboard: keyboard !== false,
+            keyboard: true,
             pointer,
             movement: true,
             pan: true,
@@ -563,6 +563,7 @@ function createEmbedImageManager(): ImageManager {
       "bobby-down": embedArtUrl("b3.png"),
       "bobby-idle": embedArtUrl("b4.png"),
       "bobby-death": embedArtUrl("b5.png"),
+      "bobby-transition": embedArtUrl("b6.png"),
       "bobby-mower": embedArtUrl("b7.png"),
       "bobby-kite": embedArtUrl("b9.png"),
       "hud-atlas": embedArtUrl("hud.png"),

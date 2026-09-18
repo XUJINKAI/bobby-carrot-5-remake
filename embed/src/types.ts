@@ -1,4 +1,4 @@
-export type EmbedKeyboardMode = false | "focus" | "global";
+export type EmbedKeyboardMode = "focus" | "global";
 export type EmbedJoystickMode = boolean | "auto";
 export type EmbedMusicStyle = "modern" | "8bit";
 

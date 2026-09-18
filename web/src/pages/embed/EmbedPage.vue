@@ -58,6 +58,10 @@ const options = computed(() => ({
   ...(info.value.trim() ? { info: info.value.trim() } : {}),
 }));
 
+const infoPlaceholder = computed(() =>
+  lang.value === "en" ? "Move with WASD / arrow keys" : "WASD / 方向键移动",
+);
+
 const embedCode = computed(() => {
   const config = {
     target: "#bc5r",
@@ -203,7 +207,7 @@ onBeforeUnmount(() => handle?.destroy());
               <option value="en">English</option>
             </select>
           </label>
-          <label class="field-group">自定义信息<input v-model="info" placeholder="Powered by Bobby Carrot 5 Remake" /></label>
+          <label class="field-group">自定义信息<input v-model="info" class="info-input" :placeholder="infoPlaceholder" /></label>
         </fieldset>
 
         <fieldset class="config-group">
@@ -238,10 +242,9 @@ onBeforeUnmount(() => handle?.destroy());
           <legend>控制</legend>
           <div class="settings-grid">
             <label>键盘
-              <select v-model="keyboard">
+              <select v-model="keyboard" class="keyboard-select">
                 <option value="focus">Focus</option>
                 <option value="global">Global</option>
-                <option :value="false">关闭</option>
               </select>
             </label>
             <label>摇杆

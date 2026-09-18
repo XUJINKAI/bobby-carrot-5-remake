@@ -24,7 +24,12 @@ export const embedHudSmokeScript = `
   );
   const joystick = shadow.querySelector('.bc5r-info .bc5r-icon-button');
   const joystickLayer = shadow.querySelector('.engine-screen-joystick-layer');
-  if (!home || !open || !restart || !joystick || !joystickLayer)
+  const infoInput = document.querySelector('.info-input');
+  const keyboardSelect = document.querySelector('.keyboard-select');
+  if (
+    !home || !open || !restart || !joystick || !joystickLayer ||
+    !infoInput || !keyboardSelect
+  )
     throw new Error('missing Embed frame controls');
   const initialJoystick = joystick.getAttribute('aria-pressed') === 'true';
   joystick.click();
@@ -45,6 +50,11 @@ export const embedHudSmokeScript = `
     openTarget: open.target,
     actionLabels: frameActions.map((element) => element.getAttribute('aria-label')),
     info: shadow.querySelector('.bc5r-info-copy')?.textContent,
+    infoPlaceholder: infoInput.placeholder,
+    keyboardOptions: [...keyboardSelect.options].map((option) => option.value),
+    transitionAssetLoaded: performance.getEntriesByType('resource').some(
+      (entry) => new URL(entry.name).pathname.endsWith('/assets/art/hd/b6.png'),
+    ),
     initialJoystick,
     toggledJoystick,
     joystickVisible: !joystickLayer.hidden,
@@ -65,6 +75,9 @@ export function assertEmbedHudSmoke(payload) {
     JSON.stringify(payload.actionLabels) !==
       JSON.stringify(["重新开始", "在新窗口打开", "关闭声音"]) ||
     payload.info !== "WASD / 方向键移动" ||
+    payload.infoPlaceholder !== payload.info ||
+    JSON.stringify(payload.keyboardOptions) !== JSON.stringify(["focus", "global"]) ||
+    !payload.transitionAssetLoaded ||
     payload.initialJoystick === payload.toggledJoystick ||
     payload.joystickVisible !== payload.toggledJoystick
   )
