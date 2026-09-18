@@ -55,3 +55,20 @@ test("Embed 服从 LevelMap 的地图音乐选择", async () => {
 
   assert.doesNotMatch(mountSource, /playMusic\(["']ingame1["']\)/);
 });
+
+
+test("Embed 在 mount 开头只解析一次 locale 并贯穿全部 UI", async () => {
+  const [typesSource, mountSource] = await Promise.all([
+    readFile(new URL("../src/types.ts", import.meta.url), "utf8"),
+    readFile(new URL("../src/mount.ts", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(typesSource, /lang\?: Locale \| "auto"/);
+  assert.match(mountSource, /const locale = resolveEmbedLocale\(options\.lang\)/);
+  assert.match(mountSource, /root\.dataset\.lang = locale/);
+  assert.match(mountSource, /createFrameControls\(audio\.enabled, locale\)/);
+  assert.match(mountSource, /createTerminalOverlay\(locale\)/);
+  assert.match(mountSource, /createInfoFooter\(options\.info, locale\)/);
+  assert.match(mountSource, /function resolveEmbedLocale\(lang: string \| undefined\): Locale/);
+  assert.doesNotMatch(mountSource, /options\.lang \?\? "zh-CN"/);
+});

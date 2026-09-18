@@ -1,3 +1,5 @@
+import type { Locale } from "@bobby/i18n";
+
 export type EmbedKeyboardMode = "focus" | "global";
 export type EmbedJoystickMode = boolean | "auto";
 export type EmbedMusicStyle = "modern" | "8bit";
@@ -6,7 +8,7 @@ export interface BC5RMountOptions {
   target: string | HTMLElement;
   map?: string;
   mapUrl?: string;
-  lang?: string;
+  lang?: Locale | "auto";
   audio?: boolean | number;
   musicStyle?: EmbedMusicStyle;
   input?: {
