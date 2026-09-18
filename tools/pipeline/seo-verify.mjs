@@ -99,7 +99,7 @@ function assertShell(relative, expected) {
   if (!html.includes(`name="robots" content="${expected.robots}"`))
     throw new Error(`${relative}: wrong robots value`);
   if (!html.includes(`rel="canonical" href="${expected.canonical}"`))
-    throw new Error(`${relative}: wrong canonical URL );
+    throw new Error(`${relative}: wrong canonical URL`);
   if (!html.includes('property="og:image"'))
     throw new Error(`${relative}: missing og:image`);
   if (
