@@ -11,7 +11,8 @@ test("Home 首屏按路由加载页面代码和非关键数据", async () => {
 
   assert.doesNotMatch(app, /from ["']\.\.\/pages\//);
   assert.match(app, /loadHomePage\(\)/);
-  assert.match(loaders, /loadHomePage[\s\S]*\["home"\][\s\S]*mountHomePage\.js/);
+  assert.match(loaders, /home:\s*definePage\([\s\S]*\["home"\][\s\S]*mountHomePage\.js/);
+  assert.match(loaders, /loadHomePage = createLocalizedPageLoader\(PAGE_REGISTRY\.home\)/);
   assert.match(app, /scheduleHomePrefetch\(\)/);
   assert.match(app, /prefetchMaps\(/);
   assert.doesNotMatch(app, /images\.preload\(\)/);
@@ -78,8 +79,8 @@ test("页面模块与 i18n scope 通过统一 loader 绑定", async () => {
     readFile(new URL("../src/i18n/webI18n.ts", import.meta.url), "utf8"),
   ]);
 
-  assert.match(loaders, /loadGamePage[\s\S]*\["game"\][\s\S]*mountGamePage\.js/);
-  assert.match(loaders, /loadEditorPage[\s\S]*\["editor", "game"\][\s\S]*mountEditorPage\.js/);
+  assert.match(loaders, /game:\s*definePage\([\s\S]*\["game"\][\s\S]*mountGamePage\.js/);
+  assert.match(loaders, /editor:\s*definePage\([\s\S]*\["editor", "game"\][\s\S]*mountEditorPage\.js/);
   assert.doesNotMatch(app, /import\("\.\.\/pages\/game\/mountGamePage\.js"\)/);
   assert.match(app, /loadGamePage\(\)/);
   assert.match(loaders, /preloadWebI18nScopes\(scopes\)/);
