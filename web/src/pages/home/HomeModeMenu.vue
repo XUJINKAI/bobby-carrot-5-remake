@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, onBeforeUnmount, ref } from "vue";
 import type {
   ImportedData,
   ImportedSaveData,
@@ -7,7 +7,7 @@ import type {
 import DataExchangePanel from "../../shared/data-exchange/DataExchangePanel.vue";
 import AppIcon from "../../shared/icons/AppIcon.vue";
 import ImportSaveConfirmation from "../import/ImportSaveConfirmation.vue";
-import { ensureWebI18nScopes, webT } from "../../i18n/webI18n.js";
+import { acquireWebI18nScopes, webT } from "../../i18n/webI18n.js";
 
 const emit = defineEmits<{
   navigate: [path: string];
@@ -15,6 +15,7 @@ const emit = defineEmits<{
 }>();
 const importOpen = ref(false);
 const pendingSave = ref<ImportedSaveData | null>(null);
+let releaseImportScope: (() => void) | null = null;
 const toolbar = computed(() => ({
   left: [],
   right: [
@@ -41,7 +42,8 @@ async function acceptImport(data: unknown): Promise<void> {
     emit("importData", imported);
     return;
   }
-  await ensureWebI18nScopes(["import"]);
+  releaseImportScope?.();
+  releaseImportScope = await acquireWebI18nScopes(["import"]);
   pendingSave.value = imported;
 }
 
@@ -52,10 +54,20 @@ function confirmSave(): void {
   emit("importData", data);
 }
 
-function closeImport(): void {
+function cancelPendingSave(): void {
   pendingSave.value = null;
+  releaseImportScope?.();
+  releaseImportScope = null;
+}
+
+function closeImport(): void {
+  cancelPendingSave();
   importOpen.value = false;
 }
+
+onBeforeUnmount(() => {
+  releaseImportScope?.();
+});
 </script>
 
 <template>
@@ -128,7 +140,7 @@ function closeImport(): void {
           v-if="pendingSave"
           :data="pendingSave"
           @confirm="confirmSave"
-          @cancel="pendingSave = null"
+          @cancel="cancelPendingSave"
         />
         <DataExchangePanel
           v-else
