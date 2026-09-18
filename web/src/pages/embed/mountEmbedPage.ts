@@ -8,7 +8,7 @@ import { webT } from "../../i18n/webI18n.js";
 const EmbedPage = defineAsyncComponent(() => import("./EmbedPage.vue"));
 
 export function renderEmbedPage(context: PageContext): PageController {
-  configureShell({
+  const syncShell = (): void => configureShell({
     topBar: {
       visible: true,
       fixed: true,
@@ -17,8 +17,9 @@ export function renderEmbedPage(context: PageContext): PageController {
     },
     bottomBar: { visible: false },
   });
+  syncShell();
   context.app.replaceChildren();
   const app = createApp(EmbedPage, { publicBaseUrl: publicBaseUrl() });
   app.mount(context.app);
-  return { destroy: () => app.unmount() };
+  return { localeChanged: syncShell, destroy: () => app.unmount() };
 }
