@@ -6,6 +6,12 @@ export interface LocalizedPageLoader<T> {
   readonly scopes: readonly TranslationScope[];
 }
 
+export function localizedPageScopes(
+  ...loaders: readonly LocalizedPageLoader<unknown>[]
+): TranslationScope[] {
+  return [...new Set(loaders.flatMap((loader) => loader.scopes))];
+}
+
 function createLocalizedPageLoader<T>(
   scopes: readonly TranslationScope[],
   importer: () => Promise<T>,
