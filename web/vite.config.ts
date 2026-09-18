@@ -4,7 +4,6 @@ import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { defineConfig, type ViteDevServer } from "vite";
 import vue from "@vitejs/plugin-vue";
-import { markdownHtmlPlugin } from "./build/markdownHtmlPlugin.js";
 import { replaySaveMiddleware } from "./dev/replaySaveMiddleware.js";
 
 const webRoot = path.dirname(fileURLToPath(import.meta.url));
@@ -16,10 +15,6 @@ export default defineConfig({
   publicDir: false,
   resolve: {
     alias: [
-      {
-        find: "@bobby/i18n",
-        replacement: path.join(projectRoot, "i18n/src/index.ts"),
-      },
       {
         find: "@bobby/embed",
         replacement: path.join(projectRoot, "embed/src/public.ts"),
@@ -52,7 +47,6 @@ export default defineConfig({
     },
   },
   plugins: [
-    markdownHtmlPlugin(),
     vue(),
     developmentReplaySave(),
     developmentDirectory("/assets", path.join(projectRoot, "assets")),
