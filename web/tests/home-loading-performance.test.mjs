@@ -31,7 +31,7 @@ test("Editor 样式按页面加载，Help 文案改为 i18n lazy scope", async (
   ]);
 
   assert.match(editorMount, /editor\/style\.css/);
-  assert.match(appRoot, /ensureWebI18nScopes\(\["help"\]\)/);
+  assert.match(appRoot, /acquireWebI18nScopes\(\["help"\]\)/);
   assert.match(catalogs, /help:[\s\S]*import\("\.\/locales\/help\/zh-CN\.js"\)/);
   assert.match(catalogs, /help:[\s\S]*import\("\.\/locales\/help\/en\.js"\)/);
 });
@@ -56,7 +56,7 @@ test("Home Save 导入按需加载 import scope", async () => {
     new URL("../src/pages/home/HomeModeMenu.vue", import.meta.url),
     "utf8",
   );
-  assert.match(source, /ensureWebI18nScopes\(\["import"\]\)/);
+  assert.match(source, /acquireWebI18nScopes\(\["import"\]\)/);
 });
 
 test("运行时 SEO 响应语言变化且静态 metadata 提供双语 fallback", async () => {
@@ -82,7 +82,10 @@ test("页面模块与 i18n scope 通过统一 loader 绑定", async () => {
   assert.match(loaders, /loadEditorPage[\s\S]*\["editor", "game"\][\s\S]*mountEditorPage\.js/);
   assert.doesNotMatch(app, /import\("\.\.\/pages\/game\/mountGamePage\.js"\)/);
   assert.match(app, /loadGamePage\(\)/);
-  assert.match(i18n, /for \(const scope of scopes\) requiredScopes\.add\(scope\);[\s\S]*await Promise\.all/);
+  assert.match(i18n, /for \(const scope of scopes\) routeScopes\.add\(scope\)/);
+  assert.match(i18n, /export function beginWebI18nRoute\(\): void \{\s*routeScopes\.clear\(\)/);
+  assert.match(i18n, /transientScopes = new Map/);
+  assert.match(app, /beginWebI18nRoute\(\)/);
 });
 
 
