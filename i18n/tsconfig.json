@@ -6,7 +6,7 @@
     "composite": true,
     "declaration": true,
     "declarationMap": true,
-    "sourceMap": true
+    "emitDeclarationOnly": true
   },
-  "include": ["src/**/*.ts"]
+  "include": ["src/**/*.ts", "src/**/*.d.ts"]
 }
