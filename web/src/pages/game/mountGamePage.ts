@@ -81,6 +81,7 @@ import {
 } from "./adventurePurchase.js";
 import { resolveGameplayHudConfig } from "./gameplayHudConfig.js";
 import { mapStatusIndicator } from "./mapStatusIndicator.js";
+import { webT } from "../../i18n/webI18n.js";
 
 export type { GamePageMode } from "./gamePageCapabilities.js";
 
@@ -606,9 +607,9 @@ function gameShellConfig(
 ): ShellConfig {
   const explore = mode === "explore";
   const shellIdentity = source === "import"
-    ? pageIdentity("导入数据", "/import/v1", false)
+    ? pageIdentity(webT("context.import"), "/import/v1", false)
     : pageIdentity(
-        source === "explore" ? "自由探索模式" : "冒险模式",
+        source === "explore" ? webT("nav.explore") : webT("nav.adventure"),
         source === "explore" ? "/explore" : "/adventure",
         false,
       );
@@ -620,8 +621,8 @@ function gameShellConfig(
       back: {
         id: "back",
         icon: "back",
-        label: "返回",
-        title: "返回",
+        label: webT("shell.back"),
+        title: webT("shell.back"),
       },
       leading: [
         ...(explore
@@ -629,14 +630,14 @@ function gameShellConfig(
               {
                 id: "previous-level",
                 icon: "previous-track" as const,
-                title: "上一关",
+                title: webT("shell.previousLevel"),
                 disabled: !explorePreviousMapId,
                 collapse: "hide" as const,
               },
               {
                 id: "next-level",
                 icon: "next-track" as const,
-                title: "下一关",
+                title: webT("shell.nextLevel"),
                 disabled: !exploreNextMapId,
                 collapse: "hide" as const,
               },
@@ -645,13 +646,13 @@ function gameShellConfig(
         {
           id: "restart",
           icon: "restart" as const,
-          title: "重新开始",
+          title: webT("shell.restart"),
         },
       ],
       commands: explore
         ? [
-            { id: "undo", icon: "undo" as const, title: "撤销" },
-            { id: "redo", icon: "redo" as const, title: "重做" },
+            { id: "undo", icon: "undo" as const, title: webT("shell.undo") },
+            { id: "redo", icon: "redo" as const, title: webT("shell.redo") },
           ]
         : [],
       actions: [
@@ -660,8 +661,8 @@ function gameShellConfig(
               {
                 id: "edit",
                 icon: "edit-map" as const,
-                label: "编辑地图",
-                title: "在编辑器中打开",
+                label: webT("shell.editMap"),
+                title: webT("shell.openInEditor"),
                 collapse: "overflow" as const,
               },
             ]
@@ -677,8 +678,8 @@ function gameShellConfig(
             {
               id: "replay-record",
               icon: "record",
-              label: "录制",
-              title: "录制 Replay 测试输入",
+              label: webT("shell.record"),
+              title: webT("shell.recordReplay"),
               pressed: replayOpen,
             },
           ]
@@ -690,7 +691,7 @@ function gameShellConfig(
         {
           id: "screen-control",
           icon: "joystick",
-          label: "屏幕摇杆",
+          label: webT("shell.screenJoystick"),
           pressed: screenControlEnabled,
         },
       ],

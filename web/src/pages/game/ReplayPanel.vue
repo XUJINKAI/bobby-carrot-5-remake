@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import AppIcon from "../../shared/icons/AppIcon.vue";
+import { webT } from "../../i18n/webI18n.js";
 
 withDefaults(defineProps<{ showBuiltin?: boolean }>(), {
   showBuiltin: true,
@@ -8,12 +9,12 @@ const canSaveBuiltin = import.meta.env.DEV;
 </script>
 
 <template>
-  <aside class="replay-panel" data-replay-panel hidden aria-label="Replay 录制">
+  <aside class="replay-panel" data-replay-panel hidden :aria-label="webT('game.replay.aria')">
     <section class="replay-panel-status">
       <span data-replay-indicator />
       <div>
-        <strong data-replay-status>准备录制</strong>
-        <small data-replay-ticks>从关卡起点记录 · 0 ticks</small>
+        <strong data-replay-status>{{ webT("game.replay.ready") }}</strong>
+        <small data-replay-ticks>{{ webT("game.replay.fromStart", { ticks: 0 }) }}</small>
       </div>
     </section>
 
@@ -22,23 +23,23 @@ const canSaveBuiltin = import.meta.env.DEV;
       type="button"
       data-replay-action="record"
     >
-      重新开始并录制
+      {{ webT("game.replay.restartRecord") }}
     </button>
 
     <section class="replay-panel-result">
       <div class="replay-panel-result-title">
-        <strong>录制结果</strong>
-        <span data-replay-verification aria-live="polite">等待录制</span>
+        <strong>{{ webT("game.replay.result") }}</strong>
+        <span data-replay-verification aria-live="polite">{{ webT("game.replay.waitRecord") }}</span>
       </div>
       <textarea
         data-replay-output
         spellcheck="false"
         aria-label="Replay JSON"
-        placeholder="停止录制后在这里显示 Replay JSON"
+        :placeholder="webT('game.replay.outputPlaceholder')"
       ></textarea>
       <label class="replay-panel-skip-thinking">
         <input data-replay-skip-thinking type="checkbox" checked />
-        <span>跳过思考时间</span>
+        <span>{{ webT("game.replay.skipThinking") }}</span>
       </label>
       <div class="replay-panel-playback-actions">
         <button
@@ -47,7 +48,7 @@ const canSaveBuiltin = import.meta.env.DEV;
           data-replay-action="play"
           disabled
         >
-          播放
+          {{ webT("game.replay.play") }}
         </button>
         <button
           class="ghost-btn"
@@ -55,15 +56,15 @@ const canSaveBuiltin = import.meta.env.DEV;
           data-replay-action="stop-playback"
           disabled
         >
-          停止
+          {{ webT("game.replay.stop") }}
         </button>
         <div class="replay-panel-speed">
           <button
             class="ghost-btn"
             type="button"
             data-replay-action="slower"
-            aria-label="降低游戏速率"
-            title="降低游戏速率"
+            :aria-label="webT('game.replay.slower')"
+            :title="webT('game.replay.slower')"
           >
             <AppIcon name="rewind" :size="16" />
           </button>
@@ -74,7 +75,7 @@ const canSaveBuiltin = import.meta.env.DEV;
               inputmode="decimal"
               step="any"
               value="1"
-              aria-label="游戏速率"
+              :aria-label="webT('game.replay.speed')"
             />
             <span aria-hidden="true">×</span>
           </label>
@@ -82,8 +83,8 @@ const canSaveBuiltin = import.meta.env.DEV;
             class="ghost-btn"
             type="button"
             data-replay-action="faster"
-            aria-label="提高游戏速率"
-            title="提高游戏速率"
+            :aria-label="webT('game.replay.faster')"
+            :title="webT('game.replay.faster')"
           >
             <AppIcon name="fast-forward" :size="16" />
           </button>
@@ -97,7 +98,7 @@ const canSaveBuiltin = import.meta.env.DEV;
           disabled
         >
           <AppIcon name="replay-beginning" :size="16" />
-          跳到起点
+          {{ webT("game.replay.beginning") }}
         </button>
         <button
           class="ghost-btn"
@@ -106,7 +107,7 @@ const canSaveBuiltin = import.meta.env.DEV;
           disabled
         >
           <AppIcon name="replay-end" :size="16" />
-          跳到终点
+          {{ webT("game.replay.end") }}
         </button>
       </div>
       <div class="replay-panel-export-actions">
@@ -116,7 +117,7 @@ const canSaveBuiltin = import.meta.env.DEV;
           data-replay-action="copy"
           disabled
         >
-          复制
+          {{ webT("common.copy") }}
         </button>
         <button
           class="ghost-btn"
@@ -124,7 +125,7 @@ const canSaveBuiltin = import.meta.env.DEV;
           data-replay-action="download"
           disabled
         >
-          下载
+          {{ webT("common.download") }}
         </button>
       </div>
       <div v-if="showBuiltin" class="replay-panel-builtin-actions">
@@ -133,7 +134,7 @@ const canSaveBuiltin = import.meta.env.DEV;
           type="button"
           data-replay-action="load-builtin"
         >
-          加载内置过法
+          {{ webT("game.replay.loadBuiltin") }}
         </button>
         <button
           v-if="canSaveBuiltin"
@@ -141,7 +142,7 @@ const canSaveBuiltin = import.meta.env.DEV;
           type="button"
           data-replay-action="save-builtin"
         >
-          保存内置过法
+          {{ webT("game.replay.saveBuiltin") }}
         </button>
       </div>
     </section>

@@ -11,6 +11,7 @@ import {
   parseReplayText,
   saveReplayAsset,
 } from "./replayAssets.js";
+import { webT } from "../../i18n/webI18n.js";
 
 const REPLAY_PARSE_DELAY_MS = 300;
 
@@ -161,14 +162,14 @@ export function bindReplayPanel(options: {
     const text = output.value.trim();
     if (!text) {
       replay = null;
-      verification.textContent = "等待录制";
+      verification.textContent = webT("game.replay.waitRecord");
       verification.classList.remove("failed");
       update();
       return null;
     }
     try {
       replay = parseReplayText(text);
-      verification.textContent = "Replay JSON 已更新";
+      verification.textContent = webT("game.replay.updated");
       verification.classList.remove("failed");
     } catch (error) {
       replay = null;
@@ -189,7 +190,7 @@ export function bindReplayPanel(options: {
       output.value = "";
       clearReplayParseTimer();
       replayTextDirty = false;
-      verification.textContent = "正在录制";
+      verification.textContent = webT("game.replay.recording");
       verification.classList.remove("failed");
       update();
     } catch (error) {
@@ -283,7 +284,7 @@ export function bindReplayPanel(options: {
     if (!output.value) return;
     try {
       await navigator.clipboard.writeText(output.value);
-      verification.textContent = "Replay JSON 已复制";
+      verification.textContent = webT("game.replay.copied");
     } catch (error) {
       showError(error);
     }
@@ -301,7 +302,7 @@ export function bindReplayPanel(options: {
   const loadBuiltinReplay = async (): Promise<void> => {
     if (!builtinReplayUrl) return;
     loadingBuiltin = true;
-    verification.textContent = "正在读取内置过法";
+    verification.textContent = webT("game.replay.readingBuiltin");
     verification.classList.remove("failed");
     update();
     try {
@@ -312,7 +313,7 @@ export function bindReplayPanel(options: {
       output.value = loaded.text;
       clearReplayParseTimer();
       replayTextDirty = false;
-      verification.textContent = "内置过法已载入";
+      verification.textContent = webT("game.replay.builtinLoaded");
       verification.classList.remove("failed");
     } catch (error) {
       if (!destroyed) showError(error);
@@ -325,7 +326,7 @@ export function bindReplayPanel(options: {
   const saveBuiltinReplay = async (): Promise<void> => {
     if (!builtinReplayUrl) return;
     savingBuiltin = true;
-    verification.textContent = "正在保存内置过法";
+    verification.textContent = webT("game.replay.savingBuiltin");
     verification.classList.remove("failed");
     update();
     try {
@@ -333,7 +334,7 @@ export function bindReplayPanel(options: {
       if (!selectedReplay) return;
       validateBuiltinReplaySave(options.game, selectedReplay);
       await saveReplayAsset(builtinReplayUrl, output.value);
-      if (!destroyed) verification.textContent = "内置过法已保存";
+      if (!destroyed) verification.textContent = webT("game.replay.builtinSaved");
     } catch (error) {
       if (!destroyed) showError(error);
     } finally {
@@ -347,7 +348,9 @@ export function bindReplayPanel(options: {
     clearReplayParseTimer();
     replayTextDirty = true;
     verification.textContent =
-      output.value.length > 0 ? "等待校验" : "等待录制";
+      output.value.length > 0
+        ? webT("game.replay.waitVerify")
+        : webT("game.replay.waitRecord");
     verification.classList.remove("failed");
     replayParseTimer = window.setTimeout(() => {
       replayParseTimer = null;
@@ -409,24 +412,28 @@ export function bindReplayPanel(options: {
     panel.classList.toggle("recording", recording);
     panel.classList.toggle("playing", playing && !paused);
     status.textContent = recording
-      ? "正在录制"
+      ? webT("game.replay.recording")
       : paused
-        ? "播放已暂停"
+        ? webT("game.replay.paused")
         : playing
-          ? "正在播放"
+          ? webT("game.replay.playing")
           : replay
-            ? "Replay 已载入"
-            : "准备录制";
+            ? webT("game.replay.loaded")
+            : webT("game.replay.ready");
     ticks.textContent = recording
       ? `World ${options.game.replayTickCount} ticks`
       : playing && replay
         ? `World ${options.game.replayTickCount} / ${replay.endTick} ticks`
         : replay
-          ? `从关卡起点记录 · ${replay.endTick} ticks`
-          : "从关卡起点记录 · 0 ticks";
-    record.textContent = recording ? "停止录制" : "重新开始并录制";
+          ? webT("game.replay.fromStart", { ticks: replay.endTick })
+          : webT("game.replay.fromStart", { ticks: 0 });
+    record.textContent = recording
+      ? webT("game.replay.stopRecord")
+      : webT("game.replay.restartRecord");
     record.disabled = playing || loadingBuiltin;
-    play.textContent = playing && !paused ? "暂停" : "播放";
+    play.textContent = playing && !paused
+      ? webT("game.replay.pause")
+      : webT("game.replay.play");
     play.disabled =
       replayTextDirty || replay === null || recording || loadingBuiltin;
     stopPlayback.disabled = !playing;
@@ -439,11 +446,15 @@ export function bindReplayPanel(options: {
     download.disabled = output.value.length === 0 || loadingBuiltin;
     if (loadBuiltin) {
       loadBuiltin.disabled = recording || playing || loadingBuiltin || savingBuiltin;
-      loadBuiltin.textContent = loadingBuiltin ? "读取中…" : "加载内置过法";
+      loadBuiltin.textContent = loadingBuiltin
+        ? webT("game.replay.loading")
+        : webT("game.replay.loadBuiltin");
     }
     if (saveBuiltin) {
       saveBuiltin.disabled = savingBuiltin || loadingBuiltin;
-      saveBuiltin.textContent = savingBuiltin ? "保存中…" : "保存内置过法";
+      saveBuiltin.textContent = savingBuiltin
+        ? webT("game.replay.saving")
+        : webT("game.replay.saveBuiltin");
     }
   };
   const unsubscribeRecordingAbort = options.game.on(
