@@ -1,4 +1,5 @@
 import type { Locale, TranslationCatalog } from "./index.js";
+import { createCatalogStore } from "./catalogStore.js";
 import embedRuntimeZhCN from "./locales/embed-runtime/zh-CN.js";
 import embedRuntimeEn from "./locales/embed-runtime/en.js";
 import type { ShellTranslationKey } from "./locales/shell/zh-CN.js";
@@ -81,19 +82,16 @@ const LOADERS: Record<TranslationScope, Record<Locale, CatalogLoader>> = {
   },
 };
 
-const cache = new Map<string, Promise<TranslationCatalog>>();
+const catalogStore = createCatalogStore<string, TranslationCatalog>();
 
-export async function loadTranslationCatalog(
+export function loadTranslationCatalog(
   scope: TranslationScope,
   locale: Locale,
 ): Promise<TranslationCatalog> {
-  const key = `${scope}:${locale}`;
-  let pending = cache.get(key);
-  if (!pending) {
-    pending = LOADERS[scope][locale]();
-    cache.set(key, pending);
-  }
-  return pending;
+  return catalogStore.load(
+    `${scope}:${locale}`,
+    LOADERS[scope][locale],
+  );
 }
 
 export const EMBED_RUNTIME_CATALOGS = {
