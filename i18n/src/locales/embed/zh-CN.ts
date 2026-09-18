@@ -25,6 +25,7 @@ const catalog = {
   "embed.code": "代码",
   "embed.copy": "复制",
   "embed.infoPlaceholder": "WASD / 方向键移动",
+  "embed.mapDataPlaceholder": "BC5R1:... 或 https://bc5r.com/import/v1#...",
 } as const;
 export type EmbedTranslationKey = keyof typeof catalog;
 export default catalog;
