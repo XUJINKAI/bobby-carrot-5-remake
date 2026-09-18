@@ -225,9 +225,11 @@ function createFrameControls(
   const root = document.createElement("div");
   root.className = "bc5r-frame-actions";
   const restart = createIconButton("restart", copy.restart);
+  restart.dataset.action = "restart";
   restart.disabled = true;
   const open = document.createElement("a");
   open.className = "bc5r-icon-button";
+  open.dataset.action = "open";
   open.target = "_blank";
   open.rel = "noopener noreferrer";
   open.title = copy.open;
@@ -277,6 +279,7 @@ function createSoundButton(
   const button = document.createElement("button");
   button.type = "button";
   button.className = "bc5r-icon-button bc5r-sound";
+  button.dataset.action = "sound";
   button.disabled = true;
   renderSoundButton(button, enabled, lang);
   return button;
