@@ -16,10 +16,15 @@ let activePanel: string | null = null;
 let currentCollection: MapCollectionIndex | null = null;
 let currentImages: ImageManager | null = null;
 
+export interface LevelFilterController {
+  localeChanged(): void;
+  destroy(): void;
+}
+
 export function mountLevelFilters(
   collection: MapCollectionIndex,
   images: ImageManager,
-): void {
+): LevelFilterController {
   currentCollection = collection;
   currentImages = images;
   const validGroups = new Set(collection.filters.map((filter) => filter.id));
@@ -41,6 +46,22 @@ export function mountLevelFilters(
   shell.addEventListener("click", onFilterClick);
   renderFilterShell(shell);
   applyFilters();
+
+  return {
+    localeChanged(): void {
+      shell.setAttribute("aria-label", webT("explore.filtersAria"));
+      renderFilterShell(shell);
+      applyFilters();
+    },
+    destroy(): void {
+      shell.removeEventListener("click", onFilterClick);
+      shell.remove();
+      if (currentCollection === collection) {
+        currentCollection = null;
+        currentImages = null;
+      }
+    },
+  };
 }
 
 export function hasActiveLevelFilters(): boolean {
