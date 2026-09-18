@@ -437,8 +437,13 @@ Challenge；`requireKey` 省略或为 `false` 时开锁不消耗钥匙。
 开锁成功时 Lock Entity 从空间索引移除；带倒计时的关卡由 Engine 私有 Runtime Entity
 继续持有计时状态，因此 Fence 邻接、通行查询、HUD、Undo 与 Replay 读取的是同一份
 World gameplay state。
-`b6.png` 进入/通关过渡属于 Bobby 的内置表现，宿主通过 `ImageManager` 提供
-`bobby-transition` 语义资源。两条过渡使用独立时长，并共用 presentation easing：
+内置原版 Gameplay 视觉通过 `createOriginalGameplayImageManager(resolveUrl)` 创建。
+Engine 维护完整的语义资源 ID、原版文件名与 HUD slices；宿主只提供从文件名到实际
+URL 的解析函数，并可以在返回的 `ImageManager` 上追加产品场景资源。Web 与 Embed
+各自持有独立实例和生命周期，共用同一份 Gameplay 资源合同。
+
+`b6.png` 进入/通关过渡属于 Bobby 的内置表现，对应 `bobby-transition` 语义资源。
+两条过渡使用独立时长，并共用 presentation easing：
 
 ```ts
 runtime: {

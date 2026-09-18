@@ -52,9 +52,10 @@ export const embedHudSmokeScript = `
     info: shadow.querySelector('.bc5r-info-copy')?.textContent,
     infoPlaceholder: infoInput.placeholder,
     keyboardOptions: [...keyboardSelect.options].map((option) => option.value),
-    transitionAssetLoaded: performance.getEntriesByType('resource').some(
-      (entry) => new URL(entry.name).pathname.endsWith('/assets/art/hd/b6.png'),
-    ),
+    gameplayAssetsLoaded: ['b6.png', 'b8.png', 'mow.png', 'hud.png', 'bf.png']
+      .every((file) => performance.getEntriesByType('resource').some(
+        (entry) => new URL(entry.name).pathname.endsWith('/assets/art/hd/' + file),
+      )),
     initialJoystick,
     toggledJoystick,
     joystickVisible: !joystickLayer.hidden,
@@ -77,7 +78,7 @@ export function assertEmbedHudSmoke(payload) {
     payload.info !== "WASD / 方向键移动" ||
     payload.infoPlaceholder !== payload.info ||
     JSON.stringify(payload.keyboardOptions) !== JSON.stringify(["focus", "global"]) ||
-    !payload.transitionAssetLoaded ||
+    !payload.gameplayAssetsLoaded ||
     payload.initialJoystick === payload.toggledJoystick ||
     payload.joystickVisible !== payload.toggledJoystick
   )

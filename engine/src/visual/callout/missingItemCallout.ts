@@ -2,6 +2,7 @@ import {
   isMissingItemEvent,
   type MissingItemKind,
 } from "../../world/WorldTypes.js";
+import { ORIGINAL_GAMEPLAY_HUD_SLICE_IDS } from "../../image/OriginalGameplayImages.js";
 import type { WorldCalloutDefinition } from "./WorldCalloutDefinition.js";
 
 export const MISSING_ITEM_CALLOUT_DURATION_MS = 992;
@@ -15,11 +16,26 @@ interface MissingItemPresentation {
 const MISSING_ITEM_PRESENTATIONS: Readonly<
   Partial<Record<MissingItemKind, MissingItemPresentation>>
 > = {
-  gas: { sliceId: "hud-gas", accessibleText: "需要汽油" },
-  "lock-key": { sliceId: "hud-key", accessibleText: "需要钥匙" },
-  kite: { sliceId: "hud-kite", accessibleText: "需要风筝" },
-  shovel: { sliceId: "hud-shovel", accessibleText: "需要雪铲" },
-  bean: { sliceId: "hud-bean", accessibleText: "需要魔豆" },
+  gas: {
+    sliceId: ORIGINAL_GAMEPLAY_HUD_SLICE_IDS.gas,
+    accessibleText: "需要汽油",
+  },
+  "lock-key": {
+    sliceId: ORIGINAL_GAMEPLAY_HUD_SLICE_IDS.key,
+    accessibleText: "需要钥匙",
+  },
+  kite: {
+    sliceId: ORIGINAL_GAMEPLAY_HUD_SLICE_IDS.kite,
+    accessibleText: "需要风筝",
+  },
+  shovel: {
+    sliceId: ORIGINAL_GAMEPLAY_HUD_SLICE_IDS.shovel,
+    accessibleText: "需要雪铲",
+  },
+  bean: {
+    sliceId: ORIGINAL_GAMEPLAY_HUD_SLICE_IDS.bean,
+    accessibleText: "需要魔豆",
+  },
 };
 
 /** 缺少道具只携带语义 item；图标和表现时序集中在 Presentation。 */

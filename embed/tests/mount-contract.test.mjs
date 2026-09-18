@@ -37,8 +37,9 @@ test("Embed 框架使用固定首页、地图打开动作与操作提示", async
   assert.match(mountSource, /runtime\.game\.restart\(\)/);
   assert.match(
     mountSource,
-    /"bobby-transition": embedArtUrl\("b6\.png"\)/,
+    /createOriginalGameplayImageManager\(embedArtUrl\)/,
   );
+  assert.doesNotMatch(mountSource, /"bobby-left":/);
   assert.match(mountSource, /WASD \/ 方向键移动/);
 });
 

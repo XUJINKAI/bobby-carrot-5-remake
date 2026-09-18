@@ -4,6 +4,7 @@ import type {
   ImageVisualLayer,
   VisualResolveContext,
 } from "../../visual/VisualDefinition.js";
+import { ORIGINAL_GAMEPLAY_IMAGE_IDS } from "../../image/OriginalGameplayImages.js";
 import type { Behavior } from "../../world/behavior/Behavior.js";
 import type {
   EntityModule,
@@ -51,21 +52,9 @@ const MOWER_SOURCE_RECT: Readonly<Record<Direction, { x: number; width: number }
 const MOWER_FRAME_HEIGHT = 83;
 
 /** Bobby 的原版人物素材与 sprite-sheet 语义集中在 Player module。 */
-export const BOBBY_VISUAL_ASSETS = {
-  move: {
-    left: "bobby-left",
-    right: "bobby-right",
-    up: "bobby-up",
-    down: "bobby-down",
-  } satisfies Readonly<Record<Direction, string>>,
-  idle: "bobby-idle",
-  death: "bobby-death",
-  transition: "bobby-transition",
-  mower: "bobby-mower",
-  snowplow: "bobby-snowplow",
-  kite: "bobby-kite",
-  speedTrail: "bobby-speed-trail",
-} as const;
+export const BOBBY_VISUAL_ASSETS = ORIGINAL_GAMEPLAY_IMAGE_IDS.bobby satisfies {
+  move: Readonly<Record<Direction, string>>;
+};
 
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.BOBBY,

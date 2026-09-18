@@ -1,8 +1,9 @@
 import {
+  createOriginalGameplayImageManager,
   createGameplayRuntime,
-  ImageManager,
   type CameraOptions,
   type GameplayRuntime,
+  type ImageManager,
 } from "@bobby/engine";
 import type { LevelMap } from "@bobby/model";
 import { loadEmbedMap } from "./mapInput.js";
@@ -551,34 +552,7 @@ function embedArtUrl(path: string): string {
 }
 
 function createEmbedImageManager(): ImageManager {
-  return new ImageManager({
-    atlas: "entity-atlas",
-    sourceTileSize: 48,
-    sources: {
-      "entity-atlas": embedArtUrl("ts.png"),
-      "original-animated-tiles": embedArtUrl("ta.png"),
-      "bobby-left": embedArtUrl("b0.png"),
-      "bobby-right": embedArtUrl("b1.png"),
-      "bobby-up": embedArtUrl("b2.png"),
-      "bobby-down": embedArtUrl("b3.png"),
-      "bobby-idle": embedArtUrl("b4.png"),
-      "bobby-death": embedArtUrl("b5.png"),
-      "bobby-transition": embedArtUrl("b6.png"),
-      "bobby-mower": embedArtUrl("b7.png"),
-      "bobby-kite": embedArtUrl("b9.png"),
-      "hud-atlas": embedArtUrl("hud.png"),
-      "golden-carrot": embedArtUrl("icon.png"),
-    },
-    slices: {
-      "hud-carrot": { source: "hud-atlas", x: 42, y: 0, width: 39, height: 38 },
-      "hud-gas": { source: "hud-atlas", x: 83, y: 0, width: 37, height: 38 },
-      "hud-key": { source: "hud-atlas", x: 122, y: 0, width: 20, height: 38 },
-      "hud-kite": { source: "hud-atlas", x: 144, y: 0, width: 35, height: 38 },
-      "hud-shovel": { source: "hud-atlas", x: 179, y: 0, width: 37, height: 38 },
-      "hud-egg": { source: "hud-atlas", x: 217, y: 0, width: 29, height: 38 },
-      "hud-bean": { source: "hud-atlas", x: 247, y: 0, width: 35, height: 38 },
-    },
-  });
+  return createOriginalGameplayImageManager(embedArtUrl);
 }
 
 function styleElement(): HTMLStyleElement {
