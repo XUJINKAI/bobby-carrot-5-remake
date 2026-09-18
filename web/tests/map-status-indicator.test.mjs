@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { beforeAll, test } from "vitest";
-import { ensureWebI18nScopes, initializeWebI18n } from "../src/i18n/webI18n.ts";
+import { preloadWebI18nScopes, initializeWebI18n } from "../src/i18n/webI18n.ts";
 import {
   mapStatusIndicator,
   mapVerificationText,
@@ -9,7 +9,7 @@ import {
 
 beforeAll(async () => {
   await initializeWebI18n("zh-CN");
-  await ensureWebI18nScopes(["game"]);
+  await preloadWebI18nScopes(["game"]);
 });
 
 test("地图状态在没有作者和注记时使用 Minus Circle", () => {
