@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from "vue";
+import { webT } from "../../i18n/webI18n.js";
 import {
   decodeExchangeText,
   detectExchangeFormat,
@@ -58,7 +59,7 @@ const acceptedFiles = computed(() =>
     .join(",") || DEFAULT_EXCHANGE_ACCEPT,
 );
 const status = computed(() => {
-  const label = format.value === "json" ? "JSON" : format.value === "bc5r1" ? "BC5R1" : "未知格式";
+  const label = format.value === "json" ? "JSON" : format.value === "bc5r1" ? "BC5R1" : webT("common.unknownFormat");
   return `${label} · ${formatBytes(new Blob([draft.value]).size)}`;
 });
 const encodeOptions = (): { publicBaseUrl?: string } =>
@@ -94,7 +95,7 @@ async function refreshDraft(
 ): Promise<void> {
   liveValueTimer = null;
   if (!force && draftDirty.value) {
-    feedback.value = "地图内容有未应用的修改；应用后再同步地图信息。";
+    feedback.value = webT("common.unsyncedChanges");
     return;
   }
   const version = ++refreshVersion;
@@ -134,7 +135,7 @@ async function importDraft(): Promise<void> {
       ? await encodeExchangeText(plain, encodeOptions())
       : plain;
     draftDirty.value = false;
-    feedback.value = "已导入";
+    feedback.value = webT("common.imported");
   } catch (error) {
     report(error);
   } finally {
@@ -179,10 +180,10 @@ async function copyDraft(): Promise<void> {
   try {
     await flushLiveValue();
     await navigator.clipboard.writeText(draft.value);
-    feedback.value = "已复制";
+    feedback.value = webT("common.copied");
     emit("copied");
   } catch (cause) {
-    report(new Error("无法访问剪贴板", { cause }));
+    report(new Error(webT("common.clipboardUnavailable"), { cause }));
   }
 }
 
@@ -194,7 +195,7 @@ async function downloadDraft(): Promise<void> {
       filename: props.filename,
       compressed: compressed.value,
     });
-    feedback.value = "已下载";
+    feedback.value = webT("common.downloaded");
     emit("downloaded");
   } catch (error) {
     report(error);
@@ -226,11 +227,11 @@ function formatBytes(bytes: number): string {
 }
 
 function label(control: DataExchangeControlConfig): string {
-  if (control.type === "importText") return control.label ?? "导入文本";
-  if (control.type === "importFile") return control.label ?? "导入文件";
-  if (control.type === "compress") return control.label ?? "压缩";
-  if (control.type === "copy") return control.label ?? "复制";
-  if (control.type === "download") return control.label ?? "下载";
+  if (control.type === "importText") return control.label ?? webT("common.importText");
+  if (control.type === "importFile") return control.label ?? webT("common.importFile");
+  if (control.type === "compress") return control.label ?? webT("common.compress");
+  if (control.type === "copy") return control.label ?? webT("common.copy");
+  if (control.type === "download") return control.label ?? webT("common.download");
   return "";
 }
 
