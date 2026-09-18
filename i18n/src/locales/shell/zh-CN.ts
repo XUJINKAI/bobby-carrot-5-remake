@@ -46,6 +46,7 @@ const catalog = {
   "settings.musicFollowTheme": "跟随主题",
   "settings.musicModern": "现代",
   "settings.volume": "音量",
+  "shell.warningCount": "共 {count} 个警告",
   "settings.more": "更多设置",
 } as const;
 
