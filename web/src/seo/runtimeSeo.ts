@@ -1,8 +1,10 @@
 import { mapAssetUrl } from "../app/routes.js";
 import { siteUrl } from "../services/assets/gameAssets.js";
+import { getWebLocale } from "../i18n/webI18n.js";
 
 interface SeoDescriptor {
   title: string;
+  titleEn: string;
   description: string;
   canonicalPath: string;
   index: boolean;
@@ -37,6 +39,7 @@ export function installRuntimeSeo(): () => void {
   };
   window.addEventListener("popstate", sync);
   window.addEventListener("hashchange", sync);
+  window.addEventListener("web-locale-change", sync);
   sync();
 
   return () => {
@@ -44,6 +47,7 @@ export function installRuntimeSeo(): () => void {
     history.replaceState = originalReplaceState;
     window.removeEventListener("popstate", sync);
     window.removeEventListener("hashchange", sync);
+    window.removeEventListener("web-locale-change", sync);
   };
 }
 
@@ -54,24 +58,32 @@ async function resolveCurrentSeo(): Promise<SeoDescriptor> {
       "兔子波比5重制版 | Bobby Carrot 5 Remake",
       "在浏览器中游玩《兔子波比5》重制版：复刻原版 40 章 400 个关卡与 80 个奖励关，并提供自由探索、地图编辑器、分享与网页内嵌。",
       "/",
+      true,
+      "Bobby Carrot 5 Remake",
     );
   if (path === "/adventure")
     return descriptor(
       `冒险模式 | ${BRAND}`,
       "按原版章节结构体验《兔子波比5》冒险模式，推进关卡、保存进度、获得奖励，并体验海狸商店、夜间列车等经典冒险机制。",
       path,
+      true,
+      "Adventure | Bobby Carrot 5 Remake",
     );
   if (path === "/adventure/chapters")
     return descriptor(
       `章节选择 | 冒险模式 | ${BRAND}`,
       "浏览《兔子波比5》冒险模式的 40 个章节，查看章节难度与完成进度并继续挑战。",
       path,
+      true,
+      "Chapters | Adventure | Bobby Carrot 5 Remake",
     );
   if (path === "/adventure/night-train")
     return descriptor(
       `夜间列车 | 冒险模式 | ${BRAND}`,
       "进入《兔子波比5》冒险模式的夜间列车，前往 Dream Machine、Cloud 9 等特殊区域。",
       path,
+      true,
+      "Night Train | Adventure | Bobby Carrot 5 Remake",
     );
   if (path === "/adventure/beaver-shop")
     return descriptor(
@@ -124,12 +136,16 @@ async function resolveCurrentSeo(): Promise<SeoDescriptor> {
       "兔子波比5地图编辑器 | 创建、试玩与分享地图",
       "在浏览器中使用《兔子波比5》的地形、机关和道具创建自己的地图，随时试玩，并通过链接、文件或网页内嵌分享。",
       "/edit",
+      true,
+      "Map Editor | Bobby Carrot 5 Remake",
     );
   if (path === "/embed")
     return descriptor(
       "网页内嵌 | 将兔子波比5地图嵌入你的网站",
       "使用 BC5R Embed 将《兔子波比5》地图嵌入其他网页，自定义地图、尺寸、音频和显示配置。",
       path,
+      true,
+      "Embed | Bobby Carrot 5 Remake",
     );
   if (path === "/settings")
     return descriptor(
@@ -137,6 +153,7 @@ async function resolveCurrentSeo(): Promise<SeoDescriptor> {
       "调整 Bobby Carrot 5 Remake 的语言、主题、音乐和控制选项。",
       path,
       false,
+      "Settings | Bobby Carrot 5 Remake",
     );
   if (path === "/import/v1")
     return descriptor(
@@ -144,12 +161,14 @@ async function resolveCurrentSeo(): Promise<SeoDescriptor> {
       "导入 Bobby Carrot 5 Remake 分享数据。",
       path,
       false,
+      "Import Data | Bobby Carrot 5 Remake",
     );
   return descriptor(
     `页面不存在 | ${BRAND}`,
     "请求的 Bobby Carrot 5 Remake 页面不存在。",
     path,
     false,
+    "Page Not Found | Bobby Carrot 5 Remake",
   );
 }
 
@@ -230,8 +249,9 @@ function descriptor(
   description: string,
   canonicalPath: string,
   index = true,
+  titleEn = title,
 ): SeoDescriptor {
-  return { title, description, canonicalPath, index };
+  return { title, titleEn, description, canonicalPath, index };
 }
 
 function normalizeMapTitle(name: string, id: string): string {
@@ -243,18 +263,19 @@ function normalizeMapTitle(name: string, id: string): string {
 
 function applySeo(value: SeoDescriptor): void {
   const canonical = `${SITE_ORIGIN}${value.canonicalPath === "/" ? "/" : value.canonicalPath}`;
-  document.title = value.title;
+  const title = getWebLocale() === "en" ? value.titleEn : value.title;
+  document.title = title;
   setMeta("name", "description", value.description);
   setMeta("name", "robots", value.index ? "index,follow" : "noindex,follow");
   setLink("canonical", canonical);
   setMeta("property", "og:site_name", "Bobby Carrot 5 Remake");
   setMeta("property", "og:type", "website");
-  setMeta("property", "og:title", value.title);
+  setMeta("property", "og:title", title);
   setMeta("property", "og:description", value.description);
   setMeta("property", "og:url", canonical);
   setMeta("property", "og:image", OG_IMAGE);
   setMeta("name", "twitter:card", "summary_large_image");
-  setMeta("name", "twitter:title", value.title);
+  setMeta("name", "twitter:title", title);
   setMeta("name", "twitter:description", value.description);
   setMeta("name", "twitter:image", OG_IMAGE);
 }
