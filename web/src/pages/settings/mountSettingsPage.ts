@@ -6,7 +6,7 @@ import SettingsPage from "./SettingsPage.vue";
 import { webT } from "../../i18n/webI18n.js";
 
 export function renderSettingsPage(context: PageContext): PageController {
-  configureShell({
+  const syncShell = (): void => configureShell({
     topBar: {
       visible: true,
       fixed: true,
@@ -17,10 +17,12 @@ export function renderSettingsPage(context: PageContext): PageController {
       actions: globalActions(),
     },
   });
+  syncShell();
   context.app.replaceChildren();
   const page = createApp(SettingsPage);
   page.mount(context.app);
   return {
+    localeChanged: syncShell,
     destroy(): void {
       page.unmount();
     },
