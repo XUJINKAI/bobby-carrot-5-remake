@@ -21,7 +21,7 @@ Pinch                 -> 围绕两指中心 Zoom
 
 调用方可以按场景逐项开关 `movement / undo / redo / pan / zoom / pinchZoom / wheelZoom / debug`。`zoom` 是键盘 Zoom 的基础能力；`pinchZoom` 与 `wheelZoom` 缺省跟随 `zoom`，也可以由 Embed 等宿主分别覆盖。页面差异通过能力配置表达，`InputController` 不认识 Adventure、Explore 或 Editor 页面。
 
-Embed 的 `input.pointer` 控制单指或鼠标左键滑动移动，`camera.pinchZoom` 与 `camera.wheelZoom` 分别控制 Pinch 和滚轮缩放。Embed 始终启用键盘 `+ / -` 缩放；底栏摇杆按钮可以在运行时切换 Screen Joystick，其初始状态由 `input.joystick` 决定。
+Embed 的 `input.pointer` 是浏览器 Pointer 输入总开关，关闭时会同时停止滑动移动、鼠标中键平移、Pinch 和滚轮输入。打开总开关后，`camera.pinchZoom` 与 `camera.wheelZoom` 分别控制 Pinch 和滚轮缩放。Embed 始终启用键盘 `+ / -` 缩放；底栏摇杆按钮可以在运行时切换 Screen Joystick，其初始状态由 `input.joystick` 决定。
 
 ## WorldClock 与 Input update
 
