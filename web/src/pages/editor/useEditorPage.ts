@@ -101,9 +101,7 @@ export function useEditorPage(initialLevel: EditorMap) {
 
   const ruleDetector = new EditorRuleDetector();
   const document = new EditorDocument(initialLevel);
-  const initialDetected = ruleDetector.detect(initialLevel, environment);
-  if (initialDetected.length > 0)
-    document.execute(enableEditorRules(environment, initialDetected));
+  ruleDetector.detect(initialLevel, environment);
   const snapshot = shallowRef<EditorSnapshot>(document.getSnapshot());
   const paletteTool = ref<EditorTool>("select");
   const placement = ref<PaletteItem>(first);
@@ -680,11 +678,8 @@ export function useEditorPage(initialLevel: EditorMap) {
 
   function loadLevel(level: EditorMap): void {
     ruleDetector.reset();
-    const detected = ruleDetector.detect(level, environment);
-    const prepared = detected.length > 0
-      ? enableEditorRules(environment, detected).apply(level)
-      : level;
-    document.load(prepared);
+    ruleDetector.detect(level, environment);
+    document.load(level);
   }
 
   function setPaletteSize(delta: number): void {

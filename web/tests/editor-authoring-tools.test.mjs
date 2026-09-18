@@ -141,14 +141,23 @@ test("Editor 右键切换当前面板的选择工具并建立单格选区", () =
   assert.doesNotMatch(page, /EditorContextMenu|contextMenu/);
 });
 
-test("新检测到的关卡规则默认启用且导入时重置检测状态", () => {
+test("已有规则在初始化和导入时保留，编辑中新检测到的规则默认启用", () => {
   assert.match(pageState, /ruleDetector = new EditorRuleDetector\(\)/);
+  assert.match(
+    pageState,
+    /const document = new EditorDocument\(initialLevel\);\s*ruleDetector\.detect\(initialLevel, environment\);/,
+  );
+  assert.doesNotMatch(pageState, /initialDetected/);
   assert.match(pageState, /function execute\(command: EditorCommand\)[\s\S]*ruleDetector\.detect\(next, environment\)[\s\S]*enableEditorRules\(environment, detected\)\.apply\(next\)/);
   const subscription = pageState.match(
     /const unsubscribe = document\.subscribe\(\(next\) => \{([\s\S]*?)\n  \}\);/,
   )?.[1] ?? "";
   assert.doesNotMatch(subscription, /document\.execute\(/);
-  assert.match(pageState, /function loadLevel[\s\S]*ruleDetector\.reset\(\)[\s\S]*document\.load\(prepared\)/);
+  assert.match(
+    pageState,
+    /function loadLevel[\s\S]*ruleDetector\.reset\(\);\s*ruleDetector\.detect\(level, environment\);\s*document\.load\(level\)/,
+  );
+  assert.doesNotMatch(pageState, /document\.load\(prepared\)/);
   assert.match(page, /page\.loadLevel\(level\)/);
 });
 

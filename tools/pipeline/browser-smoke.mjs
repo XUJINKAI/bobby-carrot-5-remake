@@ -122,7 +122,7 @@ try {
     'id="map-status"',
     'data-icon="map-details"',
     'class="shell-indicator-button tone-muted"',
-    'aria-label="地图状态：通关验证 尚未进行通关验证；作者 Aymeric du Peloux"',
+    'aria-label="地图状态：通关验证 尚未进行通关验证；关卡 ID loma-pushbox/01-01；关卡名字 01-01；作者 Aymeric du Peloux"',
     "01-01",
   ]);
   await interactiveMapStatusSmoke(
@@ -132,6 +132,8 @@ try {
       tone: "muted",
       details: {
         verification: "尚未进行通关验证",
+        "map-id": "loma-pushbox/01-01",
+        "map-name": "01-01",
         author: "Aymeric du Peloux",
       },
     },
@@ -153,14 +155,14 @@ try {
     'id="map-status"',
     'data-icon="map-status"',
     'class="shell-indicator-button tone-success"',
-    'aria-label="地图状态：通关验证 已验证可通关"',
+    'aria-label="地图状态：通关验证 已验证可通关；关卡 ID original/1-1；关卡名字 1"',
   ]);
   await smoke(
     `${origin}/explore/play/original/unlisted-smoke`,
     [
       'class="game-page"',
       'id="game"',
-      'aria-label="地图状态：通关验证 尚未进行通关验证"',
+      'aria-label="地图状态：通关验证 尚未进行通关验证；关卡 ID original/unlisted-smoke；关卡名字 1"',
     ],
   );
   await smoke(
@@ -168,13 +170,17 @@ try {
     [
       'class="game-page"',
       'id="game"',
-      'aria-label="地图状态：通关验证 尚未进行通关验证"',
+      'aria-label="地图状态：通关验证 尚未进行通关验证；关卡 ID standalone-smoke/standalone；关卡名字 1"',
     ],
   );
   await interactiveMapStatusSmoke(`${origin}/explore/play/original/1-1`, {
     icon: "map-status",
     tone: "success",
-    details: { verification: "已验证可通关" },
+    details: {
+      verification: "已验证可通关",
+      "map-id": "original/1-1",
+      "map-name": "1",
+    },
   });
   await smoke(`${origin}/explore/play/novoban-pushbox/01`, [
     'class="game-page"',
@@ -207,7 +213,7 @@ try {
       'id="map-status"',
       'data-icon="map-status"',
       'class="shell-indicator-button tone-success"',
-      'aria-label="地图状态：通关验证 已在自由探索模式中验证可通关"',
+      'aria-label="地图状态：通关验证 已在自由探索模式中验证可通关；关卡 ID original/1-1；关卡名字 1"',
     ],
     ['id="undo"', 'id="replay-record"', "data-replay-panel"],
   );
@@ -218,7 +224,8 @@ try {
     'data-palette-type="egg"',
   ]);
   await interactiveEditorSourceSmoke(
-    `${origin}/edit#map=novoban-pushbox/01`,
+    `${origin}/edit#map=engine-lab/00-intro`,
+    { type: "all", conditions: [{ type: "exit" }] },
   );
   const mapPayload = exchangePayload(
     fs.readFileSync(
@@ -244,6 +251,8 @@ try {
     tone: "muted",
     details: {
       verification: "尚未进行通关验证",
+      "map-id": "imported/shared-map",
+      "map-name": "Engine Mechanics Smoke Map",
       author: "bc5r",
       note: "Editor → Engine / Original JAR 回归测试夹具；不是正式谜题关。",
     },
@@ -482,7 +491,7 @@ async function interactiveDataExchangeSmoke(url) {
   if (!payload.confirmation)
     throw new Error(`Unexpected home import smoke result: ${JSON.stringify(payload)}`);
 }
-async function interactiveEditorSourceSmoke(url) {
+async function interactiveEditorSourceSmoke(url, expectedWin) {
   const script = `
 (async () => {
   const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -496,9 +505,17 @@ async function interactiveEditorSourceSmoke(url) {
     await delay(50);
     value = document.querySelector('.editor-dialog .data-exchange-text')?.value ?? '';
   }
+  const compressed = /\\/import\\/v1#[A-Za-z0-9_-]+$/.test(value);
+  const checkbox = document.querySelector('.data-exchange-check input[type="checkbox"]');
+  if (checkbox?.checked) checkbox.click();
+  for (let i = 0; i < 120 && !value.trimStart().startsWith('{'); i += 1) {
+    await delay(50);
+    value = document.querySelector('.editor-dialog .data-exchange-text')?.value ?? '';
+  }
   return JSON.stringify({
     hash: location.hash,
-    compressed: /\\/import\\/v1#[A-Za-z0-9_-]+$/.test(value),
+    compressed,
+    win: JSON.parse(value).rules?.win,
   });
 })()
 `;
@@ -506,7 +523,11 @@ async function interactiveEditorSourceSmoke(url) {
   if (result.status !== 0)
     throw new Error(`Interactive editor source smoke failed: ${result.stderr || result.stdout}`);
   const payload = lastJsonLine(result.stdout);
-  if (payload.hash || !payload.compressed)
+  if (
+    payload.hash ||
+    !payload.compressed ||
+    JSON.stringify(payload.win) !== JSON.stringify(expectedWin)
+  )
     throw new Error(`Unexpected editor source result: ${JSON.stringify(payload)}`);
 }
 async function runBrowserEval(url, script) {
