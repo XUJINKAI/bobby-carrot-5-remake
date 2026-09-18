@@ -138,7 +138,7 @@ try {
       icon: "map-details",
       tone: "muted",
       details: {
-        verification: ["尚未进行通关验证", "Not yet completion-verified"],
+        verification: ["未验证", "Not verified"],
         "map-id": "loma-pushbox/01-01",
         "map-name": "01-01",
         author: "Aymeric du Peloux",
@@ -246,7 +246,7 @@ try {
     icon: "map-details",
     tone: "muted",
     details: {
-      verification: ["尚未进行通关验证", "Not yet completion-verified"],
+      verification: ["未验证", "Not verified"],
       "map-id": "imported/shared-map",
       "map-name": "Engine Mechanics Smoke Map",
       author: "bc5r",
