@@ -98,7 +98,7 @@ export class BobbyApp {
   };
 
   private readonly onLocaleChange = (): void => {
-    void this.renderRoute();
+    this.controller.localeChanged?.();
   };
 
   private readonly navigate = (path: string): void => {
