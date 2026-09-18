@@ -9,7 +9,7 @@ import AppBottomBar from "../shell/AppBottomBar.vue";
 import AppTopBar from "../shell/AppTopBar.vue";
 import type { Navigate } from "./pageContracts.js";
 import type { ShellViewState } from "../shell/shellBridge.js";
-import { acquireWebI18nScopes, webT } from "../i18n/webI18n.js";
+import { openWebI18nScope, type WebI18nScope, webT } from "../i18n/webI18n.js";
 
 const props = defineProps<{
   shell: ShellViewState;
@@ -21,7 +21,7 @@ const content = ref<HTMLDivElement | null>(null);
 const quickSettingsOpen = ref(false);
 const helpOpen = ref(false);
 const helpHtml = ref("");
-let releaseHelpScope: (() => void) | null = null;
+let helpScope: WebI18nScope | null = null;
 const musicInteractionRequired = ref(audioInteractionRequired());
 const settings = useGlobalSettings(props.audio);
 const disposeMusicInteraction = props.audio.onMusicInteractionRequiredChange(
@@ -44,7 +44,16 @@ function closeSettings(): void {
 }
 
 async function openHelp(): Promise<void> {
-  releaseHelpScope ??= await acquireWebI18nScopes(["help"]);
+  const scope = openWebI18nScope(["help"]);
+  helpScope?.dispose();
+  helpScope = scope;
+  try {
+    await scope.ready;
+  } catch {
+    if (helpScope === scope) helpScope = null;
+    return;
+  }
+  if (!scope.active || helpScope !== scope) return;
   helpHtml.value = webT("help.html");
   if (!helpOpen.value && !quickSettingsOpen.value) notifySurfaceOpen();
   quickSettingsOpen.value = false;
@@ -59,8 +68,8 @@ function closeHelp(): void {
 
 function dismissHelp(): void {
   helpOpen.value = false;
-  releaseHelpScope?.();
-  releaseHelpScope = null;
+  helpScope?.dispose();
+  helpScope = null;
 }
 
 function notifySurfaceOpen(): void {
@@ -144,7 +153,7 @@ watch(
 
 defineExpose({ openSettings });
 onBeforeUnmount(() => {
-  releaseHelpScope?.();
+  helpScope?.dispose();
   disposeMusicInteraction();
 });
 onMounted(() => {
