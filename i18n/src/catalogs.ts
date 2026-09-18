@@ -77,8 +77,20 @@ const LOADERS: Record<TranslationScope, Record<Locale, CatalogLoader>> = {
     en: () => import("./locales/embed/en.js").then((m) => m.default),
   },
   help: {
-    "zh-CN": () => import("./locales/help/zh-CN.js").then((m) => m.default),
-    en: () => import("./locales/help/en.js").then((m) => m.default),
+    "zh-CN": async () => {
+      const [copy, html] = await Promise.all([
+        import("./locales/help/zh-CN.js"),
+        import("./locales/help/zh-CN.md"),
+      ]);
+      return { ...copy.default, "help.html": html.default };
+    },
+    en: async () => {
+      const [copy, html] = await Promise.all([
+        import("./locales/help/en.js"),
+        import("./locales/help/en.md"),
+      ]);
+      return { ...copy.default, "help.html": html.default };
+    },
   },
 };
 
