@@ -9,11 +9,11 @@ const siteOrigin = (
 
 export function verifySeoArtifacts() {
   assertShell("index.html", {
-    title: "å…”å­æ³¢æ¯”5é‡åˆ¶ç‰ˆ | Bobby Carrot 5 Remake",
+    title: "Bobby Carrot 5 Remake",
     robots: "index,follow",
     canonical: `${siteOrigin}/`,
     contains: [
-      "åœ¨æµè§ˆå™¨ä¸­æ¸¸çŽ©ã€Šå…”å­æ³¢æ¯”5ã€‹é‡åˆ¶ç‰ˆ",
+      "Bobby Carrot 5 Remake",
       "Play Bobby Carrot 5 Remake in your browser",
     ],
   });
@@ -37,42 +37,42 @@ export function verifySeoArtifacts() {
     robots: "index,follow",
     canonical: `${siteOrigin}/edit`,
   });
-  assertShell(settings/index.html", {
+  assertShell("settings/index.html", {
     robots: "noindex,follow",
     canonical: `${siteOrigin}/settings`,
   });
 
   for (const file of ["404.html", "robots.txt", "sitemap.xml"])
     if (!fs.existsSync(path.join(dist, file)))
-      throw new Error(cç¼ºå°‘ SEO æž„å»ºäº§ç‰©ï¼šdist/${file}`);
+      throw new Error(`Missing SEO artifact: dist/${file}`);
 
   const notFound = read("404.html");
   if (!notFound.includes('name="robots" content="noindex,follow"'))
-    throw new Error("404.html å¿…é¡» noindex,follow");
+    throw new Error("404.html must be noindex,follow");
   if (!notFound.includes('src="/assets/art/hd/sleep.png"'))
-    throw new Error("404.html å¿…é¡» f˜¾ç¤º sleep.png");
-  if (!notFound.includes('<a href="/">è¿”å›žé¦–é¡µ</a>'))
-    throw new Error("404.html å¿…é¡»æä¾›è¿”å›žé¦–é¡µé“¾æŽ¥");
+    throw new Error("404.html must display sleep.png");
+  if (!notFound.includes('<a href="/">'))
+    throw new Error("404.html must link back to the home page");
   if (!notFound.includes('gtag("config", "G-KZKWTSQXMP")'))
-    throw new Error("404.html å¿…é¡»åŒ…å« GA4 è¿½è¸ªä»£ç ");
+    throw new Error("404.html must include GA4");
   if (!fs.existsSync(path.join(dist, "assets/art/hd/sleep.png")))
-    throw new Error("404.html ä½¿ç”¨çš„ sleep.png å¿…é¡»å‘å¸ƒåˆ° dist");
+    throw new Error("404 sleep.png must be published to dist");
 
   const robots = read("robots.txt");
   if (!robots.includes(`Sitemap: ${siteOrigin}/sitemap.xml`))
-    throw new Error("robots.txt å¿…é¡»å£°æ˜Žç”Ÿäº§ sitemap URL");
+    throw new Error("robots.txt must declare the production sitemap");
 
   const sitemap = read("sitemap.xml");
   for (const expected of [
     `${siteOrigin}/`,
     `${siteOrigin}/adventure/chapter/1`,
     `${siteOrigin}/explore`,
-    `${siteOrigin}/explore/play/original/1-1`,
+     `${siteOrigin}/explore/play/original/1-1`,
     `${siteOrigin}/edit`,
     `${siteOrigin}/embed`,
   ])
     if (!sitemap.includes(`<loc>${expected}</loc>`))
-      throw new Error(`sitemap ç¼ºå°‘ canonical URLï¼š${expected}`);
+      throw new Error(`sitemap is missing canonical URL: ${expected}`);
   for (const excluded of [
     "/explore/original",
     "/settings",
@@ -80,39 +80,40 @@ export function verifySeoArtifacts() {
     "/adventure/play/1-1",
   ])
     if (sitemap.includes(`<loc>${siteOrigin}${excluded}</loc>`))
-      throw new Error(`sitemap ä¸åº”åŒ…å« noindex/alias URLï¼š${excluded}`);
+      throw new Error(`sitemap must not include noindex/alias URL: ${excluded}`);
 
   if (fs.existsSync(path.join(dist, "explore/original/index.html")))
-    throw new Error("/explore/original ä¸åº”ç”Ÿæˆ public route shell");
+    throw new Error("/explore/original must not generate a route shell");
   if (fs.existsSync(path.join(dist, "edit/original/1-1/index.html")))
-    throw new Error("Editor map source åº”ä½¿ç”¨ fragmentï¼Œä¸åº”ç”Ÿæˆ path route shell");
+    throw new Error("Editor map source uses a fragment, not a route shell");
 }
 
 function assertShell(relative, expected) {
   const file = path.join(dist, relative);
-  if (!fs.existsSync(file)) throw new Error(`ç¼ºå°‘ route shellï¼šdist/${relative}`);
+  if (!fs.existsSync(file))
+    throw new Error(`Missing route shell: dist/${relative}`);
   const html = fs.readFileSync(file, "utf8");
   assertSingleMeta(html, relative, "name", "description");
   assertSingleMeta(html, relative, "property", "og:title");
   assertSingleMeta(html, relative, "property", "og:description");
   if (!html.includes(`name="robots" content="${expected.robots}"`))
-    throw new Error(`${relative}: robots åº”ä¸º ${expected.robots}`);
+    throw new Error(`${relative}: wrong robots value`);
   if (!html.includes(`rel="canonical" href="${expected.canonical}"`))
-    throw new Error(`${relative}: canonical é”™è¯¯`);
+    throw new Error(`${relative}: wrong canonical URL );
   if (!html.includes('property="og:image"'))
-    throw new Error("${relative}: ç¼ºå°‘ og:image`);
+    throw new Error(`${relative}: missing og:image`);
   if (
     !html.includes(
       "https://www.googletagmanager.com/gtag/js?id=G-KZKWTSQXMP",
     ) ||
     !html.includes('gtag("config", "G-KZKWTSQXMP")')
   )
-    throw new Error(`${relative}: ç¼ºå°‘ GA4 è¿½è¸ªä»£ç `);
-  if (expected.title && !html.includes(`<title>${expected.title}</title>`))
-    throw new Error(`${relative}: title é”™è¯¯`);
+    throw new Error(`${relative}: missing GA4`);
+  if (expected.title && !html.includes(expected.title))
+    throw new Error(`${relative}: wrong title`);
   for (const text of expected.contains ?? [])
     if (!html.includes(text))
-      throw new Error(`${relative}: ç¼ºå°‘ SEO fallback æ–‡æ¡ˆï¼š${text}`);
+      throw new Error(`${relative}: missing SEO fallback text: ${text}`);
 }
 
 function assertSingleMeta(html, relative, attribute, key) {
@@ -122,7 +123,9 @@ function assertSingleMeta(html, relative, attribute, key) {
   );
   const count = [...html.matchAll(pattern)].length;
   if (count !== 1)
-    throw new Error(`${relative}: ${attribute}=${key} åº”æ°å¥½å‡ºçŽ°ä¸€æ¬¡ï¼Œå®žé™… ${count}`);
+    throw new Error(
+      `${relative}: ${attribute}=${key} must occur exactly once, got ${count}`,
+    );
 }
 
 function escapeRegExp(value) {
