@@ -8,7 +8,7 @@ import type {
   EmbedMusicStyle,
 } from "@bobby/embed";
 import { EMBED_RUNTIME_CATALOGS, normalizeLocale } from "@bobby/i18n";
-import { webT } from "../../i18n/webI18n.js";
+import { getWebLocale, webT } from "../../i18n/webI18n.js";
 
 const props = defineProps<{ publicBaseUrl: string }>();
 
@@ -18,7 +18,7 @@ type BC5RGlobal = { mount?: EmbedMount };
 const mapMode = ref<"map" | "mapUrl">("map");
 const map = ref(location.hash.slice(1));
 const mapUrl = ref("");
-const lang = ref("zh-CN");
+const lang = ref(getWebLocale());
 const audioEnabled = ref(true);
 const audioVolumePercent = ref(100);
 const musicStyle = ref<EmbedMusicStyle>("modern");
@@ -198,7 +198,7 @@ onBeforeUnmount(() => handle?.destroy());
             <button :class="{ active: mapMode === 'map' }" @click="mapMode = 'map'">{{ webT("embed.mapData") }}</button>
             <button :class="{ active: mapMode === 'mapUrl' }" @click="mapMode = 'mapUrl'">{{ webT("embed.mapUrl") }}</button>
           </div>
-          <textarea v-if="mapMode === 'map'" v-model="map" rows="5" wrap="soft" placeholder="BC5R1:... 或 https://bc5r.com/import/v1#..."></textarea>
+          <textarea v-if="mapMode === 'map'" v-model="map" rows="5" wrap="soft" :placeholder="webT('embed.mapDataPlaceholder')"></textarea>
           <input v-else v-model="mapUrl" type="url" placeholder="https://example.com/map.txt" />
         </div>
 
