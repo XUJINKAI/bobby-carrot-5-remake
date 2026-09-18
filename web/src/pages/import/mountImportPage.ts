@@ -20,7 +20,7 @@ export function renderImportMessage(
     | { status: "save"; data: ImportedSaveData }
     | { status: "error" | "unknown"; message: string; rawText?: string },
 ): PageController {
-  configureShell({
+  const syncShell = (): void => configureShell({
     topBar: {
       visible: true,
       fixed: true,
@@ -29,6 +29,7 @@ export function renderImportMessage(
     },
     bottomBar: { visible: false },
   });
+  syncShell();
   context.app.replaceChildren();
   const app = createApp(ImportPage, {
     ...options,
@@ -40,5 +41,5 @@ export function renderImportMessage(
     onHome: () => context.navigate("/"),
   });
   app.mount(context.app);
-  return { destroy: () => app.unmount() };
+  return { localeChanged: syncShell, destroy: () => app.unmount() };
 }
