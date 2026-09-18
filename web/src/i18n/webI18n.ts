@@ -73,9 +73,10 @@ export function setWebLocale(nextLocale: Locale): Promise<void> {
   })();
 
   localeTransition = { locale: nextLocale, promise };
-  void promise.finally(() => {
+  const clearTransition = (): void => {
     if (localeTransition?.promise === promise) localeTransition = null;
-  });
+  };
+  void promise.then(clearTransition, clearTransition);
   return promise;
 }
 
