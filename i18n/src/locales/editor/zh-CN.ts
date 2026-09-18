@@ -15,6 +15,7 @@ const catalog = {
   "editor.undoPlay": "Undo Play Test",
   "editor.redoPlay": "Redo Play Test",
   "editor.issueCount": "共 {count} 个问题",
+  "editor.copySuffix": "副本",
 } as const;
 export type EditorTranslationKey = keyof typeof catalog;
 export default catalog;
