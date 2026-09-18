@@ -2,6 +2,7 @@
 import type { AdventureLevelRow } from "./types.js";
 import AdventureViewport from "./AdventureViewport.vue";
 import AppIcon from "../../shared/icons/AppIcon.vue";
+import { webT } from "../../i18n/webI18n.js";
 
 defineProps<{
   chapterNumber: number;
@@ -19,7 +20,7 @@ const emit = defineEmits<{ navigate: [path: string] }>();
       <div>
         <span>{{ String(chapterNumber).padStart(2, "0") }}</span>
         <h2>{{ title }}</h2>
-        <span class="chapter-stars" :title="`章节难度 ${difficulty} 星`">
+        <span class="chapter-stars" :title="webT('adventure.difficulty', { count: difficulty })">
           <AppIcon
             v-for="star in difficulty"
             :key="star"

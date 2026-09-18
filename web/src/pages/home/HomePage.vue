@@ -9,6 +9,7 @@ import OriginalStarfield from "../../shared/original-scenes/OriginalStarfield.vu
 import HomeDemo from "./HomeDemo.vue";
 import HomeModeMenu from "./HomeModeMenu.vue";
 import ProjectIntro from "./ProjectIntro.vue";
+import { webT } from "../../i18n/webI18n.js";
 
 defineProps<{ state: HomeViewState; images: ImageManager }>();
 const emit = defineEmits<{
@@ -66,7 +67,7 @@ onBeforeUnmount(() => {
       :images="images"
     />
     <div class="home-page-content">
-      <section class="home-hero" aria-label="开始游戏">
+      <section class="home-hero" :aria-label="webT('home.startAria')">
         <div class="home-hero-left">
           <div class="home-sky-brand" aria-hidden="true">
             <OriginalFlightScene :images="images" :show-stars="false" />

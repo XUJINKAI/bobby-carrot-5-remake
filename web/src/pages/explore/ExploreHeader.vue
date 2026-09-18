@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { explorePlayPath } from "../../app/routes.js";
 import AppIcon from "../../shared/icons/AppIcon.vue";
+import { webT } from "../../i18n/webI18n.js";
 defineProps<{
   collection: string;
   title: string;
@@ -21,18 +22,18 @@ const emit = defineEmits<{
       <div class="eyebrow">EXPLORE MODE</div>
       <div class="collection-title-line">
         <h1>{{ title }}</h1>
-        <span class="level-browser-count">{{ mapCount }} 关</span>
+        <span class="level-browser-count">{{ webT("explore.levelCount", { count: mapCount }) }}</span>
       </div>
       <p>{{ description }}</p>
     </div>
     <div class="level-browser-actions">
       <button id="random-level" class="ghost-btn" @click="emit('random')">
         <AppIcon name="shuffle" />
-        随机关卡
+        {{ webT("explore.random") }}
       </button>
       <button class="primary-btn" @click="emit('navigate', explorePlayPath({ collection, id: lastMapId }))">
         <AppIcon name="play" weight="fill" />
-        继续游玩 · {{ lastMapLabel }}
+        {{ webT("explore.continue", { label: lastMapLabel }) }}
       </button>
     </div>
   </section>

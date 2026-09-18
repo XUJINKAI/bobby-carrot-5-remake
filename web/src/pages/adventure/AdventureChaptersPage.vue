@@ -4,6 +4,7 @@ import type { AdventureChapterRow } from "./types.js";
 import AdventureViewport from "./AdventureViewport.vue";
 import OriginalChapterStatusIcon from "./OriginalChapterStatusIcon.vue";
 import AppIcon from "../../shared/icons/AppIcon.vue";
+import { webT } from "../../i18n/webI18n.js";
 
 defineProps<{ rows: AdventureChapterRow[]; images: ImageManager }>();
 const emit = defineEmits<{ navigate: [path: string] }>();
@@ -23,7 +24,7 @@ const emit = defineEmits<{ navigate: [path: string] }>();
           <OriginalChapterStatusIcon :images="images" :completed="row.completed" />
           <span class="adventure-chapter-no">{{ String(row.number).padStart(2, "0") }}</span>
           <strong>{{ row.title }}</strong>
-          <span class="chapter-stars" :title="`章节难度 ${row.difficulty} 星`">
+          <span class="chapter-stars" :title="webT('adventure.difficulty', { count: row.difficulty })">
             <AppIcon
               v-for="star in row.difficulty"
               :key="star"
