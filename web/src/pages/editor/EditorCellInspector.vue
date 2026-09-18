@@ -28,35 +28,79 @@ const emit = defineEmits<{
   reorder: [refsTopToBottom: number[]];
 }>();
 const dragging = ref<number | null>(null);
-const dropTarget = ref<number | null>(null);
+const dropTarget = ref<{
+  refIndex: number;
+  position: "before" | "after";
+} | null>(null);
+let dragPointerId: number | null = null;
 
-function startDrag(index: number, event: DragEvent): void {
-  dragging.value = index;
-  if (event.dataTransfer) {
-    event.dataTransfer.effectAllowed = "move";
-    event.dataTransfer.setData("text/plain", String(index));
-  }
+function startDrag(refIndex: number, event: PointerEvent): void {
+  if (
+    (event.pointerType !== "mouse" && event.pointerType !== "touch") ||
+    (event.pointerType === "mouse" && event.button !== 0)
+  ) return;
+  event.preventDefault();
+  dragging.value = refIndex;
+  dragPointerId = event.pointerId;
+  (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
 }
 
-function dropAt(index: number): void {
-  const from = dragging.value;
-  endDrag();
-  if (from === null || from === index) return;
+function moveDrag(event: PointerEvent): void {
+  if (event.pointerId !== dragPointerId || dragging.value === null) return;
+  const card = document
+    .elementFromPoint(event.clientX, event.clientY)
+    ?.closest<HTMLElement>("[data-editor-layer-ref]");
+  const refIndex = Number(card?.dataset.editorLayerRef);
+  if (!card || !Number.isInteger(refIndex) || refIndex === dragging.value) {
+    dropTarget.value = null;
+    return;
+  }
+  const rect = card.getBoundingClientRect();
+  dropTarget.value = {
+    refIndex,
+    position: event.clientY < rect.top + rect.height / 2 ? "before" : "after",
+  };
+}
+
+function finishDrag(event: PointerEvent): void {
+  if (event.pointerId !== dragPointerId) return;
+  moveDrag(event);
+  const movedRef = dragging.value;
+  const target = dropTarget.value;
+  endDrag(event.currentTarget as HTMLElement);
+  if (movedRef === null || !target) return;
   const order = props.model.layers.map((layer) => layer.ref.index);
-  const [moved] = order.splice(from, 1);
-  if (moved === undefined) return;
-  order.splice(index, 0, moved);
+  const from = order.indexOf(movedRef);
+  if (from < 0) return;
+  order.splice(from, 1);
+  const targetIndex = order.indexOf(target.refIndex);
+  if (targetIndex < 0) return;
+  order.splice(
+    targetIndex + (target.position === "after" ? 1 : 0),
+    0,
+    movedRef,
+  );
   emit("reorder", order);
 }
 
-function endDrag(): void {
-  dragging.value = null;
-  dropTarget.value = null;
+function cancelDrag(event: PointerEvent): void {
+  if (event.pointerId !== dragPointerId) return;
+  endDrag(event.currentTarget as HTMLElement);
 }
 
-function dropClass(index: number): string | undefined {
-  if (dropTarget.value !== index || dragging.value === null) return undefined;
-  return dragging.value < index ? "drop-after" : "drop-before";
+function endDrag(handle: HTMLElement): void {
+  if (
+    dragPointerId !== null &&
+    handle.hasPointerCapture(dragPointerId)
+  ) handle.releasePointerCapture(dragPointerId);
+  dragging.value = null;
+  dropTarget.value = null;
+  dragPointerId = null;
+}
+
+function dropClass(refIndex: number): string | undefined {
+  if (dropTarget.value?.refIndex !== refIndex) return undefined;
+  return dropTarget.value.position === "after" ? "drop-after" : "drop-before";
 }
 </script>
 
@@ -72,22 +116,22 @@ function dropClass(index: number): string | undefined {
 
     <div v-if="model.layers.length" class="editor-layer-stack">
       <article
-        v-for="(layer, index) in model.layers"
+        v-for="layer in model.layers"
         :key="layer.ref.index"
         class="editor-layer-card"
-        :class="[{ dragging: dragging === index }, dropClass(index)]"
-        @dragover.prevent="dropTarget = index"
-        @drop.prevent="dropAt(index)"
+        :class="[{ dragging: dragging === layer.ref.index }, dropClass(layer.ref.index)]"
+        :data-editor-layer-ref="layer.ref.index"
       >
         <header class="editor-layer-head">
           <button
             v-if="model.layers.length > 1"
             type="button"
             class="editor-layer-drag"
-            draggable="true"
             :aria-label="`拖动调整 ${layer.label} 的叠加顺序`"
-            @dragstart="startDrag(index, $event)"
-            @dragend="endDrag"
+            @pointerdown="startDrag(layer.ref.index, $event)"
+            @pointermove="moveDrag"
+            @pointerup="finishDrag"
+            @pointercancel="cancelDrag"
           >
             <AppIcon name="drag" />
           </button>
@@ -202,6 +246,8 @@ function dropClass(index: number): string | undefined {
   cursor: grab;
   color: var(--editor-muted);
   font-size: 18px;
+  touch-action: none;
+  user-select: none;
 }
 .editor-layer-drag:active {
   cursor: grabbing;

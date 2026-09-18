@@ -19,10 +19,167 @@ export async function verifyEditorExperience(cdp, sessionId) {
       ),
     20_000,
   );
+  await verifyLayerReordering(cdp, sessionId);
   await verifySurfaceInspector(cdp, sessionId);
   await verifyPaletteTooltip(cdp, sessionId);
   await verifyEditorCanvasPerformance(cdp, sessionId);
   await verifyPlayControls(cdp, sessionId);
+}
+
+async function verifyLayerReordering(cdp, sessionId) {
+  await clickWhenPresent(cdp, sessionId, "#editor-tool-select");
+  const cell = await cdp.evaluate(
+    sessionId,
+    `(() => {
+      const canvas = document.querySelector('.editor-canvas');
+      if (!canvas) return null;
+      const rect = canvas.getBoundingClientRect();
+      return {
+        x: rect.left + rect.width * 2.5 / 16,
+        y: rect.top + rect.height * 2.5 / 16,
+      };
+    })()`,
+  );
+  if (!cell) throw new Error("Editor Bobby cell was not measurable");
+  await clickPoint(cdp, sessionId, cell);
+  await waitForBrowserState(async () =>
+    (await editorLayerOrder(cdp, sessionId)).length >= 2,
+  );
+  const initial = await editorLayerOrder(cdp, sessionId);
+  const mouseDrag = await editorLayerDragPoints(cdp, sessionId);
+  if (!mouseDrag) throw new Error("Editor layer drag controls were not measurable");
+  await cdp.send(
+    "Input.dispatchMouseEvent",
+    {
+      type: "mousePressed",
+      x: mouseDrag.from.x,
+      y: mouseDrag.from.y,
+      button: "left",
+      buttons: 1,
+      clickCount: 1,
+    },
+    sessionId,
+  );
+  await cdp.send(
+    "Input.dispatchMouseEvent",
+    {
+      type: "mouseMoved",
+      x: mouseDrag.to.x,
+      y: mouseDrag.to.y,
+      button: "left",
+      buttons: 1,
+    },
+    sessionId,
+  );
+  await cdp.send(
+    "Input.dispatchMouseEvent",
+    {
+      type: "mouseReleased",
+      x: mouseDrag.to.x,
+      y: mouseDrag.to.y,
+      button: "left",
+      buttons: 0,
+      clickCount: 1,
+    },
+    sessionId,
+  );
+  await waitForLayerOrderChange(cdp, sessionId, initial, "鼠标");
+  await clickWhenPresent(cdp, sessionId, "#editor-undo");
+  await waitForLayerOrder(cdp, sessionId, initial);
+
+  const touchDrag = await editorLayerDragPoints(cdp, sessionId);
+  if (!touchDrag) throw new Error("Editor touch layer controls were not measurable");
+  await cdp.send(
+    "Input.dispatchTouchEvent",
+    {
+      type: "touchStart",
+      touchPoints: [{ x: touchDrag.from.x, y: touchDrag.from.y }],
+    },
+    sessionId,
+  );
+  await cdp.send(
+    "Input.dispatchTouchEvent",
+    {
+      type: "touchMove",
+      touchPoints: [{ x: touchDrag.to.x, y: touchDrag.to.y }],
+    },
+    sessionId,
+  );
+  await cdp.send(
+    "Input.dispatchTouchEvent",
+    { type: "touchEnd", touchPoints: [] },
+    sessionId,
+  );
+  await waitForLayerOrderChange(cdp, sessionId, initial, "触摸");
+  await clickWhenPresent(cdp, sessionId, "#editor-undo");
+  await waitForLayerOrder(cdp, sessionId, initial);
+}
+
+async function editorLayerOrder(cdp, sessionId) {
+  return cdp.evaluate(
+    sessionId,
+    `[...document.querySelectorAll('[data-editor-layer-ref]')]
+      .map((card) => card.getAttribute('data-editor-layer-ref'))`,
+  );
+}
+
+async function editorLayerDragPoints(cdp, sessionId) {
+  return cdp.evaluate(
+    sessionId,
+    `(() => {
+      const cards = [...document.querySelectorAll('[data-editor-layer-ref]')];
+      const handle = cards[0]?.querySelector('.editor-layer-drag');
+      const target = cards.at(-1);
+      if (!handle || !target || cards.length < 2) return null;
+      const from = handle.getBoundingClientRect();
+      const to = target.getBoundingClientRect();
+      return {
+        from: { x: from.left + from.width / 2, y: from.top + from.height / 2 },
+        to: { x: to.left + to.width / 2, y: to.top + to.height * 0.75 },
+      };
+    })()`,
+  );
+}
+
+async function waitForLayerOrderChange(cdp, sessionId, initial, pointerLabel) {
+  await waitForBrowserState(async () => {
+    const current = await editorLayerOrder(cdp, sessionId);
+    return JSON.stringify(current) !== JSON.stringify(initial);
+  }).catch((cause) => {
+    throw new Error(`Editor ${pointerLabel}拖动没有调整 Entity 顺序`, { cause });
+  });
+}
+
+async function waitForLayerOrder(cdp, sessionId, expected) {
+  await waitForBrowserState(async () =>
+    JSON.stringify(await editorLayerOrder(cdp, sessionId)) ===
+      JSON.stringify(expected),
+  );
+}
+
+async function clickPoint(cdp, sessionId, point) {
+  await cdp.send(
+    "Input.dispatchMouseEvent",
+    {
+      type: "mousePressed",
+      x: point.x,
+      y: point.y,
+      button: "left",
+      clickCount: 1,
+    },
+    sessionId,
+  );
+  await cdp.send(
+    "Input.dispatchMouseEvent",
+    {
+      type: "mouseReleased",
+      x: point.x,
+      y: point.y,
+      button: "left",
+      clickCount: 1,
+    },
+    sessionId,
+  );
 }
 
 async function verifySurfaceInspector(cdp, sessionId) {
