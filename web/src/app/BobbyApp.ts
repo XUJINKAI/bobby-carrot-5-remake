@@ -251,6 +251,7 @@ export class BobbyApp {
         "cloud-9",
         context,
         "/adventure/night-train",
+        generation,
       );
       return;
     }
@@ -259,6 +260,7 @@ export class BobbyApp {
         "dreamland-reward",
         context,
         "/adventure/night-train",
+        generation,
       );
       return;
     }
