@@ -50,10 +50,19 @@ export const mapStatusSmokeScript = `
 `;
 
 export function assertMapStatusSmoke(payload, expected) {
+  const detailKeys = Object.keys(expected.details);
+  const detailsMatch =
+    JSON.stringify(Object.keys(payload.details)) === JSON.stringify(detailKeys) &&
+    detailKeys.every((key) => {
+      const wanted = expected.details[key];
+      return Array.isArray(wanted)
+        ? wanted.includes(payload.details[key])
+        : payload.details[key] === wanted;
+    });
   if (
     payload.icon !== expected.icon ||
     payload.tone !== expected.tone ||
-    JSON.stringify(payload.details) !== JSON.stringify(expected.details) ||
+    !detailsMatch ||
     (expected.details.note && payload.noteWhiteSpace !== "pre-wrap") ||
     payload.tooltipOverflowY !== "auto" ||
     !payload.touchVisible ||
