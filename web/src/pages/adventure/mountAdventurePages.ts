@@ -47,7 +47,7 @@ export function renderAdventureHome(context: PageContext): PageController {
       images,
       onNavigate: navigate,
     },
-    adventureShell(),
+    () => adventureShell(),
   );
 }
 
@@ -68,7 +68,7 @@ export function renderAdventureChapters(context: PageContext): PageController {
     app,
     AdventureChaptersPage,
     { rows, images, onNavigate: navigate },
-    adventureShell("/adventure"),
+    () => adventureShell("/adventure"),
   );
 }
 
@@ -102,7 +102,7 @@ export function renderAdventureChapter(
       rows,
       onNavigate: navigate,
     },
-    adventureShell("/adventure/chapters"),
+    () => adventureShell("/adventure/chapters"),
   );
 }
 
@@ -137,7 +137,7 @@ export function renderAdventureNightTrain(context: PageContext): PageController 
     app,
     AdventureNightTrainPage,
     { images, destinations, onNavigate: navigate },
-    adventureShell("/adventure"),
+    () => adventureShell("/adventure"),
   );
 }
 
@@ -158,13 +158,15 @@ function mountAdventure(
   root: HTMLDivElement,
   component: Component,
   props: Record<string, unknown>,
-  shell: ShellConfig,
+  shell: () => ShellConfig,
 ): PageController {
-  configureShell(shell);
+  const syncShell = (): void => configureShell(shell());
+  syncShell();
   root.replaceChildren();
   const app = createApp(component, props);
   app.mount(root);
   return {
+    localeChanged: syncShell,
     destroy(): void {
       app.unmount();
     },
