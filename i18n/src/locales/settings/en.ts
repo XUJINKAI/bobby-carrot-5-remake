@@ -21,6 +21,8 @@ const catalog = {
   "settings.exploreImported": "{label} save imported.",
   "settings.adventureImportNote": "Importing replaces the current Adventure save.",
   "settings.exploreImportNote": "Importing replaces the Explore save for {collection}.",
+  "settings.adventurePlaceholder": "Paste Adventure Save JSON, BC5R text, or a shared link…",
+  "settings.explorePlaceholder": "Paste Explore Collection Save JSON, BC5R text, or a shared link…",
   "settings.emptyTitle": "No game saves yet",
   "settings.emptyDescription": "Adventure and Explore saves will appear here after you play.",
 } satisfies Record<SettingsTranslationKey, string>;
