@@ -49,7 +49,6 @@ export function mount(options: BC5RMountOptions): BC5RHandle {
   const root = document.createElement("div");
   root.className = "bc5r-embed";
   root.dataset.lang = options.lang ?? "zh-CN";
-  root.dataset.theme = options.theme ?? "retro";
   const frame = document.createElement("div");
   frame.className = "bc5r-frame";
   const frameLink = document.createElement("a");
@@ -149,7 +148,6 @@ export function mount(options: BC5RMountOptions): BC5RHandle {
     if (keyboard === "focus" && activeFocusEmbed?.token !== token)
       runtime.input.setKeyboardEnabled(false);
     const audioLevels = applyAudio(runtime, audio);
-    runtime.audio.playMusic("ingame1");
     installSoundToggle(runtime, soundButton, audio.enabled, audioLevels, cleanup);
     installTerminalOverlay(runtime, terminal, canvasWrap, cleanup);
     const resumeAudio = (): void => runtime?.audio.resume();

@@ -17,7 +17,6 @@ const mapMode = ref<"map" | "mapUrl">("map");
 const map = ref(location.hash.slice(1));
 const mapUrl = ref("");
 const lang = ref("zh-CN");
-const theme = ref("retro");
 const audioEnabled = ref(true);
 const audioVolumePercent = ref(100);
 const musicStyle = ref<EmbedMusicStyle>("modern");
@@ -41,7 +40,6 @@ let renderSerial = 0;
 const options = computed(() => ({
   ...(mapMode.value === "map" ? { map: map.value.trim() } : { mapUrl: mapUrl.value.trim() }),
   lang: lang.value,
-  theme: theme.value,
   audio: audioEnabled.value ? audioVolumePercent.value / 100 : false,
   musicStyle: musicStyle.value,
   input: {
@@ -62,7 +60,6 @@ const embedCode = computed(() => {
   const config = {
     target: "#bc5r",
     lang: lang.value,
-    theme: theme.value,
     audio: audioEnabled.value ? audioVolumePercent.value / 100 : false,
     musicStyle: musicStyle.value,
     input: {
@@ -197,18 +194,11 @@ onBeforeUnmount(() => handle?.destroy());
 
         <fieldset class="config-group">
           <legend>通用</legend>
-          <div class="settings-grid">
-            <label>语言
-              <select v-model="lang">
-                <option value="zh-CN">中文</option>
-              </select>
-            </label>
-            <label>主题
-              <select v-model="theme">
-                <option value="retro">retro</option>
-              </select>
-            </label>
-          </div>
+          <label>语言
+            <select v-model="lang">
+              <option value="zh-CN">中文</option>
+            </select>
+          </label>
           <label class="field-group">自定义信息<input v-model="info" placeholder="Powered by Bobby Carrot 5 Remake" /></label>
         </fieldset>
 

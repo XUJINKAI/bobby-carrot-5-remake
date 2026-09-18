@@ -7,7 +7,6 @@ export interface BC5RMountOptions {
   map?: string;
   mapUrl?: string;
   lang?: string;
-  theme?: string;
   audio?: boolean | number;
   musicStyle?: EmbedMusicStyle;
   input?: {
