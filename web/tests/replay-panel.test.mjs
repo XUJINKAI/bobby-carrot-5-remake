@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
-import { test } from "vitest";
+import { beforeAll, test } from "vitest";
+import { ensureWebI18nScopes, initializeWebI18n } from "../src/i18n/webI18n.ts";
 import {
   replayVerificationPresentation,
   validateBuiltinReplaySave,
@@ -10,6 +11,11 @@ import {
   loadReplayPanelOpen,
   storeReplayPanelOpen,
 } from "../src/pages/game/replayPanelState.ts";
+
+beforeAll(async () => {
+  await initializeWebI18n("zh-CN");
+  await ensureWebI18nScopes(["game"]);
+});
 
 const replayPanelSource = fs.readFileSync(
   new URL("../src/pages/game/ReplayPanel.vue", import.meta.url),
