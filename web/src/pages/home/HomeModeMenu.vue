@@ -7,7 +7,7 @@ import type {
 import DataExchangePanel from "../../shared/data-exchange/DataExchangePanel.vue";
 import AppIcon from "../../shared/icons/AppIcon.vue";
 import ImportSaveConfirmation from "../import/ImportSaveConfirmation.vue";
-import { acquireWebI18nScopes, webT } from "../../i18n/webI18n.js";
+import { openWebI18nScope, type WebI18nScope, webT } from "../../i18n/webI18n.js";
 
 const emit = defineEmits<{
   navigate: [path: string];
@@ -15,7 +15,7 @@ const emit = defineEmits<{
 }>();
 const importOpen = ref(false);
 const pendingSave = ref<ImportedSaveData | null>(null);
-let releaseImportScope: (() => void) | null = null;
+let importScope: WebI18nScope | null = null;
 const toolbar = computed(() => ({
   left: [],
   right: [
@@ -42,8 +42,16 @@ async function acceptImport(data: unknown): Promise<void> {
     emit("importData", imported);
     return;
   }
-  releaseImportScope?.();
-  releaseImportScope = await acquireWebI18nScopes(["import"]);
+  const scope = openWebI18nScope(["import"]);
+  importScope?.dispose();
+  importScope = scope;
+  try {
+    await scope.ready;
+  } catch {
+    if (importScope === scope) importScope = null;
+    return;
+  }
+  if (!scope.active || importScope !== scope) return;
   pendingSave.value = imported;
 }
 
@@ -56,8 +64,8 @@ function confirmSave(): void {
 
 function cancelPendingSave(): void {
   pendingSave.value = null;
-  releaseImportScope?.();
-  releaseImportScope = null;
+  importScope?.dispose();
+  importScope = null;
 }
 
 function closeImport(): void {
@@ -66,7 +74,7 @@ function closeImport(): void {
 }
 
 onBeforeUnmount(() => {
-  releaseImportScope?.();
+  importScope?.dispose();
 });
 </script>
 
