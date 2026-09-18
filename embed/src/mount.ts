@@ -14,7 +14,7 @@ const publicBaseUrl =
     : document.currentScript instanceof HTMLScriptElement && document.currentScript.src
       ? new URL("../../", document.currentScript.src)
       : new URL(".", document.baseURI);
-const repositoryUrl = "https://github.com/XUJINKAI/bobby-carrot-5-remake";
+const homePageUrl = "https://bc5r.xujinkai.net/";
 const jerseyFontUrl = new URL(
   "../../assets/ui/fonts/jersey-10/Jersey10-Regular.woff2",
   import.meta.url,
@@ -30,6 +30,18 @@ interface TerminalOverlay {
   title: HTMLElement;
   restart: HTMLButtonElement;
   official: HTMLAnchorElement;
+}
+
+interface FrameControls {
+  root: HTMLDivElement;
+  restart: HTMLButtonElement;
+  open: HTMLAnchorElement;
+  sound: HTMLButtonElement;
+}
+
+interface InfoFooter {
+  root: HTMLDivElement;
+  joystick: HTMLButtonElement;
 }
 
 interface AudioLevels {
@@ -56,12 +68,13 @@ export function mount(options: BC5RMountOptions): BC5RHandle {
   const frame = document.createElement("div");
   frame.className = "bc5r-frame";
   const frameLink = document.createElement("a");
-  frameLink.href = publicBaseUrl.href;
+  frameLink.className = "bc5r-home-link";
+  frameLink.href = homePageUrl;
   frameLink.target = "_blank";
   frameLink.rel = "noopener noreferrer";
   frameLink.textContent = "Bobby Carrot 5 Remake";
-  const soundButton = createSoundButton(audio.enabled);
-  frame.append(frameLink, soundButton);
+  const frameControls = createFrameControls(audio.enabled, options.lang);
+  frame.append(frameLink, frameControls.root);
   const canvasWrap = document.createElement("div");
   canvasWrap.className = "bc5r-canvas-wrap";
   canvasWrap.tabIndex = 0;
@@ -69,12 +82,13 @@ export function mount(options: BC5RMountOptions): BC5RHandle {
   canvas.className = "bc5r-canvas";
   const terminal = createTerminalOverlay(options.lang ?? "zh-CN");
   canvasWrap.append(canvas, terminal.root);
-  const info = createInfoFooter(options.info);
-  root.append(styleElement(), frame, canvasWrap, info);
+  const info = createInfoFooter(options.info, options.lang);
+  root.append(styleElement(), frame, canvasWrap, info.root);
   shadow.append(root);
 
   const keyboard = options.input?.keyboard ?? "focus";
   const joystick = resolveJoystick(options.input?.joystick ?? "auto");
+  const pointer = options.input?.pointer ?? true;
   const pinchZoom = options.camera?.pinchZoom ?? true;
   const wheelZoom = options.camera?.wheelZoom ?? false;
 
@@ -107,7 +121,9 @@ export function mount(options: BC5RMountOptions): BC5RHandle {
     if (destroyed) return;
     const camera = resolveCameraOptions(options);
     const playUrl = await officialPlayUrl(level);
-    frameLink.href = playUrl;
+    frameControls.open.href = playUrl;
+    frameControls.open.removeAttribute("aria-disabled");
+    frameControls.open.tabIndex = 0;
     terminal.official.href = playUrl;
     const imageManager = createEmbedImageManager();
     images = imageManager;
@@ -126,14 +142,14 @@ export function mount(options: BC5RMountOptions): BC5RHandle {
           hud: true,
           input: {
             keyboard: keyboard !== false,
-            pointer: true,
+            pointer,
             movement: true,
             pan: true,
-            zoom: false,
+            zoom: true,
             pinchZoom,
             wheelZoom,
             debug: false,
-            screenJoystick: joystick,
+            screenJoystick: { enabled: joystick },
           },
         },
       });
@@ -152,7 +168,22 @@ export function mount(options: BC5RMountOptions): BC5RHandle {
     if (keyboard === "focus" && activeFocusEmbed?.token !== token)
       runtime.input.setKeyboardEnabled(false);
     const audioLevels = applyAudio(runtime, audio);
-    installSoundToggle(runtime, soundButton, audio.enabled, audioLevels, cleanup);
+    installRestartButton(runtime, frameControls.restart, canvasWrap, cleanup);
+    installSoundToggle(
+      runtime,
+      frameControls.sound,
+      audio.enabled,
+      audioLevels,
+      options.lang,
+      cleanup,
+    );
+    installJoystickToggle(
+      runtime,
+      info.joystick,
+      joystick,
+      options.lang,
+      cleanup,
+    );
     installTerminalOverlay(runtime, terminal, canvasWrap, cleanup);
     const resumeAudio = (): void => runtime?.audio.resume();
     root.addEventListener("pointerdown", resumeAudio, { passive: true });
@@ -184,37 +215,97 @@ function resolveTarget(target: string | HTMLElement): HTMLElement {
   return element;
 }
 
-function createSoundButton(enabled: boolean): HTMLButtonElement {
+function createFrameControls(
+  soundEnabled: boolean,
+  lang: string | undefined,
+): FrameControls {
+  const copy = controlCopy(lang);
+  const root = document.createElement("div");
+  root.className = "bc5r-frame-actions";
+  const restart = createIconButton("restart", copy.restart);
+  restart.disabled = true;
+  const open = document.createElement("a");
+  open.className = "bc5r-icon-button";
+  open.target = "_blank";
+  open.rel = "noopener noreferrer";
+  open.title = copy.open;
+  open.setAttribute("aria-label", copy.open);
+  open.setAttribute("aria-disabled", "true");
+  open.tabIndex = -1;
+  open.append(createIcon("open"));
+  const sound = createSoundButton(soundEnabled, lang);
+  root.append(restart, open, sound);
+  return { root, restart, open, sound };
+}
+
+function createIconButton(
+  icon: "restart" | "joystick",
+  label: string,
+): HTMLButtonElement {
   const button = document.createElement("button");
   button.type = "button";
-  button.className = "bc5r-sound";
-  button.disabled = true;
-  renderSoundButton(button, enabled);
+  button.className = "bc5r-icon-button";
+  button.title = label;
+  button.setAttribute("aria-label", label);
+  button.append(createIcon(icon));
   return button;
 }
 
-function renderSoundButton(button: HTMLButtonElement, enabled: boolean): void {
+function createIcon(name: "restart" | "open" | "joystick"): SVGSVGElement {
+  const paths = {
+    restart: "M20 7v5h-5 M20 12a8 8 0 1 0-2.34 5.66",
+    open: "M14 5h5v5 M19 5l-9 9 M19 13v5a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h5",
+    joystick: "M12 4a2 2 0 1 0 0 4a2 2 0 0 0 0-4 M12 8v6 M8 14h8l2 5H6l2-5",
+  } as const;
+  const namespace = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(namespace, "svg");
+  svg.classList.add("bc5r-icon");
+  svg.setAttribute("viewBox", "0 0 24 24");
+  svg.setAttribute("aria-hidden", "true");
+  const path = document.createElementNS(namespace, "path");
+  path.setAttribute("d", paths[name]);
+  svg.append(path);
+  return svg;
+}
+
+function createSoundButton(
+  enabled: boolean,
+  lang: string | undefined,
+): HTMLButtonElement {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "bc5r-icon-button bc5r-sound";
+  button.disabled = true;
+  renderSoundButton(button, enabled, lang);
+  return button;
+}
+
+function renderSoundButton(
+  button: HTMLButtonElement,
+  enabled: boolean,
+  lang: string | undefined,
+): void {
+  const copy = controlCopy(lang);
   button.textContent = enabled ? "🔊" : "🔇";
-  button.title = enabled ? "关闭声音" : "打开声音";
+  button.title = enabled ? copy.mute : copy.unmute;
   button.setAttribute("aria-label", button.title);
   button.setAttribute("aria-pressed", String(enabled));
 }
 
-function createInfoFooter(value: string | undefined): HTMLDivElement {
-  const footer = document.createElement("div");
-  footer.className = "bc5r-info";
+function createInfoFooter(
+  value: string | undefined,
+  lang: string | undefined,
+): InfoFooter {
+  const root = document.createElement("div");
+  root.className = "bc5r-info";
+  const copy = document.createElement("span");
+  copy.className = "bc5r-info-copy";
   const custom = value?.trim();
-  if (custom) {
-    footer.textContent = custom;
-    return footer;
-  }
-  const link = document.createElement("a");
-  link.href = repositoryUrl;
-  link.target = "_blank";
-  link.rel = "noopener noreferrer";
-  link.textContent = "Powered by xujinkai/bobby-carrot-5-remake";
-  footer.append(link);
-  return footer;
+  copy.textContent = custom || controlCopy(lang).movementHint;
+  const joystick = createIconButton("joystick", controlCopy(lang).joystick);
+  joystick.disabled = true;
+  root.append(copy, joystick);
+  return { root, joystick };
 }
 
 function resolveJoystick(value: boolean | "auto"): boolean {
@@ -251,11 +342,27 @@ function applyAudio(runtime: GameplayRuntime, audio: ResolvedAudio): AudioLevels
   return levels;
 }
 
+function installRestartButton(
+  runtime: GameplayRuntime,
+  button: HTMLButtonElement,
+  focusTarget: HTMLElement,
+  cleanup: Array<() => void>,
+): void {
+  const restart = (): void => {
+    runtime.game.restart();
+    focusTarget.focus({ preventScroll: true });
+  };
+  button.disabled = false;
+  button.addEventListener("click", restart);
+  cleanup.push(() => button.removeEventListener("click", restart));
+}
+
 function installSoundToggle(
   runtime: GameplayRuntime,
   button: HTMLButtonElement,
   initialEnabled: boolean,
   levels: AudioLevels,
+  lang: string | undefined,
   cleanup: Array<() => void>,
 ): void {
   let enabled = initialEnabled;
@@ -271,10 +378,36 @@ function installSoundToggle(
       runtime.audio.setMusicGain(0);
       runtime.audio.setSoundGain(0);
     }
-    renderSoundButton(button, enabled);
+    renderSoundButton(button, enabled, lang);
   };
   button.disabled = false;
-  renderSoundButton(button, enabled);
+  renderSoundButton(button, enabled, lang);
+  button.addEventListener("click", toggle);
+  cleanup.push(() => button.removeEventListener("click", toggle));
+}
+
+function installJoystickToggle(
+  runtime: GameplayRuntime,
+  button: HTMLButtonElement,
+  initialEnabled: boolean,
+  lang: string | undefined,
+  cleanup: Array<() => void>,
+): void {
+  let enabled = initialEnabled;
+  const render = (): void => {
+    const copy = controlCopy(lang);
+    button.disabled = false;
+    button.title = copy.joystick;
+    button.setAttribute("aria-label", copy.joystick);
+    button.setAttribute("aria-pressed", String(enabled));
+    button.classList.toggle("active", enabled);
+  };
+  const toggle = (): void => {
+    enabled = !enabled;
+    runtime.input.setScreenJoystickEnabled(enabled);
+    render();
+  };
+  render();
   button.addEventListener("click", toggle);
   cleanup.push(() => button.removeEventListener("click", toggle));
 }
@@ -369,6 +502,34 @@ function terminalCopy(lang: string | undefined): {
       };
 }
 
+function controlCopy(lang: string | undefined): {
+  restart: string;
+  open: string;
+  mute: string;
+  unmute: string;
+  joystick: string;
+  movementHint: string;
+} {
+  const value = lang && lang !== "auto" ? lang : navigator.language;
+  return value.toLowerCase().startsWith("zh")
+    ? {
+        restart: "重新开始",
+        open: "在新窗口打开",
+        mute: "关闭声音",
+        unmute: "打开声音",
+        joystick: "切换屏幕摇杆",
+        movementHint: "WASD / 方向键移动",
+      }
+    : {
+        restart: "Restart",
+        open: "Open in new window",
+        mute: "Mute",
+        unmute: "Unmute",
+        joystick: "Toggle screen joystick",
+        movementHint: "Move with WASD / arrow keys",
+      };
+}
+
 async function officialPlayUrl(level: LevelMap): Promise<string> {
   const stream = new Blob([JSON.stringify(level)])
     .stream()
@@ -426,15 +587,18 @@ function styleElement(): HTMLStyleElement {
     :host { display: block; width: 100%; height: 100%; min-width: 0; min-height: 0; }
     .bc5r-embed { box-sizing: border-box; width: 100%; height: 100%; min-width: 0; min-height: 0; display: flex; flex-direction: column; overflow: hidden; border: 1px solid #254868; border-radius: 10px; font: 14px/1.4 system-ui, sans-serif; color: #eef5ff; background: #071522; box-shadow: 0 8px 24px rgba(0,0,0,.22); }
     .bc5r-frame { flex: 0 0 auto; padding: 7px 10px; display: flex; align-items: center; justify-content: space-between; gap: 10px; border-bottom: 1px solid #254868; background: #0d2b46; font-size: 12px; font-weight: 700; letter-spacing: .02em; }
-    .bc5r-frame a { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #d8efff; text-decoration: none; }
-    .bc5r-frame a:hover { text-decoration: underline; }
-    .bc5r-sound { flex: 0 0 auto; padding: 0; border: 0; background: transparent; color: inherit; cursor: pointer; font: inherit; line-height: 1; }
-    .bc5r-sound:disabled { cursor: default; opacity: .55; }
+    .bc5r-home-link { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #d8efff; text-decoration: none; }
+    .bc5r-home-link:hover { text-decoration: underline; }
+    .bc5r-frame-actions { flex: 0 0 auto; display: flex; align-items: center; gap: 4px; }
+    .bc5r-icon-button { box-sizing: border-box; width: 26px; height: 26px; padding: 4px; display: grid; place-items: center; border: 0; border-radius: 5px; background: transparent; color: inherit; cursor: pointer; font: inherit; line-height: 1; text-decoration: none; }
+    .bc5r-icon-button:hover, .bc5r-icon-button.active { background: rgba(255,255,255,.14); }
+    .bc5r-icon-button:disabled, .bc5r-icon-button[aria-disabled="true"] { cursor: default; opacity: .55; }
+    .bc5r-icon { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .bc5r-sound { font-size: 16px; }
     .bc5r-canvas-wrap { position: relative; flex: 1 1 auto; min-width: 0; min-height: 0; overflow: hidden; outline: none; }
     .bc5r-canvas { display: block; width: 100%; height: 100%; touch-action: none; }
-    .bc5r-info { flex: 0 0 auto; padding: 7px 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #c9e6f7; background: #0d2b46; border-top: 1px solid #254868; font-size: 12px; }
-    .bc5r-info a { color: inherit; text-decoration: none; }
-    .bc5r-info a:hover { text-decoration: underline; }
+    .bc5r-info { flex: 0 0 auto; min-width: 0; min-height: 32px; padding: 3px 6px 3px 10px; display: flex; align-items: center; justify-content: space-between; gap: 8px; color: #c9e6f7; background: #0d2b46; border-top: 1px solid #254868; font-size: 12px; }
+    .bc5r-info-copy { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .bc5r-terminal { position: absolute; inset: 0; z-index: 10; display: grid; place-items: center; background: rgba(0,0,0,.36); }
     .bc5r-terminal[hidden] { display: none; }
     .bc5r-terminal-card { min-width: 150px; padding: 18px; display: grid; gap: 12px; text-align: center; border-radius: 12px; background: rgba(255,255,255,.95); color: #222; box-shadow: 0 8px 30px rgba(0,0,0,.28); }

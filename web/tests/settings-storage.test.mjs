@@ -49,6 +49,13 @@ test("bc5r:setting 使用严格的完整 schema v1", () => {
     screenControlEnabled: false,
   });
   assert.deepEqual(parseWebSettings(setting), setting);
+  assert.equal(
+    parseWebSettings({
+      ...setting,
+      audio: { ...setting.audio, volume: 300 },
+    }).audio.volume,
+    300,
+  );
   assert.throws(
     () => parseWebSettings({ ...setting, extra: true }),
     /设置字段/,
@@ -57,7 +64,7 @@ test("bc5r:setting 使用严格的完整 schema v1", () => {
     () =>
       parseWebSettings({
         ...setting,
-        audio: { ...setting.audio, volume: 201 },
+        audio: { ...setting.audio, volume: 301 },
       }),
     /audio\.volume/,
   );

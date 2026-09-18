@@ -76,7 +76,7 @@ try {
     ),
   );
   const embedUrl = `${origin}/embed#${mapPayload}`;
-  await smoke(embedUrl, ['class="embed-page"', "BC5R Embed v1"]);
+  await smoke(embedUrl, ['class="embed-page"', "BC5R Embed v1", "English", "Modern", "滑动屏幕"]);
   await interactiveEmbedHudSmoke(embedUrl);
   await expectStatus(`${origin}/embed/v1/bc5r.js`, 200, "text/javascript");
   await smoke(

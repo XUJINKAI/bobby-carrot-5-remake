@@ -12,6 +12,7 @@ export interface BC5RMountOptions {
   input?: {
     keyboard?: EmbedKeyboardMode;
     joystick?: EmbedJoystickMode;
+    pointer?: boolean;
   };
   camera?: {
     zoom?: number;

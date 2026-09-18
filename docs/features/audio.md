@@ -48,7 +48,7 @@ audio.setMusicGain(1.35);
 
 - 音乐开关；
 - `8bit` / `modern` 风格；
-- 音乐 gain；
+- 音乐 gain，Web Shell 与 Embed 配置界面的范围为 0～300%；
 - 音效 gain。
 
 Game / World / Entity behavior 只依赖 `AudioBackend` 语义接口，不知道 OGG URL、Web Audio node 或产品设置 UI。

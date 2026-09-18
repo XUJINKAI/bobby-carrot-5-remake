@@ -1,6 +1,7 @@
 import type { Locale } from "@bobby/i18n";
 import {
   EDITOR_PALETTE_SIZES,
+  MAX_AUDIO_VOLUME_PERCENT,
   SETTING_STORAGE_KEY,
   type EditorPaletteSize,
   type MusicMode,
@@ -177,9 +178,15 @@ function requireBoolean(value: unknown, name: string): boolean {
 }
 
 function requireVolume(value: unknown): number {
-  if (Number.isInteger(value) && Number(value) >= 0 && Number(value) <= 200)
+  if (
+    Number.isInteger(value) &&
+    Number(value) >= 0 &&
+    Number(value) <= MAX_AUDIO_VOLUME_PERCENT
+  )
     return Number(value);
-  throw new Error("设置 audio.volume 必须是 0～200 的整数");
+  throw new Error(
+    `设置 audio.volume 必须是 0～${MAX_AUDIO_VOLUME_PERCENT} 的整数`,
+  );
 }
 
 function requirePaletteSize(value: unknown): EditorPaletteSize {

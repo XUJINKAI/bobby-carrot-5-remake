@@ -6,6 +6,7 @@ import {
   getWebSettings,
   updateWebSettings,
 } from "../../storage/settingsStorage.js";
+import { MAX_AUDIO_VOLUME_PERCENT } from "../../storage/contracts.js";
 import {
   getWebTheme,
   setWebTheme,
@@ -127,5 +128,8 @@ function applyResolvedMusicStyle(
 
 function clampVolume(value: number): number {
   if (!Number.isFinite(value)) return 100;
-  return Math.min(200, Math.max(0, Math.round(value)));
+  return Math.min(
+    MAX_AUDIO_VOLUME_PERCENT,
+    Math.max(0, Math.round(value)),
+  );
 }
