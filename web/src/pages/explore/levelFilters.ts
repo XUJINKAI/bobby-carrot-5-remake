@@ -37,7 +37,14 @@ export function mountLevelFilters(
   if (activePanel && !validGroups.has(activePanel)) activePanel = null;
 
   const head = document.querySelector<HTMLElement>(".level-browser-head");
-  if (!head) return;
+  if (!head) {
+    currentCollection = null;
+    currentImages = null;
+    return {
+      localeChanged() {},
+      destroy() {},
+    };
+  }
   document.querySelector(".level-filter-shell")?.remove();
   const shell = document.createElement("section");
   shell.className = "level-filter-shell";
