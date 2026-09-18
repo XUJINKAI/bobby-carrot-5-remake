@@ -1,15 +1,5 @@
 import type { SettingsTranslationKey } from "./zh-CN.js";
 const catalog = {
-  "settings.quickTitle": "Quick settings",
-  "settings.language": "Language",
-  "settings.theme": "Theme",
-  "settings.themeBobby": "Bobby",
-  "settings.themeFc": "FC",
-  "settings.music": "Music",
-  "settings.musicFollowTheme": "Follow theme",
-  "settings.musicModern": "Modern",
-  "settings.volume": "Volume",
-  "settings.more": "More settings",
   "settings.saveTitle": "Save Management",
   "settings.saveDescription": "Import, copy, or download game saves stored in this browser.",
   "settings.savesAria": "Game saves",

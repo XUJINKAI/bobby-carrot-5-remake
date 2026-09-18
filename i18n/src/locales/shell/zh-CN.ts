@@ -30,6 +30,16 @@ const catalog = {
   "common.compress": "压缩",
   "common.copy": "复制",
   "common.download": "下载",
+  "settings.quickTitle": "快速设置",
+  "settings.language": "语言",
+  "settings.theme": "主题",
+  "settings.themeBobby": "Bobby",
+  "settings.themeFc": "FC",
+  "settings.music": "音乐",
+  "settings.musicFollowTheme": "跟随主题",
+  "settings.musicModern": "现代",
+  "settings.volume": "音量",
+  "settings.more": "更多设置",
 } as const;
 
 export type ShellTranslationKey = keyof typeof catalog;

@@ -32,6 +32,16 @@ const catalog = {
   "common.compress": "Compress",
   "common.copy": "Copy",
   "common.download": "Download",
+  "settings.quickTitle": "Quick settings",
+  "settings.language": "Language",
+  "settings.theme": "Theme",
+  "settings.themeBobby": "Bobby",
+  "settings.themeFc": "FC",
+  "settings.music": "Music",
+  "settings.musicFollowTheme": "Follow theme",
+  "settings.musicModern": "Modern",
+  "settings.volume": "Volume",
+  "settings.more": "More settings",
 } satisfies Record<ShellTranslationKey, string>;
 
 export default catalog;

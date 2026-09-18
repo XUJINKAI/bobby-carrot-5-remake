@@ -28,7 +28,7 @@ export function resolveBrowserLocale(browserLocales: readonly string[]): Locale 
 }
 
 export async function initializeWebI18n(initialLocale: Locale): Promise<Locale> {
-  await ensureWebI18nScopes(["shell", "settings"], initialLocale);
+  await ensureWebI18nScopes(["shell"], initialLocale);
   translator.setLocale(initialLocale);
   locale.value = initialLocale;
   document.documentElement.lang = initialLocale;
