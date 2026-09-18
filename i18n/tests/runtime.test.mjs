@@ -5,6 +5,7 @@ import {
   loadTranslationCatalog,
   normalizeLocale,
 } from "../dist/index.js";
+import { createCatalogStore } from "../dist/catalogStore.js";
 
 test("normalizeLocale maps supported language families", () => {
   assert.equal(normalizeLocale("zh"), "zh-CN");
@@ -38,4 +39,23 @@ test("scoped catalogs load independently by locale", async () => {
   ]);
   assert.equal(zh["shell.settings"], "设置");
   assert.equal(en["shell.settings"], "Settings");
+});
+
+
+test("catalog store retries after a failed load without poisoning the cache", async () => {
+  const store = createCatalogStore();
+  let attempts = 0;
+  const loader = async () => {
+    attempts++;
+    if (attempts === 1) throw new Error("temporary failure");
+    return { greeting: "Hello" };
+  };
+
+  await assert.rejects(store.load("scope:en", loader), /temporary failure/);
+  assert.deepEqual(await store.load("scope:en", loader), { greeting: "Hello" });
+  assert.equal(attempts, 2);
+  assert.deepEqual(
+    await store.load("scope:en", () => Promise.resolve({ greeting: "Other" })),
+    { greeting: "Hello" },
+  );
 });
