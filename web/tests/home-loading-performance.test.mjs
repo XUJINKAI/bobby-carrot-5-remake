@@ -144,3 +144,13 @@ test("持久 UI 状态保存翻译语义而不是已翻译字符串", async () =
   assert.match(importPage, /status === "unknown" \? webT\("import\.unknown"\) : message/);
   assert.doesNotMatch(app, /message: webT\("import\.unknown"\)/);
 });
+
+
+test("locale 切换加载失败只回滚当前事务且不破坏 last-request-wins", async () => {
+  const source = await readFile(new URL("../src/i18n/webI18n.ts", import.meta.url), "utf8");
+  assert.match(
+    source,
+    /try \{\s+await loadScopes\(activeScopes\(\), nextLocale\);\s+\} catch \(error\) \{\s+if \(generation === localeGeneration && desiredLocale === nextLocale\)\s+desiredLocale = locale\.value;\s+throw error;/,
+  );
+  assert.match(source, /if \(generation !== localeGeneration \|\| nextLocale !== desiredLocale\) return;/);
+});

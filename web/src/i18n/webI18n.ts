@@ -67,7 +67,13 @@ export function setWebLocale(nextLocale: Locale): Promise<void> {
   desiredLocale = nextLocale;
   const generation = ++localeGeneration;
   const promise = (async (): Promise<void> => {
-    await loadScopes(activeScopes(), nextLocale);
+    try {
+      await loadScopes(activeScopes(), nextLocale);
+    } catch (error) {
+      if (generation === localeGeneration && desiredLocale === nextLocale)
+        desiredLocale = locale.value;
+      throw error;
+    }
     if (generation !== localeGeneration || nextLocale !== desiredLocale) return;
     translator.setLocale(nextLocale);
     locale.value = nextLocale;
