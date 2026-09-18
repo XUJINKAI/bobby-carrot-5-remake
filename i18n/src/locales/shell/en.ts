@@ -48,6 +48,7 @@ const catalog = {
   "settings.musicFollowTheme": "Follow theme",
   "settings.musicModern": "Modern",
   "settings.volume": "Volume",
+  "shell.warningCount": "{count} warnings",
   "settings.more": "More settings",
 } satisfies Record<ShellTranslationKey, string>;
 
