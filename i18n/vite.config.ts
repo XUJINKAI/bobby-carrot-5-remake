@@ -12,9 +12,12 @@ export default defineConfig({
     outDir: "dist",
     emptyOutDir: true,
     lib: {
-      entry: path.join(root, "src/index.ts"),
+      entry: {
+        index: path.join(root, "src/index.ts"),
+        catalogStore: path.join(root, "src/catalogStore.ts"),
+      },
       formats: ["es"],
-      fileName: () => "index.js",
+      fileName: (_format, entryName) => `${entryName}.js`,
     },
   },
 });
