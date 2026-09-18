@@ -53,7 +53,7 @@ export function failedResultHtml(): string {
   return [
     `<h2>${escapeHtml(webT("game.failed"))}</h2>`,
     '<div class="result-actions">',
-    '<button class="ghost-btn" data-result="levels">返回</button>',
+    `<button class="ghost-btn" data-result="levels">${escapeHtml(webT("game.back"))}</button>`,
     `<button class="primary-btn" data-result="retry">${escapeHtml(webT("game.retry"))}</button>`,
     "</div>",
   ].join("");
