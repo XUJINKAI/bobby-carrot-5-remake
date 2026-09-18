@@ -13,7 +13,7 @@ test("Explore 标题直接显示 collection 地图总数", () => {
   );
 
   assert.match(explorePage, /:map-count="activeCollection\.maps\.length"/);
-  assert.match(exploreHeader, /\{\{ mapCount \}\} 关/);
+  assert.match(exploreHeader, /webT\("explore\.levelCount", \{ count: mapCount \}\)/);
 });
 
 test("Explore chapter 原样显示可选名称并统一混合布局间距", () => {

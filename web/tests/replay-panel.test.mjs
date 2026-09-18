@@ -100,7 +100,7 @@ test("Replay 面板在播放按钮上方提供跳过思考时间选项", () => {
 
   assert.notEqual(checkboxIndex, -1);
   assert.ok(checkboxIndex < playButtonIndex);
-  assert.match(replayPanelSource, /<span>跳过思考时间<\/span>/);
+  assert.match(replayPanelSource, /webT\("game\.replay\.skipThinking"\)/);
   assert.match(replayBindingSource, /skipIdleTime: skipThinking\.checked/);
 });
 

@@ -18,26 +18,18 @@ test("Home 首屏按路由加载页面代码和非关键数据", async () => {
   assert.match(entry, /void app\.start\(\)/);
 });
 
-test("Editor 样式和 Help Markdown 由所属构建阶段处理", async () => {
-  const [editorMount, packageJson, sourceFiles] = await Promise.all([
+test("Editor 样式按页面加载，Help 文案改为 i18n lazy scope", async () => {
+  const [editorMount, appRoot, catalogs] = await Promise.all([
     readFile(
       new URL("../src/pages/editor/mountEditorPage.ts", import.meta.url),
       "utf8",
     ),
-    readFile(new URL("../package.json", import.meta.url), "utf8"),
-    Promise.all([
-      readFile(new URL("../src/content/help.md", import.meta.url), "utf8"),
-      readFile(
-        new URL("../build/markdownHtmlPlugin.ts", import.meta.url),
-        "utf8",
-      ),
-    ]),
+    readFile(new URL("../src/app/AppRoot.vue", import.meta.url), "utf8"),
+    readFile(new URL("../../i18n/src/catalogs.ts", import.meta.url), "utf8"),
   ]);
-  const manifest = JSON.parse(packageJson);
 
   assert.match(editorMount, /editor\/style\.css/);
-  assert.ok(sourceFiles[0].length > 0);
-  assert.match(sourceFiles[1], /from "markdown-it"/);
-  assert.equal(manifest.dependencies?.["markdown-it"], undefined);
-  assert.equal(typeof manifest.devDependencies?.["markdown-it"], "string");
+  assert.match(appRoot, /ensureWebI18nScopes\(\["help"\]\)/);
+  assert.match(catalogs, /help:[\s\S]*import\("\.\/locales\/help\/zh-CN\.js"\)/);
+  assert.match(catalogs, /help:[\s\S]*import\("\.\/locales\/help\/en\.js"\)/);
 });

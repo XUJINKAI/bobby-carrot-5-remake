@@ -53,7 +53,7 @@ test("游戏顶栏把 Restart 排在左侧导航之后", () => {
       < leadingSource.indexOf('id: "restart"'),
   );
   assert.doesNotMatch(commandsSource, /id: "restart"/);
-  assert.match(configSource, /back:\s*\{[\s\S]*?label: "返回"/);
+  assert.match(configSource, /back:\s*\{[\s\S]*?label: webT\("shell\.back"\)/);
 });
 
 test("Explore 前后关在移动端隐藏", () => {
@@ -78,6 +78,6 @@ test("Adventure 隐藏产品名并统一返回文案", () => {
     "utf8",
   );
 
-  assert.match(source, /pageIdentity\("冒险模式", "\/adventure", false\)/);
-  assert.match(source, /back:\s*\{[\s\S]*?label: "返回"/);
+  assert.match(source, /pageIdentity\(webT\("nav\.adventure"\), "\/adventure", false\)/);
+  assert.match(source, /back:\s*\{[\s\S]*?label: webT\("shell\.back"\)/);
 });

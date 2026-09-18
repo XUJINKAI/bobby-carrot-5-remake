@@ -31,7 +31,7 @@ export async function initializeWebI18n(initialLocale: Locale): Promise<Locale> 
   await ensureWebI18nScopes(["shell"], initialLocale);
   translator.setLocale(initialLocale);
   locale.value = initialLocale;
-  document.documentElement.lang = initialLocale;
+  if (typeof document !== "undefined") document.documentElement.lang = initialLocale;
   return initialLocale;
 }
 
@@ -46,10 +46,11 @@ export async function setWebLocale(nextLocale: Locale): Promise<void> {
   );
   translator.setLocale(nextLocale);
   locale.value = nextLocale;
-  document.documentElement.lang = nextLocale;
-  window.dispatchEvent(
-    new CustomEvent("web-locale-change", { detail: nextLocale }),
-  );
+  if (typeof document !== "undefined") document.documentElement.lang = nextLocale;
+  if (typeof window !== "undefined")
+    window.dispatchEvent(
+      new CustomEvent("web-locale-change", { detail: nextLocale }),
+    );
 }
 
 export async function ensureWebI18nScopes(
