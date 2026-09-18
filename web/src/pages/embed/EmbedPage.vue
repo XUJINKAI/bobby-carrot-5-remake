@@ -7,6 +7,7 @@ import type {
   EmbedJoystickMode,
   EmbedMusicStyle,
 } from "@bobby/embed";
+import { EMBED_RUNTIME_CATALOGS, normalizeLocale } from "@bobby/i18n";
 import { webT } from "../../i18n/webI18n.js";
 
 const props = defineProps<{ publicBaseUrl: string }>();
@@ -59,9 +60,10 @@ const options = computed(() => ({
   ...(info.value.trim() ? { info: info.value.trim() } : {}),
 }));
 
-const infoPlaceholder = computed(() =>
-  lang.value === "en" ? "Move with WASD / arrow keys" : "WASD / 方向键移动",
-);
+const infoPlaceholder = computed(() => {
+  const locale = normalizeLocale(lang.value) ?? "zh-CN";
+  return EMBED_RUNTIME_CATALOGS[locale]["embedRuntime.movementHint"];
+});
 
 const embedCode = computed(() => {
   const config = {
