@@ -572,6 +572,26 @@ export async function renderGamePage(
   });
 
   return {
+    localeChanged(): void {
+      configureShell(
+        gameShellConfig(
+          mode,
+          source,
+          getWebSettings().controls.screenControlEnabled,
+          statusMapId,
+          statusMapName,
+          explorePreviousMapId,
+          exploreNextMapId,
+          replayPanelOpen,
+          capabilities.replayPanel,
+          verified,
+          mapMeta,
+        ),
+      );
+      visibleResult = null;
+      renderResult();
+      replayPanel.update();
+    },
     destroy(): void {
       window.removeEventListener("game-shell-action", onGameShellAction);
       disposeGameShell();
