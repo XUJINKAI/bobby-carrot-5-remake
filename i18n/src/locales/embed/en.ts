@@ -26,5 +26,6 @@ const catalog = {
   "embed.code": "Code",
   "embed.copy": "Copy",
   "embed.infoPlaceholder": "Move with WASD / arrow keys",
+  "embed.mapDataPlaceholder": "BC5R1:... or https://bc5r.com/import/v1#...",
 } satisfies Record<EmbedTranslationKey, string>;
 export default catalog;
