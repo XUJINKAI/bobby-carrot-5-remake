@@ -41,7 +41,7 @@ export async function renderLevels(
     );
 
   audio.playMusic("title");
-  configureShell({
+  const syncShell = (): void => configureShell({
     topBar: {
       visible: true,
       fixed: true,
@@ -50,6 +50,7 @@ export async function renderLevels(
     },
     bottomBar: { visible: false },
   });
+  syncShell();
   app.replaceChildren();
   const exploreApp = createApp(ExplorePage, {
     activeCollection: collection,
@@ -73,6 +74,7 @@ export async function renderLevels(
   await nextTick();
   if (collection.filters.length > 0) mountLevelFilters(collection, images);
   return {
+    localeChanged: syncShell,
     destroy(): void {
       exploreApp.unmount();
     },
