@@ -23,7 +23,7 @@ export function renderImportMessage(
     topBar: {
       visible: true,
       fixed: true,
-      identity: pageIdentity("导入", "/import/v1"),
+      identity: pageIdentity("导入数据", "/import/v1"),
       actions: globalActions(),
     },
     bottomBar: { visible: false },

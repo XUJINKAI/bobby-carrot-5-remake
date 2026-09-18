@@ -140,7 +140,7 @@ async function resolveCurrentSeo(): Promise<SeoDescriptor> {
     );
   if (path === "/import/v1")
     return descriptor(
-      `导入分享数据 | ${BRAND}`,
+      `导入数据 | ${BRAND}`,
       "导入 Bobby Carrot 5 Remake 分享数据。",
       path,
       false,

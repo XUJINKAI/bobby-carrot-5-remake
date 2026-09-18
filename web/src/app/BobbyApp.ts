@@ -267,6 +267,7 @@ export class BobbyApp {
             title: imported.value.meta.name,
           },
           mode: "explore",
+          source: "import",
         });
         return;
       }
@@ -322,6 +323,7 @@ export class BobbyApp {
         mapMeta: level.meta,
         identity: { ...ref, title: level.meta.name },
         mode: "explore",
+        source: "explore",
       });
       return;
     }
@@ -347,6 +349,7 @@ export class BobbyApp {
         ...(explorePreviousMapId ? { explorePreviousMapId } : {}),
         ...(exploreNextMapId ? { exploreNextMapId } : {}),
         mode: "explore",
+        source: "explore",
       });
       this.prefetchMaps([
         ...(explorePreviousMapId
@@ -400,6 +403,7 @@ export class BobbyApp {
       replayMap: resolved.ref,
       verified,
       mode: "adventure",
+      source: "adventure",
     });
     this.prefetchMaps(adventureNeighborRefs(adventure, found.level.id));
   }
@@ -442,6 +446,7 @@ export class BobbyApp {
       replayMap: resolved.ref,
       verified,
       mode: "adventure",
+      source: "adventure",
     });
   }
 

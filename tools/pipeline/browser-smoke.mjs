@@ -245,6 +245,7 @@ try {
   const importedMapUrl = `${origin}/import/v1#${mapPayload}`;
   await smoke(importedMapUrl, [
     'class="game-page"',
+    'class="shell-context-name">导入数据',
     'id="game"',
     'id="map-status"',
     'data-icon="map-details"',
@@ -262,7 +263,7 @@ try {
   });
   await smoke(`${origin}/import/v1#${profilePayload}`, [
     'class="import-page"',
-    'class="shell-context-name">导入',
+    'class="shell-context-name">导入数据',
     "Adventure Save",
     "导入并覆盖",
   ]);

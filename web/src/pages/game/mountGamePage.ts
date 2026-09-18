@@ -106,6 +106,8 @@ export interface GameIdentity {
   title: string;
 }
 
+export type GamePageSource = "adventure" | "explore" | "import";
+
 export interface GamePageContext {
   app: HTMLDivElement;
   adventure: AdventureIndex;
@@ -125,6 +127,7 @@ export interface GamePageContext {
   replayMap?: ExploreMapRef;
   verified?: boolean;
   mode: GamePageMode;
+  source: GamePageSource;
 }
 
 export async function renderGamePage(
@@ -149,6 +152,7 @@ export async function renderGamePage(
     replayMap,
     verified = false,
     mode,
+    source,
   } = context;
   const campaignNode = Boolean(adventureChapter && adventureLevel);
   if (mode === "adventure" && !campaignNode && !adventureScene) {
@@ -208,6 +212,7 @@ export async function renderGamePage(
   configureShell(
     gameShellConfig(
       mode,
+      source,
       screenControlEnabled,
       statusMapId,
       statusMapName,
@@ -359,6 +364,7 @@ export async function renderGamePage(
           configureShell(
             gameShellConfig(
               mode,
+              source,
               getWebSettings().controls.screenControlEnabled,
               statusMapId,
               statusMapName,
@@ -587,6 +593,7 @@ function nextAdventureLevel(
 
 function gameShellConfig(
   mode: GamePageMode,
+  source: GamePageSource,
   screenControlEnabled: boolean,
   mapId: string,
   mapName: string,
@@ -598,15 +605,18 @@ function gameShellConfig(
   mapMeta?: MapMeta,
 ): ShellConfig {
   const explore = mode === "explore";
+  const shellIdentity = source === "import"
+    ? pageIdentity("导入数据", "/import/v1", false)
+    : pageIdentity(
+        source === "explore" ? "自由探索模式" : "冒险模式",
+        source === "explore" ? "/explore" : "/adventure",
+        false,
+      );
   return {
     topBar: {
       visible: true,
       fixed: true,
-      identity: pageIdentity(
-        explore ? "自由探索模式" : "冒险模式",
-        explore ? "/explore" : "/adventure",
-        false,
-      ),
+      identity: shellIdentity,
       back: {
         id: "back",
         icon: "back",
