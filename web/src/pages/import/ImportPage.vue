@@ -23,7 +23,7 @@ const emit = defineEmits<{ confirm: []; cancel: []; home: [] }>();
       />
       <template v-else>
         <h1>{{ webT("import.title") }}</h1>
-        <p>{{ message }}</p>
+        <p>{{ status === "unknown" ? webT("import.unknown") : message }}</p>
         <details v-if="rawText"><summary>{{ webT("import.raw") }}</summary><pre>{{ rawText }}</pre></details>
         <div class="import-actions"><button type="button" @click="emit('home')">{{ webT("import.home") }}</button></div>
       </template>

@@ -11,20 +11,26 @@ import {
   parseReplayText,
   saveReplayAsset,
 } from "./replayAssets.js";
-import { webT } from "../../i18n/webI18n.js";
+import {
+  localizedText,
+  resolveWebText,
+  webT,
+  type WebDisplayText,
+  type WebLocalizedText,
+} from "../../i18n/webI18n.js";
 
 const REPLAY_PARSE_DELAY_MS = 300;
 
 export function replayVerificationPresentation(
   report: ReplayReport,
   expected: Replay,
-): { text: string; failed: boolean } {
+): { text: WebLocalizedText; failed: boolean } {
   if (
     expected.finalState.status !== undefined &&
     report.actual.status !== expected.finalState.status
   ) {
     return {
-      text: webT("game.replay.finalStateMismatch", {
+      text: localizedText("game.replay.finalStateMismatch", {
         recorded: expected.finalState.status,
         actual: report.actual.status,
       }),
@@ -32,7 +38,7 @@ export function replayVerificationPresentation(
     };
   }
   return {
-    text: webT("game.replay.completed", { ticks: report.endTick }),
+    text: localizedText("game.replay.completed", { ticks: report.endTick }),
     failed: false,
   };
 }
@@ -106,6 +112,10 @@ export function bindReplayPanel(options: {
   let replayTextDirty = false;
   let replayParseTimer: number | null = null;
   let destroyed = false;
+  let verificationState: { text: WebDisplayText; failed: boolean } = {
+    text: localizedText("game.replay.waitRecord"),
+    failed: false,
+  };
 
   const setOpen = (value: boolean, notify = true): void => {
     open = value;
@@ -115,15 +125,26 @@ export function bindReplayPanel(options: {
     window.dispatchEvent(new Event("resize"));
   };
 
+  const renderVerification = (): void => {
+    verification.textContent = resolveWebText(verificationState.text);
+    verification.classList.toggle("failed", verificationState.failed);
+  };
+
+  const setVerification = (
+    text: WebDisplayText,
+    failed = false,
+  ): void => {
+    verificationState = { text, failed };
+    renderVerification();
+  };
+
   const showReport = (report: ReplayReport, expected: Replay): void => {
     const presentation = replayVerificationPresentation(report, expected);
-    verification.textContent = presentation.text;
-    verification.classList.toggle("failed", presentation.failed);
+    setVerification(presentation.text, presentation.failed);
   };
 
   const showError = (error: unknown): void => {
-    verification.textContent = errorMessage(error);
-    verification.classList.add("failed");
+    setVerification(errorMessage(error), true);
   };
 
   const clearSpeedError = (): void => {
@@ -163,15 +184,13 @@ export function bindReplayPanel(options: {
     const text = output.value.trim();
     if (!text) {
       replay = null;
-      verification.textContent = webT("game.replay.waitRecord");
-      verification.classList.remove("failed");
+      setVerification(localizedText("game.replay.waitRecord"));
       update();
       return null;
     }
     try {
       replay = parseReplayText(text);
-      verification.textContent = webT("game.replay.updated");
-      verification.classList.remove("failed");
+      setVerification(localizedText("game.replay.updated"));
     } catch (error) {
       replay = null;
       showError(error);
@@ -191,8 +210,7 @@ export function bindReplayPanel(options: {
       output.value = "";
       clearReplayParseTimer();
       replayTextDirty = false;
-      verification.textContent = webT("game.replay.recording");
-      verification.classList.remove("failed");
+      setVerification(localizedText("game.replay.recording"));
       update();
     } catch (error) {
       showError(error);
@@ -285,7 +303,7 @@ export function bindReplayPanel(options: {
     if (!output.value) return;
     try {
       await navigator.clipboard.writeText(output.value);
-      verification.textContent = webT("game.replay.copied");
+      setVerification(localizedText("game.replay.copied"));
     } catch (error) {
       showError(error);
     }
@@ -303,8 +321,7 @@ export function bindReplayPanel(options: {
   const loadBuiltinReplay = async (): Promise<void> => {
     if (!builtinReplayUrl) return;
     loadingBuiltin = true;
-    verification.textContent = webT("game.replay.readingBuiltin");
-    verification.classList.remove("failed");
+    setVerification(localizedText("game.replay.readingBuiltin"));
     update();
     try {
       const loaded = await loadReplayAsset(builtinReplayUrl);
@@ -314,8 +331,7 @@ export function bindReplayPanel(options: {
       output.value = loaded.text;
       clearReplayParseTimer();
       replayTextDirty = false;
-      verification.textContent = webT("game.replay.builtinLoaded");
-      verification.classList.remove("failed");
+      setVerification(localizedText("game.replay.builtinLoaded"));
     } catch (error) {
       if (!destroyed) showError(error);
     } finally {
@@ -327,15 +343,15 @@ export function bindReplayPanel(options: {
   const saveBuiltinReplay = async (): Promise<void> => {
     if (!builtinReplayUrl) return;
     savingBuiltin = true;
-    verification.textContent = webT("game.replay.savingBuiltin");
-    verification.classList.remove("failed");
+    setVerification(localizedText("game.replay.savingBuiltin"));
     update();
     try {
       const selectedReplay = replayForAction();
       if (!selectedReplay) return;
       validateBuiltinReplaySave(options.game, selectedReplay);
       await saveReplayAsset(builtinReplayUrl, output.value);
-      if (!destroyed) verification.textContent = webT("game.replay.builtinSaved");
+      if (!destroyed)
+        setVerification(localizedText("game.replay.builtinSaved"));
     } catch (error) {
       if (!destroyed) showError(error);
     } finally {
@@ -348,11 +364,13 @@ export function bindReplayPanel(options: {
     options.game.stopReplayPlayback();
     clearReplayParseTimer();
     replayTextDirty = true;
-    verification.textContent =
-      output.value.length > 0
-        ? webT("game.replay.waitVerify")
-        : webT("game.replay.waitRecord");
-    verification.classList.remove("failed");
+    setVerification(
+      localizedText(
+        output.value.length > 0
+          ? "game.replay.waitVerify"
+          : "game.replay.waitRecord",
+      ),
+    );
     replayParseTimer = window.setTimeout(() => {
       replayParseTimer = null;
       parseReplayOutput();
@@ -407,6 +425,7 @@ export function bindReplayPanel(options: {
   window.addEventListener("keydown", onKeyDown);
 
   const update = (): void => {
+    renderVerification();
     const recording = options.game.replayRecording;
     const playing = options.game.replayPlaying;
     const paused = options.game.replayPaused;

@@ -124,3 +124,23 @@ test("route rendering serializes commits and lets the router own active i18n sco
   assert.match(app, /if \(generation !== this\.routeGeneration\) return/);
   assert.match(app, /activateI18nRoute\(loadAdventurePages, loadGamePage\)/);
 });
+
+
+test("持久 UI 状态保存翻译语义而不是已翻译字符串", async () => {
+  const [i18n, exchange, settings, importPage, app] = await Promise.all([
+    readFile(new URL("../src/i18n/webI18n.ts", import.meta.url), "utf8"),
+    readFile(new URL("../src/shared/data-exchange/DataExchangePanel.vue", import.meta.url), "utf8"),
+    readFile(new URL("../src/pages/settings/SettingsPage.vue", import.meta.url), "utf8"),
+    readFile(new URL("../src/pages/import/ImportPage.vue", import.meta.url), "utf8"),
+    readFile(new URL("../src/app/BobbyApp.ts", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(i18n, /export interface WebLocalizedText/);
+  assert.match(i18n, /export function resolveWebText/);
+  assert.match(exchange, /ref<WebDisplayText \| null>/);
+  assert.doesNotMatch(exchange, /feedback\.value = webT\(/);
+  assert.match(settings, /feedback: WebDisplayText \| null/);
+  assert.doesNotMatch(settings, /tab\.feedback = webT\(/);
+  assert.match(importPage, /status === "unknown" \? webT\("import\.unknown"\) : message/);
+  assert.doesNotMatch(app, /message: webT\("import\.unknown"\)/);
+});

@@ -4,7 +4,12 @@ import {
   type AdventureSave,
 } from "@bobby/adventure";
 import { computed, nextTick, ref } from "vue";
-import { webT } from "../../i18n/webI18n.js";
+import {
+  localizedText,
+  resolveWebText,
+  webT,
+  type WebDisplayText,
+} from "../../i18n/webI18n.js";
 import DataExchangePanel from "../../shared/data-exchange/DataExchangePanel.vue";
 import { publicBaseUrl } from "../../services/assets/gameAssets.js";
 import {
@@ -27,7 +32,7 @@ import {
 
 type SaveManagementTab = SaveManagementTarget & {
   save: AdventureSave | ExploreCollectionStorage;
-  feedback: string;
+  feedback: WebDisplayText | null;
 };
 
 const saveTabs = ref<SaveManagementTab[]>(
@@ -36,7 +41,7 @@ const saveTabs = ref<SaveManagementTab[]>(
     save: target.kind === "adventure"
       ? loadAdventureSave()
       : loadExploreCollectionSave(target.collection),
-    feedback: "",
+    feedback: null,
   })),
 );
 const activeTabId = ref(saveTabs.value[0]?.id ?? "");
@@ -76,14 +81,14 @@ function importSelected(value: unknown): void {
   const tab = requireActiveTab();
   if (tab.kind === "adventure") {
     tab.save = saveAdventureSave(value as AdventureSave);
-    tab.feedback = webT("settings.adventureImported");
+    tab.feedback = localizedText("settings.adventureImported");
     return;
   }
   tab.save = saveExploreCollectionSave(
     tab.collection,
     value as ExploreCollectionStorage,
   );
-  tab.feedback = webT("settings.exploreImported", { label: tab.label });
+  tab.feedback = localizedText("settings.exploreImported", { label: tab.label });
 }
 
 function summary(tab: SaveManagementTab): string {
@@ -212,7 +217,7 @@ function requireActiveTab(): SaveManagementTab {
         />
         <p class="save-management-note">{{ importNote(activeTab) }}</p>
         <p class="save-management-feedback" aria-live="polite">
-          {{ activeTab.feedback }}
+          {{ activeTab.feedback ? resolveWebText(activeTab.feedback) : "" }}
         </p>
       </article>
     </div>

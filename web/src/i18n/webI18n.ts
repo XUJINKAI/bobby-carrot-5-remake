@@ -24,6 +24,13 @@ let localeTransition: { locale: Locale; promise: Promise<void> } | null = null;
 
 export type WebTranslationKey = TranslationKey;
 
+export interface WebLocalizedText {
+  readonly key: WebTranslationKey;
+  readonly params?: TranslationParams;
+}
+
+export type WebDisplayText = string | WebLocalizedText;
+
 export interface WebI18nScope {
   readonly ready: Promise<void>;
   readonly active: boolean;
@@ -127,6 +134,17 @@ export function webT(
 ): string {
   locale.value;
   return translator.t(key, params);
+}
+
+export function localizedText(
+  key: WebTranslationKey,
+  params?: TranslationParams,
+): WebLocalizedText {
+  return params ? { key, params } : { key };
+}
+
+export function resolveWebText(value: WebDisplayText): string {
+  return typeof value === "string" ? value : webT(value.key, value.params);
 }
 
 function activeScopes(): Set<TranslationScope> {

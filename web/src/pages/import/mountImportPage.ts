@@ -18,7 +18,8 @@ export function renderImportMessage(
   context: PageContext,
   options:
     | { status: "save"; data: ImportedSaveData }
-    | { status: "error" | "unknown"; message: string; rawText?: string },
+    | { status: "unknown"; rawText?: string }
+    | { status: "error"; message: string; rawText?: string },
 ): PageController {
   const syncShell = (): void => configureShell({
     topBar: {

@@ -1,6 +1,11 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from "vue";
-import { webT } from "../../i18n/webI18n.js";
+import {
+  localizedText,
+  resolveWebText,
+  webT,
+  type WebDisplayText,
+} from "../../i18n/webI18n.js";
 import {
   decodeExchangeText,
   detectExchangeFormat,
@@ -44,7 +49,7 @@ const emit = defineEmits<{
 }>();
 
 const draft = ref("");
-const feedback = ref("");
+const feedback = ref<WebDisplayText | null>(null);
 const busy = ref(false);
 const fileInput = ref<HTMLInputElement | null>(null);
 const draftDirty = ref(false);
@@ -52,6 +57,9 @@ let liveValueTimer: ReturnType<typeof setTimeout> | null = null;
 let refreshVersion = 0;
 const format = computed(() => detectExchangeFormat(draft.value));
 const compressed = computed(() => format.value === "bc5r1");
+const feedbackText = computed(() =>
+  feedback.value === null ? "" : resolveWebText(feedback.value),
+);
 const acceptedFiles = computed(() =>
   [...props.toolbar.left, ...props.toolbar.right]
     .filter((control) => control.type === "importFile")
@@ -95,11 +103,11 @@ async function refreshDraft(
 ): Promise<void> {
   liveValueTimer = null;
   if (!force && draftDirty.value) {
-    feedback.value = webT("common.unsyncedChanges");
+    feedback.value = localizedText("common.unsyncedChanges");
     return;
   }
   const version = ++refreshVersion;
-  feedback.value = "";
+  feedback.value = null;
   if (props.value === undefined) {
     draft.value = "";
     draftDirty.value = false;
@@ -135,7 +143,7 @@ async function importDraft(): Promise<void> {
       ? await encodeExchangeText(plain, encodeOptions())
       : plain;
     draftDirty.value = false;
-    feedback.value = webT("common.imported");
+    feedback.value = localizedText("common.imported");
   } catch (error) {
     report(error);
   } finally {
@@ -168,7 +176,7 @@ async function toggleCompression(event: Event): Promise<void> {
       ? await encodeExchangeText(plain, encodeOptions())
       : plain;
     draftDirty.value = wasDirty;
-    feedback.value = "";
+    feedback.value = null;
   } catch (error) {
     report(error);
   } finally {
@@ -180,10 +188,12 @@ async function copyDraft(): Promise<void> {
   try {
     await flushLiveValue();
     await navigator.clipboard.writeText(draft.value);
-    feedback.value = webT("common.copied");
+    feedback.value = localizedText("common.copied");
     emit("copied");
   } catch (cause) {
-    report(new Error(webT("common.clipboardUnavailable"), { cause }));
+    const message = localizedText("common.clipboardUnavailable");
+    feedback.value = message;
+    emit("error", new Error(resolveWebText(message), { cause }));
   }
 }
 
@@ -195,7 +205,7 @@ async function downloadDraft(): Promise<void> {
       filename: props.filename,
       compressed: compressed.value,
     });
-    feedback.value = webT("common.downloaded");
+    feedback.value = localizedText("common.downloaded");
     emit("downloaded");
   } catch (error) {
     report(error);
@@ -205,7 +215,7 @@ async function downloadDraft(): Promise<void> {
 function onDraftInput(): void {
   refreshVersion++;
   draftDirty.value = true;
-  feedback.value = "";
+  feedback.value = null;
 }
 
 function selectDraft(event: FocusEvent): void {
@@ -275,7 +285,7 @@ onBeforeUnmount(() => {
       </div>
     </div>
     <input ref="fileInput" type="file" hidden :accept="acceptedFiles" @change="selectFile">
-    <p v-if="feedback" class="data-exchange-feedback" aria-live="polite">{{ feedback }}</p>
+    <p v-if="feedbackText" class="data-exchange-feedback" aria-live="polite">{{ feedbackText }}</p>
   </section>
 </template>
 

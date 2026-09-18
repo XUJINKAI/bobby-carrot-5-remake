@@ -22,7 +22,7 @@ import {
   parseMapPlayUrl,
   type ExploreMapRef,
 } from "./routes.js";
-import { setWebI18nRouteScopes, webT } from "../i18n/webI18n.js";
+import { setWebI18nRouteScopes } from "../i18n/webI18n.js";
 import {
   localizedPageScopes,
   type LocalizedPageLoader,
@@ -323,7 +323,6 @@ export class BobbyApp {
       this.controller = imported.type === "unknown"
         ? renderImportMessage(context, {
             status: "unknown",
-            message: webT("import.unknown"),
             rawText: imported.rawText,
           })
         : renderImportMessage(context, {

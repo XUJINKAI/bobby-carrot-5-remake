@@ -1,7 +1,11 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import { beforeAll, test } from "vitest";
-import { preloadWebI18nScopes, initializeWebI18n } from "../src/i18n/webI18n.ts";
+import {
+  initializeWebI18n,
+  preloadWebI18nScopes,
+  resolveWebText,
+} from "../src/i18n/webI18n.ts";
 import {
   replayVerificationPresentation,
   validateBuiltinReplaySave,
@@ -47,9 +51,13 @@ test("Replay 面板提示复跑终局与记录不一致", () => {
   );
 
   assert.deepEqual(presentation, {
-    text: "终局不一致 · 记录 won / 复跑 playing",
+    text: {
+      key: "game.replay.finalStateMismatch",
+      params: { recorded: "won", actual: "playing" },
+    },
     failed: true,
   });
+  assert.equal(resolveWebText(presentation.text), "终局不一致 · 记录 won / 复跑 playing");
 });
 
 test("Replay 使用 collection 与地图 ID 组成路径身份", () => {
@@ -73,9 +81,10 @@ test("Replay 未声明 status 时只报告复跑完成", () => {
   );
 
   assert.deepEqual(presentation, {
-    text: "复跑完成 · 2 ticks",
+    text: { key: "game.replay.completed", params: { ticks: 2 } },
     failed: false,
   });
+  assert.equal(resolveWebText(presentation.text), "复跑完成 · 2 ticks");
 });
 
 test("阻塞对话终止录制时清空 take 并显示诊断", () => {
@@ -86,6 +95,13 @@ test("阻塞对话终止录制时清空 take 并显示诊断", () => {
     /interactive host choice is not supported by replay/,
   );
   assert.match(replayBindingSource, /unsubscribeRecordingAbort\(\)/);
+});
+
+test("Replay 持久提示保存翻译语义并在 update 时重新解析", () => {
+  assert.match(replayBindingSource, /verificationState: \{ text: WebDisplayText; failed: boolean \}/);
+  assert.match(replayBindingSource, /verification\.textContent = resolveWebText\(verificationState\.text\)/);
+  assert.match(replayBindingSource, /const update = \(\): void => \{\s+renderVerification\(\)/);
+  assert.doesNotMatch(replayBindingSource, /verification\.textContent = webT\(/);
 });
 
 test("Replay 面板使用一帧一行的统一序列化", () => {
