@@ -63,7 +63,13 @@ export async function ensureWebI18nScopes(
   scopes: readonly TranslationScope[],
   targetLocale: Locale = locale.value,
 ): Promise<void> {
-  await Promise.all(scopes.map((scope) => loadAndRegister(scope, targetLocale)));
+  const locales = new Set<Locale>([targetLocale]);
+  if (desiredLocale !== targetLocale) locales.add(desiredLocale);
+  await Promise.all(
+    [...locales].flatMap((candidate) =>
+      scopes.map((scope) => loadAndRegister(scope, candidate)),
+    ),
+  );
   for (const scope of scopes) activeScopes.add(scope);
 }
 
