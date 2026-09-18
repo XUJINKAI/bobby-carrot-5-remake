@@ -72,10 +72,16 @@ export async function renderLevels(
   });
   exploreApp.mount(app);
   await nextTick();
-  if (collection.filters.length > 0) mountLevelFilters(collection, images);
+  const filters = collection.filters.length > 0
+    ? mountLevelFilters(collection, images)
+    : null;
   return {
-    localeChanged: syncShell,
+    localeChanged(): void {
+      syncShell();
+      filters?.localeChanged();
+    },
     destroy(): void {
+      filters?.destroy();
       exploreApp.unmount();
     },
   };
