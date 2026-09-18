@@ -29,8 +29,10 @@ for (const target of generatedTargets) {
 
 const tsc = tscCommand();
 
-// 产品构建只常驻编译纯模型、i18n 与 Adventure；DAT 仅在确实需要重新生成官方资产时出现。
-run(tsc, ["-b", "model", "i18n", "adventure", "--force"]);
+// i18n 自己用 Vite 编译 TS 与 Markdown，并用 tsc 只生成声明。
+run("npm", ["run", "build", "--workspace=@bobby/i18n"]);
+// 产品构建只常驻编译纯模型与 Adventure；DAT 仅在确实需要重新生成官方资产时出现。
+run(tsc, ["-b", "model", "adventure", "--force"]);
 run(process.execPath, ["tools/cli.mjs", "assets", "prepare"]);
 
 // Engine、Editor 和 Web 只消费纯 LevelMap 与已生成资产。
