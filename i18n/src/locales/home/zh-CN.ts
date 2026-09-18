@@ -14,6 +14,11 @@ const catalog = {
   "home.importDialog": "导入数据",
   "home.importOpen": "打开",
   "home.importPlaceholder": "粘贴 JSON、BC5R1 文本或分享链接……",
+  "home.demoMove": "WASD / 方向键移动",
+  "home.demoRemaining": "剩余目标 {count}",
+  "home.demoEnteringAdventure": "正在进入冒险模式…",
+  "home.demoDead": "Bobby 遇到了危险，可以重新开始。",
+  "home.demoDeathReason": "Bobby 没能继续前进。",
 } as const;
 export type HomeTranslationKey = keyof typeof catalog;
 export default catalog;

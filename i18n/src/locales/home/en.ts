@@ -15,5 +15,10 @@ const catalog = {
   "home.importDialog": "Import data",
   "home.importOpen": "Open",
   "home.importPlaceholder": "Paste JSON, BC5R1 text, or a shared link…",
+  "home.demoMove": "Move with WASD / arrow keys",
+  "home.demoRemaining": "{count} targets remaining",
+  "home.demoEnteringAdventure": "Entering Adventure…",
+  "home.demoDead": "Bobby is in trouble. Restart to try again.",
+  "home.demoDeathReason": "Bobby could not continue.",
 } satisfies Record<HomeTranslationKey, string>;
 export default catalog;

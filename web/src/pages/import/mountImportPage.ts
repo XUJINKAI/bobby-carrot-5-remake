@@ -8,6 +8,7 @@ import {
 } from "../../services/import/importPipeline.js";
 import { configureShell } from "../../shell/shellBridge.js";
 import ImportPage from "./ImportPage.vue";
+import { webT } from "../../i18n/webI18n.js";
 
 export function importedLevelMap(level: EditorMap) {
   return toLevelMap(level);
@@ -23,7 +24,7 @@ export function renderImportMessage(
     topBar: {
       visible: true,
       fixed: true,
-      identity: pageIdentity("导入数据", "/import/v1"),
+      identity: pageIdentity(webT("context.import"), "/import/v1"),
       actions: globalActions(),
     },
     bottomBar: { visible: false },

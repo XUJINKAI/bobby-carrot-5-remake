@@ -17,6 +17,7 @@ import {
   globalActions,
   pageIdentity,
 } from "../../app/pageChrome.js";
+import { webT } from "../../i18n/webI18n.js";
 
 export async function renderLevels(
   context: PageContext,
@@ -44,7 +45,7 @@ export async function renderLevels(
     topBar: {
       visible: true,
       fixed: true,
-      identity: pageIdentity("自由探索模式", "/explore"),
+      identity: pageIdentity(webT("nav.explore"), "/explore"),
       actions: globalActions(),
     },
     bottomBar: { visible: false },

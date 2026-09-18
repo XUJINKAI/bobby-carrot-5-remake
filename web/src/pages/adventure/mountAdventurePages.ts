@@ -28,6 +28,7 @@ import type {
   AdventureLevelRow,
   AdventureNightTrainDestination,
 } from "./types.js";
+import { webT } from "../../i18n/webI18n.js";
 
 export function renderAdventureHome(context: PageContext): PageController {
   const { app, adventure, audio, images, navigate } = context;
@@ -175,14 +176,14 @@ function adventureShell(backPath?: string): ShellConfig {
     topBar: {
       visible: true,
       fixed: true,
-      identity: pageIdentity("冒险模式", "/adventure", false),
+      identity: pageIdentity(webT("nav.adventure"), "/adventure", false),
       ...(backPath
         ? {
             back: {
               id: "back",
               icon: "back",
-              label: "返回",
-              title: "返回",
+              label: webT("shell.back"),
+              title: webT("shell.back"),
               href: backPath,
             },
           }
