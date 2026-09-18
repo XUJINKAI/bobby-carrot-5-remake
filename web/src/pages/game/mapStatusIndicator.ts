@@ -42,9 +42,9 @@ export function mapStatusIndicator(
     id: "map-status",
     icon: author || note ? "map-details" : "map-status",
     tone: verified ? "success" : "muted",
-    label: `地图状态：${details
-      .map((detail) => `${detail.label} ${detail.text}`)
-      .join("；")}`,
+    label: webT("game.map.status", {
+      details: details.map((detail) => `${detail.label} ${detail.text}`).join(" · "),
+    }),
     details,
   };
 }
@@ -57,8 +57,8 @@ export function mapVerificationText(
     return verified ? webT("game.map.verified") : webT("game.map.unverified");
   }
   return verified
-    ? "已在自由探索模式中验证可通关"
-    : "尚未进行通关验证";
+    ? webT("game.map.verifiedExplore")
+    : webT("game.map.unverified");
 }
 
 function normalizedMetadataText(value: string | undefined): string | null {
