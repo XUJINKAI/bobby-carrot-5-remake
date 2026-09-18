@@ -83,7 +83,7 @@ test("页面模块与 i18n scope 通过统一 loader 绑定", async () => {
   assert.match(loaders, /editor:\s*definePage\([\s\S]*\["editor", "game"\][\s\S]*mountEditorPage\.js/);
   assert.doesNotMatch(app, /import\("\.\.\/pages\/game\/mountGamePage\.js"\)/);
   assert.match(app, /loadGamePage\(\)/);
-  assert.match(loaders, /preloadWebI18nScopes\(scopes\)/);
+  assert.match(loaders, /preloadWebI18nScopes\(definition\.scopes\)/);
   assert.match(loaders, /readonly scopes: readonly TranslationScope\[\]/);
   assert.match(i18n, /setWebI18nRouteScopes/);
   assert.match(i18n, /openWebI18nScope/);
