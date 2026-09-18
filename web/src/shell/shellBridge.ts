@@ -1,4 +1,5 @@
 import type { AppIconName } from "../shared/icons/types.js";
+import { webT } from "../i18n/webI18n.js";
 
 export type ShellIcon = AppIconName;
 
@@ -126,7 +127,9 @@ export function mergeShellRuntimeWarnings(
   )
     return config;
   const first = warnings[0]!;
-  const suffix = warnings.length > 1 ? ` · 共 ${warnings.length} 个警告` : "";
+  const suffix = warnings.length > 1
+    ? ` · ${webT("shell.warningCount", { count: warnings.length })}`
+    : "";
   return {
     ...config,
     bottomBar: {
