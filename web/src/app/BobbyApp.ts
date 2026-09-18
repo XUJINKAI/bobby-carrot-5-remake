@@ -25,6 +25,7 @@ import {
 import { setWebI18nRouteScopes, webT } from "../i18n/webI18n.js";
 import {
   localizedPageScopes,
+  type LocalizedPageLoader,
   loadAdventurePages,
   loadEditorPage,
   loadEmbedPage,
@@ -512,7 +513,7 @@ export class BobbyApp {
   }
 
   private activateI18nRoute(
-    ...loaders: Parameters<typeof localizedPageScopes>
+    ...loaders: LocalizedPageLoader<unknown>[]
   ): void {
     setWebI18nRouteScopes(localizedPageScopes(...loaders));
   }
