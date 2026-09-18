@@ -44,7 +44,7 @@ test("Embed 框架使用固定首页、地图打开动作与操作提示", async
     /createOriginalGameplayImageManager\(embedArtUrl\)/,
   );
   assert.doesNotMatch(mountSource, /"bobby-left":/);
-  assert.match(mountSource, /WASD \/ 方向键移动/);
+  assert.match(mountSource, /embedRuntimeText\(lang, "embedRuntime\.movementHint"\)/);
 });
 
 test("Embed 服从 LevelMap 的地图音乐选择", async () => {

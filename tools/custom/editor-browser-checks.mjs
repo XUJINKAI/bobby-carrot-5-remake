@@ -597,10 +597,10 @@ async function verifyPlayControls(cdp, sessionId) {
     "document.querySelector('[data-replay-action=\"record\"]')?.click(); true",
   );
   await waitForBrowserState(async () =>
-    (await cdp.evaluate(
+    Boolean(await cdp.evaluate(
       sessionId,
-      "document.querySelector('[data-replay-status]')?.textContent ?? ''",
-    )) === "正在录制",
+      "document.querySelector('[data-replay-panel]')?.classList.contains('recording')",
+    )),
   );
   await cdp.evaluate(
     sessionId,
