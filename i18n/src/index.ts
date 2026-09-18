@@ -69,6 +69,11 @@ function interpolate(template: string, params?: TranslationParams): string {
 }
 
 export {
+  SEO_CATALOGS,
+  type SeoTranslationKey,
+} from "./seoCatalogs.js";
+
+export {
   EMBED_RUNTIME_CATALOGS,
   loadTranslationCatalog,
   type TranslationKey,

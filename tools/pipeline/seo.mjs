@@ -1,13 +1,22 @@
 import fs from "node:fs";
 import path from "node:path";
 import { root } from "../lib/fs.mjs";
+import {
+  ADVENTURE_SPECIAL_SCENES,
+  adventureChapterSeoDescriptor,
+  adventureLevelSeoDescriptor,
+  adventureSceneSeoDescriptor,
+  bilingualSeoDescriptor,
+  collectionSeoDescriptor,
+  exploreMapSeoDescriptor,
+  staticSeoDescriptor,
+} from "../../web/src/seo/seoDescriptors.js";
 
 const dist = path.join(root, "dist");
 const assets = path.join(root, "assets");
 const siteOrigin = normalizeOrigin(
   process.env.VITE_SITE_ORIGIN ?? "https://bc5r.xujinkai.net",
 );
-const brand = "兔子波比5重制版";
 const ogImagePath = "/assets/art/hd/title.png";
 
 export function generateSeoArtifacts() {
@@ -16,8 +25,9 @@ export function generateSeoArtifacts() {
 
   const seen = new Set();
   for (const route of routes) {
-    if (seen.has(route.path)) throw new Error(`重复 public route：${route.path}`);
-    seen.add(route.path);
+    if (seen.has(route.canonicalPath))
+      throw new Error(`重复 public route：${route.canonicalPath}`);
+    seen.add(route.canonicalPath);
     writeRouteShell(sourceHtml, route);
   }
 
@@ -36,86 +46,41 @@ function buildPublicRoutes() {
   const adventure = readJson(path.join(assets, "adventure/index.json"));
 
   const routes = [
-    route(
-      "/",
-      "兔子波比5重制版 | Bobby Carrot 5 Remake",
-      "在浏览器中游玩《兔子波比5》重制版：复刻原版 40 章 400 个关卡与 80 个奖励关，并提供自由探索、地图编辑器、分享与网页内嵌。",
-    ),
-    route(
-      "/adventure",
-      `冒险模式 | ${brand}`,
-      "按原版章节结构体验《兔子波比5》冒险模式，推进关卡、保存进度、获得奖励，并体验海狸商店、夜间列车等经典冒险机制。",
-    ),
-    route(
-      "/adventure/chapters",
-      `章节选择 | 冒险模式 | ${brand}`,
-      "浏览《兔子波比5》冒险模式的 40 个章节，查看章节难度与完成进度并继续挑战。",
-    ),
-    route(
-      "/adventure/night-train",
-      `夜间列车 | 冒险模式 | ${brand}`,
-      "进入《兔子波比5》冒险模式的夜间列车，前往 Dream Machine、Cloud 9 等特殊区域。",
-    ),
-    route(
-      "/edit",
-      "兔子波比5地图编辑器 | 创建、试玩与分享地图",
-      "在浏览器中使用《兔子波比5》的地形、机关和道具创建自己的地图，随时试玩，并通过链接、文件或网页内嵌分享。",
-    ),
-    route(
-      "/embed",
-      "网页内嵌 | 将兔子波比5地图嵌入你的网站",
-      "使用 BC5R Embed 将《兔子波比5》地图嵌入其他网页，自定义地图、尺寸、音频和显示配置。",
-    ),
-    route(
-      "/settings",
-      `设置 | ${brand}`,
-      "调整 Bobby Carrot 5 Remake 的语言、主题、音乐和控制选项。",
-      false,
-    ),
-    route(
-      "/import/v1",
-      `导入数据 | ${brand}`,
-      "导入 Bobby Carrot 5 Remake 分享数据。",
-      false,
-    ),
+    requireStaticRoute("/"),
+    requireStaticRoute("/adventure"),
+    requireStaticRoute("/adventure/chapters"),
+    requireStaticRoute("/adventure/night-train"),
+    requireStaticRoute("/edit"),
+    requireStaticRoute("/embed"),
+    requireStaticRoute("/settings"),
+    requireStaticRoute("/import/v1"),
   ];
 
   for (const chapter of adventure.chapters) {
-    const chapterNumber = String(Number(chapter.id)).padStart(2, "0");
     routes.push(
-      route(
+      adventureChapterSeoDescriptor(
         `/adventure/chapter/${chapter.id}`,
-        `第 ${chapterNumber} 章：${chapter.name} | ${brand}`,
-        chapter.description || `浏览《兔子波比5》冒险模式第 ${chapterNumber} 章的关卡。`,
+        chapter,
       ),
     );
     for (const level of chapter.levels) {
       routes.push(
-        route(
+        adventureLevelSeoDescriptor(
           `/adventure/play/${level.id}`,
-          `关卡 ${level.id.toUpperCase()} | 冒险模式 | ${brand}`,
-          `游玩《兔子波比5》冒险模式关卡 ${level.id.toUpperCase()}。`,
-          false,
+          level.id,
         ),
       );
     }
   }
 
-  const specialRoutes = new Map([
-    ["beaver-shop", "/adventure/beaver-shop"],
-    ["dream-machine", "/adventure/night-train/dream-machine"],
-    ["cloud-9", "/adventure/night-train/cloud-9"],
-    ["dreamland-reward", "/adventure/night-train/dreamland-reward"],
-  ]);
-  for (const scene of adventure.specialScenes) {
-    const pathname = specialRoutes.get(scene.id);
-    if (!pathname) continue;
+  for (const [sceneId, sceneRoute] of Object.entries(
+    ADVENTURE_SPECIAL_SCENES,
+  )) {
+    const scene = adventure.specialScenes.find((entry) => entry.id === sceneId);
     routes.push(
-      route(
-        pathname,
-        `${scene.name} | 冒险模式 | ${brand}`,
-        `进入《兔子波比5》冒险模式的 ${scene.name} 特殊场景。`,
-        false,
+      adventureSceneSeoDescriptor(
+        sceneRoute.path,
+        scene?.name ?? sceneRoute.name,
       ),
     );
   }
@@ -124,25 +89,17 @@ function buildPublicRoutes() {
     const collectionPath = collection.id === "original"
       ? "/explore"
       : `/explore/${encodeURIComponent(collection.id)}`;
-    routes.push(
-      route(
-        collectionPath,
-        collection.id === "original"
-          ? `自由探索 | ${brand}`
-          : `${collection.name} | 自由探索 | ${brand}`,
-        collection.description || `浏览并在线游玩「${collection.name}」地图合集。`,
-      ),
-    );
+    routes.push(collectionSeoDescriptor(collectionPath, collection));
 
     for (const map of collection.maps) {
-      const mapTitle = normalizeMapTitle(map.name, map.id);
       routes.push(
-        route(
+        exploreMapSeoDescriptor(
           `/explore/play/${encodeURIComponent(collection.id)}/${encodeURIComponent(map.id)}`,
-          `${mapTitle} | ${brand}`,
-          map.description
-            ? `在线游玩「${map.name}」。${map.description}`
-            : `在线游玩「${map.name}」。`,
+          {
+            id: map.id,
+            name: map.name,
+            ...(map.description ? { description: map.description } : {}),
+          },
         ),
       );
     }
@@ -151,35 +108,29 @@ function buildPublicRoutes() {
   return routes;
 }
 
-function route(pathname, title, description, index = true) {
-  return { path: pathname, title, description, index };
-}
-
-function normalizeMapTitle(name, id) {
-  const trimmed = String(name).trim();
-  return trimmed.toLowerCase() === String(id).toLowerCase()
-    ? trimmed
-    : `${trimmed} · ${String(id).toUpperCase()}`;
+function requireStaticRoute(pathname) {
+  const route = staticSeoDescriptor(pathname);
+  if (!route) throw new Error(`缺少 static SEO descriptor：${pathname}`);
+  return route;
 }
 
 function writeRouteShell(sourceHtml, descriptor) {
-  const canonical = `${siteOrigin}${descriptor.path === "/" ? "/" : descriptor.path}`;
-  const robots = descriptor.index ? "index,follow" : "noindex,follow";
-  const head = [
-    `<meta name="description" content="${escapeAttribute(descriptor.description)}" />`,
+  const fallback = bilingualSeoDescriptor(descriptor);
+  const canonical =
+    `${siteOrigin}${fallback.canonicalPath === "/" ? "/" : fallback.canonicalPath}`;
+  const robots = fallback.index ? "index,follow" : "noindex,follow";
+  const extraHead = [
     `<meta name="robots" content="${robots}" />`,
     `<link rel="canonical" href="${escapeAttribute(canonical)}" />`,
     `<meta property="og:site_name" content="Bobby Carrot 5 Remake" />`,
     `<meta property="og:type" content="website" />`,
-    `<meta property="og:title" content="${escapeAttribute(descriptor.title)}" />`,
-    `<meta property="og:description" content="${escapeAttribute(descriptor.description)}" />`,
     `<meta property="og:url" content="${escapeAttribute(canonical)}" />`,
     `<meta property="og:image" content="${escapeAttribute(`${siteOrigin}${ogImagePath}`)}" />`,
     `<meta name="twitter:card" content="summary_large_image" />`,
-    `<meta name="twitter:title" content="${escapeAttribute(descriptor.title)}" />`,
-    `<meta name="twitter:description" content="${escapeAttribute(descriptor.description)}" />`,
+    `<meta name="twitter:title" content="${escapeAttribute(fallback.title)}" />`,
+    `<meta name="twitter:description" content="${escapeAttribute(fallback.description)}" />`,
     `<meta name="twitter:image" content="${escapeAttribute(`${siteOrigin}${ogImagePath}`)}" />`,
-    descriptor.path === "/"
+    fallback.canonicalPath === "/"
       ? `<script type="application/ld+json">${JSON.stringify({
           "@context": "https://schema.org",
           "@type": "WebSite",
@@ -190,31 +141,49 @@ function writeRouteShell(sourceHtml, descriptor) {
       : "",
   ].filter(Boolean).join("\n    ");
 
-  const html = sourceHtml
-    .replace(/<title>.*?<\/title>/s, `<title>${escapeHtml(descriptor.title)}</title>`)
-    .replace("</head>", `    ${head}\n  </head>`);
-  const target = descriptor.path === "/"
+  const html = replaceBaseSeo(sourceHtml, fallback)
+    .replace("</head>", `    ${extraHead}\n  </head>`);
+  const target = fallback.canonicalPath === "/"
     ? path.join(dist, "index.html")
-    : path.join(dist, descriptor.path.slice(1), "index.html");
+    : path.join(dist, fallback.canonicalPath.slice(1), "index.html");
   fs.mkdirSync(path.dirname(target), { recursive: true });
   fs.writeFileSync(target, html);
 }
 
+function replaceBaseSeo(sourceHtml, descriptor) {
+  return sourceHtml
+    .replace(
+      /<title>.*?<\/title>/s,
+      `<title>${escapeHtml(descriptor.title)}</title>`,
+    )
+    .replace(
+      /<meta\s+name="description"\s+content="[^"]*"\s*\/>/s,
+      `<meta name="description" content="${escapeAttribute(descriptor.description)}" />`,
+    )
+    .replace(
+      /<meta\s+property="og:title"\s+content="[^"]*"\s*\/>/s,
+      `<meta property="og:title" content="${escapeAttribute(descriptor.title)}" />`,
+    )
+    .replace(
+      /<meta\s+property="og:description"\s+content="[^"]*"\s*\/>/s,
+      `<meta property="og:description" content="${escapeAttribute(descriptor.description)}" />`,
+    );
+}
+
 function writeNotFoundPage() {
-  const title = `页面不存在 | ${brand}`;
   const html = `<!doctype html>
 <html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="robots" content="noindex,follow" />
-    <title>${escapeHtml(title)}</title>
+    <title>页面不存在 | 兔子波比5重制版</title>
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-KZKWTSQXMP"></script>
     <script>
       window.dataLayer = window.dataLayer || [];
       function gtag() {
-        dataLayer.push(arguments);
+        window.dataLayer.push(arguments);
       }
       gtag("js", new Date());
       gtag("config", "G-KZKWTSQXMP");
@@ -275,10 +244,12 @@ function writeRobots() {
 
 function writeSitemap(routes) {
   const urls = routes.map((entry) => {
-    const location = `${siteOrigin}${entry.path === "/" ? "/" : entry.path}`;
+    const location =
+      `${siteOrigin}${entry.canonicalPath === "/" ? "/" : entry.canonicalPath}`;
     return `  <url><loc>${escapeXml(location)}</loc></url>`;
   });
-  const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.join("\n")}\n</urlset>\n`;
+  const xml =
+    `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.join("\n")}\n</urlset>\n`;
   fs.writeFileSync(path.join(dist, "sitemap.xml"), xml);
 }
 

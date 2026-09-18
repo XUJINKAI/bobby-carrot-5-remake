@@ -4,6 +4,7 @@ import {
   createTranslator,
   loadTranslationCatalog,
   normalizeLocale,
+  SEO_CATALOGS,
 } from "../dist/index.js";
 import { createCatalogStore } from "../dist/catalogStore.js";
 
@@ -41,6 +42,16 @@ test("scoped catalogs load independently by locale", async () => {
   assert.equal(en["shell.settings"], "Settings");
 });
 
+test("SEO catalogs are static bilingual resources", () => {
+  assert.equal(
+    SEO_CATALOGS["zh-CN"]["seo.settings.title"],
+    "设置 | 兔子波比5重制版",
+  );
+  assert.equal(
+    SEO_CATALOGS.en["seo.settings.title"],
+    "Settings | Bobby Carrot 5 Remake",
+  );
+});
 
 test("catalog store retries after a failed load without poisoning the cache", async () => {
   const store = createCatalogStore();
