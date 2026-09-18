@@ -50,6 +50,7 @@ test("语言切换只重本地化当前页面，不重建 route runtime", async 
   const localeHandler = app.match(/private readonly onLocaleChange[\s\S]*?\n  };/)?.[0] ?? "";
   assert.doesNotMatch(localeHandler, /renderRoute\(/);
   assert.match(editor, /getWebLocale\(\)/);
+  assert.match(editor, /replayPanel\?\.update\(\)/);
 });
 
 test("Home Save 导入按需加载 import scope", async () => {
@@ -141,6 +142,7 @@ test("持久 UI 状态保存翻译语义而不是已翻译字符串", async () =
   assert.doesNotMatch(exchange, /feedback\.value = webT\(/);
   assert.match(settings, /feedback: WebDisplayText \| null/);
   assert.doesNotMatch(settings, /tab\.feedback = webT\(/);
+  assert.doesNotMatch(settings, /@error="activeTab\.feedback = \$event\.message"/);
   assert.match(importPage, /status === "unknown" \? webT\("import\.unknown"\) : message/);
   assert.doesNotMatch(app, /message: webT\("import\.unknown"\)/);
 });

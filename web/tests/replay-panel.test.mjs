@@ -102,6 +102,7 @@ test("Replay 持久提示保存翻译语义并在 update 时重新解析", () =>
   assert.match(replayBindingSource, /verification\.textContent = resolveWebText\(verificationState\.text\)/);
   assert.match(replayBindingSource, /const update = \(\): void => \{\s+renderVerification\(\)/);
   assert.doesNotMatch(replayBindingSource, /verification\.textContent = webT\(/);
+  assert.match(replayBindingSource, /error instanceof LocalizedReplayError \? error\.text/);
 });
 
 test("Replay 面板使用一帧一行的统一序列化", () => {

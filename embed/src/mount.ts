@@ -191,7 +191,7 @@ export function mount(options: BC5RMountOptions): BC5RHandle {
       locale,
       cleanup,
     );
-    installTerminalOverlay(runtime, terminal, canvasWrap, cleanup);
+    installTerminalOverlay(runtime, terminal, canvasWrap, locale, cleanup);
     const resumeAudio = (): void => runtime?.audio.resume();
     root.addEventListener("pointerdown", resumeAudio, { passive: true });
     cleanup.push(() => root.removeEventListener("pointerdown", resumeAudio));
@@ -468,11 +468,9 @@ function installTerminalOverlay(
   runtime: GameplayRuntime,
   terminal: TerminalOverlay,
   focusTarget: HTMLElement,
+  locale: Locale,
   cleanup: Array<() => void>,
 ): void {
-  const locale = resolveEmbedLocale(
-    focusTarget.closest<HTMLElement>(".bc5r-embed")?.dataset.lang,
-  );
   const copy = terminalCopy(locale);
   const render = (): void => {
     const status = runtime.game.state.status;

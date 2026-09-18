@@ -212,8 +212,7 @@ function requireActiveTab(): SaveManagementTab {
           :placeholder="placeholder(activeTab)"
           :toolbar="toolbar"
           :reset-key="activeTab.id"
-          @import="importSelected"
-          @error="activeTab.feedback = $event.message"
+          @import="importSelected" 
         />
         <p class="save-management-note">{{ importNote(activeTab) }}</p>
         <p class="save-management-feedback" aria-live="polite">

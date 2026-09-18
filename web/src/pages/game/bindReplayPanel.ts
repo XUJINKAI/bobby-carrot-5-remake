@@ -21,6 +21,13 @@ import {
 
 const REPLAY_PARSE_DELAY_MS = 300;
 
+class LocalizedReplayError extends Error {
+  constructor(readonly text: WebLocalizedText) {
+    super(resolveWebText(text));
+    this.name = "LocalizedReplayError";
+  }
+}
+
 export function replayVerificationPresentation(
   report: ReplayReport,
   expected: Replay,
@@ -49,9 +56,9 @@ export function validateBuiltinReplaySave(
 ): ReplayReport {
   const report = game.verifyReplay(replay);
   if (replay.finalState.status !== "won")
-    throw new Error(webT("game.replay.builtinMustWin"));
+    throw new LocalizedReplayError(localizedText("game.replay.builtinMustWin"));
   if (report.actual.status !== "won")
-    throw new Error(webT("game.replay.builtinNotWon"));
+    throw new LocalizedReplayError(localizedText("game.replay.builtinNotWon"));
   return report;
 }
 
@@ -144,7 +151,10 @@ export function bindReplayPanel(options: {
   };
 
   const showError = (error: unknown): void => {
-    setVerification(errorMessage(error), true);
+    setVerification(
+      error instanceof LocalizedReplayError ? error.text : errorMessage(error),
+      true,
+    );
   };
 
   const clearSpeedError = (): void => {

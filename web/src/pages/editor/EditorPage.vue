@@ -87,7 +87,10 @@ watch(
     getWebLocale(),
     shellIssues.value.map((issue) => `${issue.level}:${issue.message}`).join("|"),
   ],
-  syncShell,
+  () => {
+    syncShell();
+    replayPanel?.update();
+  },
 );
 
 async function togglePlay(): Promise<void> {

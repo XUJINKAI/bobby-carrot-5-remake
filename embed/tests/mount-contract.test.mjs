@@ -44,7 +44,7 @@ test("Embed 框架使用固定首页、地图打开动作与操作提示", async
     /createOriginalGameplayImageManager\(embedArtUrl\)/,
   );
   assert.doesNotMatch(mountSource, /"bobby-left":/);
-  assert.match(mountSource, /embedRuntimeText\(lang, "embedRuntime\.movementHint"\)/);
+  assert.match(mountSource, /embedRuntimeText\(locale, "embedRuntime\.movementHint"\)/);
 });
 
 test("Embed 服从 LevelMap 的地图音乐选择", async () => {
@@ -69,6 +69,8 @@ test("Embed 在 mount 开头只解析一次 locale 并贯穿全部 UI", async ()
   assert.match(mountSource, /createFrameControls\(audio\.enabled, locale\)/);
   assert.match(mountSource, /createTerminalOverlay\(locale\)/);
   assert.match(mountSource, /createInfoFooter\(options\.info, locale\)/);
+  assert.match(mountSource, /installTerminalOverlay\(runtime, terminal, canvasWrap, locale, cleanup\)/);
+  assert.equal((mountSource.match(/resolveEmbedLocale\(/g) ?? []).length, 2);
   assert.match(mountSource, /function resolveEmbedLocale\(lang: string \| undefined\): Locale/);
   assert.doesNotMatch(mountSource, /options\.lang \?\? "zh-CN"/);
 });
