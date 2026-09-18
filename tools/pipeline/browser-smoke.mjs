@@ -246,7 +246,7 @@ try {
     icon: "map-details",
     tone: "muted",
     details: {
-      verification: "尚未进行通关验证",
+      verification: ["尚未进行通关验证", "Not yet completion-verified"],
       "map-id": "imported/shared-map",
       "map-name": "Engine Mechanics Smoke Map",
       author: "bc5r",
