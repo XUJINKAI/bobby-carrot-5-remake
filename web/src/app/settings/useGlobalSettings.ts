@@ -32,6 +32,7 @@ export function useGlobalSettings(audio: AudioRuntime) {
   };
   const setLocale = async (locale: Locale): Promise<void> => {
     await setWebLocale(locale);
+    if (getWebLocale() !== locale) return;
     updateWebSettings((settings) => ({ ...settings, locale }));
     state.locale = locale;
   };
