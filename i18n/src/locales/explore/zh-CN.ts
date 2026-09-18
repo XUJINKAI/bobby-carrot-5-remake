@@ -1,6 +1,7 @@
 const catalog = {
   "explore.tabsAria": "自由探索地图集合",
   "explore.levelCount": "{count} 关",
+  "explore.filteredLevelCount": "{count} / {total} 关",
   "explore.random": "随机关卡",
   "explore.continue": "继续游玩 · {label}",
   "explore.filtersAria": "关卡筛选",

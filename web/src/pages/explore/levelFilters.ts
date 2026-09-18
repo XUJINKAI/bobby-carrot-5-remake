@@ -9,6 +9,7 @@ import {
   entityVisualStyle,
   styleRecordToText,
 } from "../../services/assets/entityVisual.js";
+import { webT } from "../../i18n/webI18n.js";
 
 const selected = new Map<string, Set<string>>();
 let activePanel: string | null = null;
@@ -35,7 +36,7 @@ export function mountLevelFilters(
   document.querySelector(".level-filter-shell")?.remove();
   const shell = document.createElement("section");
   shell.className = "level-filter-shell";
-  shell.setAttribute("aria-label", "关卡筛选");
+  shell.setAttribute("aria-label", webT("explore.filtersAria"));
   head.insertAdjacentElement("afterend", shell);
   shell.addEventListener("click", onFilterClick);
   renderFilterShell(shell);
@@ -64,7 +65,7 @@ function renderFilterShell(shell: HTMLElement): void {
   const panels = currentCollection.filters
     .map((filter) => filterPanel(filter))
     .join("");
-  shell.innerHTML = `<div class="level-filter-toolbar"><span class="level-filter-label">筛选</span>${toolbar}<span class="level-filter-spacer"></span><button class="level-filter-clear" data-filter-clear ${total ? "" : "hidden"}>清除筛选</button></div>${panels}<div class="level-filter-status muted" data-filter-status></div>`;
+  shell.innerHTML = `<div class="level-filter-toolbar"><span class="level-filter-label">${escapeHtml(webT("explore.filter"))}</span>${toolbar}<span class="level-filter-spacer"></span><button class="level-filter-clear" data-filter-clear ${total ? "" : "hidden"}>${escapeHtml(webT("explore.clearFilters"))}</button></div>${panels}<div class="level-filter-status muted" data-filter-status></div>`;
 }
 
 function filterTrigger(filter: MapCollectionFilter): string {
@@ -152,21 +153,23 @@ function applyFilters(): void {
     chapter.classList.toggle("filter-hidden", hidden);
     setText(
       chapter.querySelector(".chapter-count"),
-      active ? `${count} / ${maps.length} 关` : `${maps.length} 关`,
+      active
+        ? webT("explore.filteredLevelCount", { count, total: maps.length })
+        : webT("explore.levelCount", { count: maps.length }),
     );
   }
   setText(
     document.querySelector("[data-filter-status]"),
     active
-      ? `匹配 ${visibleMaps} 张地图；已选条件需同时满足。`
-      : "所有已选条件需同时满足。",
+      ? webT("explore.filterStatus", { count: visibleMaps })
+      : webT("explore.filterHint"),
   );
   let empty = document.querySelector<HTMLElement>(".level-filter-empty");
   if (active && visibleMaps === 0) {
     if (!empty) {
       empty = document.createElement("div");
       empty.className = "level-filter-empty";
-      empty.textContent = "没有符合这些条件的地图。";
+      empty.textContent = webT("explore.filterEmpty");
       document.querySelector(".explore-page")?.append(empty);
     }
   } else {

@@ -2,6 +2,7 @@ import type { ExploreTranslationKey } from "./zh-CN.js";
 const catalog = {
   "explore.tabsAria": "Explore map collections",
   "explore.levelCount": "{count} levels",
+  "explore.filteredLevelCount": "{count} / {total} levels",
   "explore.random": "Random level",
   "explore.continue": "Continue · {label}",
   "explore.filtersAria": "Level filters",
