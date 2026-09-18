@@ -6,6 +6,7 @@ import {
   type ImageManager,
 } from "@bobby/engine";
 import type { LevelMap } from "@bobby/model";
+import { EMBED_RUNTIME_CATALOGS, normalizeLocale } from "@bobby/i18n";
 import { loadEmbedMap } from "./mapInput.js";
 import type { BC5RHandle, BC5RMountOptions } from "./types.js";
 
@@ -486,21 +487,12 @@ function terminalCopy(lang: string | undefined): {
   restart: string;
   official: string;
 } {
-  const value = lang && lang !== "auto" ? lang : navigator.language;
-  const chinese = value.toLowerCase().startsWith("zh");
-  return chinese
-    ? {
-        won: "通关",
-        dead: "失败",
-        restart: "重新开始",
-        official: "前往官网",
-      }
-    : {
-        won: "Level complete",
-        dead: "Game over",
-        restart: "Restart",
-        official: "Visit BC5R",
-      };
+  return {
+    won: embedRuntimeText(lang, "embedRuntime.won"),
+    dead: embedRuntimeText(lang, "embedRuntime.dead"),
+    restart: embedRuntimeText(lang, "embedRuntime.restart"),
+    official: embedRuntimeText(lang, "embedRuntime.official"),
+  };
 }
 
 function controlCopy(lang: string | undefined): {
@@ -511,24 +503,34 @@ function controlCopy(lang: string | undefined): {
   joystick: string;
   movementHint: string;
 } {
-  const value = lang && lang !== "auto" ? lang : navigator.language;
-  return value.toLowerCase().startsWith("zh")
-    ? {
-        restart: "重新开始",
-        open: "在新窗口打开",
-        mute: "关闭声音",
-        unmute: "打开声音",
-        joystick: "切换屏幕摇杆",
-        movementHint: "WASD / 方向键移动",
-      }
-    : {
-        restart: "Restart",
-        open: "Open in new window",
-        mute: "Mute",
-        unmute: "Unmute",
-        joystick: "Toggle screen joystick",
-        movementHint: "Move with WASD / arrow keys",
-      };
+  return {
+    restart: embedRuntimeText(lang, "embedRuntime.restart"),
+    open: embedRuntimeText(lang, "embedRuntime.open"),
+    mute: embedRuntimeText(lang, "embedRuntime.mute"),
+    unmute: embedRuntimeText(lang, "embedRuntime.unmute"),
+    joystick: embedRuntimeText(lang, "embedRuntime.joystick"),
+    movementHint: embedRuntimeText(lang, "embedRuntime.movementHint"),
+  };
+}
+
+type EmbedRuntimeKey =
+  | "embedRuntime.won"
+  | "embedRuntime.dead"
+  | "embedRuntime.restart"
+  | "embedRuntime.official"
+  | "embedRuntime.open"
+  | "embedRuntime.mute"
+  | "embedRuntime.unmute"
+  | "embedRuntime.joystick"
+  | "embedRuntime.movementHint";
+
+function embedRuntimeText(
+  lang: string | undefined,
+  key: EmbedRuntimeKey,
+): string {
+  const requested = lang && lang !== "auto" ? lang : navigator.language;
+  const locale = normalizeLocale(requested) ?? "en";
+  return EMBED_RUNTIME_CATALOGS[locale][key] ?? key;
 }
 
 async function officialPlayUrl(level: LevelMap): Promise<string> {
