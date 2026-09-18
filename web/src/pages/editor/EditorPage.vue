@@ -443,6 +443,7 @@ function isMobileEditor(): boolean {
       @max-moves="page.setMaxMoves"
       @max-time="page.setMaxTimeSeconds"
       @metadata="page.updateMetadata"
+      @music="page.setMusic"
       @play-restart="restartPlay"
       @play-stop="stopPlay"
     />

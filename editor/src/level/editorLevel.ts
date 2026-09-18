@@ -96,7 +96,11 @@ export function normalizeEditorLevel(input: EditorMap): EditorMap {
     level.meta.author = String(input.meta.author).slice(0, 80);
   if (typeof input.meta?.note === "string" && input.meta.note)
     level.meta.note = input.meta.note.slice(0, 500);
-  if (typeof input.music === "string" && input.music)
+  if (
+    typeof input.music === "string" &&
+    input.music &&
+    input.music !== "random"
+  )
     level.music = input.music;
   const limits = normalizeLimits(input.rules?.limits);
   level.rules = {

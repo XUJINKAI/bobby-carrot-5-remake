@@ -194,6 +194,38 @@ test("Level 最大时间把单位放在标签中", () => {
   assert.doesNotMatch(levelInfo, /<small>秒<\/small>/);
 });
 
+test("Level 音乐只列出循环曲目并用省略字段表达默认随机", () => {
+  assert.match(levelInfo, /<option value="">默认（随机）<\/option>/);
+  for (const track of [
+    "ingame0",
+    "ingame1",
+    "ingame2",
+    "mow",
+    "shop",
+    "bonus",
+    "sandman",
+    "train",
+    "universe",
+    "fly",
+    "title",
+  ]) {
+    assert.match(levelInfo, new RegExp(`value: "${track}"`));
+  }
+  for (const eventTrack of ["alarm", "cleared", "death"]) {
+    assert.doesNotMatch(levelInfo, new RegExp(`value: "${eventTrack}"`));
+  }
+  assert.match(pageState, /setMusic\(music: MapMusic \| undefined\)/);
+  assert.match(page, /@music="page\.setMusic"/);
+});
+
+test("Level 规则模式开关左侧任一、右侧全部", () => {
+  assert.match(
+    levelInfo,
+    /data-rule-mode="any"[\s\S]*>任一<\/button>[\s\S]*data-rule-mode="all"[\s\S]*>全部<\/button>/,
+  );
+  assert.match(levelInfo, /mode-all[\s\S]*translateX\(100%\)/);
+});
+
 test("Inspector 使用与 Surface Palette 相同的 visual variant 网格", () => {
   assert.match(entityFields, /surfaceTerrainForEntity/);
   assert.match(entityFields, /surfaceVisualVariant/);
@@ -260,6 +292,10 @@ test("Inspector 按当前工具显示选择、素材、删除目标与 Surface �
   assert.match(cellInspector, /layer\.footprint\.width/);
   assert.match(cellInspector, /placementPresetFromEntity/);
   assert.match(cellInspector, /drop-before/);
+  assert.match(cellInspector, /@pointerdown="startDrag/);
+  assert.match(cellInspector, /@pointermove="moveDrag"/);
+  assert.match(cellInspector, /@pointerup="finishDrag"/);
+  assert.doesNotMatch(cellInspector, /draggable=|@dragstart|@drop/);
   assert.match(multiInspector, /placementPresetFromEntity/);
   assert.match(pageState, /resolveDeletionTarget\(currentLevel\(\), environment, cell, editor\)/);
   assert.match(pageState, /function applyPlacementVariant/);

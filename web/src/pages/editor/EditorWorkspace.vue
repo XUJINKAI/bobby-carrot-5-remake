@@ -23,7 +23,11 @@ import type {
   SurfaceTool,
 } from "@bobby/editor";
 import type { ImageManager } from "@bobby/engine";
-import type { EntityType, LevelEntityFieldValue } from "@bobby/model";
+import type {
+  EntityType,
+  LevelEntityFieldValue,
+  MapMusic,
+} from "@bobby/model";
 import type { EditorLeftPanel } from "./useEditorPage.js";
 import EditorCanvas from "./EditorCanvas.vue";
 import EditorInspector from "./EditorInspector.vue";
@@ -92,6 +96,7 @@ const emit = defineEmits<{
   maxMoves: [value: number | null];
   maxTime: [value: number | null];
   metadata: [value: { name: string; author?: string }];
+  music: [value: MapMusic | undefined];
   playRestart: [];
   playStop: [];
 }>();
@@ -209,6 +214,7 @@ const emit = defineEmits<{
       :rules="rules"
       :rule-mode="ruleMode"
       @metadata="emit('metadata', $event)"
+      @music="emit('music', $event)"
       @rule="(kind, enabled) => emit('rule', kind, enabled)"
       @rule-mode="emit('ruleMode', $event)"
       @max-moves="emit('maxMoves', $event)"

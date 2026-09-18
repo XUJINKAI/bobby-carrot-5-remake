@@ -20,10 +20,80 @@ export async function verifyEditorExperience(cdp, sessionId) {
     20_000,
   );
   await verifyLayerReordering(cdp, sessionId);
+  await verifyLevelControls(cdp, sessionId);
   await verifySurfaceInspector(cdp, sessionId);
   await verifyPaletteTooltip(cdp, sessionId);
   await verifyEditorCanvasPerformance(cdp, sessionId);
   await verifyPlayControls(cdp, sessionId);
+}
+
+async function verifyLevelControls(cdp, sessionId) {
+  await clickWhenPresent(cdp, sessionId, "#editor-level-info");
+  await waitForBrowserState(async () =>
+    Boolean(
+      await cdp.evaluate(
+        sessionId,
+        "document.querySelector('[data-editor-music]')",
+      ),
+    ),
+  );
+  const initial = await cdp.evaluate(
+    sessionId,
+    `(() => ({
+      music: document.querySelector('[data-editor-music]')?.value,
+      modes: [...document.querySelectorAll('[data-rule-mode]')]
+        .map((button) => button.getAttribute('data-rule-mode')),
+      active: document.querySelector('[data-rule-mode][aria-pressed="true"]')
+        ?.getAttribute('data-rule-mode'),
+    }))()`,
+  );
+  if (
+    initial.music !== "" ||
+    JSON.stringify(initial.modes) !== JSON.stringify(["any", "all"]) ||
+    initial.active !== "all"
+  ) {
+    throw new Error(`Editor Level 控件初始状态异常：${JSON.stringify(initial)}`);
+  }
+  await cdp.evaluate(
+    sessionId,
+    `(() => {
+      const select = document.querySelector('[data-editor-music]');
+      select.value = 'shop';
+      select.dispatchEvent(new Event('change', { bubbles: true }));
+    })()`,
+  );
+  await waitForBrowserState(async () =>
+    (await cdp.evaluate(
+      sessionId,
+      "document.querySelector('[data-editor-music]')?.value",
+    )) === "shop",
+  );
+  await cdp.evaluate(
+    sessionId,
+    `(() => {
+      const select = document.querySelector('[data-editor-music]');
+      select.value = '';
+      select.dispatchEvent(new Event('change', { bubbles: true }));
+      document.querySelector('[data-rule-mode="any"]')?.click();
+    })()`,
+  );
+  await waitForBrowserState(async () =>
+    (await cdp.evaluate(
+      sessionId,
+      "document.querySelector('[data-rule-mode=\"any\"]')?.getAttribute('aria-pressed')",
+    )) === "true",
+  );
+  await cdp.evaluate(
+    sessionId,
+    "document.querySelector('[data-rule-mode=\"all\"]')?.click(); true",
+  );
+  await waitForBrowserState(async () =>
+    (await cdp.evaluate(
+      sessionId,
+      "document.querySelector('[data-rule-mode=\"all\"]')?.getAttribute('aria-pressed')",
+    )) === "true",
+  );
+  await clickWhenPresent(cdp, sessionId, "#editor-inspector");
 }
 
 async function verifyLayerReordering(cdp, sessionId) {

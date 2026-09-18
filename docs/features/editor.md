@@ -166,6 +166,8 @@ variant 数据保持稳定，hover 只更新紧凑的放置结果堆叠预览。
 
 规则检测器通过 Engine authoring API 按 Entity Type 与 Entity/Presence Fact 判断当前可用的关卡完成条件。某项能力首次出现时，Editor 默认启用对应规则；能力持续存在期间，Inspector 中的手动关闭状态保持有效。导入另一张地图时重新开始检测。
 
+Level 面板使用左侧“任一”、右侧“全部”的双段开关编辑顶层胜利条件组合。背景音乐下拉框只列出原版确认循环播放的关卡与场景曲目；“默认（随机）”通过省略 `music` 字段表达，“无音乐”保存为 `music: "none"`。
+
 `EditorEntityDefinition.defaultFields`、`EditorEntityVariant.fields`、`EditorPlacementPreset.fields`
 与 `EditorPalettePreview.fields` 共用同一套类型专属字段形状。Egg 在 Editor 中固定使用 filled
 visual 帮助识别，地图仍放置一个没有可切换 variant 的 canonical `egg` Entity。

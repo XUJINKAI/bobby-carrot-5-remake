@@ -44,6 +44,7 @@ import {
   updateMaxMoves,
   updateMaxTimeSeconds,
   updateMetadata,
+  updateMusic,
   type Cell,
   type EditorClipboard,
   type EditorCommand,
@@ -69,6 +70,7 @@ import {
   type EntityType,
   type LevelEntity,
   type LevelEntityFieldValue,
+  type MapMusic,
 } from "@bobby/model";
 import { computed, onUnmounted, ref, shallowRef } from "vue";
 import {
@@ -779,6 +781,9 @@ export function useEditorPage(initialLevel: EditorMap) {
       note?: string;
     }): void {
       execute(updateMetadata(metadata));
+    },
+    setMusic(music: MapMusic | undefined): void {
+      execute(updateMusic(music));
     },
   };
 }

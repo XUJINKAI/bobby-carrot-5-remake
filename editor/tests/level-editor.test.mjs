@@ -26,6 +26,7 @@ import {
   toLevelMap,
   updateEntityField,
   updateMetadata,
+  updateMusic,
   validateEditorLevel,
 } from "../dist/index.js";
 import { World } from "../../engine/tests/support/World.mjs";
@@ -129,6 +130,23 @@ test("Editor metadata command edits and clears meta.note", () => {
 
   const withoutNote = updateMetadata({ name: "Note Test" }).apply(withNote);
   assert.equal("note" in withoutNote.meta, false);
+});
+
+test("Editor 背景音乐使用省略字段表达默认随机", () => {
+  const level = createBlankLevel(10, 8);
+  const withMusic = updateMusic("shop").apply(level);
+  assert.equal(withMusic.music, "shop");
+  assert.equal(JSON.parse(serializeEditorLevel(withMusic)).music, "shop");
+
+  const defaultMusic = updateMusic(undefined).apply(withMusic);
+  assert.equal("music" in defaultMusic, false);
+  assert.equal("music" in JSON.parse(serializeEditorLevel(defaultMusic)), false);
+
+  const explicitRandom = parseEditorLevel(JSON.stringify({
+    ...level,
+    music: "random",
+  }));
+  assert.equal("music" in explicitRandom, false);
 });
 
 test("multi-cell persistence stays anchor-only while Preview expands Presence roles", () => {
