@@ -203,10 +203,14 @@ export async function renderGamePage(
   const screenControlEnabled = getWebSettings().controls.screenControlEnabled;
   const replayPanelInitiallyOpen =
     capabilities.replayPanel && loadReplayPanelOpen();
+  const statusMapId = `${replayTarget.collection}/${replayTarget.id}`;
+  const statusMapName = mapMeta?.name ?? identity.title;
   configureShell(
     gameShellConfig(
       mode,
       screenControlEnabled,
+      statusMapId,
+      statusMapName,
       explorePreviousMapId,
       exploreNextMapId,
       replayPanelInitiallyOpen,
@@ -356,6 +360,8 @@ export async function renderGamePage(
             gameShellConfig(
               mode,
               getWebSettings().controls.screenControlEnabled,
+              statusMapId,
+              statusMapName,
               explorePreviousMapId,
               exploreNextMapId,
               open,
@@ -582,6 +588,8 @@ function nextAdventureLevel(
 function gameShellConfig(
   mode: GamePageMode,
   screenControlEnabled: boolean,
+  mapId: string,
+  mapName: string,
   explorePreviousMapId?: string,
   exploreNextMapId?: string,
   replayOpen = false,
@@ -665,7 +673,9 @@ function gameShellConfig(
             },
           ]
         : [],
-      leadingIndicators: [mapStatusIndicator(mode, verified, mapMeta)],
+      leadingIndicators: [
+        mapStatusIndicator(mode, verified, mapId, mapName, mapMeta),
+      ],
       trailing: [
         {
           id: "screen-control",

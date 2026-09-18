@@ -8,6 +8,8 @@ import type { GamePageMode } from "./gamePageCapabilities.js";
 export function mapStatusIndicator(
   mode: GamePageMode,
   verified: boolean,
+  mapId: string,
+  mapName: string,
   meta?: MapMeta,
 ): ShellIndicator {
   const author = normalizedMetadataText(meta?.author);
@@ -17,6 +19,16 @@ export function mapStatusIndicator(
       id: "verification",
       label: "通关验证",
       text: mapVerificationText(mode, verified),
+    },
+    {
+      id: "map-id",
+      label: "关卡 ID",
+      text: mapId,
+    },
+    {
+      id: "map-name",
+      label: "关卡名字",
+      text: mapName,
     },
     ...(author
       ? [{ id: "author", label: "作者", text: author }]
