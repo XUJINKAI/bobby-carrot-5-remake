@@ -7,7 +7,7 @@ import type {
 import DataExchangePanel from "../../shared/data-exchange/DataExchangePanel.vue";
 import AppIcon from "../../shared/icons/AppIcon.vue";
 import ImportSaveConfirmation from "../import/ImportSaveConfirmation.vue";
-import { webT } from "../../i18n/webI18n.js";
+import { ensureWebI18nScopes, webT } from "../../i18n/webI18n.js";
 
 const emit = defineEmits<{
   navigate: [path: string];
@@ -34,13 +34,14 @@ function serializeImport(value: unknown): string {
   return JSON.stringify((value as ImportedData).value, null, 2);
 }
 
-function acceptImport(data: unknown): void {
+async function acceptImport(data: unknown): Promise<void> {
   const imported = data as ImportedData;
   if (imported.type === "map") {
     closeImport();
     emit("importData", imported);
     return;
   }
+  await ensureWebI18nScopes(["import"]);
   pendingSave.value = imported;
 }
 
