@@ -9,7 +9,7 @@ import AppBottomBar from "../shell/AppBottomBar.vue";
 import AppTopBar from "../shell/AppTopBar.vue";
 import type { Navigate } from "./pageContracts.js";
 import type { ShellViewState } from "../shell/shellBridge.js";
-import { webT } from "../i18n/webI18n.js";
+import { ensureWebI18nScopes, webT } from "../i18n/webI18n.js";
 
 const props = defineProps<{
   shell: ShellViewState;
@@ -20,6 +20,7 @@ const props = defineProps<{
 const content = ref<HTMLDivElement | null>(null);
 const quickSettingsOpen = ref(false);
 const helpOpen = ref(false);
+const helpHtml = ref("");
 const musicInteractionRequired = ref(audioInteractionRequired());
 const settings = useGlobalSettings(props.audio);
 const disposeMusicInteraction = props.audio.onMusicInteractionRequiredChange(
@@ -41,7 +42,9 @@ function closeSettings(): void {
   notifySurfaceClose();
 }
 
-function openHelp(): void {
+async function openHelp(): Promise<void> {
+  await ensureWebI18nScopes(["help"]);
+  helpHtml.value = webT("help.html");
   if (!helpOpen.value && !quickSettingsOpen.value) notifySurfaceOpen();
   quickSettingsOpen.value = false;
   helpOpen.value = true;
@@ -69,7 +72,7 @@ function openSettingsPage(): void {
 function dispatchAction(action: string): void {
   if (action === "music") settings.toggleMusic();
   else if (action === "settings") openSettings();
-  else if (action === "help") openHelp();
+  else if (action === "help") void openHelp();
   else if (action === "screen-control") {
     settings.setScreenControl(!settings.state.screenControlEnabled);
     updateActionPressed("screen-control", settings.state.screenControlEnabled);
@@ -127,6 +130,7 @@ watch(
   () => {
     localizeGlobalActions(shellActions());
     updateMusicInteractionTip();
+    if (helpOpen.value) helpHtml.value = webT("help.html");
   },
   { immediate: true },
 );
@@ -191,7 +195,7 @@ onMounted(() => {
 
     <GlobalDialogLayer
       v-if="helpOpen"
-      :help-html="shell.helpHtml"
+      :help-html="helpHtml"
       @close="closeHelp"
     />
   </div>

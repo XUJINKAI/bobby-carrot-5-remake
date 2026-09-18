@@ -6,7 +6,6 @@ import {
   installShellBridge,
   type ShellConfig,
   type ShellViewState,
-  unifiedHelpContent,
 } from "../shell/shellBridge.js";
 import AppRoot from "./AppRoot.vue";
 import {
@@ -519,7 +518,6 @@ function adventureNeighborRefs(
 function defaultShellState(): ShellViewState {
   return {
     config: {},
-    helpHtml: unifiedHelpContent(),
   };
 }
 

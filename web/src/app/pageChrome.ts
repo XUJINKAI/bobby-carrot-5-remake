@@ -11,7 +11,7 @@ export const PROJECT_REPOSITORY_URL =
 export function homeIdentity(): ShellIdentity {
   return {
     icon: siteUrl("assets/art/hd/icon.png"),
-    productName: "Bobby Carrot 5 Remake",
+    productName: webT("brand.name"),
     productNameVisible: true,
     href: "/",
   };
@@ -24,23 +24,23 @@ export function pageIdentity(
 ): ShellIdentity {
   return {
     icon: siteUrl("assets/art/hd/icon.png"),
-    productName: "Bobby Carrot 5 Remake",
+    productName: webT("brand.name"),
     productNameVisible,
     contextName,
     menu: [
-      { label: "首页", href: "/" },
+      { label: webT("nav.home"), href: "/" },
       {
-        label: "冒险模式",
+        label: webT("nav.adventure"),
         href: "/adventure",
         active: activeHref === "/adventure",
       },
       {
-        label: "自由探索模式",
+        label: webT("nav.explore"),
         href: "/explore",
         active: activeHref === "/explore",
       },
       {
-        label: "编辑器模式",
+        label: webT("nav.editor"),
         href: "/edit",
         active: activeHref === "/edit",
       },
@@ -68,7 +68,7 @@ export function repositoryAction(): ShellAction {
     icon: "github",
     cornerIcon: "external",
     label: "GitHub",
-    title: "打开 GitHub 仓库",
+    title: webT("shell.openGithub"),
     href: PROJECT_REPOSITORY_URL,
     external: true,
     collapse: "keep",

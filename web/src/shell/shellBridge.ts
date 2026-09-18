@@ -1,5 +1,4 @@
 import type { AppIconName } from "../shared/icons/types.js";
-import unifiedHelpHtml from "../content/help.md";
 
 export type ShellIcon = AppIconName;
 
@@ -80,7 +79,6 @@ export interface ShellConfig {
 
 export interface ShellViewState {
   config: ShellConfig;
-  helpHtml: string;
 }
 
 export interface ShellBridge {
@@ -138,6 +136,3 @@ export function mergeShellRuntimeWarnings(
   };
 }
 
-export function unifiedHelpContent(): string {
-  return unifiedHelpHtml;
-}
