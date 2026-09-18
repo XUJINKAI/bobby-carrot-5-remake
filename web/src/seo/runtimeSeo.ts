@@ -91,6 +91,7 @@ async function resolveCurrentSeo(): Promise<SeoDescriptor> {
       "进入《兔子波比5》冒险模式的 Beaver Shop 特殊场景。",
       path,
       false,
+      "Beaver Shop | Adventure | Bobby Carrot 5 Remake",
     );
   if (path === "/adventure/night-train/dream-machine")
     return descriptor(
@@ -98,6 +99,7 @@ async function resolveCurrentSeo(): Promise<SeoDescriptor> {
       "进入《兔子波比5》冒险模式的 Dream Machine 特殊场景。",
       path,
       false,
+      "Dream Machine | Adventure | Bobby Carrot 5 Remake",
     );
   if (path === "/adventure/night-train/cloud-9")
     return descriptor(
@@ -105,6 +107,7 @@ async function resolveCurrentSeo(): Promise<SeoDescriptor> {
       "进入《兔子波比5》冒险模式的 Cloud 9 特殊场景。",
       path,
       false,
+      "Cloud 9 | Adventure | Bobby Carrot 5 Remake",
     );
   if (path === "/adventure/night-train/dreamland-reward")
     return descriptor(
@@ -112,6 +115,7 @@ async function resolveCurrentSeo(): Promise<SeoDescriptor> {
       "进入《兔子波比5》冒险模式的 Dreamland Reward 特殊场景。",
       path,
       false,
+      "Dreamland Reward | Adventure | Bobby Carrot 5 Remake",
     );
   if (path.startsWith("/adventure/chapter/"))
     return resolveAdventureChapterSeo(path);
@@ -122,6 +126,7 @@ async function resolveCurrentSeo(): Promise<SeoDescriptor> {
       `游玩《兔子波比5》冒险模式关卡 ${id}。`,
       path,
       false,
+      `Level ${id} | Adventure | Bobby Carrot 5 Remake`,
     );
   }
   if (path === "/explore" || path === "/explore/original")
@@ -185,9 +190,17 @@ async function resolveAdventureChapterSeo(path: string): Promise<SeoDescriptor> 
       `第 ${chapterNumber} 章：${chapter.name} | ${BRAND}`,
       chapter.description || `浏览《兔子波比5》冒险模式第 ${chapterNumber} 章的关卡。`,
       path,
+      true,
+      `Chapter ${chapterNumber}: ${chapter.name} | Bobby Carrot 5 Remake`,
     );
   } catch {
-    return descriptor(`章节 | 冒险模式 | ${BRAND}`, "浏览《兔子波比5》冒险模式章节。", path);
+    return descriptor(
+      `章节 | 冒险模式 | ${BRAND}`,
+      "浏览《兔子波比5》冒险模式章节。",
+      path,
+      true,
+      "Chapter | Adventure | Bobby Carrot 5 Remake",
+    );
   }
 }
 
@@ -207,9 +220,19 @@ async function resolveCollectionSeo(
         : `${collection.name} | 自由探索 | ${BRAND}`,
       collection.description || `浏览并在线游玩「${collection.name}」地图合集。`,
       canonicalPath,
+      true,
+      collection.id === "original"
+        ? "Explore | Bobby Carrot 5 Remake"
+        : `${collection.name} | Explore | Bobby Carrot 5 Remake`,
     );
   } catch {
-    return descriptor(`自由探索 | ${BRAND}`, "浏览并在线游玩 Bobby Carrot 5 Remake 地图。", canonicalPath);
+    return descriptor(
+      `自由探索 | ${BRAND}`,
+      "浏览并在线游玩 Bobby Carrot 5 Remake 地图。",
+      canonicalPath,
+      true,
+      "Explore | Bobby Carrot 5 Remake",
+    );
   }
 }
 
@@ -223,6 +246,7 @@ async function resolveExploreMapSeo(path: string): Promise<SeoDescriptor> {
       "游玩临时导入的 Bobby Carrot 5 Remake 地图。",
       path,
       false,
+      "Imported Map | Bobby Carrot 5 Remake",
     );
   try {
     const document = await fetchJson<{
@@ -234,12 +258,16 @@ async function resolveExploreMapSeo(path: string): Promise<SeoDescriptor> {
       `${title} | ${BRAND}`,
       `在线游玩「${document.meta.name}」${author}。`,
       path,
+      true,
+      `${title} | Bobby Carrot 5 Remake`,
     );
   } catch {
     return descriptor(
       `${id.toUpperCase()} | ${BRAND}`,
       `在线游玩 Bobby Carrot 5 Remake 地图 ${id.toUpperCase()}。`,
       path,
+      true,
+      `${id.toUpperCase()} | Bobby Carrot 5 Remake`,
     );
   }
 }
