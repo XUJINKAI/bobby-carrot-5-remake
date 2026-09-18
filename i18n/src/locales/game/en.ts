@@ -1,0 +1,27 @@
+import type { GameTranslationKey } from "./zh-CN.js";
+const catalog = {
+  "game.complete": "Level complete!",
+  "game.failed": "Game over",
+  "game.time": "Time: {time}",
+  "game.moves": "Moves: {moves}",
+  "game.coins": "Coins: {collected}/{available}",
+  "game.totalCoins": "Total coins: {total}",
+  "game.back": "Back",
+  "game.next": "Next level",
+  "game.retry": "Restart",
+  "game.replay.ready": "Ready to record",
+  "game.replay.fromStart": "From level start · {ticks} ticks",
+  "game.replay.restartRecord": "Restart and record",
+  "game.replay.stopRecord": "Stop recording",
+  "game.replay.result": "Recording result",
+  "game.replay.waitRecord": "Waiting for recording",
+  "game.replay.skipThinking": "Skip thinking time",
+  "game.replay.play": "Play",
+  "game.replay.pause": "Pause",
+  "game.replay.stop": "Stop",
+  "game.replay.beginning": "Jump to start",
+  "game.replay.end": "Jump to end",
+  "game.replay.loadBuiltin": "Load built-in solution",
+  "game.replay.saveBuiltin": "Save built-in solution",
+} satisfies Record<GameTranslationKey, string>;
+export default catalog;

@@ -1,0 +1,27 @@
+import type { SettingsTranslationKey } from "./zh-CN.js";
+const catalog = {
+  "settings.quickTitle": "Quick settings",
+  "settings.language": "Language",
+  "settings.theme": "Theme",
+  "settings.themeBobby": "Bobby",
+  "settings.themeFc": "FC",
+  "settings.music": "Music",
+  "settings.musicFollowTheme": "Follow theme",
+  "settings.musicModern": "Modern",
+  "settings.volume": "Volume",
+  "settings.more": "More settings",
+  "settings.saveTitle": "Save Management",
+  "settings.saveDescription": "Import, copy, or download game saves stored in this browser.",
+  "settings.savesAria": "Game saves",
+  "settings.completed": "{count} completed",
+  "settings.recent": "Recent: {map}",
+  "settings.adventureDescription": "Campaign progress, Bonus Coins, and Golden Carrots.",
+  "settings.exploreDescription": "Completion history and recent position for the {collection} map collection.",
+  "settings.adventureImported": "Adventure save imported.",
+  "settings.exploreImported": "{label} save imported.",
+  "settings.adventureImportNote": "Importing replaces the current Adventure save.",
+  "settings.exploreImportNote": "Importing replaces the Explore save for {collection}.",
+  "settings.emptyTitle": "No game saves yet",
+  "settings.emptyDescription": "Adventure and Explore saves will appear here after you play.",
+} satisfies Record<SettingsTranslationKey, string>;
+export default catalog;

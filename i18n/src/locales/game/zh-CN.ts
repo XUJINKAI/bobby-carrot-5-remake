@@ -1,0 +1,27 @@
+const catalog = {
+  "game.complete": "关卡完成！",
+  "game.failed": "失败",
+  "game.time": "用时: {time}",
+  "game.moves": "步数: {moves}",
+  "game.coins": "金币: {collected}/{available}",
+  "game.totalCoins": "总金币: {total}",
+  "game.back": "返回",
+  "game.next": "下一关",
+  "game.retry": "重新开始",
+  "game.replay.ready": "准备录制",
+  "game.replay.fromStart": "从关卡起点记录 · {ticks} ticks",
+  "game.replay.restartRecord": "重新开始并录制",
+  "game.replay.stopRecord": "停止录制",
+  "game.replay.result": "录制结果",
+  "game.replay.waitRecord": "等待录制",
+  "game.replay.skipThinking": "跳过思考时间",
+  "game.replay.play": "播放",
+  "game.replay.pause": "暂停",
+  "game.replay.stop": "停止",
+  "game.replay.beginning": "跳到起点",
+  "game.replay.end": "跳到终点",
+  "game.replay.loadBuiltin": "加载内置过法",
+  "game.replay.saveBuiltin": "保存内置过法",
+} as const;
+export type GameTranslationKey = keyof typeof catalog;
+export default catalog;
