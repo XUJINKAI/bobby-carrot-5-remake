@@ -65,6 +65,7 @@ export class BobbyApp {
     document.addEventListener("pointerdown", this.resumeAudio, { passive: true });
     document.addEventListener("keydown", this.resumeAudio);
     window.addEventListener("popstate", this.onPopState);
+    window.addEventListener("web-locale-change", this.onLocaleChange);
     await contentReady;
     await this.renderRoute();
   }
@@ -76,6 +77,7 @@ export class BobbyApp {
     document.removeEventListener("pointerdown", this.resumeAudio);
     document.removeEventListener("keydown", this.resumeAudio);
     window.removeEventListener("popstate", this.onPopState);
+    window.removeEventListener("web-locale-change", this.onLocaleChange);
     installShellBridge(null);
     this.vueApp?.unmount();
     this.audio.destroy();
@@ -92,6 +94,10 @@ export class BobbyApp {
   private readonly resumeAudio = (): void => this.audio.resume();
 
   private readonly onPopState = (): void => {
+    void this.renderRoute();
+  };
+
+  private readonly onLocaleChange = (): void => {
     void this.renderRoute();
   };
 
