@@ -100,12 +100,12 @@ const editorStyle = fs.readFileSync(
 );
 
 test("Palette 和 Surface 发布工具动作与简洁标题", () => {
-  assert.match(shell, /id: "editor-tool-select"[\s\S]*icon: "select"[\s\S]*title: webT\\("editor\\.select"\\)/);
-  assert.match(shell, /id: "editor-tool-brush"[\s\S]*icon: "edit"[\s\S]*title: webT\\("editor\\.brush"\\)/);
-  assert.match(shell, /id: "editor-tool-erase"[\s\S]*icon: "delete"[\s\S]*title: webT\\("editor\\.erase"\\)/);
-  assert.match(shell, /id: "editor-surface-select"[\s\S]*icon: "select"[\s\S]*title: webT\\("editor\\.select"\\)/);
-  assert.match(shell, /id: "editor-surface-brush"[\s\S]*icon: "edit"[\s\S]*title: webT\\("editor\\.brush"\\)/);
-  assert.match(shell, /id: "editor-surface-fill"[\s\S]*icon: "fill"[\s\S]*title: webT\\("editor\\.fill"\\)/);
+  assert.match(shell, /id: "editor-tool-select"[\s\S]*icon: "select"[\s\S]*title: webT\("editor\.select"\)/);
+  assert.match(shell, /id: "editor-tool-brush"[\s\S]*icon: "edit"[\s\S]*title: webT\("editor\.brush"\)/);
+  assert.match(shell, /id: "editor-tool-erase"[\s\S]*icon: "delete"[\s\S]*title: webT\("editor\.erase"\)/);
+  assert.match(shell, /id: "editor-surface-select"[\s\S]*icon: "select"[\s\S]*title: webT\("editor\.select"\)/);
+  assert.match(shell, /id: "editor-surface-brush"[\s\S]*icon: "edit"[\s\S]*title: webT\("editor\.brush"\)/);
+  assert.match(shell, /id: "editor-surface-fill"[\s\S]*icon: "fill"[\s\S]*title: webT\("editor\.fill"\)/);
   assert.match(page, /key === "3"[\s\S]*setSurfaceTool\("fill"\)/);
   assert.match(page, /key === "4"[\s\S]*setTool\("erase"\)/);
   assert.match(page, /event\.key === "Tab"[\s\S]*switchAuthoringPanel\(\)/);
