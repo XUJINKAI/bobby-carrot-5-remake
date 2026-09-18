@@ -35,6 +35,28 @@ test("Explore chapter 原样显示可选名称并统一混合布局间距", () =
   );
 });
 
+test("Explore 难度星级颜色随应用基础样式加载", () => {
+  const chapterCard = fs.readFileSync(
+    new URL("../src/pages/explore/ExploreChapterCard.vue", import.meta.url),
+    "utf8",
+  );
+  const globalStyle = fs.readFileSync(
+    new URL("../style.css", import.meta.url),
+    "utf8",
+  );
+  const adventureViewport = fs.readFileSync(
+    new URL("../src/pages/adventure/AdventureViewport.vue", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(chapterCard, /class="chapter-stars"/);
+  assert.match(
+    globalStyle,
+    /\.chapter-stars\s*\{[^}]*color:\s*#f7d45f;/s,
+  );
+  assert.doesNotMatch(adventureViewport, /\.chapter-stars\s*\{/);
+});
+
 test("Explore 通用组件只消费 collection 展示合同", () => {
   const sources = [
     "ExplorePage.vue",

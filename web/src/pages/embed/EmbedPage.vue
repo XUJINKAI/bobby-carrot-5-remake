@@ -17,12 +17,12 @@ const mapMode = ref<"map" | "mapUrl">("map");
 const map = ref(location.hash.slice(1));
 const mapUrl = ref("");
 const lang = ref("zh-CN");
-const theme = ref("retro");
 const audioEnabled = ref(true);
 const audioVolumePercent = ref(100);
 const musicStyle = ref<EmbedMusicStyle>("modern");
 const keyboard = ref<EmbedKeyboardMode>("focus");
 const joystick = ref<EmbedJoystickMode>("auto");
+const pointer = ref(true);
 const zoom = ref(1);
 const minZoom = ref(0.5);
 const maxZoom = ref(3);
@@ -41,12 +41,12 @@ let renderSerial = 0;
 const options = computed(() => ({
   ...(mapMode.value === "map" ? { map: map.value.trim() } : { mapUrl: mapUrl.value.trim() }),
   lang: lang.value,
-  theme: theme.value,
   audio: audioEnabled.value ? audioVolumePercent.value / 100 : false,
   musicStyle: musicStyle.value,
   input: {
     keyboard: keyboard.value,
     joystick: joystick.value,
+    pointer: pointer.value,
   },
   camera: {
     zoom: zoom.value,
@@ -58,16 +58,20 @@ const options = computed(() => ({
   ...(info.value.trim() ? { info: info.value.trim() } : {}),
 }));
 
+const infoPlaceholder = computed(() =>
+  lang.value === "en" ? "Move with WASD / arrow keys" : "WASD / 方向键移动",
+);
+
 const embedCode = computed(() => {
   const config = {
     target: "#bc5r",
     lang: lang.value,
-    theme: theme.value,
     audio: audioEnabled.value ? audioVolumePercent.value / 100 : false,
     musicStyle: musicStyle.value,
     input: {
       keyboard: keyboard.value,
       joystick: joystick.value,
+      pointer: pointer.value,
     },
     camera: {
       zoom: zoom.value,
@@ -197,19 +201,13 @@ onBeforeUnmount(() => handle?.destroy());
 
         <fieldset class="config-group">
           <legend>通用</legend>
-          <div class="settings-grid">
-            <label>语言
-              <select v-model="lang">
-                <option value="zh-CN">中文</option>
-              </select>
-            </label>
-            <label>主题
-              <select v-model="theme">
-                <option value="retro">retro</option>
-              </select>
-            </label>
-          </div>
-          <label class="field-group">自定义信息<input v-model="info" placeholder="Powered by Bobby Carrot 5 Remake" /></label>
+          <label>语言
+            <select v-model="lang">
+              <option value="zh-CN">中文</option>
+              <option value="en">English</option>
+            </select>
+          </label>
+          <label class="field-group">自定义信息<input v-model="info" class="info-input" :placeholder="infoPlaceholder" /></label>
         </fieldset>
 
         <fieldset class="config-group">
@@ -217,24 +215,36 @@ onBeforeUnmount(() => handle?.destroy());
           <label class="check-line"><input v-model="audioEnabled" type="checkbox" /> 声音</label>
           <label class="range-field">
             <span>音量 <strong>{{ audioVolumePercent }}%</strong></span>
-            <input v-model.number="audioVolumePercent" type="range" min="0" max="200" step="1" :disabled="!audioEnabled" />
+            <input v-model.number="audioVolumePercent" type="range" min="0" max="300" step="1" :disabled="!audioEnabled" />
           </label>
-          <label>音乐风格
-            <select v-model="musicStyle">
-              <option value="modern">modern</option>
-              <option value="8bit">8bit</option>
-            </select>
-          </label>
+          <div class="choice-row">
+            <span>音乐风格</span>
+            <div class="choice-toggle" role="radiogroup" aria-label="音乐风格">
+              <button
+                type="button"
+                role="radio"
+                :aria-checked="musicStyle === 'modern'"
+                :class="{ selected: musicStyle === 'modern' }"
+                @click="musicStyle = 'modern'"
+              >Modern</button>
+              <button
+                type="button"
+                role="radio"
+                :aria-checked="musicStyle === '8bit'"
+                :class="{ selected: musicStyle === '8bit' }"
+                @click="musicStyle = '8bit'"
+              >8bit</button>
+            </div>
+          </div>
         </fieldset>
 
         <fieldset class="config-group">
           <legend>控制</legend>
           <div class="settings-grid">
             <label>键盘
-              <select v-model="keyboard">
+              <select v-model="keyboard" class="keyboard-select">
                 <option value="focus">Focus</option>
                 <option value="global">Global</option>
-                <option :value="false">关闭</option>
               </select>
             </label>
             <label>摇杆
@@ -245,6 +255,7 @@ onBeforeUnmount(() => handle?.destroy());
               </select>
             </label>
           </div>
+          <label class="check-line"><input v-model="pointer" type="checkbox" /> 滑动屏幕</label>
         </fieldset>
 
         <fieldset class="config-group">
@@ -294,6 +305,12 @@ input[type="range"] { padding: 0; accent-color: var(--bc-active); }
 .segmented { display: flex; gap: 8px; }
 .segmented button, .code-heading button { padding: 8px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel2); color: var(--bc-text); cursor: pointer; }
 .segmented button.active { background: var(--bc-active); border-color: var(--bc-active); }
+.choice-row { display: grid; gap: 6px; font-size: 13px; }
+.choice-toggle { display: flex; overflow: hidden; border: 1px solid var(--line); border-radius: 8px; background: var(--panel2); }
+.choice-toggle button { min-height: 36px; flex: 1 1 0; padding: 7px 10px; border: 0; border-right: 1px solid var(--line); background: transparent; color: var(--bc-text); cursor: pointer; }
+.choice-toggle button:last-child { border-right: 0; }
+.choice-toggle button:hover { background: color-mix(in srgb, var(--bc-active) 24%, transparent); }
+.choice-toggle button.selected { background: var(--bc-active); }
 .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .settings-grid label, .config-group > label:not(.check-line) { display: grid; gap: 6px; font-size: 13px; }
 .checks { display: flex; flex-wrap: wrap; gap: 18px; }

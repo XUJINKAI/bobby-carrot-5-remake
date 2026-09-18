@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import {
+  ORIGINAL_GAMEPLAY_IMAGE_IDS,
   prepareCanvas,
   resolveDevicePixelRatio,
   snapRectToDevicePixels,
@@ -226,11 +227,13 @@ function draw(now: number): void {
 
 onMounted(async () => {
   try {
-    staticTiles = await props.images.load("entity-atlas");
+    staticTiles = await props.images.load(
+      ORIGINAL_GAMEPLAY_IMAGE_IDS.entityAtlas,
+    );
     if (destroyed) return;
     animationFrame = requestAnimationFrame(draw);
     void props.images
-      .load("original-animated-tiles")
+      .load(ORIGINAL_GAMEPLAY_IMAGE_IDS.animatedTiles)
       .then((image) => {
         if (!destroyed) animatedTiles = image;
       })

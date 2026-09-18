@@ -11,6 +11,7 @@ export const EDITOR_AUTOSAVE_SLOT = "autosave";
 export const EDITOR_AUTOSAVE_STORAGE_KEY = `${EDITOR_STORAGE_PREFIX}${EDITOR_AUTOSAVE_SLOT}`;
 export const REPLAY_PANEL_SESSION_STORAGE_KEY =
   "bc5r:session/replay-panel-open";
+export const MAX_AUDIO_VOLUME_PERCENT = 300;
 
 export type WebTheme = "bobby" | "fc";
 export type MusicMode = "follow-theme" | "modern" | "8bit";

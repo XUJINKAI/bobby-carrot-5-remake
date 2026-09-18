@@ -4,6 +4,7 @@ import {
   type LevelEntity,
   type LevelEntityFieldValue,
   type LevelLimit,
+  type MapMusic,
   type WinCondition,
 } from "@bobby/model";
 import {
@@ -151,10 +152,19 @@ export function updateMetadata(metadata: {
       meta: {
         name: metadata.name,
         ...(metadata.author ? { author: metadata.author } : {}),
+        ...(metadata.note ? { note: metadata.note } : {}),
       },
     };
-    if (metadata.note) next.note = metadata.note;
-    else delete next.note;
+    return normalizeEditorLevel(next);
+  });
+}
+
+/** Editor 使用省略字段表达默认随机音乐，避免保存等价的 random 字面值。 */
+export function updateMusic(music: MapMusic | undefined): EditorCommand {
+  return command((level) => {
+    const next = { ...level };
+    if (music === undefined || music === "random") delete next.music;
+    else next.music = music;
     return normalizeEditorLevel(next);
   });
 }

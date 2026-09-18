@@ -74,7 +74,7 @@ function buildPublicRoutes() {
     ),
     route(
       "/import/v1",
-      `导入分享数据 | ${brand}`,
+      `导入数据 | ${brand}`,
       "导入 Bobby Carrot 5 Remake 分享数据。",
       false,
     ),

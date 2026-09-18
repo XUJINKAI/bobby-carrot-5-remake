@@ -65,8 +65,11 @@ export function writeLomaMaps(text) {
     fs.mkdirSync(directory, { recursive: true });
     const document = parseMapDocument({
       schemaVersion: 1,
-      meta: { name: entry.id, author: entry.author },
-      ...(entry.comment ? { note: entry.comment } : {}),
+      meta: {
+        name: entry.id,
+        author: entry.author,
+        ...(entry.comment ? { note: entry.comment } : {}),
+      },
       ...entry.level,
     });
     fs.writeFileSync(path.join(directory, `${entry.id}.json`), `${JSON.stringify(document, null, 2)}\n`);

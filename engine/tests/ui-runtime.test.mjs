@@ -160,12 +160,20 @@ test("Gameplay HUD view keeps nodes mounted and toggles display instead of mixin
 });
 
 test("Gameplay HUD presentation uses semantic ImageManager IDs instead of asset URLs or atlas offsets", () => {
-  const source = fs.readFileSync(
-    new URL("../src/ui/GameplayHudView.ts", import.meta.url),
-    "utf8",
-  );
-  assert.match(source, /hud-carrot/);
-  assert.match(source, /hud-egg/);
+  const [source, imageSource] = [
+    fs.readFileSync(
+      new URL("../src/ui/GameplayHudView.ts", import.meta.url),
+      "utf8",
+    ),
+    fs.readFileSync(
+      new URL("../src/image/OriginalGameplayImages.ts", import.meta.url),
+      "utf8",
+    ),
+  ];
+  assert.match(source, /ORIGINAL_GAMEPLAY_HUD_SLICE_IDS\.carrot/);
+  assert.match(source, /ORIGINAL_GAMEPLAY_HUD_SLICE_IDS\.egg/);
+  assert.match(imageSource, /carrot: "hud-carrot"/);
+  assert.match(imageSource, /egg: "hud-egg"/);
   assert.match(source, /MapEntityTypeId\.BONUS_COIN/);
   assert.match(source, /originalTileVisual/);
   assert.match(source, /entitySprite\(MapEntityTypeId\.BONUS_COIN, 32\)/);
@@ -186,7 +194,10 @@ test("Gameplay HUD uses objective plus primary and secondary inventory rows", ()
   assert.match(source, /inventoryRow\("primary", "#ff665e"\)/);
   assert.match(source, /inventoryRow\("secondary", "#5796ff"\)/);
   assert.match(source, /bean\.root,[\s\S]*gas\.root,[\s\S]*shovel\.root,[\s\S]*kite\.root,[\s\S]*lockKey\.root/);
-  assert.match(source, /"lock-key": "hud-key"/);
+  assert.match(
+    source,
+    /"lock-key": ORIGINAL_GAMEPLAY_HUD_SLICE_IDS\.key/,
+  );
   assert.match(source, /this\.primaryInventory\.root\.append\(this\.coins\.root\)/);
   assert.match(source, /rowGap: "10px"/);
   assert.match(source, /normalized > 1 \? "inline" : "none"/);

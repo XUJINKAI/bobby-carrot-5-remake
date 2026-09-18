@@ -8,11 +8,11 @@ import {
   PhArrowSquareOut,
   PhArrowUUpLeft,
   PhArrowUUpRight,
+  PhCaretCircleUp,
+  PhCaretDown,
   PhCheck,
-  PhChecks,
   PhClipboard,
   PhCopy,
-  PhCaretDown,
   PhCursor,
   PhDiamond,
   PhDotsSixVertical,
@@ -26,6 +26,7 @@ import {
   PhLock,
   PhMagnifyingGlass,
   PhMinus,
+  PhMinusCircle,
   PhPaintRoller,
   PhPalette,
   PhPencilSimple,
@@ -63,7 +64,6 @@ withDefaults(defineProps<{
 const icons: Record<AppIconName, Component> = {
   back: PhArrowLeft,
   check: PhCheck,
-  checks: PhChecks,
   close: PhX,
   copy: PhCopy,
   cut: PhScissors,
@@ -83,6 +83,8 @@ const icons: Record<AppIconName, Component> = {
   inspector: PhMagnifyingGlass,
   joystick: PhJoystick,
   lock: PhLock,
+  "map-details": PhCaretCircleUp,
+  "map-status": PhMinusCircle,
   menu: PhList,
   minus: PhMinus,
   music: PhSpeakerSimpleHigh,
@@ -119,6 +121,7 @@ const icons: Record<AppIconName, Component> = {
     class="app-icon"
     :size="size"
     :weight="weight"
+    :data-icon="name"
     aria-hidden="true"
   />
 </template>

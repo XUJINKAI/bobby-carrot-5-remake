@@ -9,6 +9,7 @@ import {
   type EntityType,
   type JsonValue,
 } from "@bobby/model";
+import { ORIGINAL_GAMEPLAY_IMAGE_IDS } from "../../image/OriginalGameplayImages.js";
 import type { EntityFieldDefinition } from "../../world/entity/EntityDefinition.js";
 import type {
   ImageVisualLayer,
@@ -27,7 +28,6 @@ export interface AtlasCell {
   row: number;
 }
 
-const ORIGINAL_ANIMATED_TILES_ASSET = "original-animated-tiles";
 const ORIGINAL_AMBIENT_FRAME_MS = 124;
 const ORIGINAL_TILE_SIZE = 48;
 
@@ -221,7 +221,7 @@ export function originalAmbientAnimationLayer(
   const source = frames[phase - 1]!;
   return {
     kind: "image",
-    asset: ORIGINAL_ANIMATED_TILES_ASSET,
+    asset: ORIGINAL_GAMEPLAY_IMAGE_IDS.animatedTiles,
     frameWidth: ORIGINAL_TILE_SIZE,
     frameHeight: ORIGINAL_TILE_SIZE,
     frameIndex:
@@ -258,7 +258,7 @@ function originalAnimationFrame(
   if (!source || source.atlas !== "ta") return null;
   return {
     kind: "image",
-    asset: ORIGINAL_ANIMATED_TILES_ASSET,
+    asset: ORIGINAL_GAMEPLAY_IMAGE_IDS.animatedTiles,
     frameWidth: ORIGINAL_TILE_SIZE,
     frameHeight: ORIGINAL_TILE_SIZE,
     frameIndex:

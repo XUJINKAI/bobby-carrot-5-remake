@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "meta": {
-    "name": "38-2"
+    "name": "38-2",
+    "note": "original 50 cell: waterfall 11s. bean growth 21s."
   },
-  "note": "original 50 cell: waterfall 11s. bean growth 21s.",
   "rules": {
     "win": {
       "type": "all",

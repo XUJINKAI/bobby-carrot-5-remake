@@ -26,8 +26,6 @@ export type MapMusic = "random" | "none" | MusicTrackId;
 export interface LevelMap {
   schemaVersion: 1;
   music?: MapMusic;
-  /** 属于地图内容的游戏内注记或表现文本。 */
-  note?: string;
   rules?: LevelRules;
   width: number;
   height: number;
@@ -38,6 +36,7 @@ export interface LevelMap {
 export interface MapMeta {
   name: string;
   author?: string;
+  note?: string;
 }
 
 /** 源文件、构建产物与分享共用的地图文档；资源身份来自路径或文件名。 */

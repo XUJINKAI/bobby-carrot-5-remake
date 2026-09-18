@@ -1,40 +1,39 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import AppIcon from "../shared/icons/AppIcon.vue";
 import type { ShellIndicator } from "./shellBridge.js";
 
 const props = defineProps<{ indicator: ShellIndicator }>();
+const root = ref<HTMLElement | null>(null);
 const button = ref<HTMLButtonElement | null>(null);
-const visible = ref(false);
-let pointerType = "";
-
-function onPointerDown(event: PointerEvent): void {
-  pointerType = event.pointerType;
-}
+const hovered = ref(false);
+const pinned = ref(false);
+const focused = ref(false);
+const visible = computed(() => hovered.value || pinned.value || focused.value);
 
 function onPointerEnter(event: PointerEvent): void {
-  if (event.pointerType === "mouse") visible.value = true;
+  if (event.pointerType === "mouse") hovered.value = true;
 }
 
 function onPointerLeave(event: PointerEvent): void {
-  if (event.pointerType === "mouse") visible.value = false;
+  if (event.pointerType === "mouse") hovered.value = false;
 }
 
 function onFocus(): void {
-  if (button.value?.matches(":focus-visible")) visible.value = true;
+  if (button.value?.matches(":focus-visible")) focused.value = true;
 }
 
 function onClick(): void {
-  if (pointerType === "mouse") return;
-  visible.value = !visible.value;
+  pinned.value = !pinned.value;
 }
 
-function onKeyDown(): void {
-  pointerType = "";
+function hidePersistent(): void {
+  pinned.value = false;
+  focused.value = false;
 }
 
 function onDocumentPointerDown(event: PointerEvent): void {
-  if (!button.value?.contains(event.target as Node)) visible.value = false;
+  if (!root.value?.contains(event.target as Node)) pinned.value = false;
 }
 
 onMounted(() => {
@@ -46,7 +45,12 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <span class="shell-indicator">
+  <span
+    ref="root"
+    class="shell-indicator"
+    @pointerenter="onPointerEnter"
+    @pointerleave="onPointerLeave"
+  >
     <button
       :id="indicator.id"
       ref="button"
@@ -55,14 +59,10 @@ onBeforeUnmount(() => {
       :class="`tone-${indicator.tone ?? 'muted'}`"
       :aria-label="indicator.label"
       :aria-describedby="visible ? `${indicator.id}-tooltip` : undefined"
-      @pointerdown="onPointerDown"
-      @pointerenter="onPointerEnter"
-      @pointerleave="onPointerLeave"
       @focus="onFocus"
-      @blur="visible = false"
+      @blur="focused = false"
       @click="onClick"
-      @keydown="onKeyDown"
-      @keydown.esc="visible = false"
+      @keydown.esc.prevent="hidePersistent"
     >
       <AppIcon :name="indicator.icon" :size="21" />
     </button>
@@ -70,8 +70,23 @@ onBeforeUnmount(() => {
       v-if="visible"
       :id="`${indicator.id}-tooltip`"
       class="shell-indicator-tooltip"
+      :class="{ 'has-details': indicator.details?.length }"
       role="tooltip"
-    >{{ indicator.label }}</span>
+    >
+      <span v-if="indicator.details?.length" class="shell-indicator-details">
+        <span
+          v-for="detail in indicator.details"
+          :key="detail.id"
+          class="shell-indicator-detail"
+          :class="{ 'shell-indicator-detail-note': detail.kind === 'note' }"
+          :data-indicator-detail="detail.id"
+        >
+          <strong>{{ detail.label }}</strong>
+          <span class="shell-indicator-detail-value">{{ detail.text }}</span>
+        </span>
+      </span>
+      <template v-else>{{ indicator.label }}</template>
+    </span>
   </span>
 </template>
 
@@ -124,5 +139,50 @@ onBeforeUnmount(() => {
   line-height: 1.4;
   white-space: normal;
   pointer-events: none;
+}
+
+.shell-indicator-tooltip.has-details {
+  width: min(400px, calc(100vw - 24px));
+  max-height: min(420px, calc(100vh - 96px));
+  overflow-y: auto;
+  pointer-events: auto;
+}
+
+.shell-indicator-details {
+  display: grid;
+  gap: 8px;
+}
+
+.shell-indicator-detail {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 8px;
+  align-items: baseline;
+}
+
+.shell-indicator-detail strong {
+  color: var(--bc-text-muted);
+  white-space: nowrap;
+}
+
+.shell-indicator-detail-value {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.shell-indicator-detail-note {
+  display: block;
+  padding-top: 8px;
+  border-top: 1px solid var(--bc-panel-border);
+}
+
+.shell-indicator-detail-note strong,
+.shell-indicator-detail-note .shell-indicator-detail-value {
+  display: block;
+}
+
+.shell-indicator-detail-note .shell-indicator-detail-value {
+  margin-top: 4px;
+  white-space: pre-wrap;
 }
 </style>

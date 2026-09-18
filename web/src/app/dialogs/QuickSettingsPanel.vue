@@ -5,6 +5,7 @@ import type { WebTheme } from "../../theme/webTheme.js";
 import type { MusicMode } from "../settings/globalPreferences.js";
 import type { GlobalSettingsState } from "../settings/useGlobalSettings.js";
 import AppIcon from "../../shared/icons/AppIcon.vue";
+import { MAX_AUDIO_VOLUME_PERCENT } from "../../storage/contracts.js";
 
 defineProps<{ state: GlobalSettingsState }>();
 const emit = defineEmits<{
@@ -95,7 +96,7 @@ function numberValue(event: Event): number {
       <input
         type="range"
         min="0"
-        max="200"
+        :max="MAX_AUDIO_VOLUME_PERCENT"
         step="1"
         :value="state.volume"
         :aria-valuetext="`${state.volume}%`"

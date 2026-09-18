@@ -260,12 +260,14 @@ export class BobbyApp {
         this.controller = await renderGamePage({
           ...this.pageContext(),
           level: imported.level,
+          mapMeta: imported.value.meta,
           identity: {
             collection: "imported",
             id: "shared-map",
             title: imported.value.meta.name,
           },
           mode: "explore",
+          source: "import",
         });
         return;
       }
@@ -318,8 +320,10 @@ export class BobbyApp {
       this.controller = await gamePage.renderGamePage({
         ...this.pageContext(),
         level: importPage.importedLevelMap(level),
+        mapMeta: level.meta,
         identity: { ...ref, title: level.meta.name },
         mode: "explore",
+        source: "explore",
       });
       return;
     }
@@ -345,6 +349,7 @@ export class BobbyApp {
         ...(explorePreviousMapId ? { explorePreviousMapId } : {}),
         ...(exploreNextMapId ? { exploreNextMapId } : {}),
         mode: "explore",
+        source: "explore",
       });
       this.prefetchMaps([
         ...(explorePreviousMapId
@@ -398,6 +403,7 @@ export class BobbyApp {
       replayMap: resolved.ref,
       verified,
       mode: "adventure",
+      source: "adventure",
     });
     this.prefetchMaps(adventureNeighborRefs(adventure, found.level.id));
   }
@@ -440,6 +446,7 @@ export class BobbyApp {
       replayMap: resolved.ref,
       verified,
       mode: "adventure",
+      source: "adventure",
     });
   }
 

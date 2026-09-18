@@ -49,7 +49,6 @@ export function levelMapFromDocument(document: MapDocument): LevelMap {
     height: document.height,
     entities: structuredClone(document.entities),
     ...(document.music !== undefined ? { music: document.music } : {}),
-    ...(document.note !== undefined ? { note: document.note } : {}),
     ...(document.rules ? { rules: structuredClone(document.rules) } : {}),
   };
 }

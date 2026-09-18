@@ -84,6 +84,14 @@ export {
   type LoadedImageSlice,
 } from "./image/ImageManager.js";
 export {
+  createOriginalGameplayImageManager,
+  ORIGINAL_GAMEPLAY_HUD_SLICE_IDS,
+  ORIGINAL_GAMEPLAY_IMAGE_FILES,
+  ORIGINAL_GAMEPLAY_IMAGE_IDS,
+  ORIGINAL_GAMEPLAY_IMAGE_SLICES,
+  type OriginalGameplayImageFile,
+} from "./image/OriginalGameplayImages.js";
+export {
   prepareCanvas,
   resolveDevicePixelRatio,
   snapRectToDevicePixels,

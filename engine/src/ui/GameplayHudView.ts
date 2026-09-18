@@ -1,5 +1,6 @@
 import { MapEntityTypeId, originalTileVisual } from "@bobby/model";
 import type { ImageManager, LoadedImageSlice } from "../image/ImageManager.js";
+import { ORIGINAL_GAMEPLAY_HUD_SLICE_IDS } from "../image/OriginalGameplayImages.js";
 import { GAMEPLAY_RIGHT_INSET_CSS_VAR } from "./gameplayMount.js";
 import type { GameplayHudModel } from "./GameplayHudModel.js";
 
@@ -35,13 +36,13 @@ type HudSprite =
   | "lock-key";
 
 const HUD_SLICE: Record<HudSprite, string> = {
-  carrot: "hud-carrot",
-  gas: "hud-gas",
-  kite: "hud-kite",
-  shovel: "hud-shovel",
-  egg: "hud-egg",
-  bean: "hud-bean",
-  "lock-key": "hud-key",
+  carrot: ORIGINAL_GAMEPLAY_HUD_SLICE_IDS.carrot,
+  gas: ORIGINAL_GAMEPLAY_HUD_SLICE_IDS.gas,
+  kite: ORIGINAL_GAMEPLAY_HUD_SLICE_IDS.kite,
+  shovel: ORIGINAL_GAMEPLAY_HUD_SLICE_IDS.shovel,
+  egg: ORIGINAL_GAMEPLAY_HUD_SLICE_IDS.egg,
+  bean: ORIGINAL_GAMEPLAY_HUD_SLICE_IDS.bean,
+  "lock-key": ORIGINAL_GAMEPLAY_HUD_SLICE_IDS.key,
 };
 
 /** DOM-only HUD renderer. It knows semantic image IDs, never URLs or atlas coordinates. */

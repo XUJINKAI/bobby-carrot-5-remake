@@ -13,7 +13,6 @@ export function homeIdentity(): ShellIdentity {
     icon: siteUrl("assets/art/hd/icon.png"),
     productName: "Bobby Carrot 5 Remake",
     productNameVisible: true,
-    statusText: "开发中",
     href: "/",
   };
 }

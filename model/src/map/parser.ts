@@ -11,11 +11,10 @@ const MAP_FIELDS = new Set([
   "width",
   "height",
   "music",
-  "note",
   "entities",
   "rules",
 ]);
-const META_FIELDS = new Set(["name", "author"]);
+const META_FIELDS = new Set(["name", "author", "note"]);
 const ENTITY_BASE_FIELDS = new Set(["type", "x", "y", "stackOrder"]);
 const INVALID_JSON_FIELDS_KEY = "__invalidJsonFields";
 
@@ -57,8 +56,6 @@ function parseMapObject(
     (typeof source.music !== "string" || source.music.length === 0)
   )
     throw new Error("地图 music 必须为非空字符串");
-  if (source.note !== undefined && typeof source.note !== "string")
-    throw new Error("地图 note 必须为字符串");
   if (!Array.isArray(source.entities))
     throw new Error("地图 entities 必须为数组");
   source.entities = source.entities.map((entity, index) =>
@@ -81,7 +78,6 @@ function copyLevelMap(source: Record<string, unknown>): LevelMap {
 function copyOptionalMapFields(source: Record<string, unknown>) {
   return {
     ...(source.music !== undefined ? { music: source.music as string } : {}),
-    ...(source.note !== undefined ? { note: source.note as string } : {}),
     ...(source.rules !== undefined
       ? { rules: structuredClone(source.rules as LevelRules) }
       : {}),
@@ -93,7 +89,7 @@ function parseMapMeta(value: unknown): MapMeta {
   rejectUnknownFields(meta, META_FIELDS, "MapDocument meta");
   if (typeof meta.name !== "string" || meta.name.length === 0)
     throw new Error("MapDocument meta.name 必须为非空字符串");
-  for (const key of ["author"])
+  for (const key of ["author", "note"])
     if (meta[key] !== undefined && typeof meta[key] !== "string")
       throw new Error(`MapDocument meta.${key} 必须为字符串`);
   return structuredClone(meta) as unknown as MapMeta;

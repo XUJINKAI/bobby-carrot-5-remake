@@ -3,6 +3,7 @@ import type {
   TransientVisualDefinition,
   VisualResolveContext,
 } from "../../visual/VisualDefinition.js";
+import { ORIGINAL_GAMEPLAY_IMAGE_IDS } from "../../image/OriginalGameplayImages.js";
 import type { EntityModule, EntityModuleDefinition } from "../EntityModule.js";
 import { mowableBehavior } from "../behaviorLibrary.js";
 import {
@@ -38,7 +39,7 @@ const mowEffect: TransientVisualDefinition = {
     return {
       layers: [{
         kind: "image",
-        asset: "bobby-speed-trail",
+        asset: ORIGINAL_GAMEPLAY_IMAGE_IDS.bobby.speedTrail,
         frameColumns: 5,
         frameRows: 2,
         frameIndex: frame,

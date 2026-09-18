@@ -80,6 +80,7 @@ import {
   prepareAdventureGameplayLevel,
 } from "./adventurePurchase.js";
 import { resolveGameplayHudConfig } from "./gameplayHudConfig.js";
+import { mapStatusIndicator } from "./mapStatusIndicator.js";
 
 export type { GamePageMode } from "./gamePageCapabilities.js";
 
@@ -105,6 +106,8 @@ export interface GameIdentity {
   title: string;
 }
 
+export type GamePageSource = "adventure" | "explore" | "import";
+
 export interface GamePageContext {
   app: HTMLDivElement;
   adventure: AdventureIndex;
@@ -124,6 +127,7 @@ export interface GamePageContext {
   replayMap?: ExploreMapRef;
   verified?: boolean;
   mode: GamePageMode;
+  source: GamePageSource;
 }
 
 export async function renderGamePage(
@@ -148,6 +152,7 @@ export async function renderGamePage(
     replayMap,
     verified = false,
     mode,
+    source,
   } = context;
   const campaignNode = Boolean(adventureChapter && adventureLevel);
   if (mode === "adventure" && !campaignNode && !adventureScene) {
@@ -202,15 +207,21 @@ export async function renderGamePage(
   const screenControlEnabled = getWebSettings().controls.screenControlEnabled;
   const replayPanelInitiallyOpen =
     capabilities.replayPanel && loadReplayPanelOpen();
+  const statusMapId = `${replayTarget.collection}/${replayTarget.id}`;
+  const statusMapName = mapMeta?.name ?? identity.title;
   configureShell(
     gameShellConfig(
       mode,
+      source,
       screenControlEnabled,
+      statusMapId,
+      statusMapName,
       explorePreviousMapId,
       exploreNextMapId,
       replayPanelInitiallyOpen,
       capabilities.replayPanel,
       verified,
+      mapMeta,
     ),
   );
   app.replaceChildren();
@@ -353,12 +364,16 @@ export async function renderGamePage(
           configureShell(
             gameShellConfig(
               mode,
+              source,
               getWebSettings().controls.screenControlEnabled,
+              statusMapId,
+              statusMapName,
               explorePreviousMapId,
               exploreNextMapId,
               open,
               capabilities.replayPanel,
               verified,
+              mapMeta,
             ),
           );
         },
@@ -578,23 +593,30 @@ function nextAdventureLevel(
 
 function gameShellConfig(
   mode: GamePageMode,
+  source: GamePageSource,
   screenControlEnabled: boolean,
+  mapId: string,
+  mapName: string,
   explorePreviousMapId?: string,
   exploreNextMapId?: string,
   replayOpen = false,
   replayEnabled = mode === "explore",
   verified = false,
+  mapMeta?: MapMeta,
 ): ShellConfig {
   const explore = mode === "explore";
+  const shellIdentity = source === "import"
+    ? pageIdentity("导入数据", "/import/v1", false)
+    : pageIdentity(
+        source === "explore" ? "自由探索模式" : "冒险模式",
+        source === "explore" ? "/explore" : "/adventure",
+        false,
+      );
   return {
     topBar: {
       visible: true,
       fixed: true,
-      identity: pageIdentity(
-        explore ? "自由探索模式" : "冒险模式",
-        explore ? "/explore" : "/adventure",
-        false,
-      ),
+      identity: shellIdentity,
       back: {
         id: "back",
         icon: "back",
@@ -661,12 +683,9 @@ function gameShellConfig(
             },
           ]
         : [],
-      leadingIndicators: [{
-        id: "replay-verification",
-        icon: "checks",
-        tone: verified ? "success" : "muted",
-        label: replayVerificationTooltip(mode, verified),
-      }],
+      leadingIndicators: [
+        mapStatusIndicator(mode, verified, mapId, mapName, mapMeta),
+      ],
       trailing: [
         {
           id: "screen-control",
@@ -677,20 +696,6 @@ function gameShellConfig(
       ],
     },
   };
-}
-
-function replayVerificationTooltip(
-  mode: GamePageMode,
-  verified: boolean,
-): string {
-  if (mode === "explore") {
-    return verified
-      ? "已验证可通关"
-      : "尚未进行通关验证";
-  }
-  return verified
-    ? "已在自由探索模式中验证可通关"
-    : "尚未进行通关验证";
 }
 
 const NOOP_REPLAY_PANEL_CONTROLLER: ReplayPanelController = {

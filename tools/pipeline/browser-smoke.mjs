@@ -5,6 +5,11 @@ import path from "node:path";
 import { spawn, spawnSync } from "node:child_process";
 import { gzipSync } from "node:zlib";
 import { BC5R_GAME_ID } from "../../model/dist/index.js";
+import {
+  assertMapStatusSmoke,
+  mapStatusSmokeScript,
+} from "./browser-smoke/map-status.mjs";
+import { assertEmbedHudSmoke, embedHudSmokeScript } from "./browser-smoke/embed-hud.mjs";
 import { root } from "../lib/fs.mjs";
 import { serveDistRequest } from "../lib/static-server.mjs";
 const browserEnvironment = { ...process.env };
@@ -64,7 +69,15 @@ try {
     ["本项目还在开发中"],
   );
   await interactiveDataExchangeSmoke(`${origin}/`);
-  await smoke(`${origin}/embed`, ['class="embed-page"', "BC5R Embed v1"]);
+  const mapPayload = exchangePayload(
+    fs.readFileSync(
+      path.join(root, "tools/pipeline/mechanics-smoke.json"),
+      "utf8",
+    ),
+  );
+  const embedUrl = `${origin}/embed#${mapPayload}`;
+  await smoke(embedUrl, ['class="embed-page"', "BC5R Embed v1", "English", "Modern", "滑动屏幕"]);
+  await interactiveEmbedHudSmoke(embedUrl);
   await expectStatus(`${origin}/embed/v1/bc5r.js`, 200, "text/javascript");
   await smoke(
     `${origin}/explore`,
@@ -82,6 +95,7 @@ try {
     ],
     ["进入冒险模式"],
   );
+  await exploreDifficultySmoke(`${origin}/explore`);
   await interactiveFilterSmoke(`${origin}/explore`);
   await smoke(`${origin}/explore/novoban-pushbox`, [
     'class="explore-tabs"',
@@ -114,10 +128,25 @@ try {
   await smoke(`${origin}/explore/play/loma-pushbox/01-01`, [
     'class="game-page"',
     'id="game"',
+    'id="map-status"',
+    'data-icon="map-details"',
     'class="shell-indicator-button tone-muted"',
-    'aria-label="尚未进行通关验证"',
+    'aria-label="地图状态：通关验证 尚未进行通关验证；关卡 ID loma-pushbox/01-01；关卡名字 01-01；作者 Aymeric du Peloux"',
     "01-01",
   ]);
+  await interactiveMapStatusSmoke(
+    `${origin}/explore/play/loma-pushbox/01-01`,
+    {
+      icon: "map-details",
+      tone: "muted",
+      details: {
+        verification: "尚未进行通关验证",
+        "map-id": "loma-pushbox/01-01",
+        "map-name": "01-01",
+        author: "Aymeric du Peloux",
+      },
+    },
+  );
   await smoke(`${origin}/explore/play/original/1-1`, [
     'class="game-page"',
     'id="game"',
@@ -132,15 +161,17 @@ try {
     'class="shell-topbar-left"',
     'class="shell-topbar-center"',
     'class="shell-topbar-right"',
+    'id="map-status"',
+    'data-icon="map-status"',
     'class="shell-indicator-button tone-success"',
-    'aria-label="已验证可通关"',
+    'aria-label="地图状态：通关验证 已验证可通关；关卡 ID original/1-1；关卡名字 1"',
   ]);
   await smoke(
     `${origin}/explore/play/original/unlisted-smoke`,
     [
       'class="game-page"',
       'id="game"',
-      'aria-label="尚未进行通关验证"',
+      'aria-label="地图状态：通关验证 尚未进行通关验证；关卡 ID original/unlisted-smoke；关卡名字 1"',
     ],
   );
   await smoke(
@@ -148,12 +179,18 @@ try {
     [
       'class="game-page"',
       'id="game"',
-      'aria-label="尚未进行通关验证"',
+      'aria-label="地图状态：通关验证 尚未进行通关验证；关卡 ID standalone-smoke/standalone；关卡名字 1"',
     ],
   );
-  await interactiveReplayVerificationSmoke(
-    `${origin}/explore/play/original/1-1`,
-  );
+  await interactiveMapStatusSmoke(`${origin}/explore/play/original/1-1`, {
+    icon: "map-status",
+    tone: "success",
+    details: {
+      verification: "已验证可通关",
+      "map-id": "original/1-1",
+      "map-name": "1",
+    },
+  });
   await smoke(`${origin}/explore/play/novoban-pushbox/01`, [
     'class="game-page"',
     'id="game"',
@@ -182,8 +219,10 @@ try {
     [
       "original-adventure-game",
       'id="game"',
+      'id="map-status"',
+      'data-icon="map-status"',
       'class="shell-indicator-button tone-success"',
-      'aria-label="已在自由探索模式中验证可通关"',
+      'aria-label="地图状态：通关验证 已在自由探索模式中验证可通关；关卡 ID original/1-1；关卡名字 1"',
     ],
     ['id="undo"', 'id="replay-record"', "data-replay-panel"],
   );
@@ -194,13 +233,8 @@ try {
     'data-palette-type="egg"',
   ]);
   await interactiveEditorSourceSmoke(
-    `${origin}/edit#map=novoban-pushbox/01`,
-  );
-  const mapPayload = exchangePayload(
-    fs.readFileSync(
-      path.join(root, "tools/pipeline/mechanics-smoke.json"),
-      "utf8",
-    ),
+    `${origin}/edit#map=engine-lab/00-intro`,
+    { type: "all", conditions: [{ type: "exit" }] },
   );
   const { createAdventureSave, serializeAdventureSave } = await import(
     "../../adventure/dist/index.js"
@@ -208,13 +242,28 @@ try {
   const profilePayload = exchangePayload(
     serializeAdventureSave(createAdventureSave()),
   );
-  await smoke(`${origin}/import/v1#${mapPayload}`, [
+  const importedMapUrl = `${origin}/import/v1#${mapPayload}`;
+  await smoke(importedMapUrl, [
     'class="game-page"',
+    'class="shell-context-name">导入数据',
     'id="game"',
+    'id="map-status"',
+    'data-icon="map-details"',
   ]);
+  await interactiveMapStatusSmoke(importedMapUrl, {
+    icon: "map-details",
+    tone: "muted",
+    details: {
+      verification: "尚未进行通关验证",
+      "map-id": "imported/shared-map",
+      "map-name": "Engine Mechanics Smoke Map",
+      author: "bc5r",
+      note: "Editor → Engine / Original JAR 回归测试夹具；不是正式谜题关。",
+    },
+  });
   await smoke(`${origin}/import/v1#${profilePayload}`, [
     'class="import-page"',
-    'class="shell-context-name">导入',
+    'class="shell-context-name">导入数据',
     "Adventure Save",
     "导入并覆盖",
   ]);
@@ -371,43 +420,31 @@ async function interactiveFilterSmoke(url) {
   if (!payload.active || !payload.selected || payload.cards <= 0 || payload.mowerIcons !== 2)
     throw new Error(`Unexpected filter smoke result: ${JSON.stringify(payload)}`);
 }
-async function interactiveReplayVerificationSmoke(url) {
+async function exploreDifficultySmoke(url) {
   const script = `
 (async () => {
   const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-  let button = null;
-  for (let i = 0; i < 120 && !button; i += 1) {
+  let star = null;
+  for (let i = 0; i < 120 && !star; i += 1) {
     await delay(50);
-    button = document.querySelector('#replay-verification');
+    star = document.querySelector('.chapter-stars .app-icon');
   }
-  if (!button) throw new Error('missing replay verification icon');
-  button.dispatchEvent(new PointerEvent('pointerenter', { pointerType: 'mouse' }));
-  await delay(30);
-  const hover = document.querySelector('[role="tooltip"]')?.textContent;
-  button.dispatchEvent(new PointerEvent('pointerleave', { pointerType: 'mouse' }));
-  button.dispatchEvent(new PointerEvent('pointerdown', { pointerType: 'touch', bubbles: true }));
-  button.click();
-  await delay(30);
-  const touch = document.querySelector('[role="tooltip"]')?.textContent;
-  document.body.dispatchEvent(new PointerEvent('pointerdown', {
-    pointerType: 'touch',
-    bubbles: true,
-  }));
-  await delay(30);
-  const dismissed = !document.querySelector('[role="tooltip"]');
-  return JSON.stringify({ hover, touch, dismissed });
+  if (!star) throw new Error('missing Explore difficulty star');
+  return JSON.stringify({ color: getComputedStyle(star).color });
 })()
 `;
   const result = await runBrowserEval(url, script);
   if (result.status !== 0)
-    throw new Error(`Replay 验真 tooltip 检查失败：${result.stderr || result.stdout}`);
+    throw new Error(`Explore 难度星级检查失败：${result.stderr || result.stdout}`);
   const payload = lastJsonLine(result.stdout);
-  if (
-    payload.hover !== "已验证可通关" ||
-    payload.touch !== payload.hover ||
-    !payload.dismissed
-  )
-    throw new Error(`Replay 验真 tooltip 状态异常：${JSON.stringify(payload)}`);
+  if (payload.color !== "rgb(247, 212, 95)")
+    throw new Error(`Explore 难度星级颜色异常：${JSON.stringify(payload)}`);
+}
+async function interactiveMapStatusSmoke(url, expected) {
+  const result = await runBrowserEval(url, mapStatusSmokeScript);
+  if (result.status !== 0)
+    throw new Error(`地图状态 tooltip 检查失败：${result.stderr || result.stdout}`);
+  assertMapStatusSmoke(lastJsonLine(result.stdout), expected);
 }
 async function interactiveDataExchangeSmoke(url) {
   const script = `
@@ -458,7 +495,14 @@ async function interactiveDataExchangeSmoke(url) {
   if (!payload.confirmation)
     throw new Error(`Unexpected home import smoke result: ${JSON.stringify(payload)}`);
 }
-async function interactiveEditorSourceSmoke(url) {
+
+async function interactiveEmbedHudSmoke(url) {
+  const result = await runBrowserEval(url, embedHudSmokeScript);
+  if (result.status !== 0)
+    throw new Error(`Embed HUD 字体检查失败：${result.stderr || result.stdout}`);
+  assertEmbedHudSmoke(lastJsonLine(result.stdout));
+}
+async function interactiveEditorSourceSmoke(url, expectedWin) {
   const script = `
 (async () => {
   const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -472,9 +516,17 @@ async function interactiveEditorSourceSmoke(url) {
     await delay(50);
     value = document.querySelector('.editor-dialog .data-exchange-text')?.value ?? '';
   }
+  const compressed = /\\/import\\/v1#[A-Za-z0-9_-]+$/.test(value);
+  const checkbox = document.querySelector('.data-exchange-check input[type="checkbox"]');
+  if (checkbox?.checked) checkbox.click();
+  for (let i = 0; i < 120 && !value.trimStart().startsWith('{'); i += 1) {
+    await delay(50);
+    value = document.querySelector('.editor-dialog .data-exchange-text')?.value ?? '';
+  }
   return JSON.stringify({
     hash: location.hash,
-    compressed: /\\/import\\/v1#[A-Za-z0-9_-]+$/.test(value),
+    compressed,
+    win: JSON.parse(value).rules?.win,
   });
 })()
 `;
@@ -482,7 +534,11 @@ async function interactiveEditorSourceSmoke(url) {
   if (result.status !== 0)
     throw new Error(`Interactive editor source smoke failed: ${result.stderr || result.stdout}`);
   const payload = lastJsonLine(result.stdout);
-  if (payload.hash || !payload.compressed)
+  if (
+    payload.hash ||
+    !payload.compressed ||
+    JSON.stringify(payload.win) !== JSON.stringify(expectedWin)
+  )
     throw new Error(`Unexpected editor source result: ${JSON.stringify(payload)}`);
 }
 async function runBrowserEval(url, script) {

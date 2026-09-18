@@ -1,4 +1,4 @@
-export type EmbedKeyboardMode = false | "focus" | "global";
+export type EmbedKeyboardMode = "focus" | "global";
 export type EmbedJoystickMode = boolean | "auto";
 export type EmbedMusicStyle = "modern" | "8bit";
 
@@ -7,12 +7,12 @@ export interface BC5RMountOptions {
   map?: string;
   mapUrl?: string;
   lang?: string;
-  theme?: string;
   audio?: boolean | number;
   musicStyle?: EmbedMusicStyle;
   input?: {
     keyboard?: EmbedKeyboardMode;
     joystick?: EmbedJoystickMode;
+    pointer?: boolean;
   };
   camera?: {
     zoom?: number;

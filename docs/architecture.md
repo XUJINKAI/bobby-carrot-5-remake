@@ -408,7 +408,7 @@ assets/maps/<collection>/<map>.json
 
 Editor 持久化 `MapDocument extends LevelMap`：
 
-- `schemaVersion`、`meta.name / author` 与顶层 `note`；
+- `schemaVersion` 与 `meta.name / author / note`；
 - semantic `entities[]`；
 - `LevelEntity` 类型专属顶层字段；
 - multi-cell 只保存 anchor。

@@ -5,6 +5,7 @@ import type {
   WorldOverlayItem,
 } from "../../render/RenderScene.js";
 import type { PresentationFrame } from "../../time/PresentationClock.js";
+import { ORIGINAL_GAMEPLAY_IMAGE_IDS } from "../../image/OriginalGameplayImages.js";
 import type { World } from "../../world/World.js";
 import type { AmbientVisualState } from "../VisualDefinition.js";
 import { sparkleFrameRect } from "./OriginalAmbientSprites.js";
@@ -162,7 +163,7 @@ export class AmbientVisualRuntime {
         composition: {
           layers: [{
             kind: "image",
-            asset: "original-animated-tiles",
+            asset: ORIGINAL_GAMEPLAY_IMAGE_IDS.animatedTiles,
             sourceX: source.x,
             sourceY: source.y,
             frameWidth: source.width,
@@ -230,7 +231,7 @@ export class AmbientVisualRuntime {
         composition: {
           layers: [{
             kind: "image",
-            asset: "ambient-butterfly",
+            asset: ORIGINAL_GAMEPLAY_IMAGE_IDS.ambientButterfly,
             sourceX: 0,
             sourceY: frame * 24,
             frameWidth: 24,

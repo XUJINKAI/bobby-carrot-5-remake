@@ -76,9 +76,10 @@ Leading | Info | Trailing
 
 `leading` 和 `trailing` 使用普通 `ShellAction`；`info` 使用文本或链接，并可带语义图标。Palette、Inspector、Screen Control 等 action 的结果由页面或 App 层处理，Shell 不创建业务 Drawer、Dialog 或 Engine 控件。
 
-`leadingIndicators` 紧随左侧 action 显示静态状态图标，包含语义图标、提示文字和
-`success / muted` 颜色语义。Shell 只负责鼠标悬停、键盘聚焦和触摸时展示 tooltip，
-状态含义由页面提供。
+`leadingIndicators` 紧随左侧 action 显示静态状态图标，包含语义图标、提示文字、可选的
+结构化详情和 `success / muted` 颜色语义。详情由页面提供稳定 ID、标签、文本与可选的长注记
+类型；Shell 只负责鼠标悬停、键盘聚焦和触摸时展示 tooltip，并为长注记提供保留换行的
+限高滚动布局，不解释状态含义。
 
 ## 全局功能与 Help
 

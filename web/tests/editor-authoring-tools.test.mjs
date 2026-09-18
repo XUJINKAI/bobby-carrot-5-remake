@@ -71,6 +71,21 @@ const levelInfo = fs.readFileSync(
   new URL("../src/pages/editor/EditorLevelInfo.vue", import.meta.url),
   "utf8",
 );
+const fileDialog = fs.readFileSync(
+  new URL("../src/pages/editor/EditorFileDialog.vue", import.meta.url),
+  "utf8",
+);
+const metadataDraft = fs.readFileSync(
+  new URL("../src/pages/editor/useEditorMetadataDraft.ts", import.meta.url),
+  "utf8",
+);
+const dataExchange = fs.readFileSync(
+  new URL(
+    "../src/shared/data-exchange/DataExchangePanel.vue",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const materialTooltip = fs.readFileSync(
   new URL("../src/pages/editor/EditorMaterialTooltip.vue", import.meta.url),
   "utf8",
@@ -126,14 +141,23 @@ test("Editor 右键切换当前面板的选择工具并建立单格选区", () =
   assert.doesNotMatch(page, /EditorContextMenu|contextMenu/);
 });
 
-test("新检测到的关卡规则默认启用且导入时重置检测状态", () => {
+test("已有规则在初始化和导入时保留，编辑中新检测到的规则默认启用", () => {
   assert.match(pageState, /ruleDetector = new EditorRuleDetector\(\)/);
+  assert.match(
+    pageState,
+    /const document = new EditorDocument\(initialLevel\);\s*ruleDetector\.detect\(initialLevel, environment\);/,
+  );
+  assert.doesNotMatch(pageState, /initialDetected/);
   assert.match(pageState, /function execute\(command: EditorCommand\)[\s\S]*ruleDetector\.detect\(next, environment\)[\s\S]*enableEditorRules\(environment, detected\)\.apply\(next\)/);
   const subscription = pageState.match(
     /const unsubscribe = document\.subscribe\(\(next\) => \{([\s\S]*?)\n  \}\);/,
   )?.[1] ?? "";
   assert.doesNotMatch(subscription, /document\.execute\(/);
-  assert.match(pageState, /function loadLevel[\s\S]*ruleDetector\.reset\(\)[\s\S]*document\.load\(prepared\)/);
+  assert.match(
+    pageState,
+    /function loadLevel[\s\S]*ruleDetector\.reset\(\);\s*ruleDetector\.detect\(level, environment\);\s*document\.load\(level\)/,
+  );
+  assert.doesNotMatch(pageState, /document\.load\(prepared\)/);
   assert.match(page, /page\.loadLevel\(level\)/);
 });
 
@@ -192,6 +216,53 @@ test("Editor mini button 显式居中图标", () => {
 test("Level 最大时间把单位放在标签中", () => {
   assert.match(levelInfo, /最大时间（秒）/);
   assert.doesNotMatch(levelInfo, /<small>秒<\/small>/);
+});
+
+test("Level 音乐只列出循环曲目并用省略字段表达默认随机", () => {
+  assert.match(levelInfo, /<option value="">默认（随机）<\/option>/);
+  for (const track of [
+    "ingame0",
+    "ingame1",
+    "ingame2",
+    "mow",
+    "shop",
+    "bonus",
+    "sandman",
+    "train",
+    "universe",
+    "fly",
+    "title",
+  ]) {
+    assert.match(levelInfo, new RegExp(`value: "${track}"`));
+  }
+  for (const eventTrack of ["alarm", "cleared", "death"]) {
+    assert.doesNotMatch(levelInfo, new RegExp(`value: "${eventTrack}"`));
+  }
+  assert.match(pageState, /setMusic\(music: MapMusic \| undefined\)/);
+  assert.match(page, /@music="page\.setMusic"/);
+});
+
+test("Level 规则模式开关左侧任一、右侧全部", () => {
+  assert.match(
+    levelInfo,
+    /data-rule-mode="any"[\s\S]*>任一<\/button>[\s\S]*data-rule-mode="all"[\s\S]*>全部<\/button>/,
+  );
+  assert.match(levelInfo, /mode-all[\s\S]*translateX\(100%\)/);
+});
+
+test("Level 与分享 metadata 使用输入防抖并同步地图交换内容", () => {
+  assert.match(metadataDraft, /EDITOR_METADATA_DEBOUNCE_MS = 200/);
+  assert.match(
+    metadataDraft,
+    /setTimeout\(flush, EDITOR_METADATA_DEBOUNCE_MS\)/,
+  );
+  assert.doesNotMatch(levelInfo, /@change="applyMetadata"/);
+  assert.match(levelInfo, /v-model="metadata\.name"/);
+  assert.match(fileDialog, /live-value/);
+  assert.match(fileDialog, /@downloaded="downloaded"/);
+  assert.match(page, /@metadata="page\.updateMetadata"/);
+  assert.match(dataExchange, /props\.liveValueDelayMs/);
+  assert.match(dataExchange, /await flushLiveValue\(\)/);
 });
 
 test("Inspector 使用与 Surface Palette 相同的 visual variant 网格", () => {
@@ -260,6 +331,10 @@ test("Inspector 按当前工具显示选择、素材、删除目标与 Surface �
   assert.match(cellInspector, /layer\.footprint\.width/);
   assert.match(cellInspector, /placementPresetFromEntity/);
   assert.match(cellInspector, /drop-before/);
+  assert.match(cellInspector, /@pointerdown="startDrag/);
+  assert.match(cellInspector, /@pointermove="moveDrag"/);
+  assert.match(cellInspector, /@pointerup="finishDrag"/);
+  assert.doesNotMatch(cellInspector, /draggable=|@dragstart|@drop/);
   assert.match(multiInspector, /placementPresetFromEntity/);
   assert.match(pageState, /resolveDeletionTarget\(currentLevel\(\), environment, cell, editor\)/);
   assert.match(pageState, /function applyPlacementVariant/);

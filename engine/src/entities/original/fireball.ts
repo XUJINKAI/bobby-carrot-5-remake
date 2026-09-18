@@ -11,6 +11,7 @@ import {
 import type { Behavior } from "../../world/behavior/Behavior.js";
 import type { WorldCommandApi } from "../../world/behavior/CommandQueue.js";
 import type { WorldQueryApi } from "../../world/behavior/WorldQueryApi.js";
+import { ORIGINAL_GAMEPLAY_IMAGE_IDS } from "../../image/OriginalGameplayImages.js";
 import type { EntityId } from "../../world/entity/EntityInstance.js";
 import type {
   EntityModule,
@@ -156,7 +157,7 @@ const base = originalModule(
       return {
         layers: [{
           kind: "image",
-          asset: "dragon-fireball",
+          asset: ORIGINAL_GAMEPLAY_IMAGE_IDS.dragonFireball,
           sourceX: frame === 0 ? 282 : 310,
           sourceY: 0,
           frameWidth: 28,

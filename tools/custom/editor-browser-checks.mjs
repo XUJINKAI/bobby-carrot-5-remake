@@ -19,10 +19,401 @@ export async function verifyEditorExperience(cdp, sessionId) {
       ),
     20_000,
   );
+  await verifyLayerReordering(cdp, sessionId);
+  await verifyLevelControls(cdp, sessionId);
+  await verifyMetadataSync(cdp, sessionId);
   await verifySurfaceInspector(cdp, sessionId);
   await verifyPaletteTooltip(cdp, sessionId);
   await verifyEditorCanvasPerformance(cdp, sessionId);
   await verifyPlayControls(cdp, sessionId);
+}
+
+async function verifyMetadataSync(cdp, sessionId) {
+  await clickWhenPresent(cdp, sessionId, "#editor-level-info");
+  await waitForBrowserState(async () =>
+    Boolean(
+      await cdp.evaluate(
+        sessionId,
+        "document.querySelector('[data-editor-metadata=\"name\"]')",
+      ),
+    ),
+  );
+  const original = await cdp.evaluate(
+    sessionId,
+    `(() => {
+      return {
+        name: document.querySelector('[data-editor-metadata="name"]')?.value ?? '',
+        author: document.querySelector('[data-editor-metadata="author"]')?.value ?? '',
+        note: document.querySelector('[data-editor-metadata="note"]')?.value ?? '',
+      };
+    })()`,
+  );
+  await clickWhenPresent(cdp, sessionId, "#editor-share");
+  await waitForBrowserState(async () =>
+    Boolean(
+      await cdp.evaluate(
+        sessionId,
+        "document.querySelector('[data-editor-share-metadata=\"name\"]') && document.querySelector('.data-exchange-text')?.value",
+      ),
+    ),
+  );
+  await cdp.evaluate(
+    sessionId,
+    `(() => {
+      const checkbox = document.querySelector('.data-exchange-check input[type="checkbox"]');
+      if (checkbox?.checked) checkbox.click();
+    })()`,
+  );
+  await waitForBrowserState(async () =>
+    (await cdp.evaluate(
+      sessionId,
+      "document.querySelector('.data-exchange-text')?.value.trimStart().startsWith('{')",
+    )) === true,
+  );
+  const expected = {
+    name: "防抖联动地图",
+    author: "联动作者",
+    note: "第一行\n第二行",
+  };
+  await cdp.evaluate(
+    sessionId,
+    `(values => {
+      for (const [key, value] of Object.entries(values)) {
+        const input = document.querySelector('[data-editor-share-metadata="' + key + '"]');
+        input.value = value;
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+    })(${JSON.stringify(expected)})`,
+  );
+  await waitForBrowserState(async () => {
+    const metadata = await cdp.evaluate(
+      sessionId,
+      `(() => {
+        try {
+          return JSON.parse(document.querySelector('.data-exchange-text')?.value ?? '').meta;
+        } catch {
+          return null;
+        }
+      })()`,
+    );
+    return JSON.stringify(metadata) === JSON.stringify(expected);
+  });
+  await cdp.evaluate(
+    sessionId,
+    "document.querySelector('.editor-dialog [aria-label=\"关闭\"]')?.click(); true",
+  );
+  await waitForBrowserState(async () =>
+    !await cdp.evaluate(
+      sessionId,
+      "Boolean(document.querySelector('.editor-dialog'))",
+    ),
+  );
+  await waitForBrowserState(async () => {
+    const current = await editorLevelMetadata(cdp, sessionId);
+    return JSON.stringify(current) === JSON.stringify(expected);
+  });
+  await clickWhenPresent(cdp, sessionId, "#editor-undo");
+  await waitForBrowserState(async () => {
+    const current = await editorLevelMetadata(cdp, sessionId);
+    return JSON.stringify(current) === JSON.stringify(original);
+  });
+  await clickWhenPresent(cdp, sessionId, "#editor-redo");
+  await waitForBrowserState(async () => {
+    const current = await editorLevelMetadata(cdp, sessionId);
+    return JSON.stringify(current) === JSON.stringify(expected);
+  });
+
+  // 导入另一张完整 MapDocument 时，新文档自己的 meta 必须成为 authority。
+  await clickWhenPresent(cdp, sessionId, "#editor-share");
+  await waitForBrowserState(async () =>
+    Boolean(
+      await cdp.evaluate(
+        sessionId,
+        "document.querySelector('.editor-dialog .data-exchange-text')",
+      ),
+    ),
+  );
+  await cdp.evaluate(
+    sessionId,
+    `(() => {
+      const checkbox = document.querySelector('.editor-dialog .data-exchange-check input[type="checkbox"]');
+      if (checkbox?.checked) checkbox.click();
+    })()`,
+  );
+  await waitForBrowserState(async () =>
+    (await cdp.evaluate(
+      sessionId,
+      "document.querySelector('.editor-dialog .data-exchange-text')?.value.trimStart().startsWith('{')",
+    )) === true,
+  );
+  const importedMetadata = {
+    name: "导入地图 B",
+    author: "Bob",
+    note: "B 的注记",
+  };
+  const applied = await cdp.evaluate(
+    sessionId,
+    `(metadata => {
+      const textarea = document.querySelector('.editor-dialog .data-exchange-text');
+      if (!textarea) return false;
+      const documentValue = JSON.parse(textarea.value);
+      documentValue.meta = metadata;
+      textarea.value = JSON.stringify(documentValue, null, 2);
+      textarea.dispatchEvent(new Event('input', { bubbles: true }));
+      const apply = [...document.querySelectorAll('.editor-dialog .data-exchange-toolbar button')]
+        .find((button) => button.textContent?.trim() === '应用');
+      apply?.click();
+      return Boolean(apply);
+    })(${JSON.stringify(importedMetadata)})`,
+  );
+  if (!applied) throw new Error("Editor 地图文件应用按钮不存在");
+  await waitForBrowserState(async () =>
+    !await cdp.evaluate(
+      sessionId,
+      "Boolean(document.querySelector('.editor-dialog'))",
+    ),
+  );
+  await waitForBrowserState(async () => {
+    const current = await editorLevelMetadata(cdp, sessionId);
+    return JSON.stringify(current) === JSON.stringify(importedMetadata);
+  });
+  await clickWhenPresent(cdp, sessionId, "#editor-inspector");
+}
+
+async function editorLevelMetadata(cdp, sessionId) {
+  return cdp.evaluate(
+    sessionId,
+    `(() => ({
+      name: document.querySelector('[data-editor-metadata="name"]')?.value ?? '',
+      author: document.querySelector('[data-editor-metadata="author"]')?.value ?? '',
+      note: document.querySelector('[data-editor-metadata="note"]')?.value ?? '',
+    }))()`,
+  );
+}
+
+async function verifyLevelControls(cdp, sessionId) {
+  await clickWhenPresent(cdp, sessionId, "#editor-level-info");
+  await waitForBrowserState(async () =>
+    Boolean(
+      await cdp.evaluate(
+        sessionId,
+        "document.querySelector('[data-editor-music]')",
+      ),
+    ),
+  );
+  const initial = await cdp.evaluate(
+    sessionId,
+    `(() => ({
+      music: document.querySelector('[data-editor-music]')?.value,
+      modes: [...document.querySelectorAll('[data-rule-mode]')]
+        .map((button) => button.getAttribute('data-rule-mode')),
+      active: document.querySelector('[data-rule-mode][aria-pressed="true"]')
+        ?.getAttribute('data-rule-mode'),
+    }))()`,
+  );
+  if (
+    initial.music !== "" ||
+    JSON.stringify(initial.modes) !== JSON.stringify(["any", "all"]) ||
+    initial.active !== "all"
+  ) {
+    throw new Error(`Editor Level 控件初始状态异常：${JSON.stringify(initial)}`);
+  }
+  await cdp.evaluate(
+    sessionId,
+    `(() => {
+      const select = document.querySelector('[data-editor-music]');
+      select.value = 'shop';
+      select.dispatchEvent(new Event('change', { bubbles: true }));
+    })()`,
+  );
+  await waitForBrowserState(async () =>
+    (await cdp.evaluate(
+      sessionId,
+      "document.querySelector('[data-editor-music]')?.value",
+    )) === "shop",
+  );
+  await cdp.evaluate(
+    sessionId,
+    `(() => {
+      const select = document.querySelector('[data-editor-music]');
+      select.value = '';
+      select.dispatchEvent(new Event('change', { bubbles: true }));
+      document.querySelector('[data-rule-mode="any"]')?.click();
+    })()`,
+  );
+  await waitForBrowserState(async () =>
+    (await cdp.evaluate(
+      sessionId,
+      "document.querySelector('[data-rule-mode=\"any\"]')?.getAttribute('aria-pressed')",
+    )) === "true",
+  );
+  await cdp.evaluate(
+    sessionId,
+    "document.querySelector('[data-rule-mode=\"all\"]')?.click(); true",
+  );
+  await waitForBrowserState(async () =>
+    (await cdp.evaluate(
+      sessionId,
+      "document.querySelector('[data-rule-mode=\"all\"]')?.getAttribute('aria-pressed')",
+    )) === "true",
+  );
+  await clickWhenPresent(cdp, sessionId, "#editor-inspector");
+}
+
+async function verifyLayerReordering(cdp, sessionId) {
+  await clickWhenPresent(cdp, sessionId, "#editor-tool-select");
+  const cell = await cdp.evaluate(
+    sessionId,
+    `(() => {
+      const canvas = document.querySelector('.editor-canvas');
+      if (!canvas) return null;
+      const rect = canvas.getBoundingClientRect();
+      return {
+        x: rect.left + rect.width * 2.5 / 16,
+        y: rect.top + rect.height * 2.5 / 16,
+      };
+    })()`,
+  );
+  if (!cell) throw new Error("Editor Bobby cell was not measurable");
+  await clickPoint(cdp, sessionId, cell);
+  await waitForBrowserState(async () =>
+    (await editorLayerOrder(cdp, sessionId)).length >= 2,
+  );
+  const initial = await editorLayerOrder(cdp, sessionId);
+  const mouseDrag = await editorLayerDragPoints(cdp, sessionId);
+  if (!mouseDrag) throw new Error("Editor layer drag controls were not measurable");
+  await cdp.send(
+    "Input.dispatchMouseEvent",
+    {
+      type: "mousePressed",
+      x: mouseDrag.from.x,
+      y: mouseDrag.from.y,
+      button: "left",
+      buttons: 1,
+      clickCount: 1,
+    },
+    sessionId,
+  );
+  await cdp.send(
+    "Input.dispatchMouseEvent",
+    {
+      type: "mouseMoved",
+      x: mouseDrag.to.x,
+      y: mouseDrag.to.y,
+      button: "left",
+      buttons: 1,
+    },
+    sessionId,
+  );
+  await cdp.send(
+    "Input.dispatchMouseEvent",
+    {
+      type: "mouseReleased",
+      x: mouseDrag.to.x,
+      y: mouseDrag.to.y,
+      button: "left",
+      buttons: 0,
+      clickCount: 1,
+    },
+    sessionId,
+  );
+  await waitForLayerOrderChange(cdp, sessionId, initial, "鼠标");
+  await clickWhenPresent(cdp, sessionId, "#editor-undo");
+  await waitForLayerOrder(cdp, sessionId, initial);
+
+  const touchDrag = await editorLayerDragPoints(cdp, sessionId);
+  if (!touchDrag) throw new Error("Editor touch layer controls were not measurable");
+  await cdp.send(
+    "Input.dispatchTouchEvent",
+    {
+      type: "touchStart",
+      touchPoints: [{ x: touchDrag.from.x, y: touchDrag.from.y }],
+    },
+    sessionId,
+  );
+  await cdp.send(
+    "Input.dispatchTouchEvent",
+    {
+      type: "touchMove",
+      touchPoints: [{ x: touchDrag.to.x, y: touchDrag.to.y }],
+    },
+    sessionId,
+  );
+  await cdp.send(
+    "Input.dispatchTouchEvent",
+    { type: "touchEnd", touchPoints: [] },
+    sessionId,
+  );
+  await waitForLayerOrderChange(cdp, sessionId, initial, "触摸");
+  await clickWhenPresent(cdp, sessionId, "#editor-undo");
+  await waitForLayerOrder(cdp, sessionId, initial);
+}
+
+async function editorLayerOrder(cdp, sessionId) {
+  return cdp.evaluate(
+    sessionId,
+    `[...document.querySelectorAll('[data-editor-layer-ref]')]
+      .map((card) => card.getAttribute('data-editor-layer-ref'))`,
+  );
+}
+
+async function editorLayerDragPoints(cdp, sessionId) {
+  return cdp.evaluate(
+    sessionId,
+    `(() => {
+      const cards = [...document.querySelectorAll('[data-editor-layer-ref]')];
+      const handle = cards[0]?.querySelector('.editor-layer-drag');
+      const target = cards.at(-1);
+      if (!handle || !target || cards.length < 2) return null;
+      const from = handle.getBoundingClientRect();
+      const to = target.getBoundingClientRect();
+      return {
+        from: { x: from.left + from.width / 2, y: from.top + from.height / 2 },
+        to: { x: to.left + to.width / 2, y: to.top + to.height * 0.75 },
+      };
+    })()`,
+  );
+}
+
+async function waitForLayerOrderChange(cdp, sessionId, initial, pointerLabel) {
+  await waitForBrowserState(async () => {
+    const current = await editorLayerOrder(cdp, sessionId);
+    return JSON.stringify(current) !== JSON.stringify(initial);
+  }).catch((cause) => {
+    throw new Error(`Editor ${pointerLabel}拖动没有调整 Entity 顺序`, { cause });
+  });
+}
+
+async function waitForLayerOrder(cdp, sessionId, expected) {
+  await waitForBrowserState(async () =>
+    JSON.stringify(await editorLayerOrder(cdp, sessionId)) ===
+      JSON.stringify(expected),
+  );
+}
+
+async function clickPoint(cdp, sessionId, point) {
+  await cdp.send(
+    "Input.dispatchMouseEvent",
+    {
+      type: "mousePressed",
+      x: point.x,
+      y: point.y,
+      button: "left",
+      clickCount: 1,
+    },
+    sessionId,
+  );
+  await cdp.send(
+    "Input.dispatchMouseEvent",
+    {
+      type: "mouseReleased",
+      x: point.x,
+      y: point.y,
+      button: "left",
+      clickCount: 1,
+    },
+    sessionId,
+  );
 }
 
 async function verifySurfaceInspector(cdp, sessionId) {

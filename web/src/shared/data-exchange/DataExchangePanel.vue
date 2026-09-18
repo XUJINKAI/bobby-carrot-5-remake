@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
+import { computed, onBeforeUnmount, ref, watch } from "vue";
 import {
   decodeExchangeText,
   detectExchangeFormat,
@@ -23,12 +23,16 @@ const props = withDefaults(defineProps<{
   placeholder?: string;
   filename?: string;
   defaultCompressed?: boolean;
+  liveValue?: boolean;
+  liveValueDelayMs?: number;
   toolbar: DataExchangeToolbar;
   resetKey?: string | number;
 }>(), {
   placeholder: "",
   filename: "bc5r-data",
   defaultCompressed: false,
+  liveValue: false,
+  liveValueDelayMs: 200,
   resetKey: 0,
 });
 const emit = defineEmits<{
@@ -42,6 +46,9 @@ const draft = ref("");
 const feedback = ref("");
 const busy = ref(false);
 const fileInput = ref<HTMLInputElement | null>(null);
+const draftDirty = ref(false);
+let liveValueTimer: ReturnType<typeof setTimeout> | null = null;
+let refreshVersion = 0;
 const format = computed(() => detectExchangeFormat(draft.value));
 const compressed = computed(() => format.value === "bc5r1");
 const acceptedFiles = computed(() =>
@@ -62,17 +69,58 @@ watch(
   () => void initializeDraft(),
   { immediate: true },
 );
+watch(
+  () => props.value,
+  () => {
+    if (!props.liveValue) return;
+    if (liveValueTimer !== null) clearTimeout(liveValueTimer);
+    liveValueTimer = setTimeout(
+      () => void refreshDraft(false),
+      props.liveValueDelayMs,
+    );
+  },
+  { deep: true },
+);
 
 async function initializeDraft(): Promise<void> {
+  if (liveValueTimer !== null) clearTimeout(liveValueTimer);
+  liveValueTimer = null;
+  await refreshDraft(true, true);
+}
+
+async function refreshDraft(
+  useDefaultCompression: boolean,
+  force = false,
+): Promise<void> {
+  liveValueTimer = null;
+  if (!force && draftDirty.value) {
+    feedback.value = "地图内容有未应用的修改；应用后再同步地图信息。";
+    return;
+  }
+  const version = ++refreshVersion;
   feedback.value = "";
   if (props.value === undefined) {
     draft.value = "";
+    draftDirty.value = false;
     return;
   }
   const plain = prettyJson(props.serialize(props.value));
-  draft.value = props.defaultCompressed
+  const shouldCompress = useDefaultCompression
+    ? props.defaultCompressed
+    : compressed.value;
+  const next = shouldCompress
     ? await encodeExchangeText(plain, encodeOptions())
     : plain;
+  if (version !== refreshVersion) return;
+  draft.value = next;
+  draftDirty.value = false;
+}
+
+async function flushLiveValue(): Promise<void> {
+  if (!props.liveValue) return;
+  if (liveValueTimer !== null) clearTimeout(liveValueTimer);
+  liveValueTimer = null;
+  await refreshDraft(false);
 }
 
 async function importDraft(): Promise<void> {
@@ -85,6 +133,7 @@ async function importDraft(): Promise<void> {
     draft.value = decoded.format === "bc5r1"
       ? await encodeExchangeText(plain, encodeOptions())
       : plain;
+    draftDirty.value = false;
     feedback.value = "已导入";
   } catch (error) {
     report(error);
@@ -110,11 +159,14 @@ async function toggleCompression(event: Event): Promise<void> {
   const checked = (event.target as HTMLInputElement).checked;
   try {
     busy.value = true;
+    await flushLiveValue();
+    const wasDirty = draftDirty.value;
     const decoded = await decodeExchangeText(draft.value);
     const plain = JSON.stringify(decoded.value, null, 2);
     draft.value = checked
       ? await encodeExchangeText(plain, encodeOptions())
       : plain;
+    draftDirty.value = wasDirty;
     feedback.value = "";
   } catch (error) {
     report(error);
@@ -125,6 +177,7 @@ async function toggleCompression(event: Event): Promise<void> {
 
 async function copyDraft(): Promise<void> {
   try {
+    await flushLiveValue();
     await navigator.clipboard.writeText(draft.value);
     feedback.value = "已复制";
     emit("copied");
@@ -133,14 +186,25 @@ async function copyDraft(): Promise<void> {
   }
 }
 
-function downloadDraft(): void {
-  downloadExchangeText({
-    text: draft.value,
-    filename: props.filename,
-    compressed: compressed.value,
-  });
-  feedback.value = "已下载";
-  emit("downloaded");
+async function downloadDraft(): Promise<void> {
+  try {
+    await flushLiveValue();
+    downloadExchangeText({
+      text: draft.value,
+      filename: props.filename,
+      compressed: compressed.value,
+    });
+    feedback.value = "已下载";
+    emit("downloaded");
+  } catch (error) {
+    report(error);
+  }
+}
+
+function onDraftInput(): void {
+  refreshVersion++;
+  draftDirty.value = true;
+  feedback.value = "";
 }
 
 function selectDraft(event: FocusEvent): void {
@@ -169,6 +233,11 @@ function label(control: DataExchangeControlConfig): string {
   if (control.type === "download") return control.label ?? "下载";
   return "";
 }
+
+onBeforeUnmount(() => {
+  if (liveValueTimer !== null) clearTimeout(liveValueTimer);
+  refreshVersion++;
+});
 </script>
 
 <template>
@@ -180,7 +249,7 @@ function label(control: DataExchangeControlConfig): string {
       spellcheck="false"
       wrap="soft"
       @focus="selectDraft"
-      @input="feedback = ''"
+      @input="onDraftInput"
     />
     <div class="data-exchange-toolbar">
       <div class="data-exchange-toolbar-group">

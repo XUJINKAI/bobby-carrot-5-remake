@@ -60,13 +60,6 @@ withDefaults(
   box-shadow: none;
 }
 
-.chapter-stars {
-  white-space: nowrap;
-  letter-spacing: 0.08em;
-  color: #f7d45f;
-  text-shadow: 0 1px 2px #000;
-}
-
 @media (max-width: 720px) and (orientation: portrait) {
   .adventure-viewport-auto .adventure-viewport-stage {
     width: 100%;

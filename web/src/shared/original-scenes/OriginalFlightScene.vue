@@ -1,5 +1,8 @@
 <script setup lang="ts">
-import type { ImageManager } from "@bobby/engine";
+import {
+  ORIGINAL_GAMEPLAY_IMAGE_IDS,
+  type ImageManager,
+} from "@bobby/engine";
 import { computed } from "vue";
 import OriginalStarfield from "./OriginalStarfield.vue";
 import SpriteFrame from "./SpriteFrame.vue";
@@ -68,7 +71,12 @@ const starfieldOverrides = computed(() => ({
       <SpriteFrame :images="images" asset="original-title" />
     </div>
     <div class="flight-bobby" aria-hidden="true">
-      <SpriteFrame :images="images" asset="bobby-kite" :columns="4" :frame="1" />
+      <SpriteFrame
+        :images="images"
+        :asset="ORIGINAL_GAMEPLAY_IMAGE_IDS.bobby.kite"
+        :columns="4"
+        :frame="1"
+      />
     </div>
   </section>
 </template>
