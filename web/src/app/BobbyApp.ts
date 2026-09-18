@@ -22,7 +22,7 @@ import {
   parseMapPlayUrl,
   type ExploreMapRef,
 } from "./routes.js";
-import { webT } from "../i18n/webI18n.js";
+import { beginWebI18nRoute, webT } from "../i18n/webI18n.js";
 import {
   loadAdventurePages,
   loadEditorPage,
@@ -142,6 +142,7 @@ export class BobbyApp {
     this.controller.destroy();
     this.controller = NOOP_CONTROLLER;
     this.clearIdleTasks();
+    beginWebI18nRoute();
     const path = localRoutePath();
 
     if (path === "/") {
