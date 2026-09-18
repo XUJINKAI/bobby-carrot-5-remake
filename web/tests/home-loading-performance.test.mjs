@@ -31,7 +31,7 @@ test("Editor 样式按页面加载，Help 文案改为 i18n lazy scope", async (
   ]);
 
   assert.match(editorMount, /editor\/style\.css/);
-  assert.match(appRoot, /acquireWebI18nScopes\(\["help"\]\)/);
+  assert.match(appRoot, /openWebI18nScope\\(\\["help"\\]\\)/);
   assert.match(catalogs, /help:[\s\S]*import\("\.\/locales\/help\/zh-CN\.js"\)/);
   assert.match(catalogs, /help:[\s\S]*import\("\.\/locales\/help\/en\.js"\)/);
 });
@@ -56,7 +56,7 @@ test("Home Save 导入按需加载 import scope", async () => {
     new URL("../src/pages/home/HomeModeMenu.vue", import.meta.url),
     "utf8",
   );
-  assert.match(source, /acquireWebI18nScopes\(\["import"\]\)/);
+  assert.match(source, /openWebI18nScope\\(\\["import"\\]\\)/);
 });
 
 test("运行时 SEO 响应语言变化且静态 metadata 提供双语 fallback", async () => {
@@ -82,10 +82,13 @@ test("页面模块与 i18n scope 通过统一 loader 绑定", async () => {
   assert.match(loaders, /loadEditorPage[\s\S]*\["editor", "game"\][\s\S]*mountEditorPage\.js/);
   assert.doesNotMatch(app, /import\("\.\.\/pages\/game\/mountGamePage\.js"\)/);
   assert.match(app, /loadGamePage\(\)/);
-  assert.match(i18n, /for \(const scope of scopes\) routeScopes\.add\(scope\)/);
-  assert.match(i18n, /export function beginWebI18nRoute\(\): void \{\s*routeScopes\.clear\(\)/);
+  assert.match(loaders, /preloadWebI18nScopes\(scopes\)/);
+  assert.match(loaders, /readonly scopes: readonly TranslationScope\[\]/);
+  assert.match(i18n, /setWebI18nRouteScopes/);
+  assert.match(i18n, /openWebI18nScope/);
   assert.match(i18n, /transientScopes = new Map/);
-  assert.match(app, /beginWebI18nRoute\(\)/);
+  assert.match(app, /setWebI18nRouteScopes\(localizedPageScopes/);
+  assert.doesNotMatch(app, /beginWebI18nRoute/);
 });
 
 
@@ -103,4 +106,14 @@ test("Adventure special scene 与 locale 设置都服从统一 i18n 流程", asy
     settings,
     /await setWebLocale\(locale\);\s+if \(getWebLocale\(\) !== locale\) return;\s+updateWebSettings/,
   );
+});
+
+
+test("route rendering serializes commits and lets the router own active i18n scopes", async () => {
+  const app = await readFile(new URL("../src/app/BobbyApp.ts", import.meta.url), "utf8");
+  assert.match(app, /private routeGeneration = 0/);
+  assert.match(app, /private routeRenderQueue: Promise<void> = Promise\.resolve\(\)/);
+  assert.match(app, /this\.routeRenderQueue = this\.routeRenderQueue\.then\(render, render\)/);
+  assert.match(app, /if \(generation !== this\.routeGeneration\) return/);
+  assert.match(app, /activateI18nRoute\(loadAdventurePages, loadGamePage\)/);
 });
