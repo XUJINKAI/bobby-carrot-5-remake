@@ -433,12 +433,19 @@ async function verifyReplayPanel(cdp, url) {
     "document.querySelector('[data-replay-action=\"record\"]')?.click(); true",
   );
   await waitFor(async () =>
-    String(
+    Boolean(
       await cdp.evaluate(
         sessionId,
-        "document.querySelector('[data-replay-verification]')?.textContent ?? ''",
+        `(() => {
+          const verification = document.querySelector('[data-replay-verification]');
+          return Boolean(
+            verification &&
+            !verification.classList.contains('failed') &&
+            verification.textContent?.includes('ticks')
+          );
+        })()`,
       ),
-    ).includes("复跑完成"),
+    ),
   );
   const replay = await cdp.evaluate(
     sessionId,
