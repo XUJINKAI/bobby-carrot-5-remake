@@ -13,20 +13,15 @@ import {
   type Locale,
 } from "@bobby/i18n";
 import { loadEmbedMap } from "./mapInput.js";
+import {
+  embedAssetUrl,
+  embedPublicBaseUrl,
+  loadEmbedJerseyFont,
+} from "./runtimeAssets.js";
 import { createEmbedStatus } from "./status.js";
 import type { BC5RHandle, BC5RMountOptions } from "./types.js";
 
-const publicBaseUrl =
-  typeof document === "undefined"
-    ? new URL("http://localhost/")
-    : document.currentScript instanceof HTMLScriptElement && document.currentScript.src
-      ? new URL("../../", document.currentScript.src)
-      : new URL(".", document.baseURI);
 const homePageUrl = "https://bc5r.xujinkai.net/";
-const jerseyFontUrl = new URL(
-  "../../assets/ui/fonts/jersey-10/Jersey10-Regular.woff2",
-  import.meta.url,
-).href;
 
 interface ActiveFocusEmbed {
   token: symbol;
@@ -68,6 +63,7 @@ export function mount(options: BC5RMountOptions): BC5RHandle {
   const cleanup: Array<() => void> = [];
   const audio = resolveAudio(options.audio);
   const locale = resolveEmbedLocale(options.lang);
+  const fontReady = loadEmbedJerseyFont();
 
   const shadow = target.shadowRoot ?? target.attachShadow({ mode: "open" });
   shadow.replaceChildren();
@@ -133,6 +129,7 @@ export function mount(options: BC5RMountOptions): BC5RHandle {
         map: options.map,
         mapUrl: options.mapUrl,
       });
+      await fontReady;
       if (destroyed) return;
       const camera = resolveCameraOptions(options);
       const playUrl = await officialPlayUrl(level);
@@ -148,7 +145,7 @@ export function mount(options: BC5RMountOptions): BC5RHandle {
           canvas,
           images: imageManager,
           audioOptions: {
-            baseUrl: new URL("assets/audio/original/", publicBaseUrl),
+            baseUrl: embedAssetUrl("assets/audio/original/"),
             musicEnabled: audio.enabled,
             musicStyle: options.musicStyle ?? "modern",
           },
@@ -467,7 +464,7 @@ function createTerminalOverlay(locale: Locale): TerminalOverlay {
   restart.textContent = copy.restart;
   actions.append(restart);
   const official = document.createElement("a");
-  official.href = publicBaseUrl.href;
+  official.href = embedPublicBaseUrl.href;
   official.target = "_blank";
   official.rel = "noopener noreferrer";
   official.textContent = copy.official;
@@ -555,12 +552,12 @@ function embedRuntimeText(locale: Locale, key: EmbedRuntimeKey): string {
 
 async function officialPlayUrl(level: LevelMap): Promise<string> {
   return encodeExchangeText(JSON.stringify(level), {
-    publicBaseUrl: publicBaseUrl.href,
+    publicBaseUrl: embedPublicBaseUrl.href,
   });
 }
 
 function embedArtUrl(path: string): string {
-  return new URL(`assets/art/hd/${path}`, publicBaseUrl).href;
+  return embedAssetUrl(`assets/art/hd/${path}`).href;
 }
 
 function createEmbedImageManager(): ImageManager {
@@ -570,7 +567,6 @@ function createEmbedImageManager(): ImageManager {
 function styleElement(): HTMLStyleElement {
   const style = document.createElement("style");
   style.textContent = `
-    @font-face { font-family: "Jersey 10"; src: url(${JSON.stringify(jerseyFontUrl)}) format("woff2"); font-style: normal; font-weight: 400; font-display: swap; }
     :host { display: block; width: 100%; height: 100%; min-width: 0; min-height: 0; }
     .bc5r-embed { box-sizing: border-box; width: 100%; height: 100%; min-width: 0; min-height: 0; display: flex; flex-direction: column; overflow: hidden; border: 1px solid #254868; border-radius: 10px; font: 14px/1.4 system-ui, sans-serif; color: #eef5ff; background: #071522; box-shadow: 0 8px 24px rgba(0,0,0,.22); }
     .bc5r-frame { flex: 0 0 auto; padding: 7px 10px; display: flex; align-items: center; justify-content: space-between; gap: 10px; border-bottom: 1px solid #254868; background: #0d2b46; font-size: 12px; font-weight: 700; letter-spacing: .02em; }
@@ -598,7 +594,7 @@ function styleElement(): HTMLStyleElement {
     .bc5r-terminal-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
     .bc5r-terminal-actions button, .bc5r-terminal-actions a { border: 0; border-radius: 8px; padding: 8px 12px; cursor: pointer; font: inherit; text-decoration: none; background: #222; color: #fff; }
     .bc5r-terminal-actions a { background: #fff; color: #222; box-shadow: inset 0 0 0 1px rgba(0,0,0,.2); }
-    .engine-gameplay-hud { --engine-gameplay-hud-value-font-size: 36px; font-family: "Jersey 10", fantasy; font-weight: 400; -webkit-text-stroke: 1px #000; text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000; }
+    .engine-gameplay-hud { --engine-gameplay-hud-value-font-size: 36px; font-family: "BC5R Jersey 10", "Jersey 10", fantasy; font-weight: 400; -webkit-text-stroke: 1px #000; text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000; }
     .engine-gameplay-hud-value { font-weight: 400; }
   `;
   return style;

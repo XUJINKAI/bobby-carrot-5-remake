@@ -32,15 +32,24 @@ test("Web 入口加载共享 Jersey 10 字体定义", async () => {
 });
 
 test("Embed 在 Shadow DOM 内应用 Jersey 10 HUD 主题", async () => {
-  const mountSource = await readFile(
-    new URL("../../embed/src/mount.ts", import.meta.url),
-    "utf8",
-  );
+  const [mountSource, assetSource] = await Promise.all([
+    readFile(new URL("../../embed/src/mount.ts", import.meta.url), "utf8"),
+    readFile(
+      new URL("../../embed/src/runtimeAssets.ts", import.meta.url),
+      "utf8",
+    ),
+  ]);
 
-  assert.match(mountSource, /Jersey10-Regular\.woff2/);
-  assert.match(mountSource, /@font-face/);
+  assert.match(assetSource, /Jersey10-Regular\.woff2/);
+  assert.match(assetSource, /new FontFace\(/);
+  assert.match(assetSource, /document\.fonts\.add\(face\)/);
+  assert.match(mountSource, /loadEmbedJerseyFont\(\)/);
+  assert.doesNotMatch(mountSource, /@font-face/);
   assert.match(mountSource, /\.engine-gameplay-hud \{/);
-  assert.match(mountSource, /font-family: "Jersey 10", fantasy/);
+  assert.match(
+    mountSource,
+    /font-family: "BC5R Jersey 10", "Jersey 10", fantasy/,
+  );
   assert.match(mountSource, /-webkit-text-stroke: 1px #000/);
   assert.match(
     mountSource,

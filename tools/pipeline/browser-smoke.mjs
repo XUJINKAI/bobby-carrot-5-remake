@@ -9,7 +9,11 @@ import {
   assertMapStatusSmoke,
   mapStatusSmokeScript,
 } from "./browser-smoke/map-status.mjs";
-import { assertEmbedHudSmoke, embedHudSmokeScript } from "./browser-smoke/embed-hud.mjs";
+import { runEmbedHudSmoke } from "./browser-smoke/embed-hud.mjs";
+import {
+  runStandaloneEmbedSmoke,
+  startStandaloneEmbedHost,
+} from "./browser-smoke/embed-standalone.mjs";
 import { root } from "../lib/fs.mjs";
 import { serveDistRequest } from "../lib/static-server.mjs";
 const browserEnvironment = { ...process.env };
@@ -25,6 +29,8 @@ if (!browser)
     "Browser smoke test requires Chrome/Chromium. Set BROWSER_PATH if it is not on PATH.",
   );
 const server = http.createServer((request, response) => {
+  if (/^\/(?:assets|embed\/v1)\//.test(request.url ?? ""))
+    response.setHeader("access-control-allow-origin", "*");
   if (
     request.url === "/assets/maps/original/unlisted-smoke.json" ||
     request.url === "/assets/maps/standalone-smoke/standalone.json"
@@ -50,6 +56,7 @@ await new Promise((resolve, reject) => {
   server.once("error", reject);
   server.listen(0, "127.0.0.1", resolve);
 });
+let standaloneHost = null;
 try {
   const address = server.address();
   if (!address || typeof address === "string")
@@ -76,8 +83,16 @@ try {
   );
   const embedUrl = `${origin}/embed#${mapPayload}`;
   await smoke(embedUrl, ['class="embed-page"', "BC5R Embed v1", "English", "Modern", 'class="keyboard-select"']);
-  await interactiveEmbedHudSmoke(embedUrl);
+  await runEmbedHudSmoke(runBrowserEval, embedUrl, lastJsonLine);
   await expectStatus(`${origin}/embed/v1/bc5r.js`, 200, "text/javascript");
+  standaloneHost = await startStandaloneEmbedHost(
+    `${origin}/embed/v1/bc5r.js`,
+    fs.readFileSync(
+      path.join(root, "tools/pipeline/mechanics-smoke.json"),
+      "utf8",
+    ),
+  );
+  await runStandaloneEmbedSmoke(runBrowserEval, standaloneHost.url, lastJsonLine);
   await smoke(
     `${origin}/explore`,
     [
@@ -291,6 +306,7 @@ try {
     `browser smoke: OK — ${path.basename(browser)} loaded generated SPA route shells while unknown routes and missing static resources returned 404`,
   );
 } finally {
+  await standaloneHost?.close();
   await new Promise((resolve) => server.close(resolve));
 }
 
@@ -483,12 +499,6 @@ async function interactiveDataExchangeSmoke(url) {
     throw new Error(`Unexpected home import smoke result: ${JSON.stringify(payload)}`);
 }
 
-async function interactiveEmbedHudSmoke(url) {
-  const result = await runBrowserEval(url, embedHudSmokeScript);
-  if (result.status !== 0)
-    throw new Error(`Embed HUD 字体检查失败：${result.stderr || result.stdout}`);
-  assertEmbedHudSmoke(lastJsonLine(result.stdout));
-}
 async function interactiveEditorSourceSmoke(url, expectedWin) {
   const script = `
 (async () => {
