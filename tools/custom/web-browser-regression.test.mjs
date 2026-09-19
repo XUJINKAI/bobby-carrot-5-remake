@@ -724,6 +724,7 @@ async function verifyLocaleSwitchPreservesGameSession(cdp, url) {
     20_000,
   );
 
+  await openQuickSettingsAndChooseLocale(cdp, sessionId, "中文", "zh-CN");
   const initial = await cdp.evaluate(
     sessionId,
     `(() => {
@@ -738,12 +739,14 @@ async function verifyLocaleSwitchPreservesGameSession(cdp, url) {
       };
     })()`,
   );
-  if (initial.lang !== "zh-CN")
-    throw new Error(`Locale regression did not start in zh-CN: ${initial.lang}`);
-  if (initial.replay !== "准备录制")
-    throw new Error(`Replay did not start localized in zh-CN: ${initial.replay}`);
-  if (!initial.mapStatus.includes("地图状态"))
-    throw new Error("Map status did not start localized in zh-CN");
+  if (
+    initial.lang !== "zh-CN" ||
+    !initial.canvas ||
+    !initial.stage ||
+    initial.replay !== "准备录制" ||
+    !initial.mapStatus.startsWith("地图状态：")
+  )
+    throw new Error(`Locale regression failed to establish zh-CN state: ${JSON.stringify(initial)}`);
 
   await openQuickSettingsAndChooseLocale(cdp, sessionId, "English", "en");
   await waitFor(async () =>
