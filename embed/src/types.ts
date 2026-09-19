@@ -28,3 +28,14 @@ export interface BC5RHandle {
   readonly ready: Promise<void>;
   destroy(): void;
 }
+
+export type BC5RMount = (options: BC5RMountOptions) => BC5RHandle;
+
+export interface BC5RQueue {
+  push(...options: BC5RMountOptions[]): number;
+}
+
+export interface BC5RGlobal {
+  mount: BC5RMount;
+  queue: BC5RQueue;
+}

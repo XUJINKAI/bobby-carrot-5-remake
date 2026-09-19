@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import type {
+  BC5RGlobal,
   BC5RHandle,
-  BC5RMountOptions,
+  BC5RMount,
   EmbedKeyboardMode,
   EmbedJoystickMode,
   EmbedMusicStyle,
@@ -19,8 +20,7 @@ import { errorDisplayText } from "../../errors/errorPresentation.js";
 
 const props = defineProps<{ publicBaseUrl: string }>();
 
-type EmbedMount = (options: BC5RMountOptions) => BC5RHandle;
-type BC5RGlobal = { mount?: EmbedMount };
+type EmbedMount = BC5RMount;
 
 const mapMode = ref<"map" | "mapUrl">("map");
 const map = ref(location.hash.slice(1));
@@ -96,7 +96,8 @@ const embedCode = computed(() => {
       ? { map: map.value.trim() }
       : { mapUrl: mapUrl.value.trim() }),
   };
-  return `<div id="bc5r" style="width:100%;height:520px"></div>\n<script src="${standaloneUrl()}"><\/script>\n<script>\nBC5R.mount(${JSON.stringify(config, null, 2)});\n<\/script>`;
+  const serialized = JSON.stringify(config, null, 2).replaceAll("<", "\\u003c");
+  return `<div id="bc5r" style="width:100%;height:520px"></div>\n\n<script>\nwindow.BC5R = window.BC5R || { queue: [] };\nBC5R.queue.push(${serialized});\n<\/script>\n\n<script async src="${standaloneUrl()}"><\/script>`;
 });
 
 watch(
@@ -173,8 +174,8 @@ async function resolveEmbedMount(): Promise<EmbedMount> {
   return loaded;
 }
 
-function globalBc5r(): BC5RGlobal | undefined {
-  return (window as Window & { BC5R?: BC5RGlobal }).BC5R;
+function globalBc5r(): Partial<BC5RGlobal> | undefined {
+  return (window as Window & { BC5R?: Partial<BC5RGlobal> }).BC5R;
 }
 
 function standaloneUrl(): string {
