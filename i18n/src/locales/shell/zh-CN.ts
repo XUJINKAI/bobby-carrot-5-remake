@@ -41,6 +41,8 @@ const catalog = {
   "common.error.dataExchange.unknownRepresentation": "无法识别的数据格式",
   "common.error.dataExchange.invalidPayload": "数据 Payload 的 Base64 编码无效",
   "common.error.dataExchange.damagedGzip": "压缩数据已损坏",
+  "common.error.dataExchange.saveNotMap": "这是 {scope} 存档，不是地图。",
+  "common.error.dataExchange.invalidMap": "这段数据不是有效地图。",
   "common.error.save.invalidAdventureProfile": "这段数据不是有效的冒险存档。",
   "common.error.save.invalidExploreSave": "这段数据不是有效的自由探索存档。",
   "common.error.import.unrecognizedData": "无法识别这段 Bobby Carrot 5 Remake 数据。",

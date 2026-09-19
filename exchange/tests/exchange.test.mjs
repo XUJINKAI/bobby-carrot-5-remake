@@ -8,6 +8,7 @@ import {
   encodeExchangePayload,
   encodeExchangeText,
   extractImportPayload,
+  EXCHANGE_ERROR_CODES,
   ExchangeMapError,
   parseExchangeMap,
 } from "../dist/index.js";
@@ -117,7 +118,20 @@ test("公共地图 parser 将带 scope 的存档明确识别为非地图", () =>
       () => parseExchangeMap(save),
       (error) =>
         error instanceof ExchangeMapError &&
+        error.code === EXCHANGE_ERROR_CODES.saveNotMap &&
         error.reason === "save" &&
-        error.scope === save.scope,
+        error.scope === save.scope &&
+        error.params?.scope === save.scope,
     );
+});
+
+
+test("公共地图 parser 使用集中错误码报告非法地图", () => {
+  assert.throws(
+    () => parseExchangeMap({ schemaVersion: 2 }),
+    (error) =>
+      error instanceof ExchangeMapError &&
+      error.code === EXCHANGE_ERROR_CODES.invalidMap &&
+      error.reason === "invalid-map",
+  );
 });

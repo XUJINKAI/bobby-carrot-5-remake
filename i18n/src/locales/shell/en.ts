@@ -43,6 +43,8 @@ const catalog = {
   "common.error.dataExchange.unknownRepresentation": "Unrecognized data format",
   "common.error.dataExchange.invalidPayload": "Invalid Base64 data payload",
   "common.error.dataExchange.damagedGzip": "Compressed data is corrupted",
+  "common.error.dataExchange.saveNotMap": "This is a {scope} save, not a map.",
+  "common.error.dataExchange.invalidMap": "This data is not a valid map.",
   "common.error.save.invalidAdventureProfile": "This is not a valid Adventure save.",
   "common.error.save.invalidExploreSave": "This is not a valid Explore save.",
   "common.error.import.unrecognizedData": "This Bobby Carrot 5 Remake data could not be recognized.",

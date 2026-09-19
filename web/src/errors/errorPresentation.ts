@@ -26,6 +26,10 @@ const ERROR_TRANSLATION_KEYS = {
     "common.error.dataExchange.invalidPayload",
   [EXCHANGE_ERROR_CODES.damagedGzip]:
     "common.error.dataExchange.damagedGzip",
+  [EXCHANGE_ERROR_CODES.saveNotMap]:
+    "common.error.dataExchange.saveNotMap",
+  [EXCHANGE_ERROR_CODES.invalidMap]:
+    "common.error.dataExchange.invalidMap",
   [WEB_ERROR_CODES.saveExchange.invalidAdventureProfile]:
     "common.error.save.invalidAdventureProfile",
   [WEB_ERROR_CODES.saveExchange.invalidExploreSave]:
@@ -58,7 +62,7 @@ export function localizedErrorText(error: unknown): WebLocalizedText | null {
   if (!(error instanceof WebError || error instanceof ExchangeError)) return null;
   return localizedText(
     ERROR_TRANSLATION_KEYS[error.code],
-    error instanceof WebError ? error.params : undefined,
+    error.params,
   );
 }
 

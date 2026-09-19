@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import {
   EXCHANGE_ERROR_CODES,
   ExchangeError,
+  parseExchangeMap,
   decodeBase64Url,
 } from "@bobby/exchange";
 import { beforeAll, test } from "vitest";
@@ -74,6 +75,46 @@ test("Data Exchange 错误保存语义码并随 locale 重新本地化", async (
 
   await setWebLocale("zh-CN");
   assert.equal(resolveWebText(errorDisplayText(error)), "数据 Payload 的 Base64 编码无效");
+});
+
+test("地图交换错误使用集中错误码并随 locale 重新本地化", async () => {
+  let saveError;
+  try {
+    parseExchangeMap({
+      game: "https://github.com/XUJINKAI/bobby-carrot-5-remake",
+      schemaVersion: 1,
+      scope: "explore/original",
+    });
+  } catch (caught) {
+    saveError = caught;
+  }
+  assert.ok(saveError instanceof ExchangeError);
+  assert.equal(saveError.code, EXCHANGE_ERROR_CODES.saveNotMap);
+  assert.equal(
+    resolveWebText(errorDisplayText(saveError)),
+    "这是 explore/original 存档，不是地图。",
+  );
+
+  let mapError;
+  try {
+    parseExchangeMap({ schemaVersion: 2 });
+  } catch (caught) {
+    mapError = caught;
+  }
+  assert.ok(mapError instanceof ExchangeError);
+  assert.equal(mapError.code, EXCHANGE_ERROR_CODES.invalidMap);
+  assert.equal(resolveWebText(errorDisplayText(mapError)), "这段数据不是有效地图。");
+
+  await setWebLocale("en");
+  assert.equal(
+    resolveWebText(errorDisplayText(saveError)),
+    "This is a explore/original save, not a map.",
+  );
+  assert.equal(
+    resolveWebText(errorDisplayText(mapError)),
+    "This data is not a valid map.",
+  );
+  await setWebLocale("zh-CN");
 });
 
 test("Import 无法分类的数据使用集中错误码", () => {

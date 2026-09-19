@@ -3,11 +3,15 @@ import {
   parseLevelMap,
   type LevelMap,
 } from "@bobby/model";
+import {
+  EXCHANGE_ERROR_CODES,
+  ExchangeError,
+} from "./errors.js";
 
 export type ExchangeMapErrorReason = "save" | "invalid-map";
 
 /** Data Exchange 已成功解码，但内容不能作为地图使用。 */
-export class ExchangeMapError extends Error {
+export class ExchangeMapError extends ExchangeError {
   constructor(
     public readonly reason: ExchangeMapErrorReason,
     public readonly scope: string | undefined,
@@ -15,9 +19,12 @@ export class ExchangeMapError extends Error {
   ) {
     super(
       reason === "save"
-        ? `BC5R data with scope "${scope}" is a save, not a map`
-        : "BC5R data is not a valid map",
-      options,
+        ? EXCHANGE_ERROR_CODES.saveNotMap
+        : EXCHANGE_ERROR_CODES.invalidMap,
+      {
+        ...options,
+        ...(scope === undefined ? {} : { params: { scope } }),
+      },
     );
     this.name = "ExchangeMapError";
   }
