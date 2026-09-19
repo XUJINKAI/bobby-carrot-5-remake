@@ -5,6 +5,7 @@ import {
   buildImportUrl,
   decodeExchangeText,
   detectExchangeFormat,
+  encodeExchangePayload,
   encodeExchangeText,
   extractImportPayload,
   ExchangeMapError,
@@ -19,7 +20,6 @@ import {
 test("规范 payload 对各类 UTF-8 JSON 文本执行往返", async () => {
   const values = [
     {},
-    ["数组", "🥕", "多行\n文本"],
     {
       ascii: "hello",
       chinese: "胡萝卜",
@@ -35,7 +35,21 @@ test("规范 payload 对各类 UTF-8 JSON 文本执行往返", async () => {
   }
 });
 
-test("裸 payload 与分享 URL 都接受 Base64 JSON 或 gzip JSON", async () => {
+test("Exchange 只接受 JSON object", async () => {
+  const invalidJsonValues = ["null", "true", "123", "\"text\"", "[]", "[1,2]"];
+  for (const jsonText of invalidJsonValues) {
+    assert.equal(detectExchangeFormat(jsonText), "unknown");
+    await assert.rejects(() => encodeExchangePayload(jsonText));
+    await assert.rejects(() => encodeExchangeText(jsonText));
+    await assert.rejects(() => decodeExchangeText(jsonText));
+
+    const payload = Buffer.from(jsonText, "utf8").toString("base64url");
+    assert.equal(detectExchangeFormat(payload), "unknown");
+    await assert.rejects(() => decodeExchangeText(payload));
+  }
+});
+
+test("裸 payload 与分享 URL 都接受 Base64 JSON object 或 gzip JSON object", async () => {
   const jsonText = JSON.stringify(mapDocumentFixture);
   const bytes = [Buffer.from(jsonText, "utf8"), gzipSync(jsonText)];
   const payloads = bytes.flatMap((value) => [

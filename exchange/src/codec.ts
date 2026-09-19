@@ -52,6 +52,7 @@ export async function gunzipText(value: Uint8Array): Promise<string> {
 }
 
 export async function encodeExchangePayload(jsonText: string): Promise<string> {
+  parseJsonObject(jsonText);
   return encodeBase64Url(await gzipText(jsonText));
 }
 
@@ -60,14 +61,13 @@ export async function decodeExchangePayload(
   payload: string,
 ): Promise<DecodedExchangeData> {
   const jsonText = await decodePayloadText(payload);
-  return { value: parseJson(jsonText), format: "payload", jsonText };
+  return { value: parseJsonObject(jsonText), format: "payload", jsonText };
 }
 
 export async function encodeExchangeText(
   jsonText: string,
   options: { publicBaseUrl?: string } = {},
 ): Promise<string> {
-  parseJson(jsonText);
   const payload = await encodeExchangePayload(jsonText);
   return options.publicBaseUrl
     ? buildImportUrl(options.publicBaseUrl, payload)
@@ -80,10 +80,10 @@ export async function decodeExchangeText(
   const source = text.trim();
   const payload = extractImportPayload(source);
   if (payload !== null) return decodeExchangePayload(payload);
-  if (source.startsWith("{") || source.startsWith("["))
-    return { value: parseJson(source), format: "json", jsonText: source };
   if (!source)
     throw new ExchangeError(EXCHANGE_ERROR_CODES.unknownRepresentation);
+  if (source.startsWith("{") || source.startsWith("["))
+    return { value: parseJsonObject(source), format: "json", jsonText: source };
   return decodeExchangePayload(source);
 }
 
@@ -91,8 +91,7 @@ export function detectExchangeFormat(text: string): ExchangeFormat {
   const source = text.trim();
   if (extractImportPayload(source)) return "payload";
   try {
-    JSON.parse(source);
-    return "json";
+    return isJsonObject(JSON.parse(source)) ? "json" : "unknown";
   } catch {
     return looksLikePayload(source) ? "payload" : "unknown";
   }
@@ -132,17 +131,24 @@ function looksLikePayload(source: string): boolean {
   try {
     const bytes = decodePayloadBase64(source);
     if (isGzip(bytes)) return true;
-    JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(bytes));
-    return true;
+    return isJsonObject(
+      JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(bytes)),
+    );
   } catch {
     return false;
   }
 }
 
-function parseJson(text: string): unknown {
+function parseJsonObject(text: string): Record<string, unknown> {
   try {
-    return JSON.parse(text);
+    const value: unknown = JSON.parse(text);
+    if (isJsonObject(value)) return value;
+    throw new TypeError("BC5R exchange data must be a JSON object");
   } catch (cause) {
     throw new ExchangeError(EXCHANGE_ERROR_CODES.invalidJson, { cause });
   }
+}
+
+function isJsonObject(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
 }
