@@ -28,7 +28,11 @@ await handle.ready;
 
 `map` 与 `mapUrl` 互斥且必须提供一个。`mapUrl` 只负责下载文本，两者随后都交给 `@bobby/exchange`，接受 Plain LevelMap / MapDocument JSON、裸 payload 和完整 `/import/v1#<payload>` URL。Payload 可以是 Base64 / Base64URL(JSON)，也可以是 Base64 / Base64URL(gzip(JSON))。Adventure / Explore 存档会明确报告为存档而非地图。
 
+第三方来源使用 `mapUrl` 时，该地图服务器需要允许 Embed 宿主页跨源读取。宿主页若配置 Content Security Policy，也需要放行 `bc5r.js` 的 `script-src`，以及站点资源根的 `font-src`、`img-src` 和 `connect-src`。
+
 当前仍发布一个 `bc5r.js`。`async` 消除 parser 的下载等待；只有确认 JavaScript evaluate 本身形成明显长任务时，才考虑拆分 loader 与 runtime。
+
+`bc5r.js` 执行时从自身脚本 URL 推导站点资源根，图片、音频与 Jersey 10 字体都通过该资源根加载。字体使用 `FontFace` 注册到宿主文档，并计入 `handle.ready`，因此第三方页面不需要预先加载 Web 站点样式。公开脚本与 `/assets/` 资源提供跨源读取响应头，支持在其它站点直接嵌入。
 
 
 ## 加载与错误状态

@@ -36,9 +36,13 @@ export const embedHudSmokeScript = `
   await document.fonts.ready;
   const hudStyle = getComputedStyle(hud);
   const valueStyle = getComputedStyle(value);
+  const jerseyFaces = [...document.fonts]
+    .filter((face) => face.family.replaceAll('"', '') === 'BC5R Jersey 10')
+    .map((face) => ({ family: face.family, status: face.status }));
   return JSON.stringify({
     fontFamily: hudStyle.fontFamily,
-    fontReady: document.fonts.check('36px "Jersey 10"'),
+    fontReady: document.fonts.check('36px "BC5R Jersey 10"'),
+    jerseyFaces,
     fontSize: valueStyle.fontSize,
     strokeWidth: hudStyle.webkitTextStrokeWidth,
     homeHref: home.href,
@@ -63,8 +67,9 @@ export const embedHudSmokeScript = `
 
 export function assertEmbedHudSmoke(payload) {
   if (
-    !payload.fontFamily.includes("Jersey 10") ||
+    !payload.fontFamily.includes("BC5R Jersey 10") ||
     !payload.fontReady ||
+    !payload.jerseyFaces.some((face) => face.status === "loaded") ||
     payload.fontSize !== "36px" ||
     payload.strokeWidth !== "1px" ||
     payload.homeHref !== "https://bc5r.xujinkai.net/" ||
@@ -83,4 +88,11 @@ export function assertEmbedHudSmoke(payload) {
     payload.joystickVisible !== payload.toggledJoystick
   )
     throw new Error(`Embed HUD 字体样式异常：${JSON.stringify(payload)}`);
+}
+
+export async function runEmbedHudSmoke(runBrowserEval, url, parseResult) {
+  const result = await runBrowserEval(url, embedHudSmokeScript);
+  if (result.status !== 0)
+    throw new Error(`Embed HUD 字体检查失败：${result.stderr || result.stdout}`);
+  assertEmbedHudSmoke(parseResult(result.stdout));
 }
