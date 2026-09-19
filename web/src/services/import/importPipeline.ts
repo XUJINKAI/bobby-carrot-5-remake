@@ -1,17 +1,17 @@
 import type { AdventureSave } from "@bobby/adventure";
+import {
+  decodeExchangePayload,
+  decodeExchangeText,
+  parseExchangeMap,
+} from "@bobby/exchange";
 import { WEB_ERROR_CODES, WebError } from "../../errors/errorCodes.js";
 import {
   fromLevelMap,
   parseEditorLevel,
-  toLevelMap,
   type EditorMap,
 } from "@bobby/editor";
-import { parseLevelMap, type LevelMap } from "@bobby/model";
+import type { LevelMap } from "@bobby/model";
 import { exploreCollectionPath } from "../../app/routes.js";
-import {
-  decodeExchangePayload,
-  decodeExchangeText,
-} from "../../shared/data-exchange/dataExchangeCodec.js";
 import {
   parseAdventureProfileExchange,
   saveAdventureSave,
@@ -103,6 +103,12 @@ function dataScope(value: unknown): string | null {
 }
 
 function parseMap(value: unknown): ImportedMapData | null {
+  let level: LevelMap;
+  try {
+    level = parseExchangeMap(value);
+  } catch {
+    return null;
+  }
   let text: string;
   try {
     const serialized = JSON.stringify(value);
@@ -113,18 +119,13 @@ function parseMap(value: unknown): ImportedMapData | null {
   }
   try {
     const document = parseEditorLevel(text);
-    return { type: "map", value: document, level: toLevelMap(document) };
+    return { type: "map", value: document, level };
   } catch {
     // 缺少 metadata 的纯 LevelMap 走相同 gameplay parser。
   }
-  try {
-    const level = parseLevelMap(value);
-    return {
-      type: "map",
-      value: fromLevelMap(level, "Imported Bobby Level"),
-      level,
-    };
-  } catch {
-    return null;
-  }
+  return {
+    type: "map",
+    value: fromLevelMap(level, "Imported Bobby Level"),
+    level,
+  };
 }

@@ -1,6 +1,11 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from "vue";
 import {
+  decodeExchangeText,
+  detectExchangeFormat,
+  encodeExchangeText,
+} from "@bobby/exchange";
+import {
   localizedText,
   resolveWebText,
   webT,
@@ -8,11 +13,6 @@ import {
 } from "../../i18n/webI18n.js";
 import { WEB_ERROR_CODES, WebError } from "../../errors/errorCodes.js";
 import { errorDisplayText } from "../../errors/errorPresentation.js";
-import {
-  decodeExchangeText,
-  detectExchangeFormat,
-  encodeExchangeText,
-} from "./dataExchangeCodec.js";
 import {
   DEFAULT_EXCHANGE_ACCEPT,
   downloadExchangeText,

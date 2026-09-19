@@ -10,6 +10,9 @@
   },
   "references": [
     {
+      "path": "../exchange"
+    },
+    {
       "path": "../model"
     },
     {

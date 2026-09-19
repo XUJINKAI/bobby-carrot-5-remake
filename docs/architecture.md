@@ -417,13 +417,15 @@ Editor 持久化 `MapDocument extends LevelMap`：
 
 ```text
 TextBox / Clipboard / File / Share URL
-     ↓ Data Exchange decode
+     ↓ @bobby/exchange decode
 unknown JSON
-     ↓ Editor parser
+     ↓ shared map parser
 EditorLevel / LevelMap
 ```
 
 Editor 不导入、不导出 DAT，也不生成 DAT-backed URL share。`BC5R1` 只压缩 UTF-8 JSON，并与 Map schema 版本保持独立。完整合同见 [`features/data-exchange.md`](features/data-exchange.md)。
+
+`@bobby/exchange` 位于 Model 之上、Web 与 Embed 之下，统一负责 transport 与地图导入边界。它不执行 HTTP 请求、不访问 storage，也不包含 UI；Embed 的 `mapUrl` 只负责下载文本，下载结果与 `map` 一样交给该包解码和解析。
 
 Inspector 根据 Model 字段合同与 Editor definitions 生成属性编辑控件。`dialogue` 使用可增删的多行文本框编辑同一会话的每一页对白；Lock 的 `deathCountdownSeconds` 通过同一通用路径编辑，二者都由 JSON round-trip 保留。
 

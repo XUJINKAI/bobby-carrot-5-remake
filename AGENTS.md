@@ -114,6 +114,8 @@
 ```text
 @bobby/model <- engine
 @bobby/model <- @bobby/adventure
+@bobby/model <- @bobby/exchange <- embed
+@bobby/exchange <- web
 @bobby/model <- editor <- web
 @bobby/model <- tools
 engine       <- editor <- web

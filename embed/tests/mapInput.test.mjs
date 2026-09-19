@@ -1,55 +1,49 @@
 import assert from "node:assert/strict";
-import { gzipSync } from "node:zlib";
 import test from "node:test";
-import { extractSharePayload, loadEmbedMap } from "../dist/mapInput.js";
+import { encodeExchangeText } from "@bobby/exchange";
+import {
+  levelMapFixture,
+  mapDocumentFixture,
+  scopedSaveFixtures,
+} from "../../exchange/tests/fixtures.mjs";
+import { loadEmbedMap } from "../dist/mapInput.js";
 
-const level = {
-  schemaVersion: 1,
-  width: 2,
-  height: 2,
-  entities: [],
-};
-
-function payload(value = level) {
-  return gzipSync(JSON.stringify(value)).toString("base64url");
-}
-
-test("extractSharePayload accepts raw, BC5R1 and loose v1# inputs", () => {
-  assert.equal(extractSharePayload("abc_DEF-123"), "abc_DEF-123");
-  assert.equal(extractSharePayload(" BC5R1:abc_DEF-123 "), "abc_DEF-123");
-  assert.equal(
-    extractSharePayload("prefix https://bc5r.com/import/v1#abc_DEF-123"),
-    "abc_DEF-123",
-  );
-  assert.equal(
-    extractSharePayload("anything/v1#first-v1#second"),
-    "first-v1#second",
-  );
+test("map 接受 LevelMap、MapDocument、BC5R1 与完整分享 URL", async () => {
+  const json = JSON.stringify(levelMapFixture);
+  const sources = [
+    json,
+    JSON.stringify(mapDocumentFixture),
+    await encodeExchangeText(json),
+    await encodeExchangeText(json, { publicBaseUrl: "https://example.com/" }),
+  ];
+  for (const map of sources)
+    assert.deepEqual(await loadEmbedMap({ map }), levelMapFixture);
 });
 
-test("loadEmbedMap decodes Editor-compatible BC5R1 data", async () => {
-  const encoded = payload();
-  assert.deepEqual(await loadEmbedMap({ map: `BC5R1:${encoded}` }), level);
-  assert.deepEqual(
-    await loadEmbedMap({ map: `https://bc5r.com/import/v1#${encoded}` }),
-    level,
-  );
+test("mapUrl 下载后的内容经过同一组 decoder", async () => {
+  const json = JSON.stringify(mapDocumentFixture);
+  for (const source of [json, await encodeExchangeText(json)]) {
+    const mapUrl = `data:text/plain,${encodeURIComponent(source)}`;
+    assert.deepEqual(await loadEmbedMap({ mapUrl }), levelMapFixture);
+  }
 });
 
-test("loadEmbedMap accepts user-managed mapUrl text", async () => {
-  const encoded = payload();
-  const url = `data:text/plain,${encodeURIComponent(`BC5R1:${encoded}`)}`;
-  assert.deepEqual(await loadEmbedMap({ mapUrl: url }), level);
-});
-
-test("loadEmbedMap requires one source and rejects invalid maps", async () => {
+test("要求唯一输入，并将存档明确识别为非地图", async () => {
   await assert.rejects(() => loadEmbedMap({}), /exactly one/);
   await assert.rejects(
-    () => loadEmbedMap({ map: payload(), mapUrl: "data:text/plain,unused" }),
+    () => loadEmbedMap({
+      map: JSON.stringify(levelMapFixture),
+      mapUrl: "data:text/plain,unused",
+    }),
     /exactly one/,
   );
+  for (const save of scopedSaveFixtures)
+    await assert.rejects(
+      () => loadEmbedMap({ map: JSON.stringify(save) }),
+      new RegExp(`scope.*${save.scope}.*save, not a map`),
+    );
   await assert.rejects(
-    () => loadEmbedMap({ map: payload({ ...level, schemaVersion: 2 }) }),
-    /schemaVersion.*1/,
+    () => loadEmbedMap({ map: JSON.stringify({ ...levelMapFixture, schemaVersion: 2 }) }),
+    /not a valid map/,
   );
 });

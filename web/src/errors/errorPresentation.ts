@@ -1,4 +1,9 @@
 import {
+  EXCHANGE_ERROR_CODES,
+  ExchangeError,
+  type ExchangeErrorCode,
+} from "@bobby/exchange";
+import {
   localizedText,
   type WebDisplayText,
   type WebLocalizedText,
@@ -13,15 +18,15 @@ import {
 const ERROR_TRANSLATION_KEYS = {
   [WEB_ERROR_CODES.common.clipboardUnavailable]:
     "common.clipboardUnavailable",
-  [WEB_ERROR_CODES.dataExchange.invalidJson]:
+  [EXCHANGE_ERROR_CODES.invalidJson]:
     "common.error.dataExchange.invalidJson",
-  [WEB_ERROR_CODES.dataExchange.unknownRepresentation]:
+  [EXCHANGE_ERROR_CODES.unknownRepresentation]:
     "common.error.dataExchange.unknownRepresentation",
-  [WEB_ERROR_CODES.dataExchange.invalidBase64Url]:
+  [EXCHANGE_ERROR_CODES.invalidBase64Url]:
     "common.error.dataExchange.invalidBase64Url",
-  [WEB_ERROR_CODES.dataExchange.damagedGzip]:
+  [EXCHANGE_ERROR_CODES.damagedGzip]:
     "common.error.dataExchange.damagedGzip",
-  [WEB_ERROR_CODES.dataExchange.unsupportedVersion]:
+  [EXCHANGE_ERROR_CODES.unsupportedVersion]:
     "common.error.dataExchange.unsupportedVersion",
   [WEB_ERROR_CODES.saveExchange.invalidAdventureProfile]:
     "common.error.save.invalidAdventureProfile",
@@ -49,11 +54,14 @@ const ERROR_TRANSLATION_KEYS = {
     "game.replay.invalidJson",
   [WEB_ERROR_CODES.replay.invalidDocument]:
     "game.replay.invalidDocument",
-} satisfies Record<WebErrorCode, WebTranslationKey>;
+} satisfies Record<WebErrorCode | ExchangeErrorCode, WebTranslationKey>;
 
 export function localizedErrorText(error: unknown): WebLocalizedText | null {
-  if (!(error instanceof WebError)) return null;
-  return localizedText(ERROR_TRANSLATION_KEYS[error.code], error.params);
+  if (!(error instanceof WebError || error instanceof ExchangeError)) return null;
+  return localizedText(
+    ERROR_TRANSLATION_KEYS[error.code],
+    error instanceof WebError ? error.params : undefined,
+  );
 }
 
 export function errorDisplayText(error: unknown): WebDisplayText {

@@ -3,7 +3,7 @@ import { parseEditorLevel, serializeEditorLevel, type EditorMap } from "@bobby/e
 import { computed } from "vue";
 import { publicBaseUrl } from "../../services/assets/gameAssets.js";
 import DataExchangePanel from "../../shared/data-exchange/DataExchangePanel.vue";
-import { encodeBc5rV1 } from "../../shared/data-exchange/dataExchangeCodec.js";
+import { encodeBc5rV1 } from "@bobby/exchange";
 import AppIcon from "../../shared/icons/AppIcon.vue";
 import {
   metadataValue,

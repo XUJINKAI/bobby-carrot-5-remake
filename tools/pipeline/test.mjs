@@ -5,6 +5,7 @@ import { root, run, tscCommand } from "../lib/fs.mjs";
 run("npm", ["run", "build", "--workspace=@bobby/i18n"]);
 
 if (
+  !fs.existsSync(path.join(root, "exchange/dist/index.js")) ||
   !fs.existsSync(path.join(root, "adventure/dist/index.js")) ||
   !fs.existsSync(path.join(root, "engine/dist/index.js")) ||
   !fs.existsSync(path.join(root, "editor/dist/index.js")) ||
@@ -13,6 +14,7 @@ if (
   run(tscCommand(), [
     "-b",
     "model",
+    "exchange",
     "adventure",
     "engine",
     "editor",
@@ -28,6 +30,7 @@ run(
     "tools/custom/*.test.mjs",
     "tools/original/dat-tests/*.test.mjs",
     "model/tests/*.test.mjs",
+    "exchange/tests/*.test.mjs",
     "i18n/tests/*.test.mjs",
     "adventure/tests/*.test.mjs",
     "engine/tests/*.test.mjs",

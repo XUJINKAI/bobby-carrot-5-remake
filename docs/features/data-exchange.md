@@ -46,7 +46,7 @@ Base64URL 只使用 `A-Z a-z 0-9 - _`，省略尾部 padding。raw representatio
 <publicBaseUrl>/import/v1#<payload>
 ```
 
-Payload 位于 fragment，浏览器只在客户端读取。Decoder 只还原 `unknown` JSON；Map、Adventure Save、Explore Save 等 schema 识别由统一 import pipeline 完成。
+Payload 位于 fragment，浏览器只在客户端读取。Decoder 只还原 `unknown` JSON；公共 map parser 识别 `LevelMap` / `MapDocument`，Web import pipeline 根据存档 `scope` 识别 Adventure Save 与 Explore Save。
 
 ## 站点根地址
 
@@ -63,8 +63,10 @@ Vite `base` 负责构建资源路径，`publicBaseUrl` 负责分享地址。构�
 
 ## 公共层职责
 
-`web/src/shared/data-exchange/` 提供 gzip、Base64URL、`BC5R1`、格式识别、分享 URL、文本文件 I/O，以及可配置左右 toolbar、label 和 placeholder 的 `DataExchangePanel`。
+`@bobby/exchange` 提供 gzip、Base64URL、`BC5R1`、格式识别、分享 URL payload 提取与公共 map parser。它只依赖 `@bobby/model`，不依赖 Web、Editor、存档 storage 或 UI。Home、`/import/v1` 与 Embed 的 `map` / `mapUrl` 都先经过这一层，因此 Plain LevelMap JSON、MapDocument JSON、`BC5R1:` 和完整 `/import/v1#` URL 使用同一组 decoder。
 
-公共层不知道 Map、Editor 或 Save。`web/src/services/import/importPipeline.ts` 在其上组织领域识别与存档应用；Home 和 `/import/v1` 共享该 pipeline，只分别提供文本/文件输入和 URL fragment 输入。地图游玩、确认 UI 与页面导航仍由消费页面负责。
+`web/src/shared/data-exchange/` 只提供文本文件 I/O，以及可配置左右 toolbar、label 和 placeholder 的 `DataExchangePanel`。`web/src/services/import/importPipeline.ts` 在公共包之上组织存档识别与应用；Home 和 `/import/v1` 共享该 pipeline，只分别提供文本/文件输入和 URL fragment 输入。地图游玩、确认 UI 与页面导航仍由消费页面负责。
+
+公共 map parser 遇到带 Bobby Carrot 游戏标识和 `scope` 的存档时，会明确返回“存档不是地图”，不会把它误报成 transport 编码错误。Embed 不再自行维护 prefix、Base64URL、gzip 或 URL payload 规则。
 
 Transport 区分 JSON 格式错误、未知表示、无效 Base64URL、损坏 gzip 与不支持的 transport 版本。领域 parser 提供业务类型错误；解析失败时保留 TextBox draft，且不修改业务数据。

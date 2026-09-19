@@ -1,4 +1,9 @@
 import assert from "node:assert/strict";
+import {
+  EXCHANGE_ERROR_CODES,
+  ExchangeError,
+  decodeBase64Url,
+} from "@bobby/exchange";
 import { beforeAll, test } from "vitest";
 import {
   getWebLocale,
@@ -15,7 +20,6 @@ import {
   errorDisplayText,
   localizedErrorText,
 } from "../src/errors/errorPresentation.ts";
-import { decodeBase64Url } from "../src/shared/data-exchange/dataExchangeCodec.ts";
 import { requireImportedJson } from "../src/services/import/importPipeline.ts";
 import { parseAdventureProfileExchange } from "../src/storage/adventureSaveStorage.ts";
 import {
@@ -33,13 +37,20 @@ beforeAll(async () => {
 });
 
 test("所有预期 Web 错误码集中登记且都有本地化映射", () => {
-  const codes = Object.values(WEB_ERROR_CODES).flatMap((group) =>
+  const webCodes = Object.values(WEB_ERROR_CODES).flatMap((group) =>
     Object.values(group),
   );
+  const exchangeCodes = Object.values(EXCHANGE_ERROR_CODES);
+  const codes = [...webCodes, ...exchangeCodes];
   assert.equal(new Set(codes).size, codes.length);
   assert.ok(codes.length >= 15);
-  for (const code of codes)
+  for (const code of webCodes)
     assert.ok(localizedErrorText(new WebError(code)), `missing error mapping: ${code}`);
+  for (const code of exchangeCodes)
+    assert.ok(
+      localizedErrorText(new ExchangeError(code)),
+      `missing error mapping: ${code}`,
+    );
 });
 
 test("Data Exchange 错误保存语义码并随 locale 重新本地化", async () => {
@@ -49,9 +60,9 @@ test("Data Exchange 错误保存语义码并随 locale 重新本地化", async (
   } catch (caught) {
     error = caught;
   }
-  assert.ok(error instanceof WebError);
-  assert.equal(error.code, WEB_ERROR_CODES.dataExchange.invalidBase64Url);
-  assert.equal(error.message, WEB_ERROR_CODES.dataExchange.invalidBase64Url);
+  assert.ok(error instanceof ExchangeError);
+  assert.equal(error.code, EXCHANGE_ERROR_CODES.invalidBase64Url);
+  assert.equal(error.message, EXCHANGE_ERROR_CODES.invalidBase64Url);
   assert.equal(resolveWebText(errorDisplayText(error)), "BC5R1 数据编码无效");
 
   await setWebLocale("en");

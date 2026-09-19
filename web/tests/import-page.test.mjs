@@ -1,7 +1,15 @@
 import assert from "node:assert/strict";
 import { createAdventureSave } from "@bobby/adventure";
+import {
+  encodeBc5rV1,
+  encodeExchangeText,
+} from "@bobby/exchange";
 import { BC5R_GAME_ID } from "@bobby/model";
 import { test } from "vitest";
+import {
+  levelMapFixture as level,
+  mapDocumentFixture,
+} from "../../exchange/tests/fixtures.mjs";
 import { WEB_ERROR_CODES, WebError } from "../src/errors/errorCodes.ts";
 import {
   classifyImportedJson,
@@ -9,20 +17,6 @@ import {
   decodeImportedText,
   requireImportedJson,
 } from "../src/services/import/importPipeline.ts";
-import {
-  encodeBc5rV1,
-  encodeExchangeText,
-} from "../src/shared/data-exchange/dataExchangeCodec.ts";
-
-const level = {
-  schemaVersion: 1,
-  width: 2,
-  height: 1,
-  entities: [
-    { type: "grass", x: 0, y: 0, variant: "ts-10-1" },
-    { type: "bobby", x: 0, y: 0 },
-  ],
-};
 
 const exploreSave = {
   game: BC5R_GAME_ID,
@@ -39,10 +33,7 @@ test("统一导入 pipeline 接受带 metadata 与纯 LevelMap", () => {
   assert.deepEqual(pure.level, level);
   assert.equal(pure.value.meta.name, "Imported Bobby Level");
 
-  const document = classifyImportedJson({
-    ...level,
-    meta: { name: "Shared Map", author: "Bobby" },
-  });
+  const document = classifyImportedJson(mapDocumentFixture);
   assert.equal(document?.type, "map");
   if (document?.type !== "map") return;
   assert.equal(document.value.meta.name, "Shared Map");

@@ -15,6 +15,7 @@ const generatedAssets = path.join(root, "assets");
 const generatedTargets = [
   dist,
   "model/dist",
+  "exchange/dist",
   "i18n/dist",
   "adventure/dist",
   "engine/dist",
@@ -31,7 +32,7 @@ const tsc = tscCommand();
 // i18n 自己用 Vite 编译 TS 与 Markdown，并用 tsc 只生成声明。
 run("npm", ["run", "build", "--workspace=@bobby/i18n"]);
 // 产品构建只常驻编译纯模型与 Adventure；DAT 仅在确实需要重新生成官方资产时出现。
-run(tsc, ["-b", "model", "adventure", "--force"]);
+run(tsc, ["-b", "model", "exchange", "adventure", "--force"]);
 run(process.execPath, ["tools/cli.mjs", "assets", "prepare"]);
 
 // Engine、Editor 和 Web 只消费纯 LevelMap 与已生成资产。
@@ -44,6 +45,7 @@ run(binCommand("vite"), ["build"], { cwd: path.join(root, "web") });
 run(binCommand("vite"), ["build"], { cwd: path.join(root, "embed") });
 
 copyTree(path.join(root, "model/dist"), path.join(dist, "model"));
+copyTree(path.join(root, "exchange/dist"), path.join(dist, "exchange"));
 copyTree(path.join(root, "i18n/dist"), path.join(dist, "i18n"));
 copyTree(path.join(root, "adventure/dist"), path.join(dist, "adventure"));
 copyTree(path.join(root, "engine/dist"), path.join(dist, "engine"));

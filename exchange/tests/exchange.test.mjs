@@ -1,21 +1,32 @@
 import assert from "node:assert/strict";
-import { test } from "vitest";
-import { WEB_ERROR_CODES, WebError } from "../src/errors/errorCodes.ts";
+import test from "node:test";
 import {
+  EXCHANGE_ERROR_CODES,
+  ExchangeError,
+  buildImportUrl,
   decodeExchangeText,
   detectExchangeFormat,
   encodeExchangeText,
-} from "../src/shared/data-exchange/dataExchangeCodec.ts";
-import {
-  buildImportUrl,
   extractImportPayload,
-} from "../src/shared/data-exchange/dataExchangeUrl.ts";
+  ExchangeMapError,
+  parseExchangeMap,
+} from "../dist/index.js";
+import {
+  levelMapFixture,
+  mapDocumentFixture,
+  scopedSaveFixtures,
+} from "./fixtures.mjs";
 
 test("BC5R1 对各类 UTF-8 JSON 文本执行往返", async () => {
   const values = [
     {},
     ["数组", "🥕", "多行\n文本"],
-    { ascii: "hello", chinese: "胡萝卜", emoji: "🐰", large: "地图".repeat(20_000) },
+    {
+      ascii: "hello",
+      chinese: "胡萝卜",
+      emoji: "🐰",
+      large: "地图".repeat(20_000),
+    },
   ];
   for (const value of values) {
     const source = JSON.stringify(value, null, 2);
@@ -33,11 +44,13 @@ test("分享 URL 保留完整站点根路径", () => {
       "https://bc5r.xujinkai.net",
       "https://bc5r.xujinkai.net/import/v1#PAYLOAD",
     ],
-    ["https://example.com/a/b/c/", "https://example.com/a/b/c/import/v1#PAYLOAD"],
+    [
+      "https://example.com/a/b/c/",
+      "https://example.com/a/b/c/import/v1#PAYLOAD",
+    ],
   ];
-  for (const [base, expected] of cases) {
+  for (const [base, expected] of cases)
     assert.equal(buildImportUrl(base, "PAYLOAD"), expected);
-  }
 });
 
 test("格式识别接受 JSON、BC5R1 与任意站点的 import/v1 URL", () => {
@@ -57,7 +70,23 @@ test("未知 transport 版本返回明确错误", async () => {
   await assert.rejects(
     decodeExchangeText("BC5R2:PAYLOAD"),
     (error) =>
-      error instanceof WebError &&
-      error.code === WEB_ERROR_CODES.dataExchange.unsupportedVersion,
+      error instanceof ExchangeError &&
+      error.code === EXCHANGE_ERROR_CODES.unsupportedVersion,
   );
+});
+
+test("公共地图 parser 接受 LevelMap 和 MapDocument", () => {
+  assert.deepEqual(parseExchangeMap(levelMapFixture), levelMapFixture);
+  assert.deepEqual(parseExchangeMap(mapDocumentFixture), levelMapFixture);
+});
+
+test("公共地图 parser 将带 scope 的存档明确识别为非地图", () => {
+  for (const save of scopedSaveFixtures)
+    assert.throws(
+      () => parseExchangeMap(save),
+      (error) =>
+        error instanceof ExchangeMapError &&
+        error.reason === "save" &&
+        error.scope === save.scope,
+    );
 });

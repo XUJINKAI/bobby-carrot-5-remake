@@ -22,6 +22,7 @@
   },
   "workspaces": [
     "model",
+    "exchange",
     "i18n",
     "engine",
     "editor",
