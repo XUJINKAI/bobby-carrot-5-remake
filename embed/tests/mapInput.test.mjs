@@ -7,7 +7,10 @@ import {
   mapDocumentFixture,
   scopedSaveFixtures,
 } from "../../exchange/tests/fixtures.mjs";
-import { loadEmbedMap } from "../dist/mapInput.js";
+import {
+  EmbedMapInputError,
+  loadEmbedMap,
+} from "../dist/mapInput.js";
 
 test("map 接受 JSON、两种 payload 与完整分享 URL", async () => {
   const json = JSON.stringify(levelMapFixture);
@@ -42,14 +45,22 @@ test("mapUrl 下载后的内容经过同一组 decoder", async () => {
   }
 });
 
-test("要求唯一输入，并将存档明确识别为非地图", async () => {
-  await assert.rejects(() => loadEmbedMap({}), /exactly one/);
+test("要求唯一非空输入，并将存档明确识别为非地图", async () => {
+  for (const value of [{}, { map: "" }, { mapUrl: "" }])
+    await assert.rejects(
+      () => loadEmbedMap(value),
+      (error) =>
+        error instanceof EmbedMapInputError &&
+        error.reason === "missing-map",
+    );
   await assert.rejects(
     () => loadEmbedMap({
       map: JSON.stringify(levelMapFixture),
       mapUrl: "data:text/plain,unused",
     }),
-    /exactly one/,
+    (error) =>
+      error instanceof EmbedMapInputError &&
+      error.reason === "multiple-inputs",
   );
   for (const save of scopedSaveFixtures)
     await assert.rejects(

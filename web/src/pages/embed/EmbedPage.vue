@@ -97,7 +97,7 @@ const embedCode = computed(() => {
       : { mapUrl: mapUrl.value.trim() }),
   };
   const serialized = JSON.stringify(config, null, 2).replaceAll("<", "\\u003c");
-  return `<div id="bc5r" style="width:100%;height:520px"></div>\n\n<script>\nwindow.BC5R = window.BC5R || { queue: [] };\nBC5R.queue.push(${serialized});\n<\/script>\n\n<script async src="${standaloneUrl()}"><\/script>`;
+  return `<div id="bc5r" style="height:520px;display:grid;place-items:center;border:1px solid #254868;background:#071522;color:#c9e6f7">Loading Bobby Carrot 5 Remake…</div>\n\n<script>\nwindow.BC5R = window.BC5R || { queue: [] };\nBC5R.queue.push(${serialized});\n<\/script>\n\n<script async src="${standaloneUrl()}"><\/script>`;
 });
 
 watch(
@@ -127,11 +127,6 @@ async function refreshPreview(): Promise<void> {
   previewReady.value = false;
   const target = preview.value;
   if (!target || !embedMount) return;
-  const source = mapMode.value === "map" ? map.value.trim() : mapUrl.value.trim();
-  if (!source) {
-    target.replaceChildren();
-    return;
-  }
   try {
     const next = embedMount({ target, ...options.value });
     handle = next;
@@ -141,9 +136,8 @@ async function refreshPreview(): Promise<void> {
       return;
     }
     previewReady.value = true;
-  } catch (error) {
-    if (serial === renderSerial)
-      previewError.value = errorDisplayText(error);
+  } catch {
+    // Embed runtime 在预览框内显示地图加载错误。
   }
 }
 

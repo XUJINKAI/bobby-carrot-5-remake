@@ -129,77 +129,80 @@ export function mount(options: BC5RMountOptions): BC5RHandle {
   const ready = (async (): Promise<void> => {
     status.loading();
     try {
-      const level = await loadEmbedMap({ map: options.map, mapUrl: options.mapUrl });
-    if (destroyed) return;
-    const camera = resolveCameraOptions(options);
-    const playUrl = await officialPlayUrl(level);
-    frameControls.open.href = playUrl;
-    frameControls.open.removeAttribute("aria-disabled");
-    frameControls.open.tabIndex = 0;
-    terminal.official.href = playUrl;
-    const imageManager = createEmbedImageManager();
-    images = imageManager;
-    try {
-      runtime = await createGameplayRuntime({
-        level,
-        canvas,
-        images: imageManager,
-        audioOptions: {
-          baseUrl: new URL("assets/audio/original/", publicBaseUrl),
-          musicEnabled: audio.enabled,
-          musicStyle: options.musicStyle ?? "modern",
-        },
-        runtime: {
-          camera,
-          hud: true,
-          input: {
-            keyboard: true,
-            pointer,
-            movement: true,
-            pan: true,
-            zoom: true,
-            pinchZoom,
-            wheelZoom,
-            debug: false,
-            screenJoystick: { enabled: joystick },
-          },
-        },
+      const level = await loadEmbedMap({
+        map: options.map,
+        mapUrl: options.mapUrl,
       });
-    } catch (error) {
-      if (images === imageManager) images = null;
-      imageManager.destroy();
-      throw error;
-    }
-    if (destroyed) {
-      runtime.destroy();
-      runtime = null;
-      if (images === imageManager) images = null;
-      imageManager.destroy();
-      return;
-    }
-    if (keyboard === "focus" && activeFocusEmbed?.token !== token)
-      runtime.input.setKeyboardEnabled(false);
-    const audioLevels = applyAudio(runtime, audio);
-    installRestartButton(runtime, frameControls.restart, canvasWrap, cleanup);
-    installSoundToggle(
-      runtime,
-      frameControls.sound,
-      audio.enabled,
-      audioLevels,
-      locale,
-      cleanup,
-    );
-    installJoystickToggle(
-      runtime,
-      info.joystick,
-      joystick,
-      locale,
-      cleanup,
-    );
-    installTerminalOverlay(runtime, terminal, canvasWrap, locale, cleanup);
-    const resumeAudio = (): void => runtime?.audio.resume();
-    root.addEventListener("pointerdown", resumeAudio, { passive: true });
-    cleanup.push(() => root.removeEventListener("pointerdown", resumeAudio));
+      if (destroyed) return;
+      const camera = resolveCameraOptions(options);
+      const playUrl = await officialPlayUrl(level);
+      frameControls.open.href = playUrl;
+      frameControls.open.removeAttribute("aria-disabled");
+      frameControls.open.tabIndex = 0;
+      terminal.official.href = playUrl;
+      const imageManager = createEmbedImageManager();
+      images = imageManager;
+      try {
+        runtime = await createGameplayRuntime({
+          level,
+          canvas,
+          images: imageManager,
+          audioOptions: {
+            baseUrl: new URL("assets/audio/original/", publicBaseUrl),
+            musicEnabled: audio.enabled,
+            musicStyle: options.musicStyle ?? "modern",
+          },
+          runtime: {
+            camera,
+            hud: true,
+            input: {
+              keyboard: true,
+              pointer,
+              movement: true,
+              pan: true,
+              zoom: true,
+              pinchZoom,
+              wheelZoom,
+              debug: false,
+              screenJoystick: { enabled: joystick },
+            },
+          },
+        });
+      } catch (error) {
+        if (images === imageManager) images = null;
+        imageManager.destroy();
+        throw error;
+      }
+      if (destroyed) {
+        runtime.destroy();
+        runtime = null;
+        if (images === imageManager) images = null;
+        imageManager.destroy();
+        return;
+      }
+      if (keyboard === "focus" && activeFocusEmbed?.token !== token)
+        runtime.input.setKeyboardEnabled(false);
+      const audioLevels = applyAudio(runtime, audio);
+      installRestartButton(runtime, frameControls.restart, canvasWrap, cleanup);
+      installSoundToggle(
+        runtime,
+        frameControls.sound,
+        audio.enabled,
+        audioLevels,
+        locale,
+        cleanup,
+      );
+      installJoystickToggle(
+        runtime,
+        info.joystick,
+        joystick,
+        locale,
+        cleanup,
+      );
+      installTerminalOverlay(runtime, terminal, canvasWrap, locale, cleanup);
+      const resumeAudio = (): void => runtime?.audio.resume();
+      root.addEventListener("pointerdown", resumeAudio, { passive: true });
+      cleanup.push(() => root.removeEventListener("pointerdown", resumeAudio));
       status.hide();
     } catch (error) {
       if (!destroyed) status.error(error);

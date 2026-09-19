@@ -18,4 +18,7 @@ test("Embed 生成代码与首页示例统一使用 queue + async", async () => 
     assert.ok(source.indexOf("BC5R.queue.push") < source.indexOf("script async src="));
   }
   assert.doesNotMatch(page, /BC5R\.mount\(\$\{JSON\.stringify/);
+  assert.match(page, /Loading Bobby Carrot 5 Remake…/);
+  assert.match(page, /border:1px solid #254868/);
+  assert.doesNotMatch(page, /if \(!source\)/);
 });

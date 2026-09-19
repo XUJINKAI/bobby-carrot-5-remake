@@ -76,3 +76,18 @@ test("Embed 接受浏览器 locale tag，并在 mount 开头只解析一次 loca
   assert.match(mountSource, /function resolveEmbedLocale\(lang: string \| undefined\): Locale/);
   assert.doesNotMatch(mountSource, /options\.lang \?\? "zh-CN"/);
 });
+
+
+test("Embed runtime 自己显示加载与失败状态，ready 契约保持不变", async () => {
+  const [mountSource, statusSource] = await Promise.all([
+    readFile(new URL("../src/mount.ts", import.meta.url), "utf8"),
+    readFile(new URL("../src/status.ts", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(mountSource, /createEmbedStatus\(locale\)/);
+  assert.match(mountSource, /status\.loading\(\)/);
+  assert.match(mountSource, /status\.hide\(\)/);
+  assert.match(mountSource, /status\.error\(error\)/);
+  assert.match(statusSource, /EXCHANGE_ERROR_CODES\.invalidMap/);
+  assert.match(statusSource, /EmbedMapInputError/);
+});
