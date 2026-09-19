@@ -33,13 +33,13 @@ test("存档管理只为实际存在的 Adventure 和 Explore records 创建 Tab
     {
       id: "explore:alpha",
       kind: "explore",
-      label: "Explore / alpha",
+      label: "alpha",
       collection: "alpha",
     },
     {
       id: "explore:zeta",
       kind: "explore",
-      label: "Explore / zeta",
+      label: "zeta",
       collection: "zeta",
     },
   ]);

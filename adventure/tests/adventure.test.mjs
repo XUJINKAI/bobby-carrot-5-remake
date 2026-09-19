@@ -82,8 +82,8 @@ test("Adventure Save 只接受每章一个完成位置", () => {
 test("Adventure Save 只保存已结算经济和永久进度", () => {
   const save = createAdventureSave();
   assert.deepEqual(Object.keys(save), [
-    "schemaVersion",
     "game",
+    "schemaVersion",
     "scope",
     "campaign",
     "economy",

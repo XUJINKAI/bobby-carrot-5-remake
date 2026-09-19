@@ -21,9 +21,9 @@ export const ADVENTURE_EVENT_IDS = ["bonus-key-trial"] as const;
 export type AdventureEventId = (typeof ADVENTURE_EVENT_IDS)[number];
 
 export interface AdventureSave {
-  schemaVersion: 1;
   /** 随存档保存的项目来源标识。 */
   game: typeof BC5R_GAME_ID;
+  schemaVersion: 1;
   scope: "adventure";
   campaign: {
     /** 每章只保存按顺序完成到的最远关卡。 */
@@ -40,8 +40,8 @@ export interface AdventureSave {
 
 export function createAdventureSave(): AdventureSave {
   return {
-    schemaVersion: 1,
     game: BC5R_GAME_ID,
+    schemaVersion: 1,
     scope: "adventure",
     campaign: {
       completedThrough: {},
@@ -77,8 +77,8 @@ export function normalizeAdventureSave(value: unknown): AdventureSave {
   const parsedResume = parseAdventureLevelId(String(campaign.resumeLevelId ?? ""));
   const items = stringArray(raw.items).filter(isAdventureItemId);
   return {
-    schemaVersion: 1,
     game: BC5R_GAME_ID,
+    schemaVersion: 1,
     scope: "adventure",
     campaign: {
       completedThrough,

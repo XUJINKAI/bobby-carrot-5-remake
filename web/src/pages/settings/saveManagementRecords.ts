@@ -41,7 +41,7 @@ export function listSaveManagementTargets(
     targets.push({
       id: `explore:${collection}`,
       kind: "explore",
-      label: `Explore / ${collection}`,
+      label: collection,
       collection,
     });
   }
