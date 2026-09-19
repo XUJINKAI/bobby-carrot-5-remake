@@ -78,6 +78,10 @@ test(
         await openPage(cdp, `${origin}/edit`),
       );
       await verifyReplayPanel(cdp, `${origin}/import/v1#${replayPayload()}`);
+      await verifyLocaleSwitchPreservesGameSession(
+        cdp,
+        `${origin}/import/v1#${replayPayload()}`,
+      );
       await verifyAdventureDeveloperTools(
         cdp,
         `${origin}/adventure/play/1-1`,
@@ -705,6 +709,117 @@ async function verifyReplayPanel(cdp, url) {
     throw new Error("Replay mobile panel changed the canvas layout");
   if (mobileLayout.panelLeft < mobileLayout.stageLeft + 9)
     throw new Error("Replay mobile panel did not float inside the game stage");
+}
+
+async function verifyLocaleSwitchPreservesGameSession(cdp, url) {
+  const sessionId = await openPage(cdp, url);
+  await waitFor(
+    async () =>
+      Boolean(
+        await cdp.evaluate(
+          sessionId,
+          "document.querySelector('#game') && document.querySelector('#settings') && document.querySelector('[data-replay-panel]')",
+        ),
+      ),
+    20_000,
+  );
+
+  const initial = await cdp.evaluate(
+    sessionId,
+    `(() => {
+      window.__localeRegressionCanvas = document.querySelector('#game');
+      window.__localeRegressionStage = document.querySelector('[data-game-stage]');
+      return {
+        lang: document.documentElement.lang,
+        canvas: Boolean(window.__localeRegressionCanvas),
+        stage: Boolean(window.__localeRegressionStage),
+        replay: document.querySelector('[data-replay-status]')?.textContent ?? '',
+        mapStatus: document.querySelector('#map-status')?.getAttribute('aria-label') ?? '',
+      };
+    })()`,
+  );
+  if (initial.lang !== "zh-CN")
+    throw new Error(`Locale regression did not start in zh-CN: ${initial.lang}`);
+  if (initial.replay !== "准备录制")
+    throw new Error(`Replay did not start localized in zh-CN: ${initial.replay}`);
+  if (!initial.mapStatus.includes("地图状态"))
+    throw new Error("Map status did not start localized in zh-CN");
+
+  await openQuickSettingsAndChooseLocale(cdp, sessionId, "English", "en");
+  await waitFor(async () =>
+    Boolean(
+      await cdp.evaluate(
+        sessionId,
+        `(() => ({
+          lang: document.documentElement.lang,
+          sameCanvas: document.querySelector('#game') === window.__localeRegressionCanvas,
+          sameStage: document.querySelector('[data-game-stage]') === window.__localeRegressionStage,
+          replay: document.querySelector('[data-replay-status]')?.textContent ?? '',
+          mapStatus: document.querySelector('#map-status')?.getAttribute('aria-label') ?? '',
+        }))()`,
+      ).then((state) =>
+        state.lang === "en" &&
+        state.sameCanvas &&
+        state.sameStage &&
+        state.replay === "Ready to record" &&
+        state.mapStatus.startsWith("Map status:"),
+      ),
+    ),
+  );
+
+  await openQuickSettingsAndChooseLocale(cdp, sessionId, "中文", "zh-CN");
+  await waitFor(async () =>
+    Boolean(
+      await cdp.evaluate(
+        sessionId,
+        `(() => ({
+          lang: document.documentElement.lang,
+          sameCanvas: document.querySelector('#game') === window.__localeRegressionCanvas,
+          sameStage: document.querySelector('[data-game-stage]') === window.__localeRegressionStage,
+          replay: document.querySelector('[data-replay-status]')?.textContent ?? '',
+          mapStatus: document.querySelector('#map-status')?.getAttribute('aria-label') ?? '',
+        }))()`,
+      ).then((state) =>
+        state.lang === "zh-CN" &&
+        state.sameCanvas &&
+        state.sameStage &&
+        state.replay === "准备录制" &&
+        state.mapStatus.startsWith("地图状态："),
+      ),
+    ),
+  );
+}
+
+async function openQuickSettingsAndChooseLocale(
+  cdp,
+  sessionId,
+  label,
+  expectedLocale,
+) {
+  await clickWhenPresent(cdp, sessionId, "#settings");
+  await waitFor(async () =>
+    Boolean(
+      await cdp.evaluate(
+        sessionId,
+        "document.querySelector('[data-quick-settings-layer]')",
+      ),
+    ),
+  );
+  const clicked = await cdp.evaluate(
+    sessionId,
+    `(() => {
+      const button = [...document.querySelectorAll('.quick-settings-panel button[role="radio"]')]
+        .find((item) => item.textContent?.trim() === ${JSON.stringify(label)});
+      if (!button) return false;
+      button.click();
+      return true;
+    })()`,
+  );
+  if (!clicked) throw new Error(`Quick Settings locale option missing: ${label}`);
+  await waitFor(async () =>
+    (await cdp.evaluate(sessionId, "document.documentElement.lang")) ===
+    expectedLocale,
+  );
 }
 
 async function verifyReplaySaveButton(cdp, sessionId) {
