@@ -134,6 +134,17 @@ test("Replay 动态文案只由 controller 渲染", () => {
   assert.match(replayBindingSource, /play\.textContent = playing/);
 });
 
+test("Replay 复制失败使用共享 Clipboard 语义错误", () => {
+  assert.match(
+    replayBindingSource,
+    /WEB_ERROR_CODES\.common\.clipboardUnavailable/,
+  );
+  assert.doesNotMatch(
+    replayBindingSource,
+    /WEB_ERROR_CODES\.dataExchange\.clipboardUnavailable/,
+  );
+});
+
 test("Replay 面板使用一帧一行的统一序列化", () => {
   assert.match(replayBindingSource, /output\.value = serializeReplay\(replay\)/);
 });
