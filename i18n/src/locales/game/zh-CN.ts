@@ -48,6 +48,7 @@ const catalog = {
   "game.replay.builtinMissing": "当前关卡暂无内置过法",
   "game.replay.builtinLoadFailed": "读取内置过法失败（HTTP {status}）",
   "game.replay.builtinSaveFailed": "保存内置过法失败（HTTP {status}）",
+  "game.replay.invalidJson": "Replay JSON 格式错误",
   "game.replay.invalidDocument": "Replay JSON 必须是对象",
   "game.map.verification": "验证",
   "game.map.id": "ID",
