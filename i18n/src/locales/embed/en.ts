@@ -27,5 +27,7 @@ const catalog = {
   "embed.copy": "Copy",
   "embed.infoPlaceholder": "Move with WASD / arrow keys",
   "embed.mapDataPlaceholder": "BC5R1:... or https://bc5r.com/import/v1#...",
+  "embed.error.runtimeLoadFailed": "Failed to load the embed runtime: {url}",
+  "embed.error.runtimeUnavailable": "The embed runtime did not expose BC5R.mount()",
 } satisfies Record<EmbedTranslationKey, string>;
 export default catalog;

@@ -8,7 +8,14 @@ import type {
   EmbedMusicStyle,
 } from "@bobby/embed";
 import { EMBED_RUNTIME_CATALOGS, normalizeLocale } from "@bobby/i18n";
-import { getWebLocale, webT } from "../../i18n/webI18n.js";
+import {
+  getWebLocale,
+  resolveWebText,
+  webT,
+  type WebDisplayText,
+} from "../../i18n/webI18n.js";
+import { WEB_ERROR_CODES, WebError } from "../../errors/errorCodes.js";
+import { errorDisplayText } from "../../errors/errorPresentation.js";
 
 const props = defineProps<{ publicBaseUrl: string }>();
 
@@ -33,7 +40,8 @@ const wheelZoom = ref(false);
 const info = ref("");
 const preview = ref<HTMLElement | null>(null);
 const codeBlock = ref<HTMLElement | null>(null);
-const previewError = ref("");
+const previewError = ref<WebDisplayText | null>(null);
+const copyError = ref<WebDisplayText | null>(null);
 const previewReady = ref(false);
 const apiReady = ref(false);
 let embedMount: EmbedMount | null = null;
@@ -91,7 +99,14 @@ const embedCode = computed(() => {
   return `<div id="bc5r" style="width:100%;height:520px"></div>\n<script src="${standaloneUrl()}"><\/script>\n<script>\nBC5R.mount(${JSON.stringify(config, null, 2)});\n<\/script>`;
 });
 
-watch(options, () => void refreshPreview(), { deep: true });
+watch(
+  options,
+  () => {
+    copyError.value = null;
+    void refreshPreview();
+  },
+  { deep: true },
+);
 
 onMounted(async () => {
   try {
@@ -99,7 +114,7 @@ onMounted(async () => {
     apiReady.value = true;
     await refreshPreview();
   } catch (error) {
-    previewError.value = error instanceof Error ? error.message : String(error);
+    previewError.value = errorDisplayText(error);
   }
 });
 
@@ -107,7 +122,7 @@ async function refreshPreview(): Promise<void> {
   const serial = ++renderSerial;
   handle?.destroy();
   handle = null;
-  previewError.value = "";
+  previewError.value = null;
   previewReady.value = false;
   const target = preview.value;
   if (!target || !embedMount) return;
@@ -127,7 +142,7 @@ async function refreshPreview(): Promise<void> {
     previewReady.value = true;
   } catch (error) {
     if (serial === renderSerial)
-      previewError.value = error instanceof Error ? error.message : String(error);
+      previewError.value = errorDisplayText(error);
   }
 }
 
@@ -142,13 +157,19 @@ async function resolveEmbedMount(): Promise<EmbedMount> {
     script.addEventListener("load", () => resolve(), { once: true });
     script.addEventListener(
       "error",
-      () => reject(new Error(`无法加载 ${script.src}`)),
+      () =>
+        reject(
+          new WebError(WEB_ERROR_CODES.embed.runtimeLoadFailed, {
+            params: { url: script.src },
+          }),
+        ),
       { once: true },
     );
     document.head.append(script);
   });
   const loaded = globalBc5r()?.mount;
-  if (!loaded) throw new Error("bc5r.js 未暴露 BC5R.mount()");
+  if (!loaded)
+    throw new WebError(WEB_ERROR_CODES.embed.runtimeUnavailable);
   return loaded;
 }
 
@@ -161,7 +182,14 @@ function standaloneUrl(): string {
 }
 
 async function copyCode(): Promise<void> {
-  await navigator.clipboard.writeText(embedCode.value);
+  copyError.value = null;
+  try {
+    await navigator.clipboard.writeText(embedCode.value);
+  } catch (cause) {
+    copyError.value = errorDisplayText(
+      new WebError(WEB_ERROR_CODES.common.clipboardUnavailable, { cause }),
+    );
+  }
 }
 
 function selectAllCode(): void {
@@ -278,13 +306,14 @@ onBeforeUnmount(() => handle?.destroy());
       <section class="embed-output">
         <h2>{{ webT("embed.preview") }}</h2>
         <div ref="preview" class="preview"></div>
-        <p v-if="previewError" class="error">{{ previewError }}</p>
+        <p v-if="previewError" class="error">{{ resolveWebText(previewError) }}</p>
 
         <div class="code-heading">
           <h2>{{ webT("embed.code") }}</h2>
           <button @click="copyCode">{{ webT("embed.copy") }}</button>
         </div>
         <pre ref="codeBlock" class="code-block" @click="selectAllCode"><code>{{ embedCode }}</code></pre>
+        <p v-if="copyError" class="error" aria-live="polite">{{ resolveWebText(copyError) }}</p>
       </section>
     </div>
   </main>

@@ -194,7 +194,7 @@ async function copyDraft(): Promise<void> {
     emit("copied");
   } catch (cause) {
     report(
-      new WebError(WEB_ERROR_CODES.dataExchange.clipboardUnavailable, {
+      new WebError(WEB_ERROR_CODES.common.clipboardUnavailable, {
         cause,
       }),
     );

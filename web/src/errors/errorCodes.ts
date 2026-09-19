@@ -1,14 +1,25 @@
 export const WEB_ERROR_CODES = {
+  common: {
+    clipboardUnavailable: "common.clipboard-unavailable",
+  },
   dataExchange: {
     invalidJson: "data-exchange.invalid-json",
     unknownRepresentation: "data-exchange.unknown-representation",
     invalidBase64Url: "data-exchange.invalid-base64url",
     damagedGzip: "data-exchange.damaged-gzip",
     unsupportedVersion: "data-exchange.unsupported-version",
-    clipboardUnavailable: "data-exchange.clipboard-unavailable",
+  },
+  saveExchange: {
+    invalidAdventureProfile: "save-exchange.invalid-adventure-profile",
+    invalidExploreSave: "save-exchange.invalid-explore-save",
+    invalidExploreCollection: "save-exchange.invalid-explore-collection",
   },
   import: {
     unrecognizedData: "import.unrecognized-data",
+  },
+  embed: {
+    runtimeLoadFailed: "embed.runtime-load-failed",
+    runtimeUnavailable: "embed.runtime-unavailable",
   },
   replay: {
     builtinMustWin: "replay.builtin-must-win",

@@ -11,6 +11,8 @@ import {
 } from "./errorCodes.js";
 
 const ERROR_TRANSLATION_KEYS = {
+  [WEB_ERROR_CODES.common.clipboardUnavailable]:
+    "common.clipboardUnavailable",
   [WEB_ERROR_CODES.dataExchange.invalidJson]:
     "common.error.dataExchange.invalidJson",
   [WEB_ERROR_CODES.dataExchange.unknownRepresentation]:
@@ -21,10 +23,18 @@ const ERROR_TRANSLATION_KEYS = {
     "common.error.dataExchange.damagedGzip",
   [WEB_ERROR_CODES.dataExchange.unsupportedVersion]:
     "common.error.dataExchange.unsupportedVersion",
-  [WEB_ERROR_CODES.dataExchange.clipboardUnavailable]:
-    "common.clipboardUnavailable",
+  [WEB_ERROR_CODES.saveExchange.invalidAdventureProfile]:
+    "common.error.save.invalidAdventureProfile",
+  [WEB_ERROR_CODES.saveExchange.invalidExploreSave]:
+    "common.error.save.invalidExploreSave",
+  [WEB_ERROR_CODES.saveExchange.invalidExploreCollection]:
+    "common.error.save.invalidExploreCollection",
   [WEB_ERROR_CODES.import.unrecognizedData]:
     "common.error.import.unrecognizedData",
+  [WEB_ERROR_CODES.embed.runtimeLoadFailed]:
+    "embed.error.runtimeLoadFailed",
+  [WEB_ERROR_CODES.embed.runtimeUnavailable]:
+    "embed.error.runtimeUnavailable",
   [WEB_ERROR_CODES.replay.builtinMustWin]:
     "game.replay.builtinMustWin",
   [WEB_ERROR_CODES.replay.builtinNotWon]:

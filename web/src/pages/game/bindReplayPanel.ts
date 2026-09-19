@@ -307,8 +307,10 @@ export function bindReplayPanel(options: {
     try {
       await navigator.clipboard.writeText(output.value);
       setVerification(localizedText("game.replay.copied"));
-    } catch (error) {
-      showError(error);
+    } catch (cause) {
+      showError(
+        new WebError(WEB_ERROR_CODES.common.clipboardUnavailable, { cause }),
+      );
     }
   };
 
