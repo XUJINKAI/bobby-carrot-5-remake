@@ -7,7 +7,6 @@ import {
   run,
   tscCommand,
 } from "../lib/fs.mjs";
-import { generateSeoArtifacts } from "./seo.mjs";
 import { verifySeoArtifacts } from "./seo-verify.mjs";
 import { verifyWebPerformanceArtifacts } from "./web-performance-verify.mjs";
 
@@ -51,6 +50,7 @@ copyTree(path.join(root, "engine/dist"), path.join(dist, "engine"));
 copyTree(path.join(root, "editor/dist"), path.join(dist, "editor"));
 copyTree(generatedAssets, path.join(dist, "assets"));
 
+const { generateSeoArtifacts } = await import("./seo.mjs");
 generateSeoArtifacts();
 verifySeoArtifacts();
 verifyWebPerformanceArtifacts();
