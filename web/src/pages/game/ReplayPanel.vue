@@ -23,7 +23,6 @@ const canSaveBuiltin = import.meta.env.DEV;
       type="button"
       data-replay-action="record"
     >
-      {{ webT("game.replay.restartRecord") }}
     </button>
 
     <section class="replay-panel-result">
@@ -48,7 +47,6 @@ const canSaveBuiltin = import.meta.env.DEV;
           data-replay-action="play"
           disabled
         >
-          {{ webT("game.replay.play") }}
         </button>
         <button
           class="ghost-btn"
@@ -134,7 +132,6 @@ const canSaveBuiltin = import.meta.env.DEV;
           type="button"
           data-replay-action="load-builtin"
         >
-          {{ webT("game.replay.loadBuiltin") }}
         </button>
         <button
           v-if="canSaveBuiltin"
@@ -142,7 +139,6 @@ const canSaveBuiltin = import.meta.env.DEV;
           type="button"
           data-replay-action="save-builtin"
         >
-          {{ webT("game.replay.saveBuiltin") }}
         </button>
       </div>
     </section>
