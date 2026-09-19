@@ -105,6 +105,32 @@ test("Replay 持久提示保存翻译语义并在 update 时重新解析", () =>
   assert.match(replayBindingSource, /error instanceof LocalizedReplayError \? error\.text/);
 });
 
+test("Replay 动态文案只由 controller 渲染", () => {
+  for (const selector of [
+    "data-replay-status",
+    "data-replay-ticks",
+    "data-replay-verification",
+  ]) {
+    assert.match(
+      replayPanelSource,
+      new RegExp(`<[^>]+\\b${selector}\\b[^>]*/>`),
+    );
+  }
+  for (const action of ["record", "play", "load-builtin", "save-builtin"]) {
+    const button = replayPanelSource.match(
+      new RegExp(
+        `<button[\\s\\S]*?data-replay-action="${action}"[\\s\\S]*?<\\/button>`,
+      ),
+    )?.[0];
+    assert.ok(button, `missing replay action: ${action}`);
+    assert.doesNotMatch(button, /webT\(/);
+  }
+  assert.match(replayBindingSource, /status\.textContent = recording/);
+  assert.match(replayBindingSource, /ticks\.textContent = recording/);
+  assert.match(replayBindingSource, /record\.textContent = recording/);
+  assert.match(replayBindingSource, /play\.textContent = playing/);
+});
+
 test("Replay 面板使用一帧一行的统一序列化", () => {
   assert.match(replayBindingSource, /output\.value = serializeReplay\(replay\)/);
 });
