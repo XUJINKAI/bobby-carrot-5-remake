@@ -17,7 +17,7 @@
       <pre><code>&lt;div id="bc5r-map"&gt;&lt;/div&gt;
 window.BC5R = window.BC5R || { queue: [] };
 BC5R.queue.push({ target: "#bc5r-map" });
-&lt;script async src="/embed/v1/bc5r.js" crossorigin="anonymous"&gt;&lt;/script&gt;</code></pre>
+&lt;script async src="/embed/v1/bc5r.js"&gt;&lt;/script&gt;</code></pre>
     </div>
   </div>
 </template>

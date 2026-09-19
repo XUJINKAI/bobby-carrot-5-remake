@@ -96,7 +96,7 @@ const embedCode = computed(() => {
       : { mapUrl: mapUrl.value.trim() }),
   };
   const serialized = JSON.stringify(config, null, 2).replaceAll("<", "\\u003c");
-  return `<div id="bc5r" style="width:100%;height:520px;display:grid;place-items:center;\n  border:1px solid #254868;background:#071522;color:#c9e6f7">Loading Bobby Carrot 5 Remake…</div>\n\n<script>\nwindow.BC5R = window.BC5R || { queue: [] };\nBC5R.queue.push(${serialized});\n<\/script>\n\n<script async src="${standaloneUrl()}" crossorigin="anonymous"><\/script>`;
+  return `<div id="bc5r" style="width:100%;height:520px;display:grid;place-items:center;\n  border:1px solid #254868;background:#071522;color:#c9e6f7">Loading Bobby Carrot 5 Remake…</div>\n\n<script>\nwindow.BC5R = window.BC5R || { queue: [] };\nBC5R.queue.push(${serialized});\n<\/script>\n\n<script async src="${standaloneUrl()}"><\/script>`;
 });
 
 watch(
@@ -148,7 +148,6 @@ async function resolveEmbedMount(): Promise<EmbedMount> {
     const script = document.createElement("script");
     script.src = standaloneUrl();
     script.async = true;
-    script.crossOrigin = "anonymous";
     script.addEventListener("load", () => resolve(), { once: true });
     script.addEventListener(
       "error",

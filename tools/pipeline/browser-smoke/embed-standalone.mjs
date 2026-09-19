@@ -18,7 +18,7 @@ export async function startStandaloneEmbedHost(scriptUrl, mapText) {
         input: { joystick: false }
       });
     </script>
-    <script async src=${JSON.stringify(scriptUrl)} crossorigin="anonymous"></script>
+    <script async src=${JSON.stringify(scriptUrl)}></script>
   </body>
 </html>`;
   const server = http.createServer((request, response) => {

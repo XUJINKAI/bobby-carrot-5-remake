@@ -14,7 +14,7 @@ BC5R.queue.push({
 });
 </script>
 
-<script async src="https://bc5r.xujinkai.net/embed/v1/bc5r.js" crossorigin="anonymous"></script>
+<script async src="https://bc5r.xujinkai.net/embed/v1/bc5r.js"></script>
 ```
 
 standalone 启动时读取脚本加载前已有的 `BC5R.queue`，安装正式的 `BC5R.mount()` 与可继续接收配置的 `BC5R.queue.push()`，然后按顺序启动每项配置。单项同步失败或 `handle.ready` rejection 只报告该项错误，不阻止后续 mount。
