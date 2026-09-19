@@ -1,4 +1,5 @@
 import type { JsonPrimitive } from "../shared/json.js";
+import { BC5R_GAME_ID } from "../shared/game.js";
 import type { LevelEntity, LevelMap, MapDocument, MapMeta } from "./document.js";
 import { entityMapDefinition } from "./entity/catalog.js";
 import type { EntityMapFieldDefinition } from "./entity/contract.js";
@@ -14,7 +15,7 @@ const MAP_FIELDS = new Set([
   "entities",
   "rules",
 ]);
-const META_FIELDS = new Set(["name", "author", "note"]);
+const META_FIELDS = new Set(["game", "name", "author", "note"]);
 const ENTITY_BASE_FIELDS = new Set(["type", "x", "y", "stackOrder"]);
 const INVALID_JSON_FIELDS_KEY = "__invalidJsonFields";
 
@@ -92,7 +93,12 @@ function parseMapMeta(value: unknown): MapMeta {
   for (const key of ["author", "note"])
     if (meta[key] !== undefined && typeof meta[key] !== "string")
       throw new Error(`MapDocument meta.${key} 必须为字符串`);
-  return structuredClone(meta) as unknown as MapMeta;
+  return {
+    game: BC5R_GAME_ID,
+    name: meta.name,
+    ...(meta.author !== undefined ? { author: meta.author as string } : {}),
+    ...(meta.note !== undefined ? { note: meta.note as string } : {}),
+  };
 }
 
 function parseLevelEntity(

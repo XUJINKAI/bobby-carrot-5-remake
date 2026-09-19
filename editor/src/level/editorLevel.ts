@@ -1,4 +1,5 @@
 import {
+  BC5R_GAME_ID,
   MapEntityTypeId,
   type LevelEntity,
   type LevelEntityFieldValue,
@@ -36,7 +37,7 @@ export function createBlankLevel(width = 16, height = 16): EditorMap {
   });
   return {
     schemaVersion: 1,
-    meta: { name: "Untitled Bobby Level" },
+    meta: { game: BC5R_GAME_ID, name: "Untitled Bobby Level" },
     width: safeWidth,
     height: safeHeight,
     entities,
@@ -86,6 +87,7 @@ export function normalizeEditorLevel(input: EditorMap): EditorMap {
   const level: EditorMap = {
     schemaVersion: 1,
     meta: {
+      game: BC5R_GAME_ID,
       name: String(input.meta?.name || "Untitled Bobby Level").slice(0, 120),
     },
     width,

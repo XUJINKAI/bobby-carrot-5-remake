@@ -1,4 +1,5 @@
 import type { JsonPrimitive } from "../shared/json.js";
+import type { Bc5rGameId } from "../shared/game.js";
 import type { LevelRules } from "./rules.js";
 
 export type Direction = "up" | "down" | "left" | "right";
@@ -34,6 +35,7 @@ export interface LevelMap {
 
 /** 独立地图文档携带的面向用户 metadata。 */
 export interface MapMeta {
+  game?: Bc5rGameId;
   name: string;
   author?: string;
   note?: string;

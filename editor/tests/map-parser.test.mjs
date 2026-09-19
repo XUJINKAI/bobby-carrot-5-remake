@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  BC5R_GAME_ID,
   levelEntityContractIssues,
   parseLevelMap,
   parseMapDocument,
@@ -9,7 +10,7 @@ import {
 function documentWith(entities) {
   return {
     schemaVersion: 1,
-    meta: { name: "合同测试" },
+    meta: { game: BC5R_GAME_ID, name: "合同测试" },
     width: 3,
     height: 3,
     entities,
@@ -201,6 +202,19 @@ test("Map parser 校验坐标、规则树和文档 metadata", () => {
     () => parseMapDocument({ ...documentWith([]), note: "旧位置" }),
     /地图 不允许字段 note/,
   );
+});
+
+test("MapDocument 输出补充固定 game 标识，但不依赖输入标识", () => {
+  const withoutGame = {
+    ...documentWith([]),
+    meta: { name: "无标识地图" },
+  };
+  assert.equal(parseMapDocument(withoutGame).meta.game, BC5R_GAME_ID);
+  const unrelatedMarker = {
+    ...documentWith([]),
+    meta: { game: "another-game", name: "外部地图" },
+  };
+  assert.equal(parseMapDocument(unrelatedMarker).meta.game, BC5R_GAME_ID);
 });
 
 test("Map parser 要求已归类 Surface 使用 semantic type 与 variant", () => {

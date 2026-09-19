@@ -32,7 +32,7 @@ Explore Save           → 根据 scope 覆盖对应 collection 存档
 其它 JSON              → 报告无法识别并保持原始文本
 ```
 
-地图可以携带 `meta`，也可以是纯 `LevelMap`；纯地图会生成 Editor 文档名称。Home 在弹窗内确认存档导入，`/import/v1` 在具有统一 TopBar identity 的导入页面确认。
+地图可以携带 `meta`，也可以是纯 `LevelMap`；纯地图会生成 Editor 文档名称。MapDocument 输出默认写入 `meta.game` 产品标识，但导入识别仍按地图结构进行，不要求或依赖该字段。Home 在弹窗内确认存档导入，`/import/v1` 在具有统一 TopBar identity 的导入页面确认。
 
 ## Payload 编码
 

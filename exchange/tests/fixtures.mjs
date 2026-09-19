@@ -12,7 +12,7 @@ export const levelMapFixture = {
 
 export const mapDocumentFixture = {
   ...levelMapFixture,
-  meta: { name: "Shared Map", author: "Bobby" },
+  meta: { game: BC5R_GAME_ID, name: "Shared Map", author: "Bobby" },
 };
 
 export const scopedSaveFixtures = [

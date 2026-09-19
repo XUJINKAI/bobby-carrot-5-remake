@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { entityMapDefinition, MapEntityTypeId } from "@bobby/model";
+import { BC5R_GAME_ID, entityMapDefinition, MapEntityTypeId } from "@bobby/model";
 import {
   builtinEngineEnvironment,
   SpatialVisualQuery,
@@ -89,6 +89,7 @@ test("Editor JSON only stores canonical Entity Map plus document metadata", () =
     dialogue: "作者写的话",
   });
   const json = serializeEditorLevel(level);
+  assert.equal(JSON.parse(json).meta.game, BC5R_GAME_ID);
   assert.equal(json.includes("\"terrain\""), false);
   assert.equal(json.includes("\"objects\""), false);
   assert.equal(json.includes("playerStart"), false);
@@ -123,6 +124,7 @@ test("Editor metadata command edits and clears meta.note", () => {
     note: "地图注记",
   }).apply(level);
   assert.deepEqual(withNote.meta, {
+    game: BC5R_GAME_ID,
     name: "Note Test",
     author: "xjk",
     note: "地图注记",
