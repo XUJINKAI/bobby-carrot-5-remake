@@ -23,11 +23,16 @@ const { metadata, flushMetadata } = useEditorMetadataDraft({
   enabled: () => props.open,
 });
 const exchangeLevel = computed<EditorMap>(() => {
-  const level: EditorMap = {
-    ...props.level,
-    meta: metadataValue(metadata),
+  const meta = {
+    ...props.level.meta,
+    ...metadataValue(metadata),
   };
-  return level;
+  if (!metadata.author) delete meta.author;
+  if (!metadata.note) delete meta.note;
+  return {
+    ...props.level,
+    meta,
+  };
 });
 const embedUrl = computed(() => new URL("embed", publicBaseUrl()).href);
 const toolbar = {
