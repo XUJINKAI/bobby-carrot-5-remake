@@ -1,3 +1,4 @@
+import fs from "node:fs";
 import http from "node:http";
 import path from "node:path";
 import { createServer } from "vite";
@@ -32,7 +33,56 @@ if (staticOnly) {
     },
   });
   await server.listen();
+  if (!noBuild) installI18nDevWatch(server);
   printAddress(port, mode);
+}
+
+function installI18nDevWatch(server) {
+  const sourceRoot = path.join(root, "i18n/src");
+  let timer = null;
+  let rebuilding = false;
+  let pending = false;
+  let closed = false;
+
+  const schedule = () => {
+    if (closed) return;
+    if (rebuilding) {
+      pending = true;
+      return;
+    }
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(rebuild, 100);
+  };
+
+  const rebuild = () => {
+    timer = null;
+    if (closed) return;
+    rebuilding = true;
+    try {
+      run("npm", ["run", "build", "--workspace=@bobby/i18n"]);
+      server.ws.send({ type: "full-reload" });
+      console.log("i18n: rebuilt after source change");
+    } catch (error) {
+      console.error(
+        `i18n: rebuild failed — ${error instanceof Error ? error.message : String(error)}`,
+      );
+    } finally {
+      rebuilding = false;
+      if (pending) {
+        pending = false;
+        schedule();
+      }
+    }
+  };
+
+  const watcher = fs.watch(sourceRoot, { recursive: true }, schedule);
+  const close = () => {
+    if (closed) return;
+    closed = true;
+    if (timer) clearTimeout(timer);
+    watcher.close();
+  };
+  server.httpServer?.once("close", close);
 }
 
 function printAddress(serverPort, serverMode) {
