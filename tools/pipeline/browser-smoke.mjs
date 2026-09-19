@@ -276,7 +276,7 @@ try {
   ]);
   await smoke(`${origin}/import/v1#INVALID`, [
     'class="import-page"',
-    "BC5R1",
+    "Invalid Base64 data payload",
   ]);
   await expectStatus(`${origin}/robots.txt`, 200, "text/plain");
   await expectStatus(`${origin}/sitemap.xml`, 200, "application/xml");
