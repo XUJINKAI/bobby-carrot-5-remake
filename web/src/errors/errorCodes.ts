@@ -21,10 +21,10 @@ export const WEB_ERROR_CODES = {
   },
 } as const;
 
-type ValueOf<T> = T[keyof T];
-type ErrorCodeGroup = ValueOf<typeof WEB_ERROR_CODES>;
-
-export type WebErrorCode = ValueOf<ErrorCodeGroup>;
+export type WebErrorCode = {
+  [Group in keyof typeof WEB_ERROR_CODES]:
+    (typeof WEB_ERROR_CODES)[Group][keyof (typeof WEB_ERROR_CODES)[Group]];
+}[keyof typeof WEB_ERROR_CODES];
 export type WebErrorParams = Readonly<Record<string, string | number>>;
 
 export interface WebErrorOptions extends ErrorOptions {
