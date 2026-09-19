@@ -3,7 +3,8 @@
 第三方页面通过单文件 `/embed/v1/bc5r.js` 挂载地图。标准代码先写入配置 queue，再以 `async` 加载 standalone runtime，避免 HTML parser 等待脚本下载：
 
 ```html
-<div id="bc5r" style="height:520px;display:grid;place-items:center;border:1px solid #254868;background:#071522;color:#c9e6f7">Loading Bobby Carrot 5 Remake…</div>
+<div id="bc5r" style="width:100%;height:520px;display:grid;place-items:center;
+  border:1px solid #254868;background:#071522;color:#c9e6f7">Loading Bobby Carrot 5 Remake…</div>
 
 <script>
 window.BC5R = window.BC5R || { queue: [] };
