@@ -46,6 +46,9 @@ test("Exchange 只接受 JSON object", async () => {
     const payload = Buffer.from(jsonText, "utf8").toString("base64url");
     assert.equal(detectExchangeFormat(payload), "unknown");
     await assert.rejects(() => decodeExchangeText(payload));
+
+    const gzipPayload = gzipSync(jsonText).toString("base64url");
+    await assert.rejects(() => decodeExchangeText(gzipPayload));
   }
 });
 

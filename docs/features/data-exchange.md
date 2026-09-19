@@ -65,7 +65,7 @@ Vite `base` 负责构建资源路径，`publicBaseUrl` 负责分享地址。构�
 
 ## 公共层职责
 
-`@bobby/exchange` 提供 gzip、Base64 / Base64URL、裸 payload、格式识别、分享 URL payload 提取与公共 map parser。它只依赖 `@bobby/model`，不依赖 Web、Editor、存档 storage 或 UI。Home、`/import/v1` 与 Embed 的 `map` / `mapUrl` 都先经过这一层，因此 Plain LevelMap / MapDocument JSON object、MapDocument JSON、裸 payload 和完整 `/import/v1#` URL 使用同一组 decoder。
+`@bobby/exchange` 提供 gzip、Base64 / Base64URL、裸 payload、格式识别、分享 URL payload 提取与公共 map parser。它只依赖 `@bobby/model`，不依赖 Web、Editor、存档 storage 或 UI。Home、`/import/v1` 与 Embed 的 `map` / `mapUrl` 都先经过这一层，因此 Plain LevelMap / MapDocument JSON object、裸 payload 和完整 `/import/v1#` URL 使用同一组 decoder。
 
 `web/src/shared/data-exchange/` 只提供文本文件 I/O，以及可配置左右 toolbar、label 和 placeholder 的 `DataExchangePanel`。`web/src/services/import/importPipeline.ts` 在公共包之上组织存档识别与应用；Home 和 `/import/v1` 共享该 pipeline，只分别提供文本/文件输入和 URL fragment 输入。地图游玩、确认 UI 与页面导航仍由消费页面负责。
 
