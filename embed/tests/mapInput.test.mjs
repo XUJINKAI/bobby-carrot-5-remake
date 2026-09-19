@@ -1,7 +1,11 @@
 import assert from "node:assert/strict";
 import { gzipSync } from "node:zlib";
 import test from "node:test";
-import { encodeExchangeText } from "@bobby/exchange";
+import {
+  EXCHANGE_ERROR_CODES,
+  ExchangeMapError,
+  encodeExchangeText,
+} from "@bobby/exchange";
 import {
   levelMapFixture,
   mapDocumentFixture,
@@ -65,10 +69,17 @@ test("要求唯一非空输入，并将存档明确识别为非地图", async ()
   for (const save of scopedSaveFixtures)
     await assert.rejects(
       () => loadEmbedMap({ map: JSON.stringify(save) }),
-      new RegExp(`scope.*${save.scope}.*save, not a map`),
+      (error) =>
+        error instanceof ExchangeMapError &&
+        error.code === EXCHANGE_ERROR_CODES.saveNotMap &&
+        error.reason === "save" &&
+        error.scope === save.scope,
     );
   await assert.rejects(
     () => loadEmbedMap({ map: JSON.stringify({ ...levelMapFixture, schemaVersion: 2 }) }),
-    /not a valid map/,
+    (error) =>
+      error instanceof ExchangeMapError &&
+      error.code === EXCHANGE_ERROR_CODES.invalidMap &&
+      error.reason === "invalid-map",
   );
 });
