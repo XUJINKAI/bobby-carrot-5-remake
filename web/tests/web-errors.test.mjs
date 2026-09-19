@@ -3,7 +3,6 @@ import { beforeAll, test } from "vitest";
 import {
   getWebLocale,
   initializeWebI18n,
-  preloadWebI18nScopes,
   resolveWebText,
   setWebI18nRouteScopes,
   setWebLocale,
@@ -121,7 +120,7 @@ test("共享 Clipboard 与 Embed 加载错误使用集中语义码", async () =>
   const clipboard = new WebError(WEB_ERROR_CODES.common.clipboardUnavailable);
   assert.equal(resolveWebText(errorDisplayText(clipboard)), "无法访问剪贴板");
 
-  await preloadWebI18nScopes(["embed"]);
+  await setWebI18nRouteScopes(["game", "embed"]);
   const embedError = new WebError(WEB_ERROR_CODES.embed.runtimeLoadFailed, {
     params: { url: "https://example.test/bc5r.js" },
   });
@@ -140,6 +139,7 @@ test("共享 Clipboard 与 Embed 加载错误使用集中语义码", async () =>
     "Failed to load the embed runtime: https://example.test/bc5r.js",
   );
   await setWebLocale("zh-CN");
+  await setWebI18nRouteScopes(["game"]);
 });
 
 test("Replay 资产和 JSON 解析使用集中错误码", async () => {
