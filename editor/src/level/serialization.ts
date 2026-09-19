@@ -17,5 +17,7 @@ export function serializeEditorLevel(level: EditorMap): string {
 }
 
 export function parseEditorLevel(text: string): EditorMap {
-  return normalizeEditorLevel(parseMapDocument(JSON.parse(text)));
+  const value = JSON.parse(text) as EditorMap;
+  parseMapDocument(value);
+  return structuredClone(value);
 }

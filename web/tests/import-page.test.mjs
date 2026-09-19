@@ -37,8 +37,8 @@ test("统一导入 pipeline 接受带 metadata 与纯 LevelMap", () => {
   const document = classifyImportedJson(mapDocumentFixture);
   assert.equal(document?.type, "map");
   if (document?.type !== "map") return;
-  assert.equal(document.value.meta.name, "Shared Map");
-  assert.equal(document.value.meta.author, "Bobby");
+  assert.deepEqual(document.value, mapDocumentFixture);
+  assert.deepEqual(document.level, level);
 });
 
 test("首页文本入口统一接受 JSON、两种裸 payload 与完整分享 URL", async () => {

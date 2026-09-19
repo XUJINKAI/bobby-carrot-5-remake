@@ -192,10 +192,9 @@ async function importHomeData(
     navigate(applyImportedSave(data));
     return;
   }
-  const { serializeEditorLevel } = await import("@bobby/editor");
   sessionStorage.setItem(
     "bc5r:pending-play-level",
-    serializeEditorLevel(data.value),
+    JSON.stringify(data.value),
   );
   view.importFeedback = "";
   navigate("/explore/play/imported/shared-map");

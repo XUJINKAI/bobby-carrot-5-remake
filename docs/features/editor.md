@@ -6,7 +6,7 @@ Editor 是 Bobby Carrot 5 Remake 的玩家功能，也是 Engine 的交互式调
 
 ```text
 editor/src
-├── level/       EditorMap、规范化、校验与 JSON 序列化
+├── level/       EditorMap、读取、校验与 JSON 序列化
 ├── document/    EditorDocument、History 与编辑命令
 ├── authoring/   放置、Surface、Palette、Selection 与 Inspector Model
 └── canvas/      Renderer、Input、Viewport 与坐标转换
@@ -38,6 +38,7 @@ editor/src
 ```
 
 当前开发阶段只接受 v1。地图核心仍是 `@bobby/model::LevelMap`；Editor authoring policy 不进入 Engine。
+Editor 打开合法 MapDocument 时只验证并保留输入，不自行限制或改写尺寸、metadata、music、rules 与 Entity；只有用户明确执行新建、Resize、字段修改等编辑操作时才改变地图。新建地图的默认内容属于 authoring 策略，不属于导入 normalization。
 地图文件弹窗默认生成压缩分享 URL，用户仍可通过“压缩”开关查看和编辑 Plain JSON。
 名称、作者与注记在 Level 面板和地图文件弹窗中共用当前 Editor Document；输入停止 200ms 后提交，并同步另一处面板与地图文件弹窗中的 JSON/payload 内容。
 
@@ -191,7 +192,7 @@ Body 单格 anchor 放置，向上延伸的 Head 只属于 VisualComposition。S
 
 ```text
 EditorMap
-  -> normalize / clone
+  -> Model validate / clone
   -> LevelMap
   -> Game.loadLevel()
 ```

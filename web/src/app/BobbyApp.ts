@@ -297,15 +297,12 @@ export class BobbyApp {
       );
       const imported = await decodeImportedPayload(payload);
       if (imported.type === "map") {
-        const [{ serializeEditorLevel }, { renderGamePage }] = await Promise.all([
-          import("@bobby/editor"),
-          loadGamePage(),
-        ]);
+        const { renderGamePage } = await loadGamePage();
         if (!this.canCommitRoute(generation)) return;
         if (!(await this.activateI18nRoute(generation, loadImportPage, loadGamePage))) return;
         sessionStorage.setItem(
           "bc5r:pending-editor-level",
-          serializeEditorLevel(imported.value),
+          JSON.stringify(imported.value),
         );
         this.controller = await renderGamePage({
           ...this.pageContext(),
@@ -361,20 +358,20 @@ export class BobbyApp {
         this.navigate("/");
         return;
       }
-      const [editor, importPage, gamePage] = await Promise.all([
-        import("@bobby/editor"),
-        loadImportPage(),
+      const [model, gamePage] = await Promise.all([
+        import("@bobby/model"),
         loadGamePage(),
       ]);
       if (!this.canCommitRoute(generation)) return;
-      if (!(await this.activateI18nRoute(generation, loadImportPage, loadGamePage))) return;
-      const level = editor.parseEditorLevel(pending);
+      if (!(await this.activateI18nRoute(generation, loadGamePage))) return;
+      const document = model.parseMapDocument(JSON.parse(pending));
+      const level = model.parseLevelMap(document);
       sessionStorage.setItem("bc5r:pending-editor-level", pending);
       this.controller = await gamePage.renderGamePage({
         ...this.pageContext(),
-        level: importPage.importedLevelMap(level),
-        mapMeta: level.meta,
-        identity: { ...ref, title: level.meta.name },
+        level,
+        mapMeta: document.meta,
+        identity: { ...ref, title: document.meta.name },
         mode: "explore",
         source: "explore",
       });

@@ -6,11 +6,10 @@ import {
 } from "@bobby/exchange";
 import { WEB_ERROR_CODES, WebError } from "../../errors/errorCodes.js";
 import {
-  fromLevelMap,
-  parseEditorLevel,
-  type EditorMap,
-} from "@bobby/editor";
-import type { LevelMap } from "@bobby/model";
+  type LevelMap,
+  type MapDocument,
+  parseMapDocument,
+} from "@bobby/model";
 import { exploreCollectionPath } from "../../app/routes.js";
 import {
   parseAdventureProfileExchange,
@@ -25,7 +24,7 @@ import type { ExploreCollectionStorage } from "../../storage/contracts.js";
 
 export interface ImportedMapData {
   type: "map";
-  value: EditorMap;
+  value: MapDocument;
   level: LevelMap;
 }
 
@@ -109,23 +108,24 @@ function parseMap(value: unknown): ImportedMapData | null {
   } catch {
     return null;
   }
-  let text: string;
+
   try {
-    const serialized = JSON.stringify(value);
-    if (serialized === undefined) return null;
-    text = serialized;
+    parseMapDocument(value);
+    return {
+      type: "map",
+      value: structuredClone(value as MapDocument),
+      level,
+    };
   } catch {
-    return null;
+    // 纯 LevelMap 只补产品层文档名称；gameplay 内容保持公共 parser 的结果。
   }
-  try {
-    const document = parseEditorLevel(text);
-    return { type: "map", value: document, level };
-  } catch {
-    // 缺少 metadata 的纯 LevelMap 走相同 gameplay parser。
-  }
+
   return {
     type: "map",
-    value: fromLevelMap(level, "Imported Bobby Level"),
+    value: {
+      ...structuredClone(level),
+      meta: { name: "Imported Bobby Level" },
+    },
     level,
   };
 }

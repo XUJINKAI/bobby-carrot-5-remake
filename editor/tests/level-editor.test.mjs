@@ -148,7 +148,41 @@ test("Editor 背景音乐使用省略字段表达默认随机", () => {
     ...level,
     music: "random",
   }));
-  assert.equal("music" in explicitRandom, false);
+  assert.equal(explicitRandom.music, "random");
+});
+
+test("Editor 打开合法 MapDocument 时完整保留输入", () => {
+  const source = {
+    schemaVersion: 1,
+    meta: {
+      game: "another-game",
+      name: "N".repeat(140),
+      author: "A".repeat(90),
+      note: "note".repeat(160),
+    },
+    music: "random",
+    width: 1,
+    height: 1,
+    entities: [{ type: MapEntityTypeId.BOBBY, x: 0, y: 0 }],
+  };
+  assert.deepEqual(parseEditorLevel(JSON.stringify(source)), source);
+  assert.deepEqual(toLevelMap(source), {
+    schemaVersion: 1,
+    music: "random",
+    width: 1,
+    height: 1,
+    entities: [{ type: MapEntityTypeId.BOBBY, x: 0, y: 0 }],
+  });
+
+  const large = {
+    ...source,
+    width: 256,
+    height: 129,
+    entities: [{ type: MapEntityTypeId.BOBBY, x: 255, y: 128 }],
+  };
+  assert.deepEqual(parseEditorLevel(JSON.stringify(large)), large);
+  assert.equal(createBlankLevel(1, 1).width, 1);
+  assert.equal(createBlankLevel(1, 1).height, 1);
 });
 
 test("multi-cell persistence stays anchor-only while Preview expands Presence roles", () => {
