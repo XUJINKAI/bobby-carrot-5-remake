@@ -37,6 +37,7 @@ export function parseAdventureProfileExchange(value: unknown): AdventureSave {
     value === null ||
     (value as Record<string, unknown>).game !== BC5R_GAME_ID ||
     (value as Record<string, unknown>).schemaVersion !== 1 ||
+    (value as Record<string, unknown>).scope !== "adventure" ||
     typeof (value as Record<string, unknown>).campaign !== "object" ||
     typeof (value as Record<string, unknown>).economy !== "object"
   ) {

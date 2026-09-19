@@ -27,8 +27,6 @@ const ERROR_TRANSLATION_KEYS = {
     "common.error.save.invalidAdventureProfile",
   [WEB_ERROR_CODES.saveExchange.invalidExploreSave]:
     "common.error.save.invalidExploreSave",
-  [WEB_ERROR_CODES.saveExchange.invalidExploreCollection]:
-    "common.error.save.invalidExploreCollection",
   [WEB_ERROR_CODES.import.unrecognizedData]:
     "common.error.import.unrecognizedData",
   [WEB_ERROR_CODES.embed.runtimeLoadFailed]:

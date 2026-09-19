@@ -7,6 +7,7 @@ import {
   type EditorMap,
 } from "@bobby/editor";
 import { parseLevelMap, type LevelMap } from "@bobby/model";
+import { exploreCollectionPath } from "../../app/routes.js";
 import {
   decodeExchangePayload,
   decodeExchangeText,
@@ -16,10 +17,11 @@ import {
   saveAdventureSave,
 } from "../../storage/adventureSaveStorage.js";
 import {
-  parseExploreProgressExchange,
-  saveExploreProgressSave,
-  type ExploreProgressSave,
+  exploreSaveCollection,
+  parseExploreCollectionExchange,
+  saveExploreCollectionSave,
 } from "../../storage/exploreProgressStorage.js";
+import type { ExploreCollectionStorage } from "../../storage/contracts.js";
 
 export interface ImportedMapData {
   type: "map";
@@ -29,7 +31,11 @@ export interface ImportedMapData {
 
 export type ImportedSaveData =
   | { type: "adventure-save"; value: AdventureSave }
-  | { type: "explore-save"; value: ExploreProgressSave };
+  | {
+      type: "explore-save";
+      collection: string;
+      value: ExploreCollectionStorage;
+    };
 
 export type ImportedData = ImportedMapData | ImportedSaveData;
 
@@ -61,35 +67,39 @@ export function requireImportedJson(value: unknown): ImportedData {
 }
 
 export function classifyImportedJson(value: unknown): ImportedData | null {
-  const map = parseMap(value);
-  if (map) return map;
-  try {
+  const scope = dataScope(value);
+  if (scope === "adventure") {
     return {
       type: "adventure-save",
       value: parseAdventureProfileExchange(value),
     };
-  } catch {
-    // 继续尝试其它本站导出格式。
   }
-  try {
+  if (scope?.startsWith("explore/")) {
+    const save = parseExploreCollectionExchange(value);
     return {
       type: "explore-save",
-      value: parseExploreProgressExchange(value),
+      collection: exploreSaveCollection(save),
+      value: save,
     };
-  } catch {
-    return null;
   }
+  return parseMap(value);
 }
 
 export function applyImportedSave(
   data: ImportedSaveData,
-): "/adventure" | "/explore" {
+): string {
   if (data.type === "adventure-save") {
     saveAdventureSave(data.value);
     return "/adventure";
   }
-  saveExploreProgressSave(data.value);
-  return "/explore";
+  saveExploreCollectionSave(data.collection, data.value);
+  return exploreCollectionPath(data.collection);
+}
+
+function dataScope(value: unknown): string | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const scope = (value as Record<string, unknown>).scope;
+  return typeof scope === "string" ? scope : null;
 }
 
 function parseMap(value: unknown): ImportedMapData | null {

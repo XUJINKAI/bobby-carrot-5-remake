@@ -20,7 +20,6 @@ import { requireImportedJson } from "../src/services/import/importPipeline.ts";
 import { parseAdventureProfileExchange } from "../src/storage/adventureSaveStorage.ts";
 import {
   parseExploreCollectionExchange,
-  parseExploreProgressExchange,
 } from "../src/storage/exploreProgressStorage.ts";
 import {
   loadReplayAsset,
@@ -86,16 +85,10 @@ test("存档交换错误在 Web 边界转换为可重新本地化的语义错误
       en: "This is not a valid Adventure save.",
     },
     {
-      parse: () => parseExploreProgressExchange({}),
+      parse: () => parseExploreCollectionExchange({}),
       code: WEB_ERROR_CODES.saveExchange.invalidExploreSave,
       zh: "这段数据不是有效的自由探索存档。",
       en: "This is not a valid Explore save.",
-    },
-    {
-      parse: () => parseExploreCollectionExchange({}),
-      code: WEB_ERROR_CODES.saveExchange.invalidExploreCollection,
-      zh: "这段数据不是有效的自由探索地图集合存档。",
-      en: "This is not a valid Explore collection save.",
     },
   ];
 

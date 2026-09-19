@@ -9,15 +9,7 @@ const emit = defineEmits<{ confirm: []; cancel: [] }>();
 
 const exploreCompletedCount = computed(() =>
   props.data.type === "explore-save"
-    ? Object.values(props.data.value.collections).reduce(
-        (total, save) => total + save.completedMaps.length,
-        0,
-      )
-    : 0,
-);
-const exploreCollectionCount = computed(() =>
-  props.data.type === "explore-save"
-    ? Object.keys(props.data.value.collections).length
+    ? props.data.value.completedMaps.length
     : 0,
 );
 </script>
@@ -38,7 +30,7 @@ const exploreCollectionCount = computed(() =>
       <h1>Explore Save</h1>
       <p>{{ webT("import.exploreIncoming") }}</p>
       <dl>
-        <div><dt>{{ webT("import.collections") }}</dt><dd>{{ exploreCollectionCount }}</dd></div>
+        <div><dt>{{ webT("import.collection") }}</dt><dd>{{ data.collection }}</dd></div>
         <div><dt>{{ webT("import.completed") }}</dt><dd>{{ exploreCompletedCount }}</dd></div>
       </dl>
       <p>{{ webT("import.exploreOverwrite") }}</p>

@@ -67,7 +67,7 @@ function parseSelected(value: unknown): AdventureSave | ExploreCollectionStorage
   const tab = requireActiveTab();
   return tab.kind === "adventure"
     ? parseAdventureProfileExchange(value)
-    : parseExploreCollectionExchange(value);
+    : parseExploreCollectionExchange(value, tab.collection);
 }
 
 function serializeSelected(value: unknown): string {

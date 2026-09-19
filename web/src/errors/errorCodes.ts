@@ -12,7 +12,6 @@ export const WEB_ERROR_CODES = {
   saveExchange: {
     invalidAdventureProfile: "save-exchange.invalid-adventure-profile",
     invalidExploreSave: "save-exchange.invalid-explore-save",
-    invalidExploreCollection: "save-exchange.invalid-explore-collection",
   },
   import: {
     unrecognizedData: "import.unrecognized-data",

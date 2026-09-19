@@ -24,6 +24,7 @@ export interface AdventureSave {
   schemaVersion: 1;
   /** 随存档保存的项目来源标识。 */
   game: typeof BC5R_GAME_ID;
+  scope: "adventure";
   campaign: {
     /** 每章只保存按顺序完成到的最远关卡。 */
     completedThrough: Record<string, AdventureLevelId>;
@@ -41,6 +42,7 @@ export function createAdventureSave(): AdventureSave {
   return {
     schemaVersion: 1,
     game: BC5R_GAME_ID,
+    scope: "adventure",
     campaign: {
       completedThrough: {},
       completedEvents: [],
@@ -66,6 +68,8 @@ export function normalizeAdventureSave(value: unknown): AdventureSave {
   if (raw.game !== BC5R_GAME_ID) throw new Error("这不是 Bobby Carrot 5 Remake 存档");
   if (raw.schemaVersion !== 1)
     throw new Error(`不支持的存档版本：${String(raw.schemaVersion)}`);
+  if (raw.scope !== "adventure")
+    throw new Error(`Adventure Save scope 无效：${String(raw.scope)}`);
   const campaign = objectValue(raw.campaign);
   const economy = objectValue(raw.economy);
   const completedThrough = normalizeCompletedThrough(campaign.completedThrough);
@@ -75,6 +79,7 @@ export function normalizeAdventureSave(value: unknown): AdventureSave {
   return {
     schemaVersion: 1,
     game: BC5R_GAME_ID,
+    scope: "adventure",
     campaign: {
       completedThrough,
       completedEvents: unique(completedEvents).sort(),

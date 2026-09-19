@@ -27,15 +27,9 @@ const level = {
 const exploreSave = {
   game: BC5R_GAME_ID,
   schemaVersion: 1,
-  mode: "explore",
-  collections: {
-    original: {
-      game: BC5R_GAME_ID,
-      schemaVersion: 1,
-      completedMaps: ["1-1"],
-      lastMap: "1-1",
-    },
-  },
+  scope: "explore/original",
+  completedMaps: ["1-1"],
+  lastMap: "1-1",
 };
 
 test("统一导入 pipeline 接受带 metadata 与纯 LevelMap", () => {
@@ -79,6 +73,8 @@ test("URL payload 与首页入口识别相同的 Adventure 和 Explore Save", as
     );
     assert.equal(textImported.type, type);
     assert.equal(payloadImported.type, type);
+    if (textImported.type === "explore-save")
+      assert.equal(textImported.collection, "original");
   }
 });
 

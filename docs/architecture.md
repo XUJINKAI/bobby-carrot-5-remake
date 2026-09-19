@@ -527,7 +527,7 @@ Adventure 在桌面也限制为原版式 portrait viewport，并设置 Camera �
 
 ## Adventure Save
 
-Save 是版本化纯 JSON；`@bobby/adventure` 负责 parse/normalize/serialize，Web 负责 localStorage 与文件导入导出。
+Save 是带明确 `scope` 的版本化纯 JSON；Adventure 使用 `adventure`，每份 Explore collection 使用 `explore/<collection>`。`@bobby/adventure` 负责 Adventure Save 的 parse/normalize/serialize，Web 负责 Explore Save、localStorage 与文件导入导出。
 
 Adventure Save 只保存已经结算的全局经济。每次进入关卡都使用完整 LevelMap；Web session
 暂存本局收集数量，只有 Engine 报告关卡完成时才由 Adventure 与 Campaign 进度一起提交。

@@ -46,7 +46,6 @@ const catalog = {
   "common.error.dataExchange.unsupportedVersion": "Unsupported BC5R data version",
   "common.error.save.invalidAdventureProfile": "This is not a valid Adventure save.",
   "common.error.save.invalidExploreSave": "This is not a valid Explore save.",
-  "common.error.save.invalidExploreCollection": "This is not a valid Explore collection save.",
   "common.error.import.unrecognizedData": "This Bobby Carrot 5 Remake data could not be recognized.",
   "settings.quickTitle": "Quick settings",
   "settings.language": "Language",

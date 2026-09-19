@@ -243,6 +243,7 @@ function storageExamples(mapDocument) {
         value: {
           game: BC5R_GAME_ID,
           schemaVersion: 1,
+          scope: "explore/original",
           completedMaps: ["1-1", "1-2"],
           lastMap: "1-3",
         },
@@ -267,6 +268,7 @@ function adventureSaveExample() {
   return normalizeAdventureSave({
     schemaVersion: 1,
     game: BC5R_GAME_ID,
+    scope: "adventure",
     campaign: {
       completedThrough: { "1": "1-bonus-1" },
       completedEvents: ["bonus-key-trial"],

@@ -10,6 +10,7 @@ export async function verifySettingsPage(cdp, sessionId) {
       localStorage.setItem('bc5r:adventure', JSON.stringify({
         schemaVersion: 1,
         game: 'https://github.com/XUJINKAI/bobby-carrot-5-remake',
+        scope: 'adventure',
         campaign: {
           completedThrough: {},
           completedEvents: [],
@@ -21,12 +22,14 @@ export async function verifySettingsPage(cdp, sessionId) {
       localStorage.setItem('bc5r:explore/original', JSON.stringify({
         schemaVersion: 1,
         game: 'https://github.com/XUJINKAI/bobby-carrot-5-remake',
+        scope: 'explore/original',
         completedMaps: ['1-1'],
         lastMap: '1-1'
       }));
       localStorage.setItem('bc5r:explore/custom', JSON.stringify({
         schemaVersion: 1,
         game: 'https://github.com/XUJINKAI/bobby-carrot-5-remake',
+        scope: 'explore/custom',
         completedMaps: []
       }));
       location.reload();

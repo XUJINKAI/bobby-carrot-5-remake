@@ -41,6 +41,7 @@ export interface ExploreCollectionStorage {
   schemaVersion: 1;
   /** 每份独立 collection save 都携带的项目来源标识。 */
   game: Bc5rGameId;
+  scope: `explore/${string}`;
   completedMaps: string[];
   lastMap?: string;
 }

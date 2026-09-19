@@ -1,6 +1,6 @@
 # 数据交换
 
-Data Exchange 是 Bobby Carrot 5 Remake 面向地图、Adventure Save、Explore Save 及后续 JSON 数据的统一交换能力。文件、TextBox、剪贴板和分享 URL 先还原同一份 JSON；统一导入 pipeline 再判断业务类型并执行对应导入。
+Data Exchange 是 Bobby Carrot 5 Remake 面向地图、Adventure Save、Explore Save 及后续 JSON 数据的统一交换能力。文件、TextBox、剪贴板和分享 URL 先还原同一份 JSON；统一导入 pipeline 再根据地图合同或存档 `scope` 判断业务类型并执行对应导入。
 
 ## 用户约定
 
@@ -19,12 +19,14 @@ Editor 的地图文件弹窗默认使用 Compressed 状态，打开后可以直�
 
 Settings 的存档管理读取浏览器中实际存在的 `bc5r:adventure` 和 `bc5r:explore/<collection>` records，并为每条存档生成一个 Tab。所有 Tab 共用一个 `DataExchangePanel`；选择 Adventure 时交换完整 Adventure Save，选择 Explore 时只交换当前 collection 的 `ExploreCollectionStorage`，导入也只覆盖当前 Tab 对应的 record。
 
+Adventure Save 固定使用 `scope: "adventure"`。每份 Explore Save 对应一个 collection，并使用 `scope: "explore/<collection>"`，例如 `explore/original` 与 `explore/engine-lab`。Settings 导入时要求 `scope` 与当前 Tab 完全一致；Home 与 `/import/v1` 根据 `scope` 定位并覆盖对应的独立存档 record。
+
 Home 导入弹窗接受 Plain JSON、`BC5R1`、完整分享 URL 和任意扩展名的文本文件。`/import/v1` 只接受 URL fragment 中的 gzip + Base64URL payload。两者在 transport 解码后共用相同的 JSON 识别顺序：
 
 ```text
 MapDocument / LevelMap → 创建 imported Explore gameplay session
 Adventure Save         → 确认后覆盖 Adventure 存档
-Explore Save           → 确认后覆盖 Explore 存档
+Explore Save           → 根据 scope 覆盖对应 collection 存档
 其它 JSON              → 报告无法识别并保持原始文本
 ```
 

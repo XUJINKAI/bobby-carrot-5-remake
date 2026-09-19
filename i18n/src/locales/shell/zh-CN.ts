@@ -44,7 +44,6 @@ const catalog = {
   "common.error.dataExchange.unsupportedVersion": "不支持此 BC5R 数据版本",
   "common.error.save.invalidAdventureProfile": "这段数据不是有效的冒险存档。",
   "common.error.save.invalidExploreSave": "这段数据不是有效的自由探索存档。",
-  "common.error.save.invalidExploreCollection": "这段数据不是有效的自由探索地图集合存档。",
   "common.error.import.unrecognizedData": "无法识别这段 Bobby Carrot 5 Remake 数据。",
   "settings.quickTitle": "快速设置",
   "settings.language": "语言",
