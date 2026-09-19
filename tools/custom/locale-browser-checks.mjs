@@ -1,5 +1,34 @@
 import { waitForBrowserState } from "./browser-regression-wait.mjs";
 
+export async function verifyImportErrorFollowsLocale(cdp, sessionId) {
+  await waitForBrowserState(
+    async () =>
+      Boolean(
+        await cdp.evaluate(
+          sessionId,
+          "document.querySelector('.import-card') && document.querySelector('#settings')",
+        ),
+      ),
+    20_000,
+  );
+
+  await chooseLocale(cdp, sessionId, "中文", "zh-CN");
+  await waitForBrowserState(async () =>
+    (await cdp.evaluate(
+      sessionId,
+      "document.querySelector('.import-card p')?.textContent?.trim() ?? ''",
+    )) === "BC5R1 数据编码无效",
+  );
+
+  await chooseLocale(cdp, sessionId, "English", "en");
+  await waitForBrowserState(async () =>
+    (await cdp.evaluate(
+      sessionId,
+      "document.querySelector('.import-card p')?.textContent?.trim() ?? ''",
+    )) === "Invalid BC5R1 data encoding",
+  );
+}
+
 export async function verifyLocaleSwitchPreservesGameSession(cdp, sessionId) {
   await waitForBrowserState(
     async () =>
