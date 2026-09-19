@@ -74,7 +74,7 @@ try {
       "utf8",
     ),
   );
-  const embedUrl = `${origin}/embed#${mapPayload}`;
+  const embedUrl = `${origin}/embed#BC5R1:${mapPayload}`;
   await smoke(embedUrl, ['class="embed-page"', "BC5R Embed v1", "English", "Modern", 'class="keyboard-select"']);
   await interactiveEmbedHudSmoke(embedUrl);
   await expectStatus(`${origin}/embed/v1/bc5r.js`, 200, "text/javascript");
