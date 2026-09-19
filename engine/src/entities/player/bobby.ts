@@ -28,6 +28,7 @@ const BOBBY_IDLE_FRAME_MS = 50;
 const MOWER_FRAME_MS = 62;
 const SPEED_MOWER_FRAME_MS = 31;
 const SPEED_MOW_TRAIL_FRAME_MS = 93;
+const SHOVEL_FRAME_MS = 186;
 const BOBBY_STANDING_FRAME = 3;
 const BOBBY_ICE_FRAME = 6;
 const BOBBY_TRANSITION_FRAME_COUNT = 8;
@@ -151,7 +152,7 @@ const bobbyVisual = {
     if (context.outcome?.phase === "won") return null;
 
     if (context.runtime?.animation === "shovel") {
-      const row = Math.min(2, Math.floor(progress * 3));
+      const row = timedFrame(context, SHOVEL_FRAME_MS, 3);
       return composition(context, {
         asset: BOBBY_VISUAL_ASSETS.snowplow,
         frameColumns: 4,

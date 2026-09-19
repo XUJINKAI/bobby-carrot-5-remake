@@ -262,7 +262,9 @@ Fireball 的现代实现以 `FIREBALL_MOVEMENT` 统一声明墙钟毫秒：整�
 Visual 直接读取 Presentation 毫秒选择素材帧，不依赖渲染帧数。
 
 持有 Shovel 的 Bobby 首次撞到 Snow 时停在原位；清雪期间普通输入被锁住。
-动作结束后目标 Snow 被清除，Bobby 按碰撞时保存的方向重新执行一次普通移动判定。
+第 32 个 gameplay step 清除目标 Snow 并结束铲雪姿势，下一 gameplay step 才按碰撞时保存的
+方向重新执行一次普通移动判定。`b8.png` 的三行按约 186ms 一行循环，而不是在整个动作
+期间只播放一遍；开始移动后立即使用对应方向的普通行走素材。
 Engine 用可快照的 RuntimeAction 推进这段 gameplay，`b8.png` 铲雪动画读取开始事件；
 原版地图展开的 Snow 下方已有 `ts-8-13` 地面，独立放置的 Snow 清除时生成同款可走地面。
 
