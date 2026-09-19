@@ -349,9 +349,14 @@ Pipeline 在 World 的固定阶段调用。相互冲突的 passage 判断或同�
 Presentation 使用 WorldDelta、WorldMotion、Entity state 和只读 Fact 选择画面；World 与 Mechanism 不读取 `VisualRuntime`、`PresentationClock`、Renderer、Canvas 或 DOM。仅影响 sprite、位移插值、闪烁、粒子与镜头的状态由 Presentation 持有。会改变碰撞、可攀爬时点或动作结果的过程继续由 WorldClock 上的 Entity state、RuntimeAction 或 WorldMotion 表示。
 
 环境表现由同一 `AmbientVisualRuntime` 按 PresentationTime 和 session seed 生成。Sky shimmer
-使用世界坐标并只选择视窗中的空 Sky 格；Snow 与 Butterfly 使用屏幕坐标，数量分别由
-`snowDensity`、`butterflyDensity` 按 CSS 视窗面积计算。存在 Snow 的关卡固定使用雪花天气，
-其余关卡使用 Butterfly；视窗尺寸变化只重算表现数量和位置，不写入 World。
+使用世界坐标并只选择视窗中的空 Sky 格；Snow 与 Butterfly 使用屏幕坐标。Butterfly 由
+`butterflyDensity` 按 CSS 视窗面积计算；Snow 由 `snowDensity` 按 `zoom=1` 时的可见面积
+计算，使粒子数量随当前可见格数变化。默认雪花密度为每百万基准像素 16.25 粒。雪花复用
+`hud.png` 原版切片，并以约 31ms 的固定步长在 `zoom=1` 时每次下落 3px、横向随机移动
+-1/0/+1px；尺寸与每步位移均随格子屏幕尺寸缩放。存在 Snow 的关卡固定使用雪花天气，
+雪花在整个 Canvas viewport 中连续模拟，再按当前地图屏幕矩形裁剪；Camera pan 只移动
+裁剪边界，不改变已有粒子的屏幕坐标。其余关卡使用 Butterfly；视窗或缩放变化只重算
+表现数量和位置，不写入 World。
 
 `variant` 的归属由实际语义决定。原版 Surface 的某些 atlas variant 对应不同地图内语义；Carousel 的 `variant` 影响通行方向，Mirror 的 `variant` 参与机关结果。纯视觉字段由地图字段和 Visual Definition 使用，具有 gameplay 含义的值留在对象状态或初始配置并投影必要 Fact。稳定地图字段不因内部分类而改名。`ts.png` / `ta.png` 坐标由 Model 的 semantic atlas mapping 提供，DAT byte 换算只在 `tools/original/dat/`。
 

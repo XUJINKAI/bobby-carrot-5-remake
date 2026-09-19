@@ -6,11 +6,17 @@ import { drawVisualComposition } from "../dist/render/VisualPainter.js";
 
 function fixture() {
   const draws = [];
+  const clips = [];
   const context = {
     setTransform() {},
     fillRect() {},
     save() {},
     restore() {},
+    beginPath() {},
+    rect(...args) {
+      clips.push(args);
+    },
+    clip() {},
     translate() {},
     rotate() {},
     scale() {},
@@ -25,7 +31,7 @@ function fixture() {
       return { width: 192, height: 96 };
     },
   };
-  return { draws, context, images };
+  return { clips, draws, context, images };
 }
 
 const atlas = { kind: "atlas", column: 0, row: 0 };
@@ -134,4 +140,30 @@ test("连续双格 atlas 先组合为一个源矩形再整体缩放", () => {
   assert.equal(draws.length, 1);
   assert.deepEqual(draws[0].slice(1, 5), [96, 144, 48, 96]);
   assert.deepEqual(draws[0].slice(5), [0, -12, 13, 25]);
+});
+
+test("屏幕环境层可以裁剪在地图可见矩形内", () => {
+  const { clips, context, draws, images } = fixture();
+  const renderer = new Renderer({ getContext: () => context }, images);
+  const camera = new Camera();
+  camera.setViewport(96, 96);
+  renderer.render({
+    worldWidth: 1,
+    worldHeight: 1,
+    world: [],
+    standing: [],
+    effect: [],
+    ambientBackground: [],
+    callouts: [],
+    ambientForeground: [{
+      composition: { layers: [{ kind: "image", asset: "snow" }] },
+      x: 0,
+      y: 0,
+      size: 48,
+      clip: { x: 12, y: 18, width: 48, height: 36 },
+    }],
+  }, camera, viewport);
+
+  assert.deepEqual(clips, [[12, 18, 48, 36]]);
+  assert.equal(draws.length, 1);
 });

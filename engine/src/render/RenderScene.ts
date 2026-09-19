@@ -13,6 +13,13 @@ export interface ScreenOverlayItem {
   x: number;
   y: number;
   size: number;
+  /** 屏幕坐标裁剪区；用于天气只覆盖当前地图可见范围。 */
+  clip?: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  };
 }
 
 export interface RenderItem {
