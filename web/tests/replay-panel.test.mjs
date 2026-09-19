@@ -11,6 +11,8 @@ import {
   validateBuiltinReplaySave,
 } from "../src/pages/game/bindReplayPanel.ts";
 import { replayPathId } from "../src/pages/game/replayAssets.ts";
+import { WEB_ERROR_CODES, WebError } from "../src/errors/errorCodes.ts";
+import { errorDisplayText } from "../src/errors/errorPresentation.ts";
 import {
   loadReplayPanelOpen,
   storeReplayPanelOpen,
@@ -87,12 +89,12 @@ test("Replay 未声明 status 时只报告复跑完成", () => {
   assert.equal(resolveWebText(presentation.text), "复跑完成 · 2 ticks");
 });
 
-test("阻塞对话终止录制时清空 take 并显示诊断", () => {
+test("阻塞对话终止录制时清空 take 并使用统一错误码", () => {
   assert.match(replayBindingSource, /"replay-recording-aborted"/);
   assert.match(replayBindingSource, /replay = null;\s+output\.value = ""/);
   assert.match(
     replayBindingSource,
-    /interactive host choice is not supported by replay/,
+    /WEB_ERROR_CODES\.replay\.interactiveHostUnsupported/,
   );
   assert.match(replayBindingSource, /unsubscribeRecordingAbort\(\)/);
 });
@@ -102,7 +104,7 @@ test("Replay 持久提示保存翻译语义并在 update 时重新解析", () =>
   assert.match(replayBindingSource, /verification\.textContent = resolveWebText\(verificationState\.text\)/);
   assert.match(replayBindingSource, /const update = \(\): void => \{\s+renderVerification\(\)/);
   assert.doesNotMatch(replayBindingSource, /verification\.textContent = webT\(/);
-  assert.match(replayBindingSource, /error instanceof LocalizedReplayError \? error\.text/);
+  assert.match(replayBindingSource, /setVerification\(errorDisplayText\(error\), true\)/);
 });
 
 test("Replay 动态文案只由 controller 渲染", () => {
@@ -202,7 +204,10 @@ test("保存内置过法只要求声明与实际复跑终局均为 won", () => {
       { verifyReplay: () => report },
       { finalState: { status: "playing" } },
     ),
-    /必须声明 won 终局/,
+    (error) =>
+      error instanceof WebError &&
+      error.code === WEB_ERROR_CODES.replay.builtinMustWin &&
+      resolveWebText(errorDisplayText(error)) === "内置过法必须声明 won 终局",
   );
   assert.throws(
     () => validateBuiltinReplaySave(
@@ -214,7 +219,10 @@ test("保存内置过法只要求声明与实际复跑终局均为 won", () => {
       },
       replay,
     ),
-    /复跑后未通关/,
+    (error) =>
+      error instanceof WebError &&
+      error.code === WEB_ERROR_CODES.replay.builtinNotWon &&
+      resolveWebText(errorDisplayText(error)) === "Replay 在当前关卡复跑后未通关",
   );
 });
 
