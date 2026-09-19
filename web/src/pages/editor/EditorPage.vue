@@ -387,6 +387,9 @@ function isMobileEditor(): boolean {
   >
     <EditorWorkspace
       :level="page.snapshot.value.level as EditorMap"
+      :name-value="page.nameValue.value"
+      :author-value="page.authorValue.value"
+      :note-value="page.noteValue.value"
       :revision="page.snapshot.value.revision"
       :tool="page.tool.value"
       :placement="page.leftPanel.value === 'palette' ? page.placement.value : null"
@@ -442,7 +445,7 @@ function isMobileEditor(): boolean {
       @rule-mode="page.setRuleMode"
       @max-moves="page.setMaxMoves"
       @max-time="page.setMaxTimeSeconds"
-      @metadata="page.updateMetadata"
+      @metadata-field="page.setMetadataValue"
       @music="page.setMusic"
       @play-restart="restartPlay"
       @play-stop="stopPlay"
@@ -450,9 +453,13 @@ function isMobileEditor(): boolean {
     <EditorFileDialog
       :open="page.fileDialogOpen.value"
       :level="page.snapshot.value.level"
+      :name-value="page.nameValue.value"
+      :author-value="page.authorValue.value"
+      :note-value="page.noteValue.value"
       @close="page.fileDialogOpen.value = false"
       @import="importLevel"
-      @metadata="page.updateMetadata"
+      @metadata-field="page.setMetadataValue"
+      @metadata-flush="page.flushMetadata"
       @saved="markDownloaded"
     />
   </div>

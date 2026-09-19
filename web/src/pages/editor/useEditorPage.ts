@@ -88,8 +88,10 @@ import {
 } from "./editorFieldValues.js";
 
 export type EditorLeftPanel = "palette" | "surface";
+export type EditorMetadataField = "name" | "author" | "note";
 
 const EDITOR_AUTOSAVE_DELAY_MS = 200;
+const EDITOR_METADATA_DEBOUNCE_MS = 200;
 
 export function useEditorPage(initialLevel: EditorMap) {
   const environment = builtinEngineEnvironment;
@@ -103,6 +105,9 @@ export function useEditorPage(initialLevel: EditorMap) {
   const document = new EditorDocument(initialLevel);
   ruleDetector.detect(initialLevel, environment);
   const snapshot = shallowRef<EditorSnapshot>(document.getSnapshot());
+  const nameValue = ref(initialLevel.meta.name);
+  const authorValue = ref(initialLevel.meta.author ?? "");
+  const noteValue = ref(initialLevel.meta.note ?? "");
   const paletteTool = ref<EditorTool>("select");
   const placement = ref<PaletteItem>(first);
   const leftPanel = ref<EditorLeftPanel>("palette");
@@ -119,13 +124,16 @@ export function useEditorPage(initialLevel: EditorMap) {
   const eraseVisited = new Set<string>();
   let pendingAutosave: EditorMap | null = null;
   let autosaveTimer: ReturnType<typeof setTimeout> | null = null;
+  let metadataTimer: ReturnType<typeof setTimeout> | null = null;
 
   const unsubscribe = document.subscribe((next) => {
     snapshot.value = next;
+    if (metadataTimer === null) syncMetadataValues(next.level as EditorMap);
     scheduleAutosave(next.level as EditorMap);
     ruleDetector.detect(next.level as EditorMap, environment);
   });
   onUnmounted(() => {
+    flushMetadata();
     unsubscribe();
     flushAutosave();
   });
@@ -159,6 +167,44 @@ export function useEditorPage(initialLevel: EditorMap) {
     const level = pendingAutosave;
     pendingAutosave = null;
     if (level) storeEditorAutosave(level);
+  }
+
+  function setMetadataValue(field: EditorMetadataField, value: string): void {
+    if (field === "name") nameValue.value = value;
+    else if (field === "author") authorValue.value = value;
+    else noteValue.value = value;
+    if (metadataTimer !== null) clearTimeout(metadataTimer);
+    metadataTimer = setTimeout(flushMetadata, EDITOR_METADATA_DEBOUNCE_MS);
+  }
+
+  function flushMetadata(): void {
+    if (metadataTimer !== null) clearTimeout(metadataTimer);
+    metadataTimer = null;
+    const level = currentLevel();
+    const author = authorValue.value || undefined;
+    const note = noteValue.value || undefined;
+    if (
+      level.meta.name === nameValue.value &&
+      level.meta.author === author &&
+      level.meta.note === note
+    )
+      return;
+    execute(updateMetadata({
+      name: nameValue.value,
+      ...(author ? { author } : {}),
+      ...(note ? { note } : {}),
+    }));
+  }
+
+  function cancelPendingMetadata(): void {
+    if (metadataTimer !== null) clearTimeout(metadataTimer);
+    metadataTimer = null;
+  }
+
+  function syncMetadataValues(level: Readonly<EditorMap>): void {
+    nameValue.value = level.meta.name;
+    authorValue.value = level.meta.author ?? "";
+    noteValue.value = level.meta.note ?? "";
   }
   const tool = computed<EditorTool>(() =>
     leftPanel.value === "surface"
@@ -677,6 +723,7 @@ export function useEditorPage(initialLevel: EditorMap) {
   }
 
   function loadLevel(level: EditorMap): void {
+    cancelPendingMetadata();
     ruleDetector.reset();
     ruleDetector.detect(level, environment);
     document.load(level);
@@ -704,6 +751,9 @@ export function useEditorPage(initialLevel: EditorMap) {
     palette,
     document,
     snapshot,
+    nameValue,
+    authorValue,
+    noteValue,
     tool,
     paletteTool,
     placement,
@@ -764,18 +814,13 @@ export function useEditorPage(initialLevel: EditorMap) {
     setRule,
     setRuleMode,
     loadLevel,
+    setMetadataValue,
+    flushMetadata,
     setMaxMoves(value: number | null): void {
       execute(updateMaxMoves(value));
     },
     setMaxTimeSeconds(value: number | null): void {
       execute(updateMaxTimeSeconds(value));
-    },
-    updateMetadata(metadata: {
-      name: string;
-      author?: string;
-      note?: string;
-    }): void {
-      execute(updateMetadata(metadata));
     },
     setMusic(music: MapMusic | undefined): void {
       execute(updateMusic(music));

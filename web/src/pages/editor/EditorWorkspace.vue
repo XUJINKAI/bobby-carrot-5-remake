@@ -28,7 +28,7 @@ import type {
   LevelEntityFieldValue,
   MapMusic,
 } from "@bobby/model";
-import type { EditorLeftPanel } from "./useEditorPage.js";
+import type { EditorLeftPanel, EditorMetadataField } from "./useEditorPage.js";
 import EditorCanvas from "./EditorCanvas.vue";
 import EditorInspector from "./EditorInspector.vue";
 import EditorLevelInfo from "./EditorLevelInfo.vue";
@@ -38,6 +38,9 @@ import ReplayPanel from "../game/ReplayPanel.vue";
 
 defineProps<{
   level: Readonly<EditorMap>;
+  nameValue: string;
+  authorValue: string;
+  noteValue: string;
   revision: number;
   tool: EditorTool;
   placement: EditorPlacementPreset | null;
@@ -95,7 +98,7 @@ const emit = defineEmits<{
   ruleMode: [mode: EditorRuleMode];
   maxMoves: [value: number | null];
   maxTime: [value: number | null];
-  metadata: [value: { name: string; author?: string; note?: string }];
+  metadataField: [field: EditorMetadataField, value: string];
   music: [value: MapMusic | undefined];
   playRestart: [];
   playStop: [];
@@ -211,9 +214,12 @@ const emit = defineEmits<{
     <EditorLevelInfo
       v-show="!playing && rightPanel === 'level'"
       :level="level"
+      :name-value="nameValue"
+      :author-value="authorValue"
+      :note-value="noteValue"
       :rules="rules"
       :rule-mode="ruleMode"
-      @metadata="emit('metadata', $event)"
+      @metadata-field="(field, value) => emit('metadataField', field, value)"
       @music="emit('music', $event)"
       @rule="(kind, enabled) => emit('rule', kind, enabled)"
       @rule-mode="emit('ruleMode', $event)"

@@ -7,25 +7,24 @@ import type {
 } from "@bobby/editor";
 import type { MapMusic } from "@bobby/model";
 import { computed } from "vue";
-import { useEditorMetadataDraft } from "./useEditorMetadataDraft.js";
+import type { EditorMetadataField } from "./useEditorPage.js";
 
 const props = defineProps<{
   level: Readonly<EditorMap>;
+  nameValue: string;
+  authorValue: string;
+  noteValue: string;
   rules: readonly EditorRuleCapability[];
   ruleMode: EditorRuleMode;
 }>();
 const emit = defineEmits<{
-  metadata: [value: { name: string; author?: string; note?: string }];
+  metadataField: [field: EditorMetadataField, value: string];
   music: [value: MapMusic | undefined];
   maxMoves: [value: number | null];
   maxTime: [value: number | null];
   rule: [kind: EditorRuleKind, enabled: boolean];
   ruleMode: [mode: EditorRuleMode];
 }>();
-const { metadata } = useEditorMetadataDraft({
-  source: () => props.level.meta,
-  apply: (value) => emit("metadata", value),
-});
 const labels: Record<EditorRuleKind, string> = {
   carrots: "收集胡萝卜",
   eggs: "放置彩蛋",
@@ -75,6 +74,10 @@ function applyMusic(event: Event): void {
   const value = (event.target as HTMLSelectElement).value;
   emit("music", value ? value : undefined);
 }
+
+function textValue(event: Event): string {
+  return (event.target as HTMLInputElement | HTMLTextAreaElement).value;
+}
 </script>
 
 <template>
@@ -84,19 +87,28 @@ function applyMusic(event: Event): void {
       <strong>地图信息</strong>
       <label class="editor-field">
         <span>名称</span>
-        <input v-model="metadata.name" data-editor-metadata="name">
+        <input
+          :value="nameValue"
+          data-editor-metadata="name"
+          @input="emit('metadataField', 'name', textValue($event))"
+        >
       </label>
       <label class="editor-field">
         <span>作者</span>
-        <input v-model="metadata.author" data-editor-metadata="author">
+        <input
+          :value="authorValue"
+          data-editor-metadata="author"
+          @input="emit('metadataField', 'author', textValue($event))"
+        >
       </label>
       <label class="editor-field">
         <span>注记</span>
         <textarea
-          v-model="metadata.note"
+          :value="noteValue"
           data-editor-metadata="note"
           maxlength="500"
           rows="4"
+          @input="emit('metadataField', 'note', textValue($event))"
         />
       </label>
       <label class="editor-field">
