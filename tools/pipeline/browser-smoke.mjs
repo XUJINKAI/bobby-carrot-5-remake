@@ -274,7 +274,7 @@ try {
     'class="import-page"',
     'class="import-card"',
   ]);
-  await smoke(`${origin}/import/v1#INVALID`, [
+  await smoke(`${origin}/import/v1#INVALID!`, [
     'class="import-page"',
     "Invalid Base64 data payload",
   ]);
