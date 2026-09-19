@@ -17,6 +17,7 @@ export const WEB_ERROR_CODES = {
     builtinMissing: "replay.builtin-missing",
     builtinLoadFailed: "replay.builtin-load-failed",
     builtinSaveFailed: "replay.builtin-save-failed",
+    invalidJson: "replay.invalid-json",
     invalidDocument: "replay.invalid-document",
   },
 } as const;
