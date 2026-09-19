@@ -166,6 +166,7 @@ test("Editor 打开合法 MapDocument 时完整保留输入", () => {
     entities: [{ type: MapEntityTypeId.BOBBY, x: 0, y: 0 }],
   };
   assert.deepEqual(parseEditorLevel(JSON.stringify(source)), source);
+  assert.deepEqual(JSON.parse(serializeEditorLevel(source)), source);
   assert.deepEqual(toLevelMap(source), {
     schemaVersion: 1,
     music: "random",
@@ -181,6 +182,15 @@ test("Editor 打开合法 MapDocument 时完整保留输入", () => {
     entities: [{ type: MapEntityTypeId.BOBBY, x: 255, y: 128 }],
   };
   assert.deepEqual(parseEditorLevel(JSON.stringify(large)), large);
+  assert.deepEqual(JSON.parse(serializeEditorLevel(large)), large);
+
+  const opaque = {
+    ...source,
+    meta: { name: "Opaque Surface" },
+    entities: [{ type: "ts-1-1", x: 0, y: 0, stackOrder: 0 }],
+  };
+  assert.deepEqual(JSON.parse(serializeEditorLevel(opaque)), opaque);
+
   assert.equal(createBlankLevel(1, 1).width, 1);
   assert.equal(createBlankLevel(1, 1).height, 1);
 });
@@ -307,7 +317,7 @@ test("Entity fields and instance stack order round-trip", () => {
   );
   const serialized = serializeEditorLevel(level);
   const stored = JSON.parse(serialized);
-  assert.equal(stored.entities[0].stackOrder, undefined);
+  assert.equal(stored.entities[0].stackOrder, 0);
   const parsed = parseEditorLevel(serialized);
   const speedSwitch = parsed.entities.find(
     (entity) => entity.type === MapEntityTypeId.SPEED_SWITCH,
