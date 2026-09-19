@@ -18,36 +18,47 @@ function memoryStorage(initial = {}) {
   };
 }
 
-test("存档管理只为实际存在的 Adventure 和 Explore records 创建 Tab", () => {
+test("存档管理使用 Explore discovery 白名单和顺序", () => {
   const storage = memoryStorage({
     "bc5r:setting": "{}",
-    "bc5r:explore/zeta": "{}",
-    [ADVENTURE_STORAGE_KEY]: "",
     "bc5r:explore/alpha": "{}",
-    "bc5r:explore/": "{}",
+    [ADVENTURE_STORAGE_KEY]: "",
+    "bc5r:explore/zeta": "{}",
+    "bc5r:explore/rogue": "{}",
     unrelated: "{}",
   });
+  const collections = [
+    { id: "zeta" },
+    { id: "missing" },
+    { id: "alpha" },
+  ];
 
-  assert.deepEqual(listSaveManagementTargets(storage), [
+  assert.deepEqual(listSaveManagementTargets(collections, storage), [
     { id: "adventure", kind: "adventure", label: "Adventure" },
-    {
-      id: "explore:alpha",
-      kind: "explore",
-      label: "alpha",
-      collection: "alpha",
-    },
     {
       id: "explore:zeta",
       kind: "explore",
       label: "zeta",
       collection: "zeta",
     },
+    {
+      id: "explore:alpha",
+      kind: "explore",
+      label: "alpha",
+      collection: "alpha",
+    },
   ]);
 });
 
-test("没有游戏存档时不创建存档管理 Tab", () => {
+test("没有白名单内游戏存档时不创建存档管理 Tab", () => {
   assert.deepEqual(
-    listSaveManagementTargets(memoryStorage({ "bc5r:setting": "{}" })),
+    listSaveManagementTargets(
+      [{ id: "original" }],
+      memoryStorage({
+        "bc5r:setting": "{}",
+        "bc5r:explore/rogue": "{}",
+      }),
+    ),
     [],
   );
 });

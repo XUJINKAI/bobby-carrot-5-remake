@@ -1,6 +1,7 @@
+import type { MapCollectionSummary } from "../../services/catalog/catalog.js";
 import {
   ADVENTURE_STORAGE_KEY,
-  EXPLORE_STORAGE_PREFIX,
+  exploreStorageKey,
 } from "../../storage/contracts.js";
 
 export type SaveManagementTarget =
@@ -16,8 +17,12 @@ export type SaveManagementTarget =
       collection: string;
     };
 
-/** 设置页只展示浏览器中实际存在的独立存档 record。 */
+/**
+ * 设置页只展示 discovery index 允许且浏览器中实际存在的存档。
+ * Explore 顺序完全跟随 maps/index.json，与 Explore 页面一致。
+ */
 export function listSaveManagementTargets(
+  collections: readonly Pick<MapCollectionSummary, "id">[],
   storage: Storage = localStorage,
 ): SaveManagementTarget[] {
   const targets: SaveManagementTarget[] = [];
@@ -29,15 +34,8 @@ export function listSaveManagementTargets(
     });
   }
 
-  const collections = new Set<string>();
-  for (let index = 0; index < storage.length; index += 1) {
-    const key = storage.key(index);
-    if (!key?.startsWith(EXPLORE_STORAGE_PREFIX)) continue;
-    const collection = key.slice(EXPLORE_STORAGE_PREFIX.length);
-    if (collection) collections.add(collection);
-  }
-
-  for (const collection of [...collections].sort()) {
+  for (const { id: collection } of collections) {
+    if (storage.getItem(exploreStorageKey(collection)) === null) continue;
     targets.push({
       id: `explore:${collection}`,
       kind: "explore",

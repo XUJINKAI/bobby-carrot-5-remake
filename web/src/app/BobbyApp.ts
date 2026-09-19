@@ -198,7 +198,10 @@ export class BobbyApp {
       return;
     }
     if (path === "/settings") {
-      const { renderSettingsPage } = await loadSettingsPage();
+      const [{ renderSettingsPage }] = await Promise.all([
+        loadSettingsPage(),
+        this.catalog.loadCollectionsIndex(),
+      ]);
       if (!this.canCommitRoute(generation)) return;
       if (!(await this.activateI18nRoute(generation, loadSettingsPage))) return;
       const context = this.pageContext();
