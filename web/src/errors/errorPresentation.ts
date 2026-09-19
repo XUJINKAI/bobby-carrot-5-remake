@@ -37,6 +37,8 @@ const ERROR_TRANSLATION_KEYS = {
     "game.replay.builtinLoadFailed",
   [WEB_ERROR_CODES.replay.builtinSaveFailed]:
     "game.replay.builtinSaveFailed",
+  [WEB_ERROR_CODES.replay.invalidJson]:
+    "game.replay.invalidJson",
   [WEB_ERROR_CODES.replay.invalidDocument]:
     "game.replay.invalidDocument",
 } satisfies Record<WebErrorCode, WebTranslationKey>;
