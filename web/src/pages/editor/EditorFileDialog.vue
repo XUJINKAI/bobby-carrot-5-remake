@@ -22,11 +22,9 @@ const emit = defineEmits<{
   saved: [];
 }>();
 const exchangeLevel = computed<EditorMap>(() => {
-  const {
-    author: _author,
-    note: _note,
-    ...meta
-  } = props.level.meta;
+  const meta = { ...props.level.meta };
+  delete meta.author;
+  delete meta.note;
   return {
     ...props.level,
     meta: {
@@ -79,6 +77,10 @@ function downloaded(): void {
 function imported(level: EditorMap): void {
   emit("import", level);
 }
+
+function textValue(event: Event): string {
+  return (event.target as HTMLInputElement | HTMLTextAreaElement).value;
+}
 </script>
 
 <template>
@@ -90,9 +92,9 @@ function imported(level: EditorMap): void {
           <AppIcon name="close" />
         </button>
       </header>
-      <label class="editor-field"><span>名称</span><input :value="nameValue" data-editor-share-metadata="name" maxlength="120" @input="emit('metadataField', 'name', ($event.target as HTMLInputElement).value)"></label>
-      <label class="editor-field"><span>作者</span><input :value="authorValue" data-editor-share-metadata="author" maxlength="80" placeholder="可选" @input="emit('metadataField', 'author', ($event.target as HTMLInputElement).value)"></label>
-      <label class="editor-field"><span>注记</span><textarea :value="noteValue" data-editor-share-metadata="note" maxlength="500" rows="4" placeholder="可选" @input="emit('metadataField', 'note', ($event.target as HTMLTextAreaElement).value)"></textarea></label>
+      <label class="editor-field"><span>名称</span><input :value="nameValue" data-editor-share-metadata="name" maxlength="120" @input="emit('metadataField', 'name', textValue($event))"></label>
+      <label class="editor-field"><span>作者</span><input :value="authorValue" data-editor-share-metadata="author" maxlength="80" placeholder="可选" @input="emit('metadataField', 'author', textValue($event))"></label>
+      <label class="editor-field"><span>注记</span><textarea :value="noteValue" data-editor-share-metadata="note" maxlength="500" rows="4" placeholder="可选" @input="emit('metadataField', 'note', textValue($event))"></textarea></label>
       <p class="editor-muted">地图内容使用语义 JSON，可通过文本、分享链接、`.json` 或 `.bc5r` 文件交换。</p>
       <p class="editor-muted"><a :href="embedUrl" @click.prevent="openEmbed">内嵌到其他网页</a></p>
       <DataExchangePanel
