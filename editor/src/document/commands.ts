@@ -147,15 +147,15 @@ export function updateMetadata(metadata: {
   note?: string;
 }): EditorCommand {
   return command((level) => {
-    const next: EditorMap = {
-      ...level,
-      meta: {
-        name: metadata.name,
-        ...(metadata.author ? { author: metadata.author } : {}),
-        ...(metadata.note ? { note: metadata.note } : {}),
-      },
+    const meta = {
+      ...level.meta,
+      name: metadata.name,
     };
-    return normalizeEditorLevel(next);
+    if (metadata.author) meta.author = metadata.author;
+    else delete meta.author;
+    if (metadata.note) meta.note = metadata.note;
+    else delete meta.note;
+    return normalizeEditorLevel({ ...level, meta });
   });
 }
 
