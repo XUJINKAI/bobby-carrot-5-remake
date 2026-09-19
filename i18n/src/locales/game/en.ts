@@ -49,6 +49,7 @@ const catalog = {
   "game.replay.builtinMissing": "No built-in solution is available for this level",
   "game.replay.builtinLoadFailed": "Failed to load the built-in solution (HTTP {status})",
   "game.replay.builtinSaveFailed": "Failed to save the built-in solution (HTTP {status})",
+  "game.replay.invalidJson": "Invalid Replay JSON",
   "game.replay.invalidDocument": "Replay JSON must be an object",
   "game.map.verification": "Verify",
   "game.map.id": "ID",
