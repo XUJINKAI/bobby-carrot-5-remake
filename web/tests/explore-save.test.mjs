@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "vitest";
 import { BC5R_GAME_ID } from "@bobby/model";
+import { WEB_ERROR_CODES, WebError } from "../src/errors/errorCodes.ts";
 import {
   parseExploreProgressExchange,
   saveExploreProgressSave,
@@ -56,14 +57,16 @@ test("Explore save exchange normalizes collection-scoped progress data", () => {
   assert.deepEqual(JSON.parse(serializeExploreProgressSave(save)), save);
 });
 
-test("Explore save exchange rejects unrelated data", () => {
+test("Explore save exchange rejects unrelated data with a semantic error", () => {
   assert.throws(
     () =>
       parseExploreProgressExchange({
         game: BC5R_GAME_ID,
         schemaVersion: 1,
       }),
-    /Explore Save/,
+    (error) =>
+      error instanceof WebError &&
+      error.code === WEB_ERROR_CODES.saveExchange.invalidExploreSave,
   );
 });
 
