@@ -155,7 +155,7 @@ Replay Tick 只发布可观察的 `WorldEvent`；`onInteractionRequest()` 不在
 World Snapshot 或确定性 Tick 时间线。Replay 播放期间 Game 忽略内部对白展示请求。
 宿主选择、由选择派生的业务效果和外部可变状态不进入 Replay。
 
-## 仓库内置过法
+## 仓库内置 Replay
 
 Web 为每张地图约定一个默认内置过法地址：
 
@@ -170,8 +170,9 @@ Web 录制面板只按当前关卡的 collection 和 map ID 尝试该固定地�
 可以拥有多个 Replay 测试文件。每新增一个 JSON 都会自动进入这项回归测试，也会随
 `assets/` 原样发布到 `dist/assets/`。
 
-构建在生成地图并编译当前 Engine 后复跑全部内置 Replay。只有声明终态与实际终态
-均为 `won`，且 Replay 的终态断言全部通过，才在对应的
+构建在生成地图并编译当前 Engine 后复跑全部内置 Replay。每条仓库 Replay 都必须声明
+`finalState.status`，复跑后的实际状态必须与其一致；`playing / won / dead` 都是合法预期。
+只有声明状态与实际状态均为 `won`，且 Replay 的其它终态断言全部通过，才在对应的
 `assets/maps/<collection>/index.json` 地图条目中写入 `verified: true`。同一地图的
 多条获胜 Replay 只产生一个标记；没有获胜验证的条目省略该字段。每次构建都重新计算，
 Replay 校验失败会中止构建。开发服务器启动时执行相同验证，Engine 源码或 Replay

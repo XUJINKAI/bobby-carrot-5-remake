@@ -30,6 +30,11 @@ export function verifyReplayFixture(replayFile) {
   const level = parseMapDocument(readJson(mapFile));
   const report = runReplay(level, replay);
   assert.equal(report.endTick, replay.endTick, relative);
+  assertReplayReachedFinalState(
+    relative,
+    report.actual.status,
+    replay.finalState?.status,
+  );
   const verification = replayVerificationStates(
     report.actual,
     replay.finalState,
@@ -40,6 +45,19 @@ export function verifyReplayFixture(replayFile) {
     winning: replay.finalState?.status === "won" &&
       report.actual.status === "won",
   };
+}
+
+export function assertReplayReachedFinalState(relative, actual, expected) {
+  assert.notEqual(
+    expected,
+    undefined,
+    `${relative}: 仓库 Replay 必须声明 finalState.status`,
+  );
+  assert.equal(
+    actual,
+    expected,
+    `${relative}: Replay 实际状态必须匹配 finalState.status`,
+  );
 }
 
 function listFiles(directory) {
