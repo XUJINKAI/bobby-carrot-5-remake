@@ -132,7 +132,7 @@ async function togglePlay(): Promise<void> {
     replayPanel = bindReplayPanel({
       root,
       game: session.game,
-      filename: `editor-${page.snapshot.value.level.meta.name}`,
+      filename: `editor-${page.nameValue.value || "map"}`,
       meta: {
         id: "editor/draft",
         url: window.location.href,

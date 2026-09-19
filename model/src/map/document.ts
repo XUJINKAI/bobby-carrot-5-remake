@@ -36,7 +36,7 @@ export interface LevelMap {
 /** 独立地图文档携带的面向用户 metadata。 */
 export interface MapMeta {
   game?: Bc5rGameId;
-  name: string;
+  name?: string;
   author?: string;
   note?: string;
 }

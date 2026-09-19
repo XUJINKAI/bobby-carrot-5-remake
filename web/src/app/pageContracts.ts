@@ -21,6 +21,7 @@ export type { ResolvedMapCollection };
 export interface PageContext {
   app: HTMLDivElement;
   collectionsIndex: MapCollectionsIndex;
+  loadCollectionsIndex(): Promise<MapCollectionsIndex>;
   collections: ResolvedMapCollection[];
   adventure: AdventureIndex;
   audio: AudioRuntime;

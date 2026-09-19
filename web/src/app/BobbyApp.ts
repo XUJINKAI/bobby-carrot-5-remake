@@ -126,6 +126,7 @@ export class BobbyApp {
     return {
       app: this.content,
       collectionsIndex: this.catalog.collectionsIndex,
+      loadCollectionsIndex: () => this.catalog.loadCollectionsIndex(),
       collections: this.catalog.collections,
       adventure: this.catalog.adventure,
       audio: this.audio,
@@ -292,7 +293,10 @@ export class BobbyApp {
   private async renderImport(generation: number): Promise<void> {
     const payload = location.hash.slice(1);
     try {
-      const { decodeImportedPayload } = await import(
+      const {
+        decodeImportedPayload,
+        requireImportedSaveTarget,
+      } = await import(
         "../services/import/importPipeline.js"
       );
       const imported = await decodeImportedPayload(payload);
@@ -311,12 +315,16 @@ export class BobbyApp {
           identity: {
             collection: "imported",
             id: "shared-map",
-            title: imported.value.meta.name,
+            title: imported.value.meta.name || "Imported Bobby Level",
           },
           mode: "explore",
           source: "import",
         });
         return;
+      }
+      if (imported.type === "explore-save") {
+        const index = await this.catalog.loadCollectionsIndex();
+        requireImportedSaveTarget(imported, index.collections);
       }
       const { renderImportMessage } = await loadImportPage();
       if (!this.canCommitRoute(generation)) return;
@@ -371,7 +379,7 @@ export class BobbyApp {
         ...this.pageContext(),
         level,
         mapMeta: document.meta,
-        identity: { ...ref, title: document.meta.name },
+        identity: { ...ref, title: document.meta.name || ref.id },
         mode: "explore",
         source: "explore",
       });
@@ -396,7 +404,10 @@ export class BobbyApp {
         ...this.pageContext(),
         level: resolved.level,
         mapMeta: resolved.document.meta,
-        identity: { ...resolved.ref, title: resolved.document.meta.name },
+        identity: {
+          ...resolved.ref,
+          title: resolved.document.meta.name || resolved.ref.id,
+        },
         verified: collection?.maps[currentIndex]?.verified === true,
         ...(explorePreviousMapId ? { explorePreviousMapId } : {}),
         ...(exploreNextMapId ? { exploreNextMapId } : {}),

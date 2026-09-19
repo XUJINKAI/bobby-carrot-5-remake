@@ -142,19 +142,17 @@ export function reorderEntityStack(
 }
 
 export function updateMetadata(metadata: {
-  name: string;
+  name?: string;
   author?: string;
   note?: string;
 }): EditorCommand {
   return command((level) => {
     const meta = {
       ...level.meta,
-      name: metadata.name,
     };
-    if (metadata.author) meta.author = metadata.author;
-    else delete meta.author;
-    if (metadata.note) meta.note = metadata.note;
-    else delete meta.note;
+    if (metadata.name !== undefined) meta.name = metadata.name;
+    if (metadata.author !== undefined) meta.author = metadata.author;
+    if (metadata.note !== undefined) meta.note = metadata.note;
     return normalizeEditorLevel({ ...level, meta });
   });
 }

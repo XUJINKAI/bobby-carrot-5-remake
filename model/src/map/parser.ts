@@ -88,14 +88,12 @@ function copyOptionalMapFields(source: Record<string, unknown>) {
 function parseMapMeta(value: unknown): MapMeta {
   const meta = requireRecord(value, "MapDocument meta");
   rejectUnknownFields(meta, META_FIELDS, "MapDocument meta");
-  if (typeof meta.name !== "string" || meta.name.length === 0)
-    throw new Error("MapDocument meta.name 必须为非空字符串");
-  for (const key of ["author", "note"])
+  for (const key of ["name", "author", "note"])
     if (meta[key] !== undefined && typeof meta[key] !== "string")
       throw new Error(`MapDocument meta.${key} 必须为字符串`);
   return {
     game: BC5R_GAME_ID,
-    name: meta.name,
+    ...(meta.name !== undefined ? { name: meta.name as string } : {}),
     ...(meta.author !== undefined ? { author: meta.author as string } : {}),
     ...(meta.note !== undefined ? { note: meta.note as string } : {}),
   };

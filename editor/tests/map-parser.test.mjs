@@ -179,9 +179,17 @@ test("Map parser 校验坐标、规则树和文档 metadata", () => {
       }),
     /不允许字段 target/,
   );
+  assert.deepEqual(
+    parseMapDocument({ ...documentWith([]), meta: {} }).meta,
+    { game: BC5R_GAME_ID },
+  );
+  assert.deepEqual(
+    parseMapDocument({ ...documentWith([]), meta: { name: "" } }).meta,
+    { game: BC5R_GAME_ID, name: "" },
+  );
   assert.throws(
-    () => parseMapDocument({ ...documentWith([]), meta: { name: "" } }),
-    /meta.name 必须为非空字符串/,
+    () => parseMapDocument({ ...documentWith([]), meta: { name: 1 } }),
+    /meta.name 必须为字符串/,
   );
   assert.throws(
     () =>

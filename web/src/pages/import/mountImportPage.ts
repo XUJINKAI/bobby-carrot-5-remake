@@ -31,7 +31,12 @@ export function renderImportMessage(
     ...options,
     onConfirm: () => {
       if (options.status !== "save") return;
-      context.navigate(applyImportedSave(options.data));
+      context.navigate(
+        applyImportedSave(
+          options.data,
+          context.collectionsIndex.collections,
+        ),
+      );
     },
     onCancel: () => context.navigate("/"),
     onHome: () => context.navigate("/"),

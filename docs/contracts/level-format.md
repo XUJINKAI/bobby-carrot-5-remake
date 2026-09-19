@@ -280,14 +280,14 @@ HUD 与 Editor 使用 Engine 的结果和可用性定义。关卡最终完成时
 interface MapDocument extends LevelMap {
   meta: {
     game?: "https://github.com/XUJINKAI/bobby-carrot-5-remake";
-    name: string;
+    name?: string;
     author?: string;
     note?: string;
   };
 }
 ```
 
-`MapDocument` 输出默认在 `meta.game` 写入与存档相同的产品标识；输入不要求携带该字段，地图识别也不依赖它。`MapDocument` 不持久化资源 ID 和导航关系。collection 与 map ID 来自 `/assets/maps/<collection>/<map-id>.json` 路径；列表、分组和前后关导航由 collection `index.json` 决定。地图内音乐使用 `LevelMap.music`；地图名称、作者与注记统一位于 `MapDocument.meta`，由 Web 等产品层消费，不进入 Engine 的 `LevelMap`。
+`meta` 中的字段全部可省略，字符串允许为空。`MapDocument` 输出默认在 `meta.game` 写入与存档相同的产品标识；输入不要求携带该字段，地图识别也不依赖它。`MapDocument` 不持久化资源 ID 和导航关系。collection 与 map ID 来自 `/assets/maps/<collection>/<map-id>.json` 路径；列表、分组和前后关导航由 collection `index.json` 决定。地图内音乐使用 `LevelMap.music`；地图名称、作者与注记统一位于 `MapDocument.meta`，由 Web 等产品层消费，不进入 Engine 的 `LevelMap`。
 
 > `LevelMap.music` 的字段归属已经确定，运行时由哪一层解析选曲仍待决策，参见
 > [背景音乐选曲职责 ADR](../decisions/background-music-selection-ownership.md)。本节字段合同暂予保留。

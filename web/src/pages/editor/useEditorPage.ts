@@ -105,7 +105,7 @@ export function useEditorPage(initialLevel: EditorMap) {
   const document = new EditorDocument(initialLevel);
   ruleDetector.detect(initialLevel, environment);
   const snapshot = shallowRef<EditorSnapshot>(document.getSnapshot());
-  const nameValue = ref(initialLevel.meta.name);
+  const nameValue = ref(initialLevel.meta.name ?? "");
   const authorValue = ref(initialLevel.meta.author ?? "");
   const noteValue = ref(initialLevel.meta.note ?? "");
   const paletteTool = ref<EditorTool>("select");
@@ -125,6 +125,7 @@ export function useEditorPage(initialLevel: EditorMap) {
   let pendingAutosave: EditorMap | null = null;
   let autosaveTimer: ReturnType<typeof setTimeout> | null = null;
   let metadataTimer: ReturnType<typeof setTimeout> | null = null;
+  const pendingMetadataFields = new Set<EditorMetadataField>();
 
   const unsubscribe = document.subscribe((next) => {
     snapshot.value = next;
@@ -173,6 +174,7 @@ export function useEditorPage(initialLevel: EditorMap) {
     if (field === "name") nameValue.value = value;
     else if (field === "author") authorValue.value = value;
     else noteValue.value = value;
+    pendingMetadataFields.add(field);
     if (metadataTimer !== null) clearTimeout(metadataTimer);
     metadataTimer = setTimeout(flushMetadata, EDITOR_METADATA_DEBOUNCE_MS);
   }
@@ -180,29 +182,31 @@ export function useEditorPage(initialLevel: EditorMap) {
   function flushMetadata(): void {
     if (metadataTimer !== null) clearTimeout(metadataTimer);
     metadataTimer = null;
+    const fields = [...pendingMetadataFields];
+    pendingMetadataFields.clear();
+    if (fields.length === 0) return;
     const level = currentLevel();
-    const author = authorValue.value || undefined;
-    const note = noteValue.value || undefined;
-    if (
-      level.meta.name === nameValue.value &&
-      level.meta.author === author &&
-      level.meta.note === note
-    )
-      return;
-    execute(updateMetadata({
+    const values = {
       name: nameValue.value,
-      ...(author ? { author } : {}),
-      ...(note ? { note } : {}),
-    }));
+      author: authorValue.value,
+      note: noteValue.value,
+    };
+    const metadata = Object.fromEntries(
+      fields
+        .filter((field) => level.meta[field] !== values[field])
+        .map((field) => [field, values[field]]),
+    );
+    if (Object.keys(metadata).length > 0) execute(updateMetadata(metadata));
   }
 
   function cancelPendingMetadata(): void {
     if (metadataTimer !== null) clearTimeout(metadataTimer);
     metadataTimer = null;
+    pendingMetadataFields.clear();
   }
 
   function syncMetadataValues(level: Readonly<EditorMap>): void {
-    nameValue.value = level.meta.name;
+    nameValue.value = level.meta.name ?? "";
     authorValue.value = level.meta.author ?? "";
     noteValue.value = level.meta.note ?? "";
   }

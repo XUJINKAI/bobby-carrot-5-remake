@@ -30,7 +30,7 @@ export async function renderEditorPage(
       const resolved = await resolveMapDocument(mapRef);
       level = fromLevelMap(
         resolved.level,
-        `${resolved.document.meta.name} · ${webT("editor.copySuffix")}`,
+        `${resolved.document.meta.name || resolved.ref.id} · ${webT("editor.copySuffix")}`,
       );
       window.history.replaceState(
         window.history.state,

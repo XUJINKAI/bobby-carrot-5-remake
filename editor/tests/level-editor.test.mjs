@@ -116,7 +116,7 @@ test("Editor JSON only stores canonical Entity Map plus document metadata", () =
   );
 });
 
-test("Editor metadata command edits and clears meta.note", () => {
+test("Editor metadata command 只修改显式字段并保留空字符串", () => {
   const level = createBlankLevel(10, 8);
   const withNote = updateMetadata({
     name: "Note Test",
@@ -130,8 +130,10 @@ test("Editor metadata command edits and clears meta.note", () => {
     note: "地图注记",
   });
 
-  const withoutNote = updateMetadata({ name: "Note Test" }).apply(withNote);
-  assert.equal("note" in withoutNote.meta, false);
+  const emptyNote = updateMetadata({ note: "" }).apply(withNote);
+  assert.equal(emptyNote.meta.name, "Note Test");
+  assert.equal(emptyNote.meta.author, "xjk");
+  assert.equal(emptyNote.meta.note, "");
 });
 
 test("Editor 背景音乐使用省略字段表达默认随机", () => {
@@ -193,6 +195,10 @@ test("Editor 打开合法 MapDocument 时完整保留输入", () => {
 
   assert.equal(createBlankLevel(1, 1).width, 1);
   assert.equal(createBlankLevel(1, 1).height, 1);
+
+  const emptyMeta = { ...source, meta: {} };
+  assert.deepEqual(parseEditorLevel(JSON.stringify(emptyMeta)), emptyMeta);
+  assert.deepEqual(JSON.parse(serializeEditorLevel(emptyMeta)), emptyMeta);
 });
 
 test("multi-cell persistence stays anchor-only while Preview expands Presence roles", () => {

@@ -6,7 +6,9 @@ import {
 } from "@bobby/exchange";
 import { WEB_ERROR_CODES, WebError } from "../../errors/errorCodes.js";
 import {
+  BC5R_GAME_ID,
   type LevelMap,
+  type MapCollectionSummary,
   type MapDocument,
   parseMapDocument,
 } from "@bobby/model";
@@ -86,13 +88,26 @@ export function classifyImportedJson(value: unknown): ImportedData | null {
 
 export function applyImportedSave(
   data: ImportedSaveData,
+  collections: readonly Pick<MapCollectionSummary, "id">[] = [],
 ): string {
   if (data.type === "adventure-save") {
     saveAdventureSave(data.value);
     return "/adventure";
   }
+  requireImportedSaveTarget(data, collections);
   saveExploreCollectionSave(data.collection, data.value);
   return exploreCollectionPath(data.collection);
+}
+
+export function requireImportedSaveTarget(
+  data: ImportedSaveData,
+  collections: readonly Pick<MapCollectionSummary, "id">[],
+): void {
+  if (
+    data.type === "explore-save" &&
+    !collections.some(({ id }) => id === data.collection)
+  )
+    throw new WebError(WEB_ERROR_CODES.saveExchange.invalidExploreSave);
 }
 
 function dataScope(value: unknown): string | null {
@@ -124,7 +139,7 @@ function parseMap(value: unknown): ImportedMapData | null {
     type: "map",
     value: {
       ...structuredClone(level),
-      meta: { name: "Imported Bobby Level" },
+      meta: { game: BC5R_GAME_ID, name: "Imported Bobby Level" },
     },
     level,
   };
