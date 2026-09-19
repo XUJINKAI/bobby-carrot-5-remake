@@ -3,7 +3,6 @@ export const EXCHANGE_ERROR_CODES = {
   unknownRepresentation: "data-exchange.unknown-representation",
   invalidPayload: "data-exchange.invalid-payload",
   damagedGzip: "data-exchange.damaged-gzip",
-  unsupportedVersion: "data-exchange.unsupported-version",
 } as const;
 
 export type ExchangeErrorCode =

@@ -291,13 +291,13 @@ interface MapDocument extends LevelMap {
 > `LevelMap.music` 的字段归属已经确定，运行时由哪一层解析选曲仍待决策，参见
 > [背景音乐选曲职责 ADR](../decisions/background-music-selection-ownership.md)。本节字段合同暂予保留。
 
-`@bobby/model` 的 `parseMapDocument()` 是持久化文档入口，`parseLevelMap()` 校验后只返回 gameplay 字段。Editor JSON、BC5R1/Embed、Explore 加载和 `npm run verify` 共用这两个入口。地图结构错误、越界坐标和非法规则会被拒绝；Entity type 或实例字段合同问题由可定位 warning、primitive 规范化与惰性占位行为承接。
+`@bobby/model` 的 `parseMapDocument()` 是持久化文档入口，`parseLevelMap()` 校验后只返回 gameplay 字段。Editor JSON、Exchange/Embed、Explore 加载和 `npm run verify` 共用这两个入口。地图结构错误、越界坐标和非法规则会被拒绝；Entity type 或实例字段合同问题由可定位 warning、primitive 规范化与惰性占位行为承接。
 
 ## Editor JSON
 
 Editor 导入、导出与分享直接保存同一套 `schemaVersion: 1` Entity Map，并可编辑 `meta.name / author / note`。Editor 不维护 Terrain/Object persistence model，也不解析历史 schema。
 
-`BC5R1` 是 JSON 的传输编码版本，不是地图 schemaVersion。
+Exchange payload 编码不是地图 schemaVersion。
 
 ## Collection 与 Campaign metadata
 

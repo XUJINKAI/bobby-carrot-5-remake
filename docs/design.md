@@ -9,7 +9,7 @@ Bobby Carrot 5 Remake 是第五代的现代浏览器重制与原版研究工程�
 - **Adventure**：尽量恢复原作 Campaign、存档、经济、章节选择和手机竖屏信息限制；
 - **Explore**：现代化自由浏览，全部普通关与 Bonus 奖励关开放、可筛选、可调试、可自由缩放。
 
-自定义地图与 Editor Play Test 使用独立的 Engine gameplay 流程；Adventure Campaign 由 `@bobby/adventure` 负责。用户地图的长期内容格式是 JSON；Data Exchange 可以把 JSON 表示为 `BC5R1` 压缩文本、分享 URL 或 `.bc5r` 文本文件，不把原版 DAT 暴露成产品格式。
+自定义地图与 Editor Play Test 使用独立的 Engine gameplay 流程；Adventure Campaign 由 `@bobby/adventure` 负责。用户地图的长期内容格式是 JSON；Data Exchange 可以把 JSON 表示为压缩 payload、分享 URL 或 `.bc5r` 文本文件，不把原版 DAT 暴露成产品格式。
 
 ## 保留
 

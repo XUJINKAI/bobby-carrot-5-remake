@@ -25,7 +25,7 @@ const catalog = {
   "embed.code": "代码",
   "embed.copy": "复制",
   "embed.infoPlaceholder": "WASD / 方向键移动",
-  "embed.mapDataPlaceholder": "JSON、Payload、BC5R1:... 或 /import/v1#... URL",
+  "embed.mapDataPlaceholder": "JSON、Payload 或 /import/v1#... URL",
   "embed.error.runtimeLoadFailed": "无法加载内嵌运行时：{url}",
   "embed.error.runtimeUnavailable": "内嵌运行时未提供 BC5R.mount()",
 } as const;

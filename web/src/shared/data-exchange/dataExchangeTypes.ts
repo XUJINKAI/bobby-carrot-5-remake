@@ -1,4 +1,4 @@
-export type DataExchangeFormat = "json" | "bc5r1" | "unknown";
+export type DataExchangeFormat = "json" | "payload" | "unknown";
 
 export type DataExchangeControlConfig =
   | { type: "importText"; label?: string }
@@ -12,4 +12,3 @@ export interface DataExchangeToolbar {
   left: DataExchangeControlConfig[];
   right: DataExchangeControlConfig[];
 }
-

@@ -25,6 +25,6 @@ const handle = BC5R.mount({ target: "#bc5r", map });
 await handle.ready;
 ```
 
-`map` 与 `mapUrl` 互斥且必须提供一个。`mapUrl` 只负责下载文本，两者随后都交给 `@bobby/exchange`，接受 Plain LevelMap / MapDocument JSON、裸 payload、`BC5R1:<payload>` 和完整 `/import/v1#<payload>` URL。Payload 可以是 Base64 / Base64URL(JSON)，也可以是 Base64 / Base64URL(gzip(JSON))。Adventure / Explore 存档会明确报告为存档而非地图。
+`map` 与 `mapUrl` 互斥且必须提供一个。`mapUrl` 只负责下载文本，两者随后都交给 `@bobby/exchange`，接受 Plain LevelMap / MapDocument JSON、裸 payload 和完整 `/import/v1#<payload>` URL。Payload 可以是 Base64 / Base64URL(JSON)，也可以是 Base64 / Base64URL(gzip(JSON))。Adventure / Explore 存档会明确报告为存档而非地图。
 
 当前仍发布一个 `bc5r.js`。`async` 消除 parser 的下载等待；只有确认 JavaScript evaluate 本身形成明显长任务时，才考虑拆分 loader 与 runtime。

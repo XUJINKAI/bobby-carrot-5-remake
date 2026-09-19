@@ -423,7 +423,7 @@ unknown JSON
 EditorLevel / LevelMap
 ```
 
-Editor 不导入、不导出 DAT，也不生成 DAT-backed URL share。`BC5R1` 只压缩 UTF-8 JSON，并与 Map schema 版本保持独立。完整合同见 [`features/data-exchange.md`](features/data-exchange.md)。
+Editor 不导入、不导出 DAT，也不生成 DAT-backed URL share。Exchange payload 只编码 UTF-8 JSON，并与 Map schema 版本保持独立。完整合同见 [`features/data-exchange.md`](features/data-exchange.md)。
 
 `@bobby/exchange` 位于 Model 之上、Web 与 Embed 之下，统一负责 transport 与地图导入边界。它不执行 HTTP 请求、不访问 storage，也不包含 UI；Embed 的 `mapUrl` 只负责下载文本，下载结果与 `map` 一样交给该包解码和解析。
 

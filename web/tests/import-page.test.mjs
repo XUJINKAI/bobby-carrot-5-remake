@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { gzipSync } from "node:zlib";
 import { createAdventureSave } from "@bobby/adventure";
 import {
-  encodeBc5rV1,
+  encodeExchangePayload,
   encodeExchangeText,
 } from "@bobby/exchange";
 import { BC5R_GAME_ID } from "@bobby/model";
@@ -41,7 +41,7 @@ test("统一导入 pipeline 接受带 metadata 与纯 LevelMap", () => {
   assert.equal(document.value.meta.author, "Bobby");
 });
 
-test("首页文本入口统一接受 JSON、两种裸 payload、BC5R1 与完整分享 URL", async () => {
+test("首页文本入口统一接受 JSON、两种裸 payload 与完整分享 URL", async () => {
   const json = JSON.stringify(level);
   const encoded = await encodeExchangeText(json);
   const url = await encodeExchangeText(json, {
@@ -63,7 +63,7 @@ test("URL payload 与首页入口识别相同的 Adventure 和 Explore Save", as
   ]) {
     const textImported = await decodeImportedText(JSON.stringify(value));
     const payloadImported = await decodeImportedPayload(
-      await encodeBc5rV1(JSON.stringify(value)),
+      await encodeExchangePayload(JSON.stringify(value)),
     );
     const plainPayloadImported = await decodeImportedPayload(
       Buffer.from(JSON.stringify(value), "utf8").toString("base64url"),
@@ -91,7 +91,7 @@ test("地图中的未知或字段无效 Entity 不阻断导入", async () => {
 });
 
 test("无法识别的 JSON 在 URL 中保留原文，在首页返回领域错误", async () => {
-  const payload = await encodeBc5rV1("{}");
+  const payload = await encodeExchangePayload("{}");
   assert.deepEqual(await decodeImportedPayload(payload), {
     type: "unknown",
     rawText: "{}",

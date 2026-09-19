@@ -2,8 +2,6 @@ import assert from "node:assert/strict";
 import { gzipSync } from "node:zlib";
 import test from "node:test";
 import {
-  EXCHANGE_ERROR_CODES,
-  ExchangeError,
   buildImportUrl,
   decodeExchangeText,
   detectExchangeFormat,
@@ -18,7 +16,7 @@ import {
   scopedSaveFixtures,
 } from "./fixtures.mjs";
 
-test("BC5R1 对各类 UTF-8 JSON 文本执行往返", async () => {
+test("规范 payload 对各类 UTF-8 JSON 文本执行往返", async () => {
   const values = [
     {},
     ["数组", "🥕", "多行\n文本"],
@@ -32,12 +30,12 @@ test("BC5R1 对各类 UTF-8 JSON 文本执行往返", async () => {
   for (const value of values) {
     const source = JSON.stringify(value, null, 2);
     const encoded = await encodeExchangeText(source);
-    assert.match(encoded, /^BC5R1:[A-Za-z0-9_-]+$/);
+    assert.match(encoded, /^[A-Za-z0-9_-]+$/);
     assert.deepEqual((await decodeExchangeText(encoded)).value, value);
   }
 });
 
-test("裸 payload、BC5R1 与分享 URL 都接受 Base64 JSON 或 gzip JSON", async () => {
+test("裸 payload 与分享 URL 都接受 Base64 JSON 或 gzip JSON", async () => {
   const jsonText = JSON.stringify(mapDocumentFixture);
   const bytes = [Buffer.from(jsonText, "utf8"), gzipSync(jsonText)];
   const payloads = bytes.flatMap((value) => [
@@ -48,7 +46,6 @@ test("裸 payload、BC5R1 与分享 URL 都接受 Base64 JSON 或 gzip JSON", as
   for (const payload of payloads) {
     for (const source of [
       payload,
-      `BC5R1:${payload}`,
       `https://example.com/game/import/v1#${payload}`,
     ]) {
       const decoded = await decodeExchangeText(source);
@@ -74,14 +71,13 @@ test("分享 URL 保留完整站点根路径", () => {
     assert.equal(buildImportUrl(base, "PAYLOAD"), expected);
 });
 
-test("格式识别接受 JSON、裸 payload、BC5R1 与任意站点的 import/v1 URL", () => {
+test("格式识别接受 JSON、裸 payload 与任意站点的 import/v1 URL", () => {
   const payload = Buffer.from(JSON.stringify(levelMapFixture)).toString("base64url");
   assert.equal(detectExchangeFormat('{"foo":"bar"}'), "json");
-  assert.equal(detectExchangeFormat(payload), "bc5r1");
-  assert.equal(detectExchangeFormat("BC5R1:PAYLOAD"), "bc5r1");
+  assert.equal(detectExchangeFormat(payload), "payload");
   assert.equal(
     detectExchangeFormat("https://example.com/foo/import/v1#PAYLOAD"),
-    "bc5r1",
+    "payload",
   );
   assert.equal(
     extractImportPayload("https://another.example/app/import/v1#PAYLOAD"),
@@ -89,13 +85,8 @@ test("格式识别接受 JSON、裸 payload、BC5R1 与任意站点的 import/v1
   );
 });
 
-test("未知 transport 版本返回明确错误", async () => {
-  await assert.rejects(
-    decodeExchangeText("BC5R2:PAYLOAD"),
-    (error) =>
-      error instanceof ExchangeError &&
-      error.code === EXCHANGE_ERROR_CODES.unsupportedVersion,
-  );
+test("旧 BC5R 前缀不再是有效表示", async () => {
+  await assert.rejects(decodeExchangeText("BC5R1:PAYLOAD"));
 });
 
 test("公共地图 parser 接受 LevelMap 和 MapDocument", () => {

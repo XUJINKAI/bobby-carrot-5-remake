@@ -26,8 +26,6 @@ const ERROR_TRANSLATION_KEYS = {
     "common.error.dataExchange.invalidPayload",
   [EXCHANGE_ERROR_CODES.damagedGzip]:
     "common.error.dataExchange.damagedGzip",
-  [EXCHANGE_ERROR_CODES.unsupportedVersion]:
-    "common.error.dataExchange.unsupportedVersion",
   [WEB_ERROR_CODES.saveExchange.invalidAdventureProfile]:
     "common.error.save.invalidAdventureProfile",
   [WEB_ERROR_CODES.saveExchange.invalidExploreSave]:

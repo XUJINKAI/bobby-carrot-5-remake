@@ -4,9 +4,7 @@ import {
 } from "./errors.js";
 import { buildImportUrl, extractImportPayload } from "./url.js";
 
-const PREFIX = "BC5R1:";
-
-export type ExchangeFormat = "json" | "bc5r1" | "unknown";
+export type ExchangeFormat = "json" | "payload" | "unknown";
 
 export interface DecodedExchangeData {
   value: unknown;
@@ -53,12 +51,8 @@ export async function gunzipText(value: Uint8Array): Promise<string> {
   }
 }
 
-export async function encodeBc5rV1(jsonText: string): Promise<string> {
+export async function encodeExchangePayload(jsonText: string): Promise<string> {
   return encodeBase64Url(await gzipText(jsonText));
-}
-
-export async function decodeBc5rV1(payload: string): Promise<string> {
-  return decodePayloadText(payload);
 }
 
 /** 解码裸 payload；内容可以是 Base64(JSON) 或 Base64(gzip(JSON))。 */
@@ -66,7 +60,7 @@ export async function decodeExchangePayload(
   payload: string,
 ): Promise<DecodedExchangeData> {
   const jsonText = await decodePayloadText(payload);
-  return { value: parseJson(jsonText), format: "bc5r1", jsonText };
+  return { value: parseJson(jsonText), format: "payload", jsonText };
 }
 
 export async function encodeExchangeText(
@@ -74,21 +68,17 @@ export async function encodeExchangeText(
   options: { publicBaseUrl?: string } = {},
 ): Promise<string> {
   parseJson(jsonText);
-  const payload = await encodeBc5rV1(jsonText);
+  const payload = await encodeExchangePayload(jsonText);
   return options.publicBaseUrl
     ? buildImportUrl(options.publicBaseUrl, payload)
-    : `${PREFIX}${payload}`;
+    : payload;
 }
 
 export async function decodeExchangeText(
   text: string,
 ): Promise<DecodedExchangeData> {
   const source = text.trim();
-  if (/^BC5R\d+:/.test(source) && !source.startsWith(PREFIX))
-    throw new ExchangeError(EXCHANGE_ERROR_CODES.unsupportedVersion);
-  const payload = source.startsWith(PREFIX)
-    ? source.slice(PREFIX.length)
-    : extractImportPayload(source);
+  const payload = extractImportPayload(source);
   if (payload !== null) return decodeExchangePayload(payload);
   if (source.startsWith("{") || source.startsWith("["))
     return { value: parseJson(source), format: "json", jsonText: source };
@@ -99,12 +89,12 @@ export async function decodeExchangeText(
 
 export function detectExchangeFormat(text: string): ExchangeFormat {
   const source = text.trim();
-  if (source.startsWith(PREFIX) || extractImportPayload(source)) return "bc5r1";
+  if (extractImportPayload(source)) return "payload";
   try {
     JSON.parse(source);
     return "json";
   } catch {
-    return looksLikePayload(source) ? "bc5r1" : "unknown";
+    return looksLikePayload(source) ? "payload" : "unknown";
   }
 }
 

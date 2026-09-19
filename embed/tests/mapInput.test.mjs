@@ -9,7 +9,7 @@ import {
 } from "../../exchange/tests/fixtures.mjs";
 import { loadEmbedMap } from "../dist/mapInput.js";
 
-test("map 接受 JSON、两种 payload、BC5R1 与完整分享 URL", async () => {
+test("map 接受 JSON、两种 payload 与完整分享 URL", async () => {
   const json = JSON.stringify(levelMapFixture);
   const plainPayload = Buffer.from(json, "utf8").toString("base64url");
   const gzipPayload = gzipSync(json).toString("base64url");
@@ -18,8 +18,6 @@ test("map 接受 JSON、两种 payload、BC5R1 与完整分享 URL", async () =>
     JSON.stringify(mapDocumentFixture),
     plainPayload,
     gzipPayload,
-    `BC5R1:${plainPayload}`,
-    `BC5R1:${gzipPayload}`,
     `https://example.com/import/v1#${plainPayload}`,
     `https://example.com/import/v1#${gzipPayload}`,
     await encodeExchangeText(json),

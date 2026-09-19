@@ -58,7 +58,7 @@ const draftDirty = ref(false);
 let liveValueTimer: ReturnType<typeof setTimeout> | null = null;
 let refreshVersion = 0;
 const format = computed(() => detectExchangeFormat(draft.value));
-const compressed = computed(() => format.value === "bc5r1");
+const compressed = computed(() => format.value === "payload");
 const feedbackText = computed(() =>
   feedback.value === null ? "" : resolveWebText(feedback.value),
 );
@@ -69,7 +69,7 @@ const acceptedFiles = computed(() =>
     .join(",") || DEFAULT_EXCHANGE_ACCEPT,
 );
 const status = computed(() => {
-  const label = format.value === "json" ? "JSON" : format.value === "bc5r1" ? "BC5R1" : webT("common.unknownFormat");
+  const label = format.value === "json" ? "JSON" : format.value === "payload" ? "Payload" : webT("common.unknownFormat");
   return `${label} · ${formatBytes(new Blob([draft.value]).size)}`;
 });
 const encodeOptions = (): { publicBaseUrl?: string } =>
@@ -141,7 +141,7 @@ async function importDraft(): Promise<void> {
     const value = await props.parse(decoded.value);
     emit("import", value);
     const plain = prettyJson(props.serialize(value));
-    draft.value = decoded.format === "bc5r1"
+    draft.value = decoded.format === "payload"
       ? await encodeExchangeText(plain, encodeOptions())
       : plain;
     draftDirty.value = false;

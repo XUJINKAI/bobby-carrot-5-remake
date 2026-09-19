@@ -3,7 +3,7 @@ import { parseEditorLevel, serializeEditorLevel, type EditorMap } from "@bobby/e
 import { computed } from "vue";
 import { publicBaseUrl } from "../../services/assets/gameAssets.js";
 import DataExchangePanel from "../../shared/data-exchange/DataExchangePanel.vue";
-import { encodeBc5rV1 } from "@bobby/exchange";
+import { encodeExchangePayload } from "@bobby/exchange";
 import AppIcon from "../../shared/icons/AppIcon.vue";
 import {
   metadataValue,
@@ -54,7 +54,7 @@ function serializeMap(value: unknown): string {
 async function openEmbed(): Promise<void> {
   flushMetadata();
   const url = new URL(embedUrl.value);
-  url.hash = await encodeBc5rV1(serializeMap(exchangeLevel.value));
+  url.hash = await encodeExchangePayload(serializeMap(exchangeLevel.value));
   window.location.assign(url.href);
 }
 
