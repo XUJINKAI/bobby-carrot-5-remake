@@ -6,6 +6,8 @@ import {
   webT,
   type WebDisplayText,
 } from "../../i18n/webI18n.js";
+import { WEB_ERROR_CODES, WebError } from "../../errors/errorCodes.js";
+import { errorDisplayText } from "../../errors/errorPresentation.js";
 import {
   decodeExchangeText,
   detectExchangeFormat,
@@ -191,9 +193,11 @@ async function copyDraft(): Promise<void> {
     feedback.value = localizedText("common.copied");
     emit("copied");
   } catch (cause) {
-    const message = localizedText("common.clipboardUnavailable");
-    feedback.value = message;
-    emit("error", new Error(resolveWebText(message), { cause }));
+    report(
+      new WebError(WEB_ERROR_CODES.dataExchange.clipboardUnavailable, {
+        cause,
+      }),
+    );
   }
 }
 
@@ -224,7 +228,7 @@ function selectDraft(event: FocusEvent): void {
 
 function report(value: unknown): void {
   const error = value instanceof Error ? value : new Error(String(value));
-  feedback.value = error.message;
+  feedback.value = errorDisplayText(error);
   emit("error", error);
 }
 
