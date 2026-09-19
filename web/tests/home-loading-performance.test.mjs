@@ -107,7 +107,7 @@ test("Adventure special scene 与 locale 设置都服从统一 i18n 流程", asy
   ]);
 
   const sceneRenderer =
-    app.match(/private async renderAdventureScene[\s\S]*?\n  }\n\n  private activateI18nRoute/)?.[0] ?? "";
+    app.match(/private async renderAdventureScene[\s\S]*?\n  }\n\n  private async activateI18nRoute/)?.[0] ?? "";
   assert.match(sceneRenderer, /loadGamePage\(\)/);
   assert.doesNotMatch(sceneRenderer, /ensureWebI18nScopes/);
   assert.match(
@@ -123,7 +123,7 @@ test("route rendering serializes commits and lets the router own active i18n sco
   assert.match(app, /private routeRenderQueue: Promise<void> = Promise\.resolve\(\)/);
   assert.match(app, /this\.routeRenderQueue = this\.routeRenderQueue\.then\(render, render\)/);
   assert.match(app, /if \(generation !== this\.routeGeneration\) return/);
-  assert.match(app, /activateI18nRoute\(loadAdventurePages, loadGamePage\)/);
+  assert.match(app, /activateI18nRoute\(generation, loadAdventurePages, loadGamePage\)/);
 });
 
 
