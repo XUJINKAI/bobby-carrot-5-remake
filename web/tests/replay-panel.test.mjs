@@ -117,12 +117,13 @@ test("Replay 动态文案只由 controller 渲染", () => {
     );
   }
   for (const action of ["record", "play", "load-builtin", "save-builtin"]) {
-    const button = replayPanelSource.match(
-      new RegExp(
-        `<button[\\s\\S]*?data-replay-action="${action}"[\\s\\S]*?<\\/button>`,
-      ),
-    )?.[0];
-    assert.ok(button, `missing replay action: ${action}`);
+    const marker = `data-replay-action="${action}"`;
+    const markerIndex = replayPanelSource.indexOf(marker);
+    assert.notEqual(markerIndex, -1, `missing replay action: ${action}`);
+    const start = replayPanelSource.lastIndexOf("<button", markerIndex);
+    const end = replayPanelSource.indexOf("</button>", markerIndex);
+    assert.ok(start >= 0 && end > markerIndex, `invalid replay action markup: ${action}`);
+    const button = replayPanelSource.slice(start, end + "</button>".length);
     assert.doesNotMatch(button, /webT\(/);
   }
   assert.match(replayBindingSource, /status\.textContent = recording/);
