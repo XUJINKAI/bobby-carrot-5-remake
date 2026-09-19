@@ -157,7 +157,7 @@ export class BobbyApp {
     if (path === "/") {
       const { renderHome } = await loadHomePage();
       if (!this.canCommitRoute(generation)) return;
-      this.activateI18nRoute(loadHomePage);
+      await this.activateI18nRoute(loadHomePage);
       const context = this.pageContext();
       this.controller = await renderHome(context);
       this.scheduleHomePrefetch();
@@ -166,7 +166,7 @@ export class BobbyApp {
     if (path === "/embed") {
       const { renderEmbedPage } = await loadEmbedPage();
       if (!this.canCommitRoute(generation)) return;
-      this.activateI18nRoute(loadEmbedPage);
+      await this.activateI18nRoute(loadEmbedPage);
       const context = this.pageContext();
       this.controller = renderEmbedPage(context);
       return;
@@ -174,7 +174,7 @@ export class BobbyApp {
     if (path === "/import/v1") {
       await loadImportPage();
       if (!this.canCommitRoute(generation)) return;
-      this.activateI18nRoute(loadImportPage);
+      await this.activateI18nRoute(loadImportPage);
       await this.renderImport(generation);
       return;
     }
@@ -192,14 +192,14 @@ export class BobbyApp {
         this.catalog.loadCollection(collection),
       ]);
       if (!this.canCommitRoute(generation)) return;
-      this.activateI18nRoute(loadExplorePage);
+      await this.activateI18nRoute(loadExplorePage);
       this.controller = await renderLevels(this.pageContext(), collection);
       return;
     }
     if (path === "/settings") {
       const { renderSettingsPage } = await loadSettingsPage();
       if (!this.canCommitRoute(generation)) return;
-      this.activateI18nRoute(loadSettingsPage);
+      await this.activateI18nRoute(loadSettingsPage);
       const context = this.pageContext();
       this.controller = renderSettingsPage(context);
       return;
@@ -207,7 +207,7 @@ export class BobbyApp {
     if (path === "/edit") {
       const { renderEditorPage } = await loadEditorPage();
       if (!this.canCommitRoute(generation)) return;
-      this.activateI18nRoute(loadEditorPage);
+      await this.activateI18nRoute(loadEditorPage);
       this.controller = await renderEditorPage(this.pageContext());
       return;
     }
@@ -220,7 +220,7 @@ export class BobbyApp {
       loadAdventurePages(),
     ]);
     if (!this.canCommitRoute(generation)) return;
-    this.activateI18nRoute(loadAdventurePages);
+    await this.activateI18nRoute(loadAdventurePages);
     const context = this.pageContext();
     if (path === "/adventure") {
       this.controller = adventurePages.renderAdventureHome(context);
@@ -298,7 +298,7 @@ export class BobbyApp {
           loadGamePage(),
         ]);
         if (!this.canCommitRoute(generation)) return;
-        this.activateI18nRoute(loadImportPage, loadGamePage);
+        await this.activateI18nRoute(loadImportPage, loadGamePage);
         sessionStorage.setItem(
           "bc5r:pending-editor-level",
           serializeEditorLevel(imported.value),
@@ -332,7 +332,7 @@ export class BobbyApp {
     } catch (error) {
       const { renderImportMessage } = await loadImportPage();
       if (!this.canCommitRoute(generation)) return;
-      this.activateI18nRoute(loadImportPage);
+      await this.activateI18nRoute(loadImportPage);
       this.controller = renderImportMessage(this.pageContext(), {
         status: "error",
         message: error instanceof Error ? error.message : String(error),
@@ -363,7 +363,7 @@ export class BobbyApp {
         loadGamePage(),
       ]);
       if (!this.canCommitRoute(generation)) return;
-      this.activateI18nRoute(loadImportPage, loadGamePage);
+      await this.activateI18nRoute(loadImportPage, loadGamePage);
       const level = editor.parseEditorLevel(pending);
       sessionStorage.setItem("bc5r:pending-editor-level", pending);
       this.controller = await gamePage.renderGamePage({
@@ -384,7 +384,7 @@ export class BobbyApp {
       ]);
       const resolved = await maps.resolveMapDocument(ref);
       if (!this.canCommitRoute(generation)) return;
-      this.activateI18nRoute(loadGamePage);
+      await this.activateI18nRoute(loadGamePage);
       const currentIndex =
         collection?.maps.findIndex((item) => item.id === ref.id) ?? -1;
       const explorePreviousMapId =
@@ -441,7 +441,7 @@ export class BobbyApp {
       (map) => map.id === ref.id && map.verified === true,
     );
     if (!this.canCommitRoute(generation)) return;
-    this.activateI18nRoute(loadAdventurePages, loadGamePage);
+    await this.activateI18nRoute(loadAdventurePages, loadGamePage);
     this.controller = await gamePage.renderGamePage({
       ...this.pageContext(),
       level: resolved.level,
@@ -487,7 +487,7 @@ export class BobbyApp {
       (map) => map.id === ref.id && map.verified === true,
     );
     if (!this.canCommitRoute(generation)) return;
-    this.activateI18nRoute(loadAdventurePages, loadGamePage);
+    await this.activateI18nRoute(loadAdventurePages, loadGamePage);
     this.controller = await gamePage.renderGamePage({
       ...context,
       level: resolved.level,
@@ -511,10 +511,10 @@ export class BobbyApp {
     return generation === this.routeGeneration;
   }
 
-  private activateI18nRoute(
+  private async activateI18nRoute(
     ...loaders: LocalizedPageLoader<unknown>[]
-  ): void {
-    setWebI18nRouteScopes(localizedPageScopes(...loaders));
+  ): Promise<void> {
+    await setWebI18nRouteScopes(localizedPageScopes(...loaders));
   }
 
   private scheduleHomePrefetch(): void {
