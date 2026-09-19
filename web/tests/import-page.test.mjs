@@ -43,6 +43,21 @@ test("统一导入 pipeline 接受带 metadata 与纯 LevelMap", () => {
   assert.deepEqual(document.level, level);
 });
 
+test("导入 pipeline 不规范化原始 MapDocument", () => {
+  const source = {
+    ...mapDocumentFixture,
+    meta: { game: "another-game", name: "" },
+    entities: mapDocumentFixture.entities.map((entity, index) => ({
+      ...entity,
+      ...(index === 0 ? { stackOrder: 0 } : {}),
+    })),
+  };
+  const imported = classifyImportedJson(source);
+  assert.equal(imported?.type, "map");
+  if (imported?.type !== "map") return;
+  assert.deepEqual(imported.value, source);
+});
+
 test("Explore Save 只写入 discovery index 白名单中的 collection", () => {
   const values = new Map();
   const storage = {

@@ -292,11 +292,11 @@ interface MapDocument extends LevelMap {
 > `LevelMap.music` 的字段归属已经确定，运行时由哪一层解析选曲仍待决策，参见
 > [背景音乐选曲职责 ADR](../decisions/background-music-selection-ownership.md)。本节字段合同暂予保留。
 
-`@bobby/model` 的 `parseMapDocument()` 是持久化文档入口，`parseLevelMap()` 校验后只返回 gameplay 字段。Editor JSON、Exchange/Embed、Explore 加载和 `npm run verify` 共用这两个入口。地图结构错误、越界坐标和非法规则会被拒绝；Entity type 或实例字段合同问题由可定位 warning、primitive 规范化与惰性占位行为承接。
+`@bobby/model` 的 `parseMapDocument()` 是持久化文档入口，`parseLevelMap()` 校验后只返回 gameplay 字段，`serializeMapDocument()` 输出统一字段顺序、补充 `meta.game` 并省略 `stackOrder: 0` 等默认表示。地图结构错误、越界坐标和非法规则会被拒绝；Entity type 或实例字段合同问题由可定位 warning、primitive 规范化与惰性占位行为承接。
 
 ## Editor JSON
 
-Editor 导入、导出与分享直接保存同一套 `schemaVersion: 1` Entity Map，并可编辑 `meta.name / author / note`。Editor 不维护 Terrain/Object persistence model，也不解析历史 schema。
+地图进入 Editor 时统一经过一次 `serializeMapDocument()` 往返规范化，后续编辑、导出与分享均以该表示为基础。首页导入、`/import/v1` 与 Embed 的识别流程不执行这次 Editor 规范化。Editor 保存同一套 `schemaVersion: 1` Entity Map，并可编辑 `meta.name / author / note`；不维护 Terrain/Object persistence model，也不解析历史 schema。
 
 Exchange payload 编码不是地图 schemaVersion。
 

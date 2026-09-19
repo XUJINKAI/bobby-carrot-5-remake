@@ -153,7 +153,7 @@ test("Editor 背景音乐使用省略字段表达默认随机", () => {
   assert.equal(explicitRandom.music, "random");
 });
 
-test("Editor 打开合法 MapDocument 时完整保留输入", () => {
+test("Editor 打开合法 MapDocument 时只规范化持久化表示", () => {
   const source = {
     schemaVersion: 1,
     meta: {
@@ -167,8 +167,14 @@ test("Editor 打开合法 MapDocument 时完整保留输入", () => {
     height: 1,
     entities: [{ type: MapEntityTypeId.BOBBY, x: 0, y: 0 }],
   };
-  assert.deepEqual(parseEditorLevel(JSON.stringify(source)), source);
-  assert.deepEqual(JSON.parse(serializeEditorLevel(source)), source);
+  const sourceBeforeOpen = structuredClone(source);
+  const normalized = {
+    ...source,
+    meta: { ...source.meta, game: BC5R_GAME_ID },
+  };
+  assert.deepEqual(parseEditorLevel(JSON.stringify(source)), normalized);
+  assert.deepEqual(JSON.parse(serializeEditorLevel(source)), normalized);
+  assert.deepEqual(source, sourceBeforeOpen);
   assert.deepEqual(toLevelMap(source), {
     schemaVersion: 1,
     music: "random",
@@ -183,22 +189,40 @@ test("Editor 打开合法 MapDocument 时完整保留输入", () => {
     height: 129,
     entities: [{ type: MapEntityTypeId.BOBBY, x: 255, y: 128 }],
   };
-  assert.deepEqual(parseEditorLevel(JSON.stringify(large)), large);
-  assert.deepEqual(JSON.parse(serializeEditorLevel(large)), large);
+  const normalizedLarge = {
+    ...large,
+    meta: { ...large.meta, game: BC5R_GAME_ID },
+  };
+  assert.deepEqual(parseEditorLevel(JSON.stringify(large)), normalizedLarge);
+  assert.deepEqual(JSON.parse(serializeEditorLevel(large)), normalizedLarge);
 
   const opaque = {
     ...source,
     meta: { name: "Opaque Surface" },
     entities: [{ type: "ts-1-1", x: 0, y: 0, stackOrder: 0 }],
   };
-  assert.deepEqual(JSON.parse(serializeEditorLevel(opaque)), opaque);
+  assert.deepEqual(JSON.parse(serializeEditorLevel(opaque)), {
+    ...opaque,
+    meta: { game: BC5R_GAME_ID, name: "Opaque Surface" },
+    entities: [{ type: "ts-1-1", x: 0, y: 0 }],
+  });
 
   assert.equal(createBlankLevel(1, 1).width, 1);
   assert.equal(createBlankLevel(1, 1).height, 1);
 
   const emptyMeta = { ...source, meta: {} };
-  assert.deepEqual(parseEditorLevel(JSON.stringify(emptyMeta)), emptyMeta);
-  assert.deepEqual(JSON.parse(serializeEditorLevel(emptyMeta)), emptyMeta);
+  const normalizedEmptyMeta = {
+    ...emptyMeta,
+    meta: { game: BC5R_GAME_ID },
+  };
+  assert.deepEqual(
+    parseEditorLevel(JSON.stringify(emptyMeta)),
+    normalizedEmptyMeta,
+  );
+  assert.deepEqual(
+    JSON.parse(serializeEditorLevel(emptyMeta)),
+    normalizedEmptyMeta,
+  );
 });
 
 test("multi-cell persistence stays anchor-only while Preview expands Presence roles", () => {
@@ -323,7 +347,7 @@ test("Entity fields and instance stack order round-trip", () => {
   );
   const serialized = serializeEditorLevel(level);
   const stored = JSON.parse(serialized);
-  assert.equal(stored.entities[0].stackOrder, 0);
+  assert.equal("stackOrder" in stored.entities[0], false);
   const parsed = parseEditorLevel(serialized);
   const speedSwitch = parsed.entities.find(
     (entity) => entity.type === MapEntityTypeId.SPEED_SWITCH,

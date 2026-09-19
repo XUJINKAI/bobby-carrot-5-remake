@@ -5,6 +5,7 @@ import {
   levelEntityContractIssues,
   parseLevelMap,
   parseMapDocument,
+  serializeMapDocument,
 } from "../../model/dist/index.js";
 
 function documentWith(entities) {
@@ -223,6 +224,31 @@ test("MapDocument 输出补充固定 game 标识，但不依赖输入标识", ()
     meta: { game: "another-game", name: "外部地图" },
   };
   assert.equal(parseMapDocument(unrelatedMarker).meta.game, BC5R_GAME_ID);
+});
+
+test("MapDocument 序列化统一字段顺序并省略默认 stackOrder", () => {
+  const source = {
+    entities: [
+      { type: "grass", x: 0, y: 0, stackOrder: 0, variant: "ts-10-1" },
+      { type: "bobby", x: 0, y: 0, stackOrder: 1 },
+    ],
+    height: 1,
+    width: 1,
+    meta: {},
+    schemaVersion: 1,
+  };
+  const serialized = serializeMapDocument(source);
+  assert.deepEqual(JSON.parse(serialized), {
+    schemaVersion: 1,
+    meta: { game: BC5R_GAME_ID },
+    width: 1,
+    height: 1,
+    entities: [
+      { type: "grass", x: 0, y: 0, variant: "ts-10-1" },
+      { type: "bobby", x: 0, y: 0, stackOrder: 1 },
+    ],
+  });
+  assert.equal(source.entities[0].stackOrder, 0);
 });
 
 test("Map parser 要求已归类 Surface 使用 semantic type 与 variant", () => {

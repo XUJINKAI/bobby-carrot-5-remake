@@ -32,6 +32,15 @@ export function parseMapDocument(value: unknown): MapDocument {
   };
 }
 
+/** 将合法 MapDocument 输出为统一的 canonical JSON 表示。 */
+export function serializeMapDocument(value: unknown): string {
+  const document = parseMapDocument(value);
+  return `${JSON.stringify({
+    ...document,
+    entities: document.entities.map(canonicalMapEntity),
+  }, null, 2)}\n`;
+}
+
 /** 校验可游玩的地图合同；输入可以是 MapDocument，返回值只保留 LevelMap 字段。 */
 export function parseLevelMap(value: unknown): LevelMap {
   return copyLevelMap(parseMapObject(value, false));
@@ -137,6 +146,12 @@ function parseLevelEntity(
   if (invalidJsonFields.length > 0)
     normalized[INVALID_JSON_FIELDS_KEY] = invalidJsonFields.join(", ");
   return normalized;
+}
+
+function canonicalMapEntity(entity: LevelEntity): LevelEntity {
+  const canonical = structuredClone(entity);
+  if (canonical.stackOrder === 0) delete canonical.stackOrder;
+  return canonical;
 }
 
 /** 已知 Entity 的实例字段问题由 Engine 降级为占位符，不阻断整张地图。 */
