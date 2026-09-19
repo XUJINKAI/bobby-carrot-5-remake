@@ -1,5 +1,6 @@
 import { extractImportPayload, buildImportUrl } from "./dataExchangeUrl.js";
-import { DataExchangeError, type DataExchangeFormat } from "./dataExchangeTypes.js";
+import { WEB_ERROR_CODES, WebError } from "../../errors/errorCodes.js";
+import type { DataExchangeFormat } from "./dataExchangeTypes.js";
 
 const PREFIX = "BC5R1:";
 
@@ -17,14 +18,14 @@ export function encodeBase64Url(bytes: Uint8Array): string {
 
 export function decodeBase64Url(text: string): Uint8Array {
   if (!/^[A-Za-z0-9_-]+$/.test(text)) {
-    throw new DataExchangeError("invalid-base64url", "BC5R1 数据编码无效");
+    throw new WebError(WEB_ERROR_CODES.dataExchange.invalidBase64Url);
   }
   const standard = text.replace(/-/g, "+").replace(/_/g, "/");
   const padded = standard.padEnd(Math.ceil(standard.length / 4) * 4, "=");
   try {
     return Uint8Array.from(atob(padded), (character) => character.charCodeAt(0));
   } catch (cause) {
-    throw new DataExchangeError("invalid-base64url", "BC5R1 数据编码无效", { cause });
+    throw new WebError(WEB_ERROR_CODES.dataExchange.invalidBase64Url, { cause });
   }
 }
 
@@ -40,7 +41,7 @@ export async function gunzipText(value: Uint8Array): Promise<string> {
       .pipeThrough(new DecompressionStream("gzip"));
     return await new Response(stream).text();
   } catch (cause) {
-    throw new DataExchangeError("damaged-gzip", "BC5R1 压缩数据已损坏", { cause });
+    throw new WebError(WEB_ERROR_CODES.dataExchange.damagedGzip, { cause });
   }
 }
 
@@ -74,7 +75,7 @@ export async function encodeExchangeText(
 export async function decodeExchangeText(text: string): Promise<DecodedExchangeData> {
   const source = text.trim();
   if (/^BC5R\d+:/.test(source) && !source.startsWith(PREFIX)) {
-    throw new DataExchangeError("unsupported-version", "不支持此 BC5R 数据版本");
+    throw new WebError(WEB_ERROR_CODES.dataExchange.unsupportedVersion);
   }
   const payload = source.startsWith(PREFIX)
     ? source.slice(PREFIX.length)
@@ -83,7 +84,7 @@ export async function decodeExchangeText(text: string): Promise<DecodedExchangeD
     return decodeExchangePayload(payload);
   }
   if (!source.startsWith("{") && !source.startsWith("[")) {
-    throw new DataExchangeError("unknown-representation", "无法识别的数据格式");
+    throw new WebError(WEB_ERROR_CODES.dataExchange.unknownRepresentation);
   }
   return { value: parseJson(source), format: "json", jsonText: source };
 }
@@ -103,6 +104,6 @@ function parseJson(text: string): unknown {
   try {
     return JSON.parse(text);
   } catch (cause) {
-    throw new DataExchangeError("invalid-json", "JSON 格式错误", { cause });
+    throw new WebError(WEB_ERROR_CODES.dataExchange.invalidJson, { cause });
   }
 }
