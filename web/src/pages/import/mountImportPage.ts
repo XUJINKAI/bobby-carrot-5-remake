@@ -8,7 +8,7 @@ import {
 } from "../../services/import/importPipeline.js";
 import { configureShell } from "../../shell/shellBridge.js";
 import ImportPage from "./ImportPage.vue";
-import { webT } from "../../i18n/webI18n.js";
+import { webT, type WebDisplayText } from "../../i18n/webI18n.js";
 
 export function importedLevelMap(level: EditorMap) {
   return toLevelMap(level);
@@ -19,7 +19,7 @@ export function renderImportMessage(
   options:
     | { status: "save"; data: ImportedSaveData }
     | { status: "unknown"; rawText?: string }
-    | { status: "error"; message: string; rawText?: string },
+    | { status: "error"; message: WebDisplayText; rawText?: string },
 ): PageController {
   const syncShell = (): void => configureShell({
     topBar: {
