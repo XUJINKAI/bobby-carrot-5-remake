@@ -5,6 +5,7 @@ import {
   type GameplayRuntime,
   type ImageManager,
 } from "@bobby/engine";
+import { encodeExchangeText } from "@bobby/exchange";
 import type { LevelMap } from "@bobby/model";
 import {
   EMBED_RUNTIME_CATALOGS,
@@ -12,6 +13,7 @@ import {
   type Locale,
 } from "@bobby/i18n";
 import { loadEmbedMap } from "./mapInput.js";
+import { createEmbedStatus } from "./status.js";
 import type { BC5RHandle, BC5RMountOptions } from "./types.js";
 
 const publicBaseUrl =
@@ -87,8 +89,9 @@ export function mount(options: BC5RMountOptions): BC5RHandle {
   canvasWrap.tabIndex = 0;
   const canvas = document.createElement("canvas");
   canvas.className = "bc5r-canvas";
+  const status = createEmbedStatus(locale);
   const terminal = createTerminalOverlay(locale);
-  canvasWrap.append(canvas, terminal.root);
+  canvasWrap.append(canvas, status.root, terminal.root);
   const info = createInfoFooter(options.info, locale);
   root.append(styleElement(), frame, canvasWrap, info.root);
   shadow.append(root);
@@ -124,77 +127,87 @@ export function mount(options: BC5RMountOptions): BC5RHandle {
   cleanup.push(() => root.removeEventListener("focusout", deactivate));
 
   const ready = (async (): Promise<void> => {
-    const level = await loadEmbedMap({ map: options.map, mapUrl: options.mapUrl });
-    if (destroyed) return;
-    const camera = resolveCameraOptions(options);
-    const playUrl = await officialPlayUrl(level);
-    frameControls.open.href = playUrl;
-    frameControls.open.removeAttribute("aria-disabled");
-    frameControls.open.tabIndex = 0;
-    terminal.official.href = playUrl;
-    const imageManager = createEmbedImageManager();
-    images = imageManager;
+    status.loading();
     try {
-      runtime = await createGameplayRuntime({
-        level,
-        canvas,
-        images: imageManager,
-        audioOptions: {
-          baseUrl: new URL("assets/audio/original/", publicBaseUrl),
-          musicEnabled: audio.enabled,
-          musicStyle: options.musicStyle ?? "modern",
-        },
-        runtime: {
-          camera,
-          hud: true,
-          input: {
-            keyboard: true,
-            pointer,
-            movement: true,
-            pan: true,
-            zoom: true,
-            pinchZoom,
-            wheelZoom,
-            debug: false,
-            screenJoystick: { enabled: joystick },
-          },
-        },
+      const level = await loadEmbedMap({
+        map: options.map,
+        mapUrl: options.mapUrl,
       });
+      if (destroyed) return;
+      const camera = resolveCameraOptions(options);
+      const playUrl = await officialPlayUrl(level);
+      frameControls.open.href = playUrl;
+      frameControls.open.removeAttribute("aria-disabled");
+      frameControls.open.tabIndex = 0;
+      terminal.official.href = playUrl;
+      const imageManager = createEmbedImageManager();
+      images = imageManager;
+      try {
+        runtime = await createGameplayRuntime({
+          level,
+          canvas,
+          images: imageManager,
+          audioOptions: {
+            baseUrl: new URL("assets/audio/original/", publicBaseUrl),
+            musicEnabled: audio.enabled,
+            musicStyle: options.musicStyle ?? "modern",
+          },
+          runtime: {
+            camera,
+            hud: true,
+            input: {
+              keyboard: true,
+              pointer,
+              movement: true,
+              pan: true,
+              zoom: true,
+              pinchZoom,
+              wheelZoom,
+              debug: false,
+              screenJoystick: { enabled: joystick },
+            },
+          },
+        });
+      } catch (error) {
+        if (images === imageManager) images = null;
+        imageManager.destroy();
+        throw error;
+      }
+      if (destroyed) {
+        runtime.destroy();
+        runtime = null;
+        if (images === imageManager) images = null;
+        imageManager.destroy();
+        return;
+      }
+      if (keyboard === "focus" && activeFocusEmbed?.token !== token)
+        runtime.input.setKeyboardEnabled(false);
+      const audioLevels = applyAudio(runtime, audio);
+      installRestartButton(runtime, frameControls.restart, canvasWrap, cleanup);
+      installSoundToggle(
+        runtime,
+        frameControls.sound,
+        audio.enabled,
+        audioLevels,
+        locale,
+        cleanup,
+      );
+      installJoystickToggle(
+        runtime,
+        info.joystick,
+        joystick,
+        locale,
+        cleanup,
+      );
+      installTerminalOverlay(runtime, terminal, canvasWrap, locale, cleanup);
+      const resumeAudio = (): void => runtime?.audio.resume();
+      root.addEventListener("pointerdown", resumeAudio, { passive: true });
+      cleanup.push(() => root.removeEventListener("pointerdown", resumeAudio));
+      status.hide();
     } catch (error) {
-      if (images === imageManager) images = null;
-      imageManager.destroy();
+      if (!destroyed) status.error(error);
       throw error;
     }
-    if (destroyed) {
-      runtime.destroy();
-      runtime = null;
-      if (images === imageManager) images = null;
-      imageManager.destroy();
-      return;
-    }
-    if (keyboard === "focus" && activeFocusEmbed?.token !== token)
-      runtime.input.setKeyboardEnabled(false);
-    const audioLevels = applyAudio(runtime, audio);
-    installRestartButton(runtime, frameControls.restart, canvasWrap, cleanup);
-    installSoundToggle(
-      runtime,
-      frameControls.sound,
-      audio.enabled,
-      audioLevels,
-      locale,
-      cleanup,
-    );
-    installJoystickToggle(
-      runtime,
-      info.joystick,
-      joystick,
-      locale,
-      cleanup,
-    );
-    installTerminalOverlay(runtime, terminal, canvasWrap, locale, cleanup);
-    const resumeAudio = (): void => runtime?.audio.resume();
-    root.addEventListener("pointerdown", resumeAudio, { passive: true });
-    cleanup.push(() => root.removeEventListener("pointerdown", resumeAudio));
   })();
 
   return {
@@ -541,19 +554,9 @@ function embedRuntimeText(locale: Locale, key: EmbedRuntimeKey): string {
 }
 
 async function officialPlayUrl(level: LevelMap): Promise<string> {
-  const stream = new Blob([JSON.stringify(level)])
-    .stream()
-    .pipeThrough(new CompressionStream("gzip"));
-  const bytes = new Uint8Array(await new Response(stream).arrayBuffer());
-  let binary = "";
-  for (const byte of bytes) binary += String.fromCharCode(byte);
-  const payload = btoa(binary)
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=+$/, "");
-  const url = new URL("import/v1", publicBaseUrl);
-  url.hash = payload;
-  return url.href;
+  return encodeExchangeText(JSON.stringify(level), {
+    publicBaseUrl: publicBaseUrl.href,
+  });
 }
 
 function embedArtUrl(path: string): string {
@@ -581,6 +584,11 @@ function styleElement(): HTMLStyleElement {
     .bc5r-sound { font-size: 16px; }
     .bc5r-canvas-wrap { position: relative; flex: 1 1 auto; min-width: 0; min-height: 0; overflow: hidden; outline: none; }
     .bc5r-canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+    .bc5r-status { position: absolute; inset: 0; z-index: 8; display: grid; place-content: center; gap: 7px; padding: 24px; text-align: center; background: #071522; color: #c9e6f7; }
+    .bc5r-status[hidden] { display: none; }
+    .bc5r-status strong { color: #eef5ff; font-size: 17px; }
+    .bc5r-status span { max-width: 520px; color: #9fc4db; font-size: 13px; line-height: 1.5; overflow-wrap: anywhere; }
+    .bc5r-status[data-state="error"] strong { color: #ffb4ab; }
     .bc5r-info { flex: 0 0 auto; min-width: 0; min-height: 32px; padding: 3px 6px 3px 10px; display: flex; align-items: center; justify-content: space-between; gap: 8px; color: #c9e6f7; background: #0d2b46; border-top: 1px solid #254868; font-size: 12px; }
     .bc5r-info-copy { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .bc5r-terminal { position: absolute; inset: 0; z-index: 10; display: grid; place-items: center; background: rgba(0,0,0,.36); }

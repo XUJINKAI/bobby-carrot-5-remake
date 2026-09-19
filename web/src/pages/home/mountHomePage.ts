@@ -18,7 +18,8 @@ import {
 import HomePage from "./HomePage.vue";
 import { createHomeDemoLevel } from "./homeDemoLevel.js";
 import type { HomeViewState } from "./types.js";
-import { webT } from "../../i18n/webI18n.js";
+import { resolveWebText, webT } from "../../i18n/webI18n.js";
+import { errorDisplayText } from "../../errors/errorPresentation.js";
 
 export async function renderHome(
   context: PageContext,
@@ -83,7 +84,7 @@ export async function renderHome(
       );
     },
     onImportData: (data: ImportedData) =>
-      importHomeData(data, view, navigate),
+      importHomeData(data, view, context),
   });
   homeApp.mount(app);
 
@@ -182,20 +183,27 @@ export async function renderHome(
 async function importHomeData(
   data: ImportedData,
   view: HomeViewState,
-  navigate: PageContext["navigate"],
+  context: PageContext,
 ): Promise<void> {
+  const { navigate } = context;
   if (data.type !== "map") {
     const { applyImportedSave } = await import(
       "../../services/import/importPipeline.js"
     );
-    view.importFeedback = "";
-    navigate(applyImportedSave(data));
+    try {
+      const collections = data.type === "explore-save"
+        ? (await context.loadCollectionsIndex()).collections
+        : [];
+      navigate(applyImportedSave(data, collections));
+      view.importFeedback = "";
+    } catch (error) {
+      view.importFeedback = resolveWebText(errorDisplayText(error));
+    }
     return;
   }
-  const { serializeEditorLevel } = await import("@bobby/editor");
   sessionStorage.setItem(
     "bc5r:pending-play-level",
-    serializeEditorLevel(data.value),
+    JSON.stringify(data.value),
   );
   view.importFeedback = "";
   navigate("/explore/play/imported/shared-map");

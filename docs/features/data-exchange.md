@@ -1,50 +1,54 @@
 # 数据交换
 
-Data Exchange 是 Bobby Carrot 5 Remake 面向地图、Adventure Save、Explore Save 及后续 JSON 数据的统一交换能力。文件、TextBox、剪贴板和分享 URL 先还原同一份 JSON；统一导入 pipeline 再判断业务类型并执行对应导入。
+Data Exchange 是 Bobby Carrot 5 Remake 面向地图、Adventure Save、Explore Save 及后续 JSON object 数据的统一交换能力。文件、TextBox、剪贴板和分享 URL 先还原同一份 JSON object；统一导入 pipeline 再根据地图合同或存档 `scope` 判断业务类型并执行对应导入。
 
 ## 用户约定
 
 用户可以直接编辑或粘贴以下任一表示，并使用同一个导入动作：
 
-- Plain JSON；
-- `BC5R1:<payload>` 压缩文本；
+- Plain JSON object；
+- 裸 `<payload>`；
 - 以 `/import/v1#<payload>` 结尾的完整分享 URL；
 - 内容为上述任一表示的文本文件；文件扩展名不参与格式判断。
 
+两种携带 payload 的外层表示使用同一个 decoder。Payload 可以是 Base64 / Base64URL 编码的 UTF-8 JSON object，也可以是 Base64 / Base64URL 编码的 gzip(JSON object)；decoder 根据解码后字节的 gzip header 自动判断，不靠外层形式猜测。
+
 `.bc5r` 是 UTF-8 文本文件，MIME 为 `text/plain;charset=utf-8`。压缩状态下载的文件内容与 TextBox 当前内容完全一致；正式站点配置 `publicBaseUrl` 后，该内容通常是可点击的完整分享 URL。Plain 状态下载 `.json`。
 
-压缩开关只转换 TextBox 当前 draft：Plain 状态显示格式化 JSON，Compressed 状态显示 Share URL 或 `BC5R1:` raw representation。TextBox 对长串文本使用软折行与 `break-all` 字符断行，显示折行不会改变 draft 内容；通过点击获得焦点时自动全选，随后仍可直接输入、粘贴、选择局部文本或调整光标。导入会自动识别表示形式，不依赖开关状态。复制与下载均使用 TextBox 的准确文本。
+压缩开关只转换 TextBox 当前 draft：Plain 状态显示格式化 JSON，Compressed 状态显示 Share URL 或裸 payload。TextBox 对长串文本使用软折行与 `break-all` 字符断行，显示折行不会改变 draft 内容；通过点击获得焦点时自动全选，随后仍可直接输入、粘贴、选择局部文本或调整光标。导入会自动识别表示形式，不依赖开关状态。复制与下载均使用 TextBox 的准确文本。
 
 Editor 的地图文件弹窗默认使用 Compressed 状态，打开后可以直接复制分享 URL。其它消费页面可按场景选择初始表示。
 
-Settings 的存档管理读取浏览器中实际存在的 `bc5r:adventure` 和 `bc5r:explore/<collection>` records，并为每条存档生成一个 Tab。所有 Tab 共用一个 `DataExchangePanel`；选择 Adventure 时交换完整 Adventure Save，选择 Explore 时只交换当前 collection 的 `ExploreCollectionStorage`，导入也只覆盖当前 Tab 对应的 record。
+Settings 的存档管理固定先显示浏览器中实际存在的 Adventure Save；Explore Save 只读取 `assets/maps/index.json` discovery index 白名单中的 `bc5r:explore/<collection>` records，并严格沿用 Explore 页面的 collection 顺序。未知或不可见 collection 的残留 localStorage key 不进入设置页。所有 Tab 共用一个 `DataExchangePanel`；选择 Adventure 时交换完整 Adventure Save，选择 Explore 时只交换当前 collection 的 `ExploreCollectionStorage`，导入也只覆盖当前 Tab 对应的 record。
 
-Home 导入弹窗接受 Plain JSON、`BC5R1`、完整分享 URL 和任意扩展名的文本文件。`/import/v1` 只接受 URL fragment 中的 gzip + Base64URL payload。两者在 transport 解码后共用相同的 JSON 识别顺序：
+Adventure Save 固定使用 `scope: "adventure"`。每份 Explore Save 对应一个 collection，并使用 `scope: "explore/<collection>"`，例如 `explore/original` 与 `explore/engine-lab`。Settings 导入时要求 `scope` 与当前 Tab 完全一致；Home 与 `/import/v1` 根据 `scope` 定位并覆盖对应的独立存档 record。
+
+Home 导入弹窗接受 Plain JSON object、裸 payload、完整分享 URL 和任意扩展名的文本文件。`/import/v1` 从 URL fragment 取得 payload；所有入口在 transport 解码后共用相同的 JSON 识别顺序：
 
 ```text
 MapDocument / LevelMap → 创建 imported Explore gameplay session
 Adventure Save         → 确认后覆盖 Adventure 存档
-Explore Save           → 确认后覆盖 Explore 存档
-其它 JSON              → 报告无法识别并保持原始文本
+Explore Save           → 根据 scope 覆盖对应 collection 存档
+其它 JSON object       → 报告无法识别并保持原始文本
 ```
 
-地图可以携带 `meta`，也可以是纯 `LevelMap`；纯地图会生成 Editor 文档名称。Home 在弹窗内确认存档导入，`/import/v1` 在具有统一 TopBar identity 的导入页面确认。
+地图可以携带 `meta`，也可以是纯 `LevelMap`；纯地图会生成 Editor 文档名称。MapDocument 输出默认写入 `meta.game` 产品标识，但导入识别仍按地图结构进行，不要求或依赖该字段。Home 在弹窗内确认存档导入，`/import/v1` 在具有统一 TopBar identity 的导入页面确认。
 
-## Transport V1
+## Payload 编码
 
-`BC5R1` 表示 Data Exchange Transport Version 1，不表示地图或 Profile schema 版本。编码过程为：
+Payload 编码不表示地图或 Profile schema 版本。编码过程为：
 
 ```text
 JSON text → UTF-8 → gzip → Base64URL payload
 ```
 
-Base64URL 只使用 `A-Z a-z 0-9 - _`，省略尾部 padding。raw representation 为 `BC5R1:<payload>`。分享地址为：
+Encoder 的规范输出使用 gzip + Base64URL；Base64URL 只使用 `A-Z a-z 0-9 - _`，省略尾部 padding。未提供 `publicBaseUrl` 时直接输出裸 payload；提供后输出分享地址：
 
 ```text
 <publicBaseUrl>/import/v1#<payload>
 ```
 
-Payload 位于 fragment，浏览器只在客户端读取。Decoder 只还原 `unknown` JSON；Map、Adventure Save、Explore Save 等 schema 识别由统一 import pipeline 完成。
+Payload 位于 fragment，浏览器只在客户端读取。Decoder 同时接受未压缩 JSON payload 和 gzip payload，并只接受、还原 JSON object；公共 map parser 识别 `LevelMap` / `MapDocument`，Web import pipeline 根据存档 `scope` 识别 Adventure Save 与 Explore Save。
 
 ## 站点根地址
 
@@ -61,8 +65,12 @@ Vite `base` 负责构建资源路径，`publicBaseUrl` 负责分享地址。构�
 
 ## 公共层职责
 
-`web/src/shared/data-exchange/` 提供 gzip、Base64URL、`BC5R1`、格式识别、分享 URL、文本文件 I/O，以及可配置左右 toolbar、label 和 placeholder 的 `DataExchangePanel`。
+`@bobby/exchange` 提供 gzip、Base64 / Base64URL、裸 payload、格式识别、分享 URL payload 提取与公共 map parser。它只依赖 `@bobby/model`，不依赖 Web、Editor、存档 storage 或 UI。Home、`/import/v1` 与 Embed 的 `map` / `mapUrl` 都先经过这一层，因此 Plain LevelMap / MapDocument JSON object、裸 payload 和完整 `/import/v1#` URL 使用同一组 decoder。
 
-公共层不知道 Map、Editor 或 Save。`web/src/services/import/importPipeline.ts` 在其上组织领域识别与存档应用；Home 和 `/import/v1` 共享该 pipeline，只分别提供文本/文件输入和 URL fragment 输入。地图游玩、确认 UI 与页面导航仍由消费页面负责。
+`web/src/shared/data-exchange/` 只提供文本文件 I/O，以及可配置左右 toolbar、label 和 placeholder 的 `DataExchangePanel`。`web/src/services/import/importPipeline.ts` 在公共包之上组织存档识别与应用；Home 和 `/import/v1` 共享该 pipeline，只分别提供文本/文件输入和 URL fragment 输入。地图游玩、确认 UI 与页面导航仍由消费页面负责。
 
-Transport 区分 JSON 格式错误、未知表示、无效 Base64URL、损坏 gzip 与不支持的 transport 版本。领域 parser 提供业务类型错误；解析失败时保留 TextBox draft，且不修改业务数据。
+Embed 的 `map` / `mapUrl` 解码和“在官网打开”分享 URL 编码也都调用 `@bobby/exchange`；Embed runtime 不自行实现 gzip、Base64URL 或分享 URL 拼接。
+
+公共 map parser 遇到带 Bobby Carrot 游戏标识和 `scope` 的存档时，会明确返回“存档不是地图”，不会把它误报成 transport 编码错误。Embed 不再自行维护 prefix、Base64URL、gzip 或 URL payload 规则。
+
+Transport 区分 JSON 格式错误、未知表示、无效 Base64/Base64URL 与损坏 gzip。领域 parser 提供业务类型错误；解析失败时保留 TextBox draft，且不修改业务数据。

@@ -20,15 +20,11 @@ const AUTO_TERRAIN_KEY = "__editorSurfaceAuto";
 const AUTO_SEED_KEY = "__editorSurfaceSeed";
 
 /**
- * Editor 内 Auto Surface 可以保持未锁定 variant；写出地图前统一固定当前 visual。
- * atlas 坐标选择值会规范化为该格对应的语义 Entity。
+ * Editor 内 Auto Surface 可以保持未锁定 variant；写出地图前只固定这些
+ * Editor 自己创建的临时状态。没有 Auto metadata 的输入 Entity 必须原样保留。
  */
 export function materializeSurfaceVariants(level: EditorMap): EditorMap {
-  const resolved = resolveAutoSurfaceVariants(level);
-  return {
-    ...resolved,
-    entities: resolved.entities.map(canonicalizeSurfaceVariant),
-  };
+  return resolveAutoSurfaceVariants(level);
 }
 
 /** 吸取已保存的 canonical type + flat variant 时仍恢复到对应 Exact visual。 */

@@ -262,8 +262,8 @@ try {
   const explorePayload = exchangePayload(JSON.stringify({
     game: BC5R_GAME_ID,
     schemaVersion: 1,
-    mode: "explore",
-    collections: {},
+    scope: "explore/original",
+    completedMaps: [],
   }));
   await smoke(`${origin}/import/v1#${explorePayload}`, [
     'class="import-page"',
@@ -274,9 +274,9 @@ try {
     'class="import-page"',
     'class="import-card"',
   ]);
-  await smoke(`${origin}/import/v1#INVALID`, [
+  await smoke(`${origin}/import/v1#INVALID!`, [
     'class="import-page"',
-    "BC5R1",
+    "Invalid Base64 data payload",
   ]);
   await expectStatus(`${origin}/robots.txt`, 200, "text/plain");
   await expectStatus(`${origin}/sitemap.xml`, 200, "application/xml");
@@ -450,15 +450,9 @@ async function interactiveDataExchangeSmoke(url) {
   const source = {
     game: ${JSON.stringify(BC5R_GAME_ID)},
     schemaVersion: 1,
-    mode: 'explore',
-    collections: {
-      original: {
-        game: ${JSON.stringify(BC5R_GAME_ID)},
-        schemaVersion: 1,
-        completedMaps: ['1-1'],
-        lastMap: '1-1',
-      },
-    },
+    scope: 'explore/original',
+    completedMaps: ['1-1'],
+    lastMap: '1-1',
   };
   let textarea = null;
   for (let i = 0; i < 120 && !textarea; i += 1) {

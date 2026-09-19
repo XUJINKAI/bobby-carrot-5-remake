@@ -1,16 +1,17 @@
 import {
+  BC5R_GAME_ID,
   MapEntityTypeId,
+  parseLevelMap,
+  parseMapDocument,
   type LevelEntity,
-  type LevelEntityFieldValue,
-  type LevelLimit,
   type LevelMap,
   type WinCondition,
 } from "@bobby/model";
 import type { EditorMap } from "./types.js";
 
 export function createBlankLevel(width = 16, height = 16): EditorMap {
-  const safeWidth = clampDimension(width);
-  const safeHeight = clampDimension(height);
+  const safeWidth = editorDimension(width, 16);
+  const safeHeight = editorDimension(height, 16);
   const exit = {
     x: Math.max(0, safeWidth - 3),
     y: Math.max(0, safeHeight - 3),
@@ -36,7 +37,7 @@ export function createBlankLevel(width = 16, height = 16): EditorMap {
   });
   return {
     schemaVersion: 1,
-    meta: { name: "Untitled Bobby Level" },
+    meta: { game: BC5R_GAME_ID, name: "Untitled Bobby Level" },
     width: safeWidth,
     height: safeHeight,
     entities,
@@ -48,68 +49,28 @@ export function fromLevelMap(
   level: LevelMap,
   name = "Bobby Level",
 ): EditorMap {
-  return normalizeEditorLevel({
-    ...structuredClone(level),
-    meta: { name },
-  });
+  const parsed = parseLevelMap(level);
+  return {
+    ...structuredClone(parsed),
+    meta: { game: BC5R_GAME_ID, name },
+  };
 }
 
 export function toLevelMap(level: EditorMap): LevelMap {
-  const normalized = normalizeEditorLevel(level);
-  return {
-    schemaVersion: 1,
-    width: normalized.width,
-    height: normalized.height,
-    ...(normalized.music ? { music: normalized.music } : {}),
-    entities: normalized.entities.map(cloneEntity),
-    ...(normalized.rules ? { rules: structuredClone(normalized.rules) } : {}),
-  };
+  return parseLevelMap(level);
 }
 
 export function cloneEditorLevel(level: EditorMap): EditorMap {
-  return normalizeEditorLevel(structuredClone(level));
+  return structuredClone(level);
 }
 
+/**
+ * Editor 只验证 MapDocument，不在读取、History 或命令提交时改写地图语义。
+ * 尺寸、metadata、music、rules 与 Entity 内容只有显式编辑操作才能改变。
+ */
 export function normalizeEditorLevel(input: EditorMap): EditorMap {
-  const width = clampDimension(Number(input.width));
-  const height = clampDimension(Number(input.height));
-  const entities = (input.entities ?? [])
-    .map(normalizeEntity)
-    .filter(
-      (entity): entity is LevelEntity =>
-        entity !== null &&
-        entity.x >= 0 &&
-        entity.y >= 0 &&
-        entity.x < width &&
-        entity.y < height,
-    );
-  const level: EditorMap = {
-    schemaVersion: 1,
-    meta: {
-      name: String(input.meta?.name || "Untitled Bobby Level").slice(0, 120),
-    },
-    width,
-    height,
-    entities,
-  };
-  if (input.meta?.author)
-    level.meta.author = String(input.meta.author).slice(0, 80);
-  if (typeof input.meta?.note === "string" && input.meta.note)
-    level.meta.note = input.meta.note.slice(0, 500);
-  if (
-    typeof input.music === "string" &&
-    input.music &&
-    input.music !== "random"
-  )
-    level.music = input.music;
-  const limits = normalizeLimits(input.rules?.limits);
-  level.rules = {
-    ...(limits.length > 0 ? { limits } : {}),
-    win: input.rules?.win
-      ? structuredClone(input.rules.win)
-      : defaultWinCondition(),
-  };
-  return level;
+  parseMapDocument(input);
+  return structuredClone(input);
 }
 
 export function resizeEditorLevel(
@@ -117,65 +78,26 @@ export function resizeEditorLevel(
   width: number,
   height: number,
 ): EditorMap {
-  return normalizeEditorLevel({ ...level, width, height });
-}
-
-function normalizeLimits(value: readonly LevelLimit[] | undefined): LevelLimit[] {
-  if (!Array.isArray(value)) return [];
-  const result: LevelLimit[] = [];
-  for (const limit of value) {
-    if (limit?.type === "max-moves") {
-      const moves = Math.trunc(Number(limit.moves));
-      if (Number.isFinite(moves) && moves > 0)
-        result.push({ type: "max-moves", moves });
-    } else if (limit?.type === "max-time-seconds") {
-      const seconds = Math.trunc(Number(limit.seconds));
-      if (Number.isFinite(seconds) && seconds > 0)
-        result.push({ type: "max-time-seconds", seconds });
-    }
-  }
-  return result;
-}
-
-function normalizeEntity(raw: LevelEntity): LevelEntity | null {
-  if (!raw || typeof raw !== "object") return null;
-  const type = typeof raw.type === "string" ? raw.type.trim() : "";
-  const x = Math.trunc(Number(raw.x));
-  const y = Math.trunc(Number(raw.y));
-  if (!type || !Number.isFinite(x) || !Number.isFinite(y)) return null;
-  const entity: LevelEntity = { type, x, y };
-  if (Number.isFinite(raw.stackOrder))
-    entity.stackOrder = Math.trunc(raw.stackOrder!);
-  for (const [key, value] of Object.entries(raw)) {
-    if (key === "type" || key === "x" || key === "y" || key === "stackOrder")
-      continue;
-    if (!key || !isLevelEntityFieldValue(value)) continue;
-    entity[key] = structuredClone(value);
-  }
-  return entity;
-}
-
-function isLevelEntityFieldValue(
-  value: unknown,
-): value is LevelEntityFieldValue {
-  return (
-    value === null ||
-    typeof value === "string" ||
-    typeof value === "boolean" ||
-    (typeof value === "number" && Number.isFinite(value)) ||
-    (Array.isArray(value) && value.every((item) => typeof item === "string"))
+  const safeWidth = editorDimension(width, level.width);
+  const safeHeight = editorDimension(height, level.height);
+  const resized = structuredClone(level);
+  resized.width = safeWidth;
+  resized.height = safeHeight;
+  resized.entities = resized.entities.filter(
+    (entity) =>
+      entity.x >= 0 &&
+      entity.y >= 0 &&
+      entity.x < safeWidth &&
+      entity.y < safeHeight,
   );
+  return normalizeEditorLevel(resized);
 }
 
 function defaultWinCondition(): WinCondition {
   return { type: "exit" };
 }
 
-function cloneEntity(entity: LevelEntity): LevelEntity {
-  return structuredClone(entity);
-}
-
-function clampDimension(value: number): number {
-  if (!Number.isFinite(value)) return 16;
-  return Math.min(128, Math.max(3, Math.trunc(value)));
+function editorDimension(value: number, fallback: number): number {
+  if (!Number.isFinite(value)) return fallback;
+  return Math.max(1, Math.trunc(value));
 }

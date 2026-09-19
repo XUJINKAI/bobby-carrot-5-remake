@@ -4,6 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 import test from "node:test";
+import { BC5R_GAME_ID } from "@bobby/model";
 import { root } from "../lib/fs.mjs";
 
 for (const action of ["prepare", "rebuild"]) {
@@ -63,7 +64,10 @@ export const rebuildAssets = prepareCustomCollections;
     assert.ok(fs.existsSync(path.join(directory, "model/dist/index.js")));
     assert.deepEqual(
       JSON.parse(fs.readFileSync(path.join(directory, "assets/maps/sample/map.json"), "utf8")),
-      level,
+      {
+        ...level,
+        meta: { game: BC5R_GAME_ID, ...level.meta },
+      },
     );
   });
 }

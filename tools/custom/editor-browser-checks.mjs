@@ -1,3 +1,4 @@
+import { BC5R_GAME_ID } from "@bobby/model";
 import { waitForBrowserState } from "./browser-regression-wait.mjs";
 import { verifyEditorCanvasPerformance } from "./editor-performance-browser.mjs";
 import { replayLayout } from "./replay-browser-checks.mjs";
@@ -75,6 +76,7 @@ async function verifyMetadataSync(cdp, sessionId) {
     author: "联动作者",
     note: "第一行\n第二行",
   };
+  const expectedDocumentMetadata = { game: BC5R_GAME_ID, ...expected };
   await cdp.evaluate(
     sessionId,
     `(values => {
@@ -96,7 +98,7 @@ async function verifyMetadataSync(cdp, sessionId) {
         }
       })()`,
     );
-    return JSON.stringify(metadata) === JSON.stringify(expected);
+    return JSON.stringify(metadata) === JSON.stringify(expectedDocumentMetadata);
   });
   await cdp.evaluate(
     sessionId,

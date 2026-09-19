@@ -2,6 +2,7 @@
   "files": [],
   "references": [
     { "path": "./model" },
+    { "path": "./exchange" },
     { "path": "./engine" },
     { "path": "./editor" },
     { "path": "./embed" },

@@ -1,4 +1,5 @@
 import type { JsonPrimitive } from "../shared/json.js";
+import { BC5R_GAME_ID } from "../shared/game.js";
 import type { LevelEntity, LevelMap, MapDocument, MapMeta } from "./document.js";
 import { entityMapDefinition } from "./entity/catalog.js";
 import type { EntityMapFieldDefinition } from "./entity/contract.js";
@@ -14,7 +15,7 @@ const MAP_FIELDS = new Set([
   "entities",
   "rules",
 ]);
-const META_FIELDS = new Set(["name", "author", "note"]);
+const META_FIELDS = new Set(["game", "name", "author", "note"]);
 const ENTITY_BASE_FIELDS = new Set(["type", "x", "y", "stackOrder"]);
 const INVALID_JSON_FIELDS_KEY = "__invalidJsonFields";
 
@@ -29,6 +30,16 @@ export function parseMapDocument(value: unknown): MapDocument {
     height: source.height as number,
     entities: structuredClone(source.entities as LevelEntity[]),
   };
+}
+
+/** 将合法 MapDocument 输出为统一的 canonical JSON 表示。 */
+export function serializeMapDocument(value: unknown): string {
+  const document = parseMapDocument(value);
+  return `${JSON.stringify({
+    ...document,
+    meta: canonicalMapMeta(document.meta),
+    entities: document.entities.map(canonicalMapEntity),
+  }, null, 2)}\n`;
 }
 
 /** 校验可游玩的地图合同；输入可以是 MapDocument，返回值只保留 LevelMap 字段。 */
@@ -87,12 +98,15 @@ function copyOptionalMapFields(source: Record<string, unknown>) {
 function parseMapMeta(value: unknown): MapMeta {
   const meta = requireRecord(value, "MapDocument meta");
   rejectUnknownFields(meta, META_FIELDS, "MapDocument meta");
-  if (typeof meta.name !== "string" || meta.name.length === 0)
-    throw new Error("MapDocument meta.name 必须为非空字符串");
-  for (const key of ["author", "note"])
+  for (const key of ["name", "author", "note"])
     if (meta[key] !== undefined && typeof meta[key] !== "string")
       throw new Error(`MapDocument meta.${key} 必须为字符串`);
-  return structuredClone(meta) as unknown as MapMeta;
+  return {
+    game: BC5R_GAME_ID,
+    ...(meta.name !== undefined ? { name: meta.name as string } : {}),
+    ...(meta.author !== undefined ? { author: meta.author as string } : {}),
+    ...(meta.note !== undefined ? { note: meta.note as string } : {}),
+  };
 }
 
 function parseLevelEntity(
@@ -133,6 +147,19 @@ function parseLevelEntity(
   if (invalidJsonFields.length > 0)
     normalized[INVALID_JSON_FIELDS_KEY] = invalidJsonFields.join(", ");
   return normalized;
+}
+
+function canonicalMapEntity(entity: LevelEntity): LevelEntity {
+  const canonical = structuredClone(entity);
+  if (canonical.stackOrder === 0) delete canonical.stackOrder;
+  return canonical;
+}
+
+function canonicalMapMeta(meta: MapMeta): MapMeta {
+  const canonical = structuredClone(meta);
+  for (const key of ["name", "author", "note"] as const)
+    if (canonical[key] === "") delete canonical[key];
+  return canonical;
 }
 
 /** 已知 Entity 的实例字段问题由 Engine 降级为占位符，不阻断整张地图。 */

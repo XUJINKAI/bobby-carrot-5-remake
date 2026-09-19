@@ -75,10 +75,6 @@ const fileDialog = fs.readFileSync(
   new URL("../src/pages/editor/EditorFileDialog.vue", import.meta.url),
   "utf8",
 );
-const metadataDraft = fs.readFileSync(
-  new URL("../src/pages/editor/useEditorMetadataDraft.ts", import.meta.url),
-  "utf8",
-);
 const dataExchange = fs.readFileSync(
   new URL(
     "../src/shared/data-exchange/DataExchangePanel.vue",
@@ -250,17 +246,28 @@ test("Level 规则模式开关左侧任一、右侧全部", () => {
   assert.match(levelInfo, /mode-all[\s\S]*translateX\(100%\)/);
 });
 
-test("Level 与分享 metadata 使用输入防抖并同步地图交换内容", () => {
-  assert.match(metadataDraft, /EDITOR_METADATA_DEBOUNCE_MS = 200/);
+test("Level 与分享 metadata 直接绑定地图字段并使用统一输入防抖", () => {
+  assert.match(pageState, /EDITOR_METADATA_DEBOUNCE_MS = 200/);
   assert.match(
-    metadataDraft,
-    /setTimeout\(flush, EDITOR_METADATA_DEBOUNCE_MS\)/,
+    pageState,
+    /setTimeout\(flushMetadata, EDITOR_METADATA_DEBOUNCE_MS\)/,
   );
-  assert.doesNotMatch(levelInfo, /@change="applyMetadata"/);
-  assert.match(levelInfo, /v-model="metadata\.name"/);
+  assert.match(pageState, /nameValue = ref\(initialLevel\.meta\.name \?\? ""\)/);
+  assert.match(pageState, /authorValue = ref\(initialLevel\.meta\.author \?\? ""\)/);
+  assert.match(pageState, /noteValue = ref\(initialLevel\.meta\.note \?\? ""\)/);
+  assert.match(pageState, /pendingMetadataFields\.add\(field\)/);
+  assert.doesNotMatch(levelInfo, /useEditorMetadataDraft|metadataValue|v-model="metadata\./);
+  assert.match(levelInfo, /:value="nameValue"/);
+  assert.match(fileDialog, /name: props\.nameValue/);
+  assert.match(fileDialog, /author: props\.authorValue/);
+  assert.match(fileDialog, /note: props\.noteValue/);
+  assert.doesNotMatch(fileDialog, /delete meta\.|authorValue \?|noteValue \?/);
+  assert.match(levelInfo, /@input="emit\('metadataField', 'name'/);
   assert.match(fileDialog, /live-value/);
   assert.match(fileDialog, /@downloaded="downloaded"/);
-  assert.match(page, /@metadata="page\.updateMetadata"/);
+  assert.match(fileDialog, /:value="nameValue"/);
+  assert.match(page, /@metadata-field="page\.setMetadataValue"/);
+  assert.match(page, /@metadata-flush="page\.flushMetadata"/);
   assert.match(dataExchange, /props\.liveValueDelayMs/);
   assert.match(dataExchange, /await flushLiveValue\(\)/);
 });

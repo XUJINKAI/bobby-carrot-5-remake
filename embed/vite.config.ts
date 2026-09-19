@@ -10,7 +10,7 @@ export default defineConfig({
     outDir: "../dist/embed/v1",
     emptyOutDir: false,
     lib: {
-      entry: path.join(root, "src/public.ts"),
+      entry: path.join(root, "src/standalone.ts"),
       name: "BC5R",
       formats: ["iife"],
       fileName: () => "bc5r.js",

@@ -3,32 +3,33 @@ import { parseEditorLevel, serializeEditorLevel, type EditorMap } from "@bobby/e
 import { computed } from "vue";
 import { publicBaseUrl } from "../../services/assets/gameAssets.js";
 import DataExchangePanel from "../../shared/data-exchange/DataExchangePanel.vue";
-import { encodeBc5rV1 } from "../../shared/data-exchange/dataExchangeCodec.js";
+import { encodeExchangePayload } from "@bobby/exchange";
 import AppIcon from "../../shared/icons/AppIcon.vue";
-import {
-  metadataValue,
-  useEditorMetadataDraft,
-} from "./useEditorMetadataDraft.js";
+import type { EditorMetadataField } from "./useEditorPage.js";
 
-const props = defineProps<{ open: boolean; level: Readonly<EditorMap> }>();
+const props = defineProps<{
+  open: boolean;
+  level: Readonly<EditorMap>;
+  nameValue: string;
+  authorValue: string;
+  noteValue: string;
+}>();
 const emit = defineEmits<{
   close: [];
   import: [level: EditorMap];
-  metadata: [value: { name: string; author?: string; note?: string }];
+  metadataField: [field: EditorMetadataField, value: string];
+  metadataFlush: [];
   saved: [];
 }>();
-const { metadata, flushMetadata } = useEditorMetadataDraft({
-  source: () => props.level.meta,
-  apply: (value) => emit("metadata", value),
-  enabled: () => props.open,
-});
-const exchangeLevel = computed<EditorMap>(() => {
-  const level: EditorMap = {
-    ...props.level,
-    meta: metadataValue(metadata),
-  };
-  return level;
-});
+const exchangeLevel = computed<EditorMap>(() => ({
+  ...props.level,
+  meta: {
+    ...props.level.meta,
+    name: props.nameValue,
+    author: props.authorValue,
+    note: props.noteValue,
+  },
+}));
 const embedUrl = computed(() => new URL("embed", publicBaseUrl()).href);
 const toolbar = {
   left: [
@@ -52,24 +53,28 @@ function serializeMap(value: unknown): string {
 }
 
 async function openEmbed(): Promise<void> {
-  flushMetadata();
+  emit("metadataFlush");
   const url = new URL(embedUrl.value);
-  url.hash = await encodeBc5rV1(serializeMap(exchangeLevel.value));
+  url.hash = await encodeExchangePayload(serializeMap(exchangeLevel.value));
   window.location.assign(url.href);
 }
 
 function close(): void {
-  flushMetadata();
+  emit("metadataFlush");
   emit("close");
 }
 
 function downloaded(): void {
-  flushMetadata();
+  emit("metadataFlush");
   emit("saved");
 }
 
 function imported(level: EditorMap): void {
   emit("import", level);
+}
+
+function textValue(event: Event): string {
+  return (event.target as HTMLInputElement | HTMLTextAreaElement).value;
 }
 </script>
 
@@ -82,9 +87,9 @@ function imported(level: EditorMap): void {
           <AppIcon name="close" />
         </button>
       </header>
-      <label class="editor-field"><span>名称</span><input v-model="metadata.name" data-editor-share-metadata="name" maxlength="120"></label>
-      <label class="editor-field"><span>作者</span><input v-model="metadata.author" data-editor-share-metadata="author" maxlength="80" placeholder="可选"></label>
-      <label class="editor-field"><span>注记</span><textarea v-model="metadata.note" data-editor-share-metadata="note" maxlength="500" rows="4" placeholder="可选"></textarea></label>
+      <label class="editor-field"><span>名称</span><input :value="nameValue" data-editor-share-metadata="name" maxlength="120" @input="emit('metadataField', 'name', textValue($event))"></label>
+      <label class="editor-field"><span>作者</span><input :value="authorValue" data-editor-share-metadata="author" maxlength="80" placeholder="可选" @input="emit('metadataField', 'author', textValue($event))"></label>
+      <label class="editor-field"><span>注记</span><textarea :value="noteValue" data-editor-share-metadata="note" maxlength="500" rows="4" placeholder="可选" @input="emit('metadataField', 'note', textValue($event))"></textarea></label>
       <p class="editor-muted">地图内容使用语义 JSON，可通过文本、分享链接、`.json` 或 `.bc5r` 文件交换。</p>
       <p class="editor-muted"><a :href="embedUrl" @click.prevent="openEmbed">内嵌到其他网页</a></p>
       <DataExchangePanel
@@ -92,7 +97,7 @@ function imported(level: EditorMap): void {
         :serialize="serializeMap"
         :parse="parseMap"
         :public-base-url="publicBaseUrl()"
-        :filename="metadata.name || 'bc5r-map'"
+        :filename="nameValue || 'bc5r-map'"
         :default-compressed="true"
         live-value
         :toolbar="toolbar"

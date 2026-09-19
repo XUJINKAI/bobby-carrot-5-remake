@@ -1,15 +1,17 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  BC5R_GAME_ID,
   levelEntityContractIssues,
   parseLevelMap,
   parseMapDocument,
+  serializeMapDocument,
 } from "../../model/dist/index.js";
 
 function documentWith(entities) {
   return {
     schemaVersion: 1,
-    meta: { name: "合同测试" },
+    meta: { game: BC5R_GAME_ID, name: "合同测试" },
     width: 3,
     height: 3,
     entities,
@@ -178,9 +180,17 @@ test("Map parser 校验坐标、规则树和文档 metadata", () => {
       }),
     /不允许字段 target/,
   );
+  assert.deepEqual(
+    parseMapDocument({ ...documentWith([]), meta: {} }).meta,
+    { game: BC5R_GAME_ID },
+  );
+  assert.deepEqual(
+    parseMapDocument({ ...documentWith([]), meta: { name: "" } }).meta,
+    { game: BC5R_GAME_ID, name: "" },
+  );
   assert.throws(
-    () => parseMapDocument({ ...documentWith([]), meta: { name: "" } }),
-    /meta.name 必须为非空字符串/,
+    () => parseMapDocument({ ...documentWith([]), meta: { name: 1 } }),
+    /meta.name 必须为字符串/,
   );
   assert.throws(
     () =>
@@ -201,6 +211,45 @@ test("Map parser 校验坐标、规则树和文档 metadata", () => {
     () => parseMapDocument({ ...documentWith([]), note: "旧位置" }),
     /地图 不允许字段 note/,
   );
+});
+
+test("MapDocument 输出补充固定 game 标识，但不依赖输入标识", () => {
+  const withoutGame = {
+    ...documentWith([]),
+    meta: { name: "无标识地图" },
+  };
+  assert.equal(parseMapDocument(withoutGame).meta.game, BC5R_GAME_ID);
+  const unrelatedMarker = {
+    ...documentWith([]),
+    meta: { game: "another-game", name: "外部地图" },
+  };
+  assert.equal(parseMapDocument(unrelatedMarker).meta.game, BC5R_GAME_ID);
+});
+
+test("MapDocument 序列化统一字段顺序并省略默认表示", () => {
+  const source = {
+    entities: [
+      { type: "grass", x: 0, y: 0, stackOrder: 0, variant: "ts-10-1" },
+      { type: "bobby", x: 0, y: 0, stackOrder: 1 },
+    ],
+    height: 1,
+    width: 1,
+    meta: { name: "", author: "", note: "" },
+    schemaVersion: 1,
+  };
+  const serialized = serializeMapDocument(source);
+  assert.deepEqual(JSON.parse(serialized), {
+    schemaVersion: 1,
+    meta: { game: BC5R_GAME_ID },
+    width: 1,
+    height: 1,
+    entities: [
+      { type: "grass", x: 0, y: 0, variant: "ts-10-1" },
+      { type: "bobby", x: 0, y: 0, stackOrder: 1 },
+    ],
+  });
+  assert.deepEqual(source.meta, { name: "", author: "", note: "" });
+  assert.equal(source.entities[0].stackOrder, 0);
 });
 
 test("Map parser 要求已归类 Surface 使用 semantic type 与 variant", () => {

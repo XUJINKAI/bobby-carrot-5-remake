@@ -1,8 +1,10 @@
 export { mount } from "./mount.js";
-export { extractSharePayload } from "./mapInput.js";
 export type {
   BC5RHandle,
+  BC5RGlobal,
+  BC5RMount,
   BC5RMountOptions,
+  BC5RQueue,
   EmbedJoystickMode,
   EmbedKeyboardMode,
   EmbedMusicStyle,

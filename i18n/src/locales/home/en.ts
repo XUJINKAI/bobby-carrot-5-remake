@@ -14,7 +14,7 @@ const catalog = {
   "home.embed": "Embed your custom map on another website",
   "home.importDialog": "Import data",
   "home.importOpen": "Open",
-  "home.importPlaceholder": "Paste JSON, BC5R1 text, or a shared link…",
+  "home.importPlaceholder": "Paste JSON, a payload, or a shared link…",
   "home.demoMove": "Move with WASD / arrow keys",
   "home.demoRemaining": "{count} targets remaining",
   "home.demoEnteringAdventure": "Entering Adventure…",

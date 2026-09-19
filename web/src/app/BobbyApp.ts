@@ -126,6 +126,7 @@ export class BobbyApp {
     return {
       app: this.content,
       collectionsIndex: this.catalog.collectionsIndex,
+      loadCollectionsIndex: () => this.catalog.loadCollectionsIndex(),
       collections: this.catalog.collections,
       adventure: this.catalog.adventure,
       audio: this.audio,
@@ -198,7 +199,10 @@ export class BobbyApp {
       return;
     }
     if (path === "/settings") {
-      const { renderSettingsPage } = await loadSettingsPage();
+      const [{ renderSettingsPage }] = await Promise.all([
+        loadSettingsPage(),
+        this.catalog.loadCollectionsIndex(),
+      ]);
       if (!this.canCommitRoute(generation)) return;
       if (!(await this.activateI18nRoute(generation, loadSettingsPage))) return;
       const context = this.pageContext();
@@ -289,20 +293,20 @@ export class BobbyApp {
   private async renderImport(generation: number): Promise<void> {
     const payload = location.hash.slice(1);
     try {
-      const { decodeImportedPayload } = await import(
+      const {
+        decodeImportedPayload,
+        requireImportedSaveTarget,
+      } = await import(
         "../services/import/importPipeline.js"
       );
       const imported = await decodeImportedPayload(payload);
       if (imported.type === "map") {
-        const [{ serializeEditorLevel }, { renderGamePage }] = await Promise.all([
-          import("@bobby/editor"),
-          loadGamePage(),
-        ]);
+        const { renderGamePage } = await loadGamePage();
         if (!this.canCommitRoute(generation)) return;
         if (!(await this.activateI18nRoute(generation, loadImportPage, loadGamePage))) return;
         sessionStorage.setItem(
           "bc5r:pending-editor-level",
-          serializeEditorLevel(imported.value),
+          JSON.stringify(imported.value),
         );
         this.controller = await renderGamePage({
           ...this.pageContext(),
@@ -311,12 +315,16 @@ export class BobbyApp {
           identity: {
             collection: "imported",
             id: "shared-map",
-            title: imported.value.meta.name,
+            title: imported.value.meta.name || "Imported Bobby Level",
           },
           mode: "explore",
           source: "import",
         });
         return;
+      }
+      if (imported.type === "explore-save") {
+        const index = await this.catalog.loadCollectionsIndex();
+        requireImportedSaveTarget(imported, index.collections);
       }
       const { renderImportMessage } = await loadImportPage();
       if (!this.canCommitRoute(generation)) return;
@@ -358,20 +366,20 @@ export class BobbyApp {
         this.navigate("/");
         return;
       }
-      const [editor, importPage, gamePage] = await Promise.all([
-        import("@bobby/editor"),
-        loadImportPage(),
+      const [model, gamePage] = await Promise.all([
+        import("@bobby/model"),
         loadGamePage(),
       ]);
       if (!this.canCommitRoute(generation)) return;
-      if (!(await this.activateI18nRoute(generation, loadImportPage, loadGamePage))) return;
-      const level = editor.parseEditorLevel(pending);
+      if (!(await this.activateI18nRoute(generation, loadGamePage))) return;
+      const document = model.parseMapDocument(JSON.parse(pending));
+      const level = model.parseLevelMap(document);
       sessionStorage.setItem("bc5r:pending-editor-level", pending);
       this.controller = await gamePage.renderGamePage({
         ...this.pageContext(),
-        level: importPage.importedLevelMap(level),
-        mapMeta: level.meta,
-        identity: { ...ref, title: level.meta.name },
+        level,
+        mapMeta: document.meta,
+        identity: { ...ref, title: document.meta.name || ref.id },
         mode: "explore",
         source: "explore",
       });
@@ -396,7 +404,10 @@ export class BobbyApp {
         ...this.pageContext(),
         level: resolved.level,
         mapMeta: resolved.document.meta,
-        identity: { ...resolved.ref, title: resolved.document.meta.name },
+        identity: {
+          ...resolved.ref,
+          title: resolved.document.meta.name || resolved.ref.id,
+        },
         verified: collection?.maps[currentIndex]?.verified === true,
         ...(explorePreviousMapId ? { explorePreviousMapId } : {}),
         ...(exploreNextMapId ? { exploreNextMapId } : {}),

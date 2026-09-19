@@ -5,7 +5,7 @@
 - `human-focus.md`：需要人类重点判断的语义、Adapter 与玩法文件。
 - `system/`：BC5R 的核心系统与内容定义；原版内容规则见 `system/original/`。
 - `contracts/`：Engine API、关卡格式、资产目录等跨模块契约。
-- `features/`：具体功能的行为约束；Web UI 见 `features/ui.md`，地图编辑器见 `features/editor.md`。
+- `features/`：具体功能的行为约束；Web UI 见 `features/ui.md`，地图编辑器见 `features/editor.md`，第三方嵌入见 `features/embed.md`。
 - `workflows/`：新增关卡、逆向机关等跨模块工作流。
 - `patterns/`：可复用实现模式。
 - `decisions/`：长期有效的重要决策与原因。

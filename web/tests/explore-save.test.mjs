@@ -3,12 +3,13 @@ import { test } from "vitest";
 import { BC5R_GAME_ID } from "@bobby/model";
 import { WEB_ERROR_CODES, WebError } from "../src/errors/errorCodes.ts";
 import {
-  parseExploreProgressExchange,
-  saveExploreProgressSave,
-  serializeExploreProgressSave,
+  exploreSaveCollection,
+  parseExploreCollectionExchange,
+  saveExploreCollectionSave,
+  serializeExploreCollectionSave,
 } from "../src/storage/exploreProgressStorage.ts";
 
-function memoryStorage(initial = {}, failOnKey = null) {
+function memoryStorage(initial = {}) {
   const values = new Map(Object.entries(initial));
   return {
     get length() {
@@ -21,7 +22,6 @@ function memoryStorage(initial = {}, failOnKey = null) {
       return values.get(key) ?? null;
     },
     setItem(key, value) {
-      if (key === failOnKey) throw new Error("模拟写入失败");
       values.set(key, value);
     },
     removeItem(key) {
@@ -31,97 +31,88 @@ function memoryStorage(initial = {}, failOnKey = null) {
   };
 }
 
-test("Explore save exchange normalizes collection-scoped progress data", () => {
-  const save = parseExploreProgressExchange({
+test("Explore save 通过 scope 标识 collection 并规范化进度", () => {
+  const save = parseExploreCollectionExchange({
     game: BC5R_GAME_ID,
     schemaVersion: 1,
-    mode: "explore",
-    collections: {
-      original: {
-        game: BC5R_GAME_ID,
-        schemaVersion: 1,
-        completedMaps: ["1-2", "1-1", "1-1"],
-        lastMap: "1-2",
-      },
-      custom: {
-        game: BC5R_GAME_ID,
-        schemaVersion: 1,
-        completedMaps: ["demo"],
-        lastMap: "demo",
-      },
-    },
+    scope: "explore/original",
+    completedMaps: ["1-2", "1-1", "1-1"],
+    lastMap: "1-2",
   });
 
-  assert.deepEqual(save.collections.original.completedMaps, ["1-1", "1-2"]);
-  assert.equal(save.collections.original.lastMap, "1-2");
-  assert.deepEqual(JSON.parse(serializeExploreProgressSave(save)), save);
+  assert.equal(exploreSaveCollection(save), "original");
+  assert.deepEqual(save.completedMaps, ["1-1", "1-2"]);
+  assert.equal(save.lastMap, "1-2");
+  assert.deepEqual(JSON.parse(serializeExploreCollectionSave(save)), save);
 });
 
-test("Explore save exchange rejects unrelated data with a semantic error", () => {
+test("Settings 导入要求 scope 与当前 collection 一致", () => {
+  const value = {
+    game: BC5R_GAME_ID,
+    schemaVersion: 1,
+    scope: "explore/engine-lab",
+    completedMaps: ["00-intro"],
+  };
+
+  assert.deepEqual(
+    parseExploreCollectionExchange(value, "engine-lab"),
+    value,
+  );
   assert.throws(
-    () =>
-      parseExploreProgressExchange({
-        game: BC5R_GAME_ID,
-        schemaVersion: 1,
-      }),
+    () => parseExploreCollectionExchange(value, "original"),
     (error) =>
       error instanceof WebError &&
       error.code === WEB_ERROR_CODES.saveExchange.invalidExploreSave,
   );
 });
 
-test("Explore save 在修改 storage 前拒绝非法 collection ID", () => {
-  const storage = memoryStorage({
-    "bc5r:explore/original": JSON.stringify({ completedMaps: ["1-1"] }),
-  });
-  assert.throws(
-    () =>
-      saveExploreProgressSave({
-        game: BC5R_GAME_ID,
-        schemaVersion: 1,
-        mode: "explore",
-        collections: {
-          "": {
-            game: BC5R_GAME_ID,
-            schemaVersion: 1,
-            completedMaps: [],
-          },
-        },
-      }, storage),
-    /collection ID 无效/,
-  );
-  assert.equal(storage.values.has("bc5r:explore/original"), true);
+test("Explore save 拒绝旧聚合格式与非法 scope", () => {
+  for (const value of [
+    {
+      game: BC5R_GAME_ID,
+      schemaVersion: 1,
+      mode: "explore",
+      collections: {},
+    },
+    {
+      game: BC5R_GAME_ID,
+      schemaVersion: 1,
+      scope: "explore/",
+      completedMaps: [],
+    },
+  ]) {
+    assert.throws(
+      () => parseExploreCollectionExchange(value),
+      (error) =>
+        error instanceof WebError &&
+        error.code === WEB_ERROR_CODES.saveExchange.invalidExploreSave,
+    );
+  }
 });
 
-test("Explore save 写入失败时恢复原有 collection records", () => {
-  const originalValue = JSON.stringify({ completedMaps: ["1-1"] });
-  const storage = memoryStorage(
-    { "bc5r:explore/original": originalValue },
-    "bc5r:explore/custom",
-  );
-  assert.throws(
-    () =>
-      saveExploreProgressSave({
-        game: BC5R_GAME_ID,
-        schemaVersion: 1,
-        mode: "explore",
-        collections: {
-          original: {
-            game: BC5R_GAME_ID,
-            schemaVersion: 1,
-            completedMaps: ["1-2"],
-          },
-          custom: {
-            game: BC5R_GAME_ID,
-            schemaVersion: 1,
-            completedMaps: ["demo"],
-          },
-        },
-      }, storage),
-    /模拟写入失败/,
-  );
-  assert.deepEqual(
-    Object.fromEntries(storage.values),
-    { "bc5r:explore/original": originalValue },
-  );
+test("保存 Explore save 前校验 collection scope", () => {
+  const storage = memoryStorage();
+  const previousLocalStorage = globalThis.localStorage;
+  Object.defineProperty(globalThis, "localStorage", {
+    configurable: true,
+    value: storage,
+  });
+  try {
+    assert.throws(
+      () =>
+        saveExploreCollectionSave("original", {
+          game: BC5R_GAME_ID,
+          schemaVersion: 1,
+          scope: "explore/engine-lab",
+          completedMaps: [],
+        }),
+      /有效 Explore Collection Save/,
+    );
+    assert.equal(storage.values.size, 0);
+  } finally {
+    Object.defineProperty(globalThis, "localStorage", {
+      configurable: true,
+      value: previousLocalStorage,
+    });
+  }
 });

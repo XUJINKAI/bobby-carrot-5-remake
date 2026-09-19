@@ -1,21 +1,13 @@
-import { parseMapDocument } from "@bobby/model";
+import { serializeMapDocument } from "@bobby/model";
 import { materializeSurfaceVariants } from "../authoring/surfacePersistence.js";
-import { normalizeEditorLevel } from "./editorLevel.js";
 import type { EditorMap } from "./types.js";
 
 export function serializeEditorLevel(level: EditorMap): string {
   const materialized = materializeSurfaceVariants(level);
-  const canonical = parseMapDocument(normalizeEditorLevel(materialized));
-  return `${JSON.stringify({
-    ...canonical,
-    entities: canonical.entities.map((entity) => {
-      if (entity.stackOrder !== 0) return entity;
-      const { stackOrder: _stackOrder, ...withoutStackOrder } = entity;
-      return withoutStackOrder;
-    }),
-  }, null, 2)}\n`;
+  return serializeMapDocument(materialized);
 }
 
 export function parseEditorLevel(text: string): EditorMap {
-  return normalizeEditorLevel(parseMapDocument(JSON.parse(text)));
+  const value = JSON.parse(text) as unknown;
+  return JSON.parse(serializeMapDocument(value)) as EditorMap;
 }

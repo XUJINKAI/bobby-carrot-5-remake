@@ -1,4 +1,3 @@
-import { toLevelMap, type EditorMap } from "@bobby/editor";
 import { createApp } from "vue";
 import type { PageContext, PageController } from "../../app/pageContracts.js";
 import { globalActions, pageIdentity } from "../../app/pageChrome.js";
@@ -9,10 +8,6 @@ import {
 import { configureShell } from "../../shell/shellBridge.js";
 import ImportPage from "./ImportPage.vue";
 import { webT, type WebDisplayText } from "../../i18n/webI18n.js";
-
-export function importedLevelMap(level: EditorMap) {
-  return toLevelMap(level);
-}
 
 export function renderImportMessage(
   context: PageContext,
@@ -36,7 +31,12 @@ export function renderImportMessage(
     ...options,
     onConfirm: () => {
       if (options.status !== "save") return;
-      context.navigate(applyImportedSave(options.data));
+      context.navigate(
+        applyImportedSave(
+          options.data,
+          context.collectionsIndex.collections,
+        ),
+      );
     },
     onCancel: () => context.navigate("/"),
     onHome: () => context.navigate("/"),

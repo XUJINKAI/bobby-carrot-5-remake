@@ -82,13 +82,18 @@ test("Adventure Save 只接受每章一个完成位置", () => {
 test("Adventure Save 只保存已结算经济和永久进度", () => {
   const save = createAdventureSave();
   assert.deepEqual(Object.keys(save), [
-    "schemaVersion",
     "game",
+    "schemaVersion",
+    "scope",
     "campaign",
     "economy",
     "items",
   ]);
   assert.deepEqual(JSON.parse(serializeAdventureSave(save)), save);
+  assert.throws(
+    () => parseAdventureSave(JSON.stringify({ ...save, scope: "explore/original" })),
+    /scope 无效/,
+  );
 });
 
 test("resume follows the last unfinished level and replaying completed levels does not move it", () => {

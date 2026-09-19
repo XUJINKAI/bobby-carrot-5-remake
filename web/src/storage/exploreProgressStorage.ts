@@ -1,18 +1,9 @@
 import { BC5R_GAME_ID } from "@bobby/model";
 import { WEB_ERROR_CODES, WebError } from "../errors/errorCodes.js";
 import {
-  EXPLORE_STORAGE_PREFIX,
   exploreStorageKey,
   type ExploreCollectionStorage,
 } from "./contracts.js";
-
-/** 只用于交换的聚合结构；物理存储仍然为每个 collection 一个 key。 */
-export interface ExploreProgressSave {
-  game: typeof BC5R_GAME_ID;
-  schemaVersion: 1;
-  mode: "explore";
-  collections: Record<string, ExploreCollectionStorage>;
-}
 
 export function completedExploreMapIds(collection: string): Set<string> {
   return new Set(loadExploreCollectionSave(collection).completedMaps);
@@ -36,11 +27,11 @@ export function rememberExploreMap(collection: string, mapId: string): void {
 
 export function loadExploreCollectionSave(collection: string): ExploreCollectionStorage {
   const raw = localStorage.getItem(exploreStorageKey(collection));
-  if (!raw) return emptyCollectionSave();
+  if (!raw) return emptyCollectionSave(collection);
   try {
-    return normalizeExploreCollectionSave(JSON.parse(raw));
+    return normalizeExploreCollectionSave(JSON.parse(raw), collection);
   } catch {
-    return emptyCollectionSave();
+    return emptyCollectionSave(collection);
   }
 }
 
@@ -48,7 +39,7 @@ export function saveExploreCollectionSave(
   collection: string,
   save: ExploreCollectionStorage,
 ): ExploreCollectionStorage {
-  const normalized = normalizeExploreCollectionSave(save);
+  const normalized = normalizeExploreCollectionSave(save, collection, true);
   localStorage.setItem(exploreStorageKey(collection), JSON.stringify(normalized));
   return normalized;
 }
@@ -57,65 +48,12 @@ export function resetExploreCollection(collection: string): void {
   localStorage.removeItem(exploreStorageKey(collection));
 }
 
-export function parseExploreCollectionExchange(value: unknown): ExploreCollectionStorage {
+export function parseExploreCollectionExchange(
+  value: unknown,
+  expectedCollection?: string,
+): ExploreCollectionStorage {
   try {
-    return normalizeExploreCollectionSave(value, true);
-  } catch (cause) {
-    throw new WebError(
-      WEB_ERROR_CODES.saveExchange.invalidExploreCollection,
-      { cause },
-    );
-  }
-}
-
-export function serializeExploreCollectionSave(save: ExploreCollectionStorage): string {
-  return JSON.stringify(normalizeExploreCollectionSave(save, true));
-}
-
-export function loadExploreProgressSave(): ExploreProgressSave {
-  return {
-    game: BC5R_GAME_ID,
-    schemaVersion: 1,
-    mode: "explore",
-    collections: Object.fromEntries(
-      listExploreCollectionIds().map((collection) => [collection, loadExploreCollectionSave(collection)]),
-    ),
-  };
-}
-
-export function saveExploreProgressSave(
-  save: ExploreProgressSave,
-  storage: Storage = localStorage,
-): ExploreProgressSave {
-  const normalized = normalizeExploreProgressSave(save);
-  const entries = Object.entries(normalized.collections).map(
-    ([collection, value]) => [
-      validatedExploreStorageKey(collection),
-      JSON.stringify(value),
-    ] as const,
-  );
-  const previous = snapshotExploreStorage(storage);
-  try {
-    clearExploreStorage(storage);
-    for (const [key, value] of entries) storage.setItem(key, value);
-  } catch (cause) {
-    try {
-      clearExploreStorage(storage);
-      for (const [key, value] of previous) storage.setItem(key, value);
-    } catch (rollbackCause) {
-      throw new AggregateError(
-        [cause, rollbackCause],
-        "Explore Save 写入失败，且原存档恢复失败",
-      );
-    }
-    throw cause;
-  }
-  return normalized;
-}
-
-export function parseExploreProgressExchange(value: unknown): ExploreProgressSave {
-  try {
-    return normalizeExploreProgressSave(value);
+    return normalizeExploreCollectionSave(value, expectedCollection, true);
   } catch (cause) {
     throw new WebError(
       WEB_ERROR_CODES.saveExchange.invalidExploreSave,
@@ -124,26 +62,51 @@ export function parseExploreProgressExchange(value: unknown): ExploreProgressSav
   }
 }
 
-export function serializeExploreProgressSave(save: ExploreProgressSave): string {
-  return JSON.stringify(normalizeExploreProgressSave(save));
+export function serializeExploreCollectionSave(save: ExploreCollectionStorage): string {
+  return JSON.stringify(normalizeExploreCollectionSave(save, undefined, true));
 }
 
-function emptyCollectionSave(): ExploreCollectionStorage {
-  return { game: BC5R_GAME_ID, schemaVersion: 1, completedMaps: [] };
+export function exploreSaveCollection(save: ExploreCollectionStorage): string {
+  const collection = collectionFromScope(save.scope);
+  if (collection === null) throw new Error("Explore Collection Save scope 无效");
+  return collection;
+}
+
+function emptyCollectionSave(collection: string): ExploreCollectionStorage {
+  return {
+    game: BC5R_GAME_ID,
+    schemaVersion: 1,
+    scope: `explore/${validatedCollectionId(collection)}`,
+    completedMaps: [],
+  };
 }
 
 function normalizeExploreCollectionSave(
   value: unknown,
+  expectedCollection?: string,
   strict = false,
 ): ExploreCollectionStorage {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
     if (strict) throw new Error("这段数据不是有效 Explore Collection Save");
-    return emptyCollectionSave();
+    if (expectedCollection) return emptyCollectionSave(expectedCollection);
+    throw new Error("Explore Collection Save 缺少 collection");
   }
   const raw = value as Record<string, unknown>;
-  if (raw.game !== BC5R_GAME_ID || raw.schemaVersion !== 1) {
+  const collection = typeof raw.scope === "string"
+    ? collectionFromScope(raw.scope)
+    : null;
+  const expected = expectedCollection === undefined
+    ? undefined
+    : validatedCollectionId(expectedCollection);
+  if (
+    raw.game !== BC5R_GAME_ID ||
+    raw.schemaVersion !== 1 ||
+    collection === null ||
+    (expected !== undefined && collection !== expected)
+  ) {
     if (strict) throw new Error("这段数据不是有效 Explore Collection Save");
-    return emptyCollectionSave();
+    if (expected) return emptyCollectionSave(expected);
+    throw new Error("Explore Collection Save scope 无效");
   }
   const completedMaps = Array.isArray(raw.completedMaps)
     ? [...new Set(raw.completedMaps.filter((id): id is string => typeof id === "string" && id.length > 0))].sort()
@@ -166,70 +129,24 @@ function normalizeExploreCollectionSave(
   return {
     game: BC5R_GAME_ID,
     schemaVersion: 1,
+    scope: `explore/${collection}`,
     completedMaps,
     ...(lastMap ? { lastMap } : {}),
   };
 }
 
-function normalizeExploreProgressSave(value: unknown): ExploreProgressSave {
-  if (!value || typeof value !== "object" || Array.isArray(value))
-    throw new Error("这段数据不是有效 Explore Save");
-  const raw = value as Record<string, unknown>;
-  if (raw.game !== BC5R_GAME_ID || raw.schemaVersion !== 1 || raw.mode !== "explore")
-    throw new Error("这段数据不是有效 Explore Save");
-  const collectionsRaw = raw.collections;
-  if (!collectionsRaw || typeof collectionsRaw !== "object" || Array.isArray(collectionsRaw))
-    throw new Error("Explore Save 缺少 collections");
-  return {
-    game: BC5R_GAME_ID,
-    schemaVersion: 1,
-    mode: "explore",
-    collections: Object.fromEntries(
-      Object.entries(collectionsRaw).map(([collection, save]) => [
-        validatedCollectionId(collection),
-        normalizeExploreCollectionSave(save, true),
-      ]),
-    ),
-  };
-}
-
-function listExploreCollectionIds(): string[] {
-  const ids: string[] = [];
-  for (let index = 0; index < localStorage.length; index += 1) {
-    const key = localStorage.key(index);
-    if (!key?.startsWith(EXPLORE_STORAGE_PREFIX)) continue;
-    const collection = key.slice(EXPLORE_STORAGE_PREFIX.length);
-    if (collection) ids.push(collection);
+function collectionFromScope(scope: string): string | null {
+  if (!scope.startsWith("explore/")) return null;
+  const collection = scope.slice("explore/".length);
+  try {
+    return validatedCollectionId(collection);
+  } catch {
+    return null;
   }
-  return [...new Set(ids)].sort();
 }
 
 function validatedCollectionId(collection: string): string {
   if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(collection))
     throw new Error(`Explore Save collection ID 无效：${JSON.stringify(collection)}`);
   return collection;
-}
-
-function validatedExploreStorageKey(collection: string): string {
-  return exploreStorageKey(validatedCollectionId(collection));
-}
-
-function snapshotExploreStorage(storage: Storage): ReadonlyArray<readonly [string, string]> {
-  return exploreStorageKeys(storage).flatMap((key) => {
-    const value = storage.getItem(key);
-    return value === null ? [] : [[key, value] as const];
-  });
-}
-
-function exploreStorageKeys(storage: Storage): string[] {
-  const keys: string[] = [];
-  for (let index = 0; index < storage.length; index += 1) {
-    const key = storage.key(index);
-    if (key?.startsWith(EXPLORE_STORAGE_PREFIX)) keys.push(key);
-  }
-  return keys;
-}
-
-function clearExploreStorage(storage: Storage): void {
-  for (const key of exploreStorageKeys(storage)) storage.removeItem(key);
 }

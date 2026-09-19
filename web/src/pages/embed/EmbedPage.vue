@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import type {
+  BC5RGlobal,
   BC5RHandle,
-  BC5RMountOptions,
+  BC5RMount,
   EmbedKeyboardMode,
   EmbedJoystickMode,
   EmbedMusicStyle,
@@ -19,8 +20,7 @@ import { errorDisplayText } from "../../errors/errorPresentation.js";
 
 const props = defineProps<{ publicBaseUrl: string }>();
 
-type EmbedMount = (options: BC5RMountOptions) => BC5RHandle;
-type BC5RGlobal = { mount?: EmbedMount };
+type EmbedMount = BC5RMount;
 
 const mapMode = ref<"map" | "mapUrl">("map");
 const map = ref(location.hash.slice(1));
@@ -39,7 +39,6 @@ const pinchZoom = ref(true);
 const wheelZoom = ref(false);
 const info = ref("");
 const preview = ref<HTMLElement | null>(null);
-const codeBlock = ref<HTMLElement | null>(null);
 const previewError = ref<WebDisplayText | null>(null);
 const copyError = ref<WebDisplayText | null>(null);
 const previewReady = ref(false);
@@ -96,7 +95,8 @@ const embedCode = computed(() => {
       ? { map: map.value.trim() }
       : { mapUrl: mapUrl.value.trim() }),
   };
-  return `<div id="bc5r" style="width:100%;height:520px"></div>\n<script src="${standaloneUrl()}"><\/script>\n<script>\nBC5R.mount(${JSON.stringify(config, null, 2)});\n<\/script>`;
+  const serialized = JSON.stringify(config, null, 2).replaceAll("<", "\\u003c");
+  return `<div id="bc5r" style="width:100%;height:520px;display:grid;place-items:center;\n  border:1px solid #254868;background:#071522;color:#c9e6f7">Loading Bobby Carrot 5 Remake…</div>\n\n<script>\nwindow.BC5R = window.BC5R || { queue: [] };\nBC5R.queue.push(${serialized});\n<\/script>\n\n<script async src="${standaloneUrl()}"><\/script>`;
 });
 
 watch(
@@ -126,11 +126,6 @@ async function refreshPreview(): Promise<void> {
   previewReady.value = false;
   const target = preview.value;
   if (!target || !embedMount) return;
-  const source = mapMode.value === "map" ? map.value.trim() : mapUrl.value.trim();
-  if (!source) {
-    target.replaceChildren();
-    return;
-  }
   try {
     const next = embedMount({ target, ...options.value });
     handle = next;
@@ -140,9 +135,8 @@ async function refreshPreview(): Promise<void> {
       return;
     }
     previewReady.value = true;
-  } catch (error) {
-    if (serial === renderSerial)
-      previewError.value = errorDisplayText(error);
+  } catch {
+    // Embed runtime 在预览框内显示地图加载错误。
   }
 }
 
@@ -173,8 +167,8 @@ async function resolveEmbedMount(): Promise<EmbedMount> {
   return loaded;
 }
 
-function globalBc5r(): BC5RGlobal | undefined {
-  return (window as Window & { BC5R?: BC5RGlobal }).BC5R;
+function globalBc5r(): Partial<BC5RGlobal> | undefined {
+  return (window as Window & { BC5R?: Partial<BC5RGlobal> }).BC5R;
 }
 
 function standaloneUrl(): string {
@@ -190,16 +184,6 @@ async function copyCode(): Promise<void> {
       new WebError(WEB_ERROR_CODES.common.clipboardUnavailable, { cause }),
     );
   }
-}
-
-function selectAllCode(): void {
-  const element = codeBlock.value;
-  const selection = window.getSelection();
-  if (!element || !selection) return;
-  const range = document.createRange();
-  range.selectNodeContents(element);
-  selection.removeAllRanges();
-  selection.addRange(range);
 }
 
 onBeforeUnmount(() => handle?.destroy());
@@ -312,7 +296,7 @@ onBeforeUnmount(() => handle?.destroy());
           <h2>{{ webT("embed.code") }}</h2>
           <button @click="copyCode">{{ webT("embed.copy") }}</button>
         </div>
-        <pre ref="codeBlock" class="code-block" @click="selectAllCode"><code>{{ embedCode }}</code></pre>
+        <pre class="code-block"><code>{{ embedCode }}</code></pre>
         <p v-if="copyError" class="error" aria-live="polite">{{ resolveWebText(copyError) }}</p>
       </section>
     </div>

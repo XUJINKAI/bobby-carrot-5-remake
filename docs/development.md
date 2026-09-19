@@ -42,9 +42,11 @@ npm run preview
 
 ```text
 model      纯 semantic LevelMap / IDs
+exchange   Data Exchange transport / map import boundary
 engine     gameplay / runtime
 adventure  Campaign / Save / Adventure runtime rule
 editor     authoring + share boundary
+embed      third-party embed runtime
 web        product SPA
 tools      assets / Original DAT / original JAR validation
 ```
@@ -75,9 +77,11 @@ Vercel 对 `/app/` 下带内容哈希的 JavaScript、CSS 与字体资源发送�
 node_modules/
 dist/
 model/dist/
+exchange/dist/
 adventure/dist/
 engine/dist/
 editor/dist/
+embed/dist/
 original/extracted/
 original/decoded/
 original/adapted/

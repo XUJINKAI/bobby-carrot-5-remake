@@ -19,7 +19,9 @@ export function renderSettingsPage(context: PageContext): PageController {
   });
   syncShell();
   context.app.replaceChildren();
-  const page = createApp(SettingsPage);
+  const page = createApp(SettingsPage, {
+    collections: context.collectionsIndex.collections,
+  });
   page.mount(context.app);
   return {
     localeChanged: syncShell,

@@ -4,6 +4,7 @@ import {
   type AdventureSave,
 } from "@bobby/adventure";
 import { computed, nextTick, ref } from "vue";
+import type { MapCollectionSummary } from "../../services/catalog/catalog.js";
 import {
   localizedText,
   resolveWebText,
@@ -30,13 +31,17 @@ import {
   type SaveManagementTarget,
 } from "./saveManagementRecords.js";
 
+const props = defineProps<{
+  collections: readonly MapCollectionSummary[];
+}>();
+
 type SaveManagementTab = SaveManagementTarget & {
   save: AdventureSave | ExploreCollectionStorage;
   feedback: WebDisplayText | null;
 };
 
 const saveTabs = ref<SaveManagementTab[]>(
-  listSaveManagementTargets().map((target) => ({
+  listSaveManagementTargets(props.collections).map((target) => ({
     ...target,
     save: target.kind === "adventure"
       ? loadAdventureSave()
@@ -67,7 +72,7 @@ function parseSelected(value: unknown): AdventureSave | ExploreCollectionStorage
   const tab = requireActiveTab();
   return tab.kind === "adventure"
     ? parseAdventureProfileExchange(value)
-    : parseExploreCollectionExchange(value);
+    : parseExploreCollectionExchange(value, tab.collection);
 }
 
 function serializeSelected(value: unknown): string {

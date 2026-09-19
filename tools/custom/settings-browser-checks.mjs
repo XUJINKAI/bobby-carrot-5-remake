@@ -10,6 +10,7 @@ export async function verifySettingsPage(cdp, sessionId) {
       localStorage.setItem('bc5r:adventure', JSON.stringify({
         schemaVersion: 1,
         game: 'https://github.com/XUJINKAI/bobby-carrot-5-remake',
+        scope: 'adventure',
         campaign: {
           completedThrough: {},
           completedEvents: [],
@@ -21,12 +22,20 @@ export async function verifySettingsPage(cdp, sessionId) {
       localStorage.setItem('bc5r:explore/original', JSON.stringify({
         schemaVersion: 1,
         game: 'https://github.com/XUJINKAI/bobby-carrot-5-remake',
+        scope: 'explore/original',
         completedMaps: ['1-1'],
         lastMap: '1-1'
+      }));
+      localStorage.setItem('bc5r:explore/engine-lab', JSON.stringify({
+        schemaVersion: 1,
+        game: 'https://github.com/XUJINKAI/bobby-carrot-5-remake',
+        scope: 'explore/engine-lab',
+        completedMaps: []
       }));
       localStorage.setItem('bc5r:explore/custom', JSON.stringify({
         schemaVersion: 1,
         game: 'https://github.com/XUJINKAI/bobby-carrot-5-remake',
+        scope: 'explore/custom',
         completedMaps: []
       }));
       location.reload();
@@ -52,7 +61,7 @@ export async function verifySettingsPage(cdp, sessionId) {
   );
   if (
     snapshot.tabs.map((tab) => tab.label).join(",") !==
-      "Adventure,Explore / custom,Explore / original" ||
+      "Adventure,original,engine-lab" ||
     snapshot.tabs[0]?.selected !== "true" ||
     snapshot.panels !== 1 ||
     snapshot.draftHeight < 350 ||

@@ -40,7 +40,8 @@
    - 其它修改必须执行完整的 `npm run verify`。跨模块修改、Engine / Model / Adventure 逻辑、公共合同、数据格式、构建工具和包含多个逻辑阶段的长任务均属于完整验证范围。
    - 同一任务同时包含低风险修改与其它修改时，按完整验证执行；无法确定风险级别时也按完整验证执行。
 6. 浏览器回归测试需要启动本机 Chromium，必须直接在沙箱外运行；包含该测试的 `npm run verify` 同样直接在沙箱外运行，避免先在沙箱内失败再重试。
-7. 输出 PR message 前，以任务开始时记录的 `HEAD` commit 为比较基线检查：
+7. 在网页版 GPT 环境中，远端 GitHub 读写必须使用 GitHub Connector；完成本地 commit 后，通过 Connector 更新目标分支，不直接执行 `git push`。
+8. 输出 PR message 前，以任务开始时记录的 `HEAD` commit 为比较基线检查：
 
    ```sh
    git log --oneline <base-commit>..HEAD
@@ -114,6 +115,8 @@
 ```text
 @bobby/model <- engine
 @bobby/model <- @bobby/adventure
+@bobby/model <- @bobby/exchange <- embed
+@bobby/exchange <- web
 @bobby/model <- editor <- web
 @bobby/model <- tools
 engine       <- editor <- web

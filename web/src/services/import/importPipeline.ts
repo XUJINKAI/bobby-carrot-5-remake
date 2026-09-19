@@ -1,35 +1,42 @@
 import type { AdventureSave } from "@bobby/adventure";
-import { WEB_ERROR_CODES, WebError } from "../../errors/errorCodes.js";
-import {
-  fromLevelMap,
-  parseEditorLevel,
-  toLevelMap,
-  type EditorMap,
-} from "@bobby/editor";
-import { parseLevelMap, type LevelMap } from "@bobby/model";
 import {
   decodeExchangePayload,
   decodeExchangeText,
-} from "../../shared/data-exchange/dataExchangeCodec.js";
+  parseExchangeMap,
+} from "@bobby/exchange";
+import { WEB_ERROR_CODES, WebError } from "../../errors/errorCodes.js";
+import {
+  BC5R_GAME_ID,
+  type LevelMap,
+  type MapCollectionSummary,
+  type MapDocument,
+  parseMapDocument,
+} from "@bobby/model";
+import { exploreCollectionPath } from "../../app/routes.js";
 import {
   parseAdventureProfileExchange,
   saveAdventureSave,
 } from "../../storage/adventureSaveStorage.js";
 import {
-  parseExploreProgressExchange,
-  saveExploreProgressSave,
-  type ExploreProgressSave,
+  exploreSaveCollection,
+  parseExploreCollectionExchange,
+  saveExploreCollectionSave,
 } from "../../storage/exploreProgressStorage.js";
+import type { ExploreCollectionStorage } from "../../storage/contracts.js";
 
 export interface ImportedMapData {
   type: "map";
-  value: EditorMap;
+  value: MapDocument;
   level: LevelMap;
 }
 
 export type ImportedSaveData =
   | { type: "adventure-save"; value: AdventureSave }
-  | { type: "explore-save"; value: ExploreProgressSave };
+  | {
+      type: "explore-save";
+      collection: string;
+      value: ExploreCollectionStorage;
+    };
 
 export type ImportedData = ImportedMapData | ImportedSaveData;
 
@@ -61,60 +68,79 @@ export function requireImportedJson(value: unknown): ImportedData {
 }
 
 export function classifyImportedJson(value: unknown): ImportedData | null {
-  const map = parseMap(value);
-  if (map) return map;
-  try {
+  const scope = dataScope(value);
+  if (scope === "adventure") {
     return {
       type: "adventure-save",
       value: parseAdventureProfileExchange(value),
     };
-  } catch {
-    // 继续尝试其它本站导出格式。
   }
-  try {
+  if (scope?.startsWith("explore/")) {
+    const save = parseExploreCollectionExchange(value);
     return {
       type: "explore-save",
-      value: parseExploreProgressExchange(value),
+      collection: exploreSaveCollection(save),
+      value: save,
     };
-  } catch {
-    return null;
   }
+  return parseMap(value);
 }
 
 export function applyImportedSave(
   data: ImportedSaveData,
-): "/adventure" | "/explore" {
+  collections: readonly Pick<MapCollectionSummary, "id">[] = [],
+): string {
   if (data.type === "adventure-save") {
     saveAdventureSave(data.value);
     return "/adventure";
   }
-  saveExploreProgressSave(data.value);
-  return "/explore";
+  requireImportedSaveTarget(data, collections);
+  saveExploreCollectionSave(data.collection, data.value);
+  return exploreCollectionPath(data.collection);
+}
+
+export function requireImportedSaveTarget(
+  data: ImportedSaveData,
+  collections: readonly Pick<MapCollectionSummary, "id">[],
+): void {
+  if (
+    data.type === "explore-save" &&
+    !collections.some(({ id }) => id === data.collection)
+  )
+    throw new WebError(WEB_ERROR_CODES.saveExchange.invalidExploreSave);
+}
+
+function dataScope(value: unknown): string | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const scope = (value as Record<string, unknown>).scope;
+  return typeof scope === "string" ? scope : null;
 }
 
 function parseMap(value: unknown): ImportedMapData | null {
-  let text: string;
+  let level: LevelMap;
   try {
-    const serialized = JSON.stringify(value);
-    if (serialized === undefined) return null;
-    text = serialized;
+    level = parseExchangeMap(value);
   } catch {
     return null;
   }
+
   try {
-    const document = parseEditorLevel(text);
-    return { type: "map", value: document, level: toLevelMap(document) };
-  } catch {
-    // 缺少 metadata 的纯 LevelMap 走相同 gameplay parser。
-  }
-  try {
-    const level = parseLevelMap(value);
+    parseMapDocument(value);
     return {
       type: "map",
-      value: fromLevelMap(level, "Imported Bobby Level"),
+      value: structuredClone(value as MapDocument),
       level,
     };
   } catch {
-    return null;
+    // 纯 LevelMap 只补产品层文档名称；gameplay 内容保持公共 parser 的结果。
   }
+
+  return {
+    type: "map",
+    value: {
+      ...structuredClone(level),
+      meta: { game: BC5R_GAME_ID, name: "Imported Bobby Level" },
+    },
+    level,
+  };
 }
