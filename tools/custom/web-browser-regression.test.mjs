@@ -8,7 +8,10 @@ import { verifyButtonFocusPolicy } from "./button-focus-browser-checks.mjs";
 import { waitForBrowserState } from "./browser-regression-wait.mjs";
 import { verifyEditorExperience } from "./editor-browser-checks.mjs";
 import { verifyGameplayDialogKeyboard } from "./gameplay-dialog-browser-checks.mjs";
-import { verifyLocaleSwitchPreservesGameSession } from "./locale-browser-checks.mjs";
+import {
+  verifyImportErrorFollowsLocale,
+  verifyLocaleSwitchPreservesGameSession,
+} from "./locale-browser-checks.mjs";
 import {
   replayLayout,
   verifyReplayPanelShortcut,
@@ -82,6 +85,10 @@ test(
       await verifyLocaleSwitchPreservesGameSession(
         cdp,
         await openPage(cdp, `${origin}/import/v1#${replayPayload()}`),
+      );
+      await verifyImportErrorFollowsLocale(
+        cdp,
+        await openPage(cdp, `${origin}/import/v1#%`),
       );
       await verifyAdventureDeveloperTools(
         cdp,
