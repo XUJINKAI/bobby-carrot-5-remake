@@ -33,7 +33,7 @@ export interface WebErrorOptions extends ErrorOptions {
 }
 
 export class WebError extends Error {
-  readonly params?: WebErrorParams;
+  readonly params: WebErrorParams | undefined;
 
   constructor(
     public readonly code: WebErrorCode,
