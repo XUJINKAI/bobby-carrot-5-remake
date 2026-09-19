@@ -143,7 +143,8 @@ test("持久 UI 状态保存翻译语义而不是已翻译字符串", async () =
   assert.match(settings, /feedback: WebDisplayText \| null/);
   assert.doesNotMatch(settings, /tab\.feedback = webT\(/);
   assert.doesNotMatch(settings, /@error="activeTab\.feedback = \$event\.message"/);
-  assert.match(importPage, /status === "unknown" \? webT\("import\.unknown"\) : message/);
+  assert.match(importPage, /message \? resolveWebText\(message\) : ""/);
+  assert.match(app, /message: errorDisplayText\(error\)/);
   assert.doesNotMatch(app, /message: webT\("import\.unknown"\)/);
 });
 
