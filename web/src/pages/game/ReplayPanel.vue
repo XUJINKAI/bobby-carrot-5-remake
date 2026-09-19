@@ -13,8 +13,8 @@ const canSaveBuiltin = import.meta.env.DEV;
     <section class="replay-panel-status">
       <span data-replay-indicator />
       <div>
-        <strong data-replay-status>{{ webT("game.replay.ready") }}</strong>
-        <small data-replay-ticks>{{ webT("game.replay.fromStart", { ticks: 0 }) }}</small>
+        <strong data-replay-status />
+        <small data-replay-ticks />
       </div>
     </section>
 
@@ -29,7 +29,7 @@ const canSaveBuiltin = import.meta.env.DEV;
     <section class="replay-panel-result">
       <div class="replay-panel-result-title">
         <strong>{{ webT("game.replay.result") }}</strong>
-        <span data-replay-verification aria-live="polite">{{ webT("game.replay.waitRecord") }}</span>
+        <span data-replay-verification aria-live="polite" />
       </div>
       <textarea
         data-replay-output
