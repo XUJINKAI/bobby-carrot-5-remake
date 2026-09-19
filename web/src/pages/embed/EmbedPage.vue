@@ -39,7 +39,6 @@ const pinchZoom = ref(true);
 const wheelZoom = ref(false);
 const info = ref("");
 const preview = ref<HTMLElement | null>(null);
-const codeBlock = ref<HTMLElement | null>(null);
 const previewError = ref<WebDisplayText | null>(null);
 const copyError = ref<WebDisplayText | null>(null);
 const previewReady = ref(false);
@@ -97,7 +96,7 @@ const embedCode = computed(() => {
       : { mapUrl: mapUrl.value.trim() }),
   };
   const serialized = JSON.stringify(config, null, 2).replaceAll("<", "\\u003c");
-  return `<div id="bc5r" style="height:520px;display:grid;place-items:center;border:1px solid #254868;background:#071522;color:#c9e6f7">Loading Bobby Carrot 5 Remake…</div>\n\n<script>\nwindow.BC5R = window.BC5R || { queue: [] };\nBC5R.queue.push(${serialized});\n<\/script>\n\n<script async src="${standaloneUrl()}"><\/script>`;
+  return `<div id="bc5r" style="width:100%;height:520px;display:grid;place-items:center;\n  border:1px solid #254868;background:#071522;color:#c9e6f7">Loading Bobby Carrot 5 Remake…</div>\n\n<script>\nwindow.BC5R = window.BC5R || { queue: [] };\nBC5R.queue.push(${serialized});\n<\/script>\n\n<script async src="${standaloneUrl()}"><\/script>`;
 });
 
 watch(
@@ -185,16 +184,6 @@ async function copyCode(): Promise<void> {
       new WebError(WEB_ERROR_CODES.common.clipboardUnavailable, { cause }),
     );
   }
-}
-
-function selectAllCode(): void {
-  const element = codeBlock.value;
-  const selection = window.getSelection();
-  if (!element || !selection) return;
-  const range = document.createRange();
-  range.selectNodeContents(element);
-  selection.removeAllRanges();
-  selection.addRange(range);
 }
 
 onBeforeUnmount(() => handle?.destroy());
@@ -307,7 +296,7 @@ onBeforeUnmount(() => handle?.destroy());
           <h2>{{ webT("embed.code") }}</h2>
           <button @click="copyCode">{{ webT("embed.copy") }}</button>
         </div>
-        <pre ref="codeBlock" class="code-block" @click="selectAllCode"><code>{{ embedCode }}</code></pre>
+        <pre class="code-block"><code>{{ embedCode }}</code></pre>
         <p v-if="copyError" class="error" aria-live="polite">{{ resolveWebText(copyError) }}</p>
       </section>
     </div>
