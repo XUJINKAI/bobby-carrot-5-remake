@@ -35,3 +35,40 @@ test("页面配置不维护完整快捷键清单", async () => {
   assert.doesNotMatch(source, /录制 Replay 测试输入（Tab）/);
   assert.doesNotMatch(source, /方向键 \/ WASD 移动/);
 });
+
+
+test("lazy i18n scope readiness covers both rendered and requested locales", async () => {
+  const source = await readFile(
+    new URL("../src/i18n/webI18n.ts", import.meta.url),
+    "utf8",
+  );
+  assert.match(source, /const currentLocale = locale\.value;/);
+  assert.match(source, /const targetLocale = desiredLocale;/);
+  assert.match(
+    source,
+    /Promise\.all\(\[\s*loadScopes\(scopes, currentLocale\),[\s\S]*loadScopes\(scopes, targetLocale\)/,
+  );
+  assert.match(
+    source,
+    /currentLocale === locale\.value[\s\S]*targetLocale === desiredLocale/,
+  );
+  assert.match(
+    source,
+    /export async function setWebI18nRouteScopes[\s\S]*await loadScopesForRender\(scopes\)/,
+  );
+});
+
+test("route i18n activation keeps stale-route protection across awaits", async () => {
+  const source = await readFile(
+    new URL("../src/app/BobbyApp.ts", import.meta.url),
+    "utf8",
+  );
+  assert.match(
+    source,
+    /private async activateI18nRoute\([\s\S]*if \(!this\.canCommitRoute\(generation\)\) return false;[\s\S]*await setWebI18nRouteScopes[\s\S]*return this\.canCommitRoute\(generation\)/,
+  );
+  assert.match(
+    source,
+    /if \(!\(await this\.activateI18nRoute\(generation, loadGamePage\)\)\) return;/,
+  );
+});
