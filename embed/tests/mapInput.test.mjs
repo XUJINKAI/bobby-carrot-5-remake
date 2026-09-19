@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { gzipSync } from "node:zlib";
 import test from "node:test";
 import { encodeExchangeText } from "@bobby/exchange";
 import {
@@ -8,11 +9,19 @@ import {
 } from "../../exchange/tests/fixtures.mjs";
 import { loadEmbedMap } from "../dist/mapInput.js";
 
-test("map 接受 LevelMap、MapDocument、BC5R1 与完整分享 URL", async () => {
+test("map 接受 JSON、两种 payload、BC5R1 与完整分享 URL", async () => {
   const json = JSON.stringify(levelMapFixture);
+  const plainPayload = Buffer.from(json, "utf8").toString("base64url");
+  const gzipPayload = gzipSync(json).toString("base64url");
   const sources = [
     json,
     JSON.stringify(mapDocumentFixture),
+    plainPayload,
+    gzipPayload,
+    `BC5R1:${plainPayload}`,
+    `BC5R1:${gzipPayload}`,
+    `https://example.com/import/v1#${plainPayload}`,
+    `https://example.com/import/v1#${gzipPayload}`,
     await encodeExchangeText(json),
     await encodeExchangeText(json, { publicBaseUrl: "https://example.com/" }),
   ];
@@ -22,7 +31,14 @@ test("map 接受 LevelMap、MapDocument、BC5R1 与完整分享 URL", async () =
 
 test("mapUrl 下载后的内容经过同一组 decoder", async () => {
   const json = JSON.stringify(mapDocumentFixture);
-  for (const source of [json, await encodeExchangeText(json)]) {
+  const plainPayload = Buffer.from(json, "utf8").toString("base64");
+  const gzipPayload = gzipSync(json).toString("base64url");
+  for (const source of [
+    json,
+    plainPayload,
+    gzipPayload,
+    await encodeExchangeText(json),
+  ]) {
     const mapUrl = `data:text/plain,${encodeURIComponent(source)}`;
     assert.deepEqual(await loadEmbedMap({ mapUrl }), levelMapFixture);
   }

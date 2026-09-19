@@ -39,7 +39,7 @@ const catalog = {
   "common.unsyncedChanges": "内容有未应用的修改；应用后再同步信息。",
   "common.error.dataExchange.invalidJson": "JSON 格式错误",
   "common.error.dataExchange.unknownRepresentation": "无法识别的数据格式",
-  "common.error.dataExchange.invalidBase64Url": "BC5R1 数据编码无效",
+  "common.error.dataExchange.invalidPayload": "数据 Payload 的 Base64 编码无效",
   "common.error.dataExchange.damagedGzip": "BC5R1 压缩数据已损坏",
   "common.error.dataExchange.unsupportedVersion": "不支持此 BC5R 数据版本",
   "common.error.save.invalidAdventureProfile": "这段数据不是有效的冒险存档。",

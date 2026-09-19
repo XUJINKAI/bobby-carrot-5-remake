@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { gzipSync } from "node:zlib";
 import test from "node:test";
 import {
   EXCHANGE_ERROR_CODES,
@@ -36,6 +37,26 @@ test("BC5R1 对各类 UTF-8 JSON 文本执行往返", async () => {
   }
 });
 
+test("裸 payload、BC5R1 与分享 URL 都接受 Base64 JSON 或 gzip JSON", async () => {
+  const jsonText = JSON.stringify(mapDocumentFixture);
+  const bytes = [Buffer.from(jsonText, "utf8"), gzipSync(jsonText)];
+  const payloads = bytes.flatMap((value) => [
+    value.toString("base64url"),
+    value.toString("base64"),
+  ]);
+
+  for (const payload of payloads) {
+    for (const source of [
+      payload,
+      `BC5R1:${payload}`,
+      `https://example.com/game/import/v1#${payload}`,
+    ]) {
+      const decoded = await decodeExchangeText(source);
+      assert.deepEqual(decoded.value, mapDocumentFixture);
+    }
+  }
+});
+
 test("分享 URL 保留完整站点根路径", () => {
   const cases = [
     ["https://bc5r.com", "https://bc5r.com/import/v1#PAYLOAD"],
@@ -53,8 +74,10 @@ test("分享 URL 保留完整站点根路径", () => {
     assert.equal(buildImportUrl(base, "PAYLOAD"), expected);
 });
 
-test("格式识别接受 JSON、BC5R1 与任意站点的 import/v1 URL", () => {
+test("格式识别接受 JSON、裸 payload、BC5R1 与任意站点的 import/v1 URL", () => {
+  const payload = Buffer.from(JSON.stringify(levelMapFixture)).toString("base64url");
   assert.equal(detectExchangeFormat('{"foo":"bar"}'), "json");
+  assert.equal(detectExchangeFormat(payload), "bc5r1");
   assert.equal(detectExchangeFormat("BC5R1:PAYLOAD"), "bc5r1");
   assert.equal(
     detectExchangeFormat("https://example.com/foo/import/v1#PAYLOAD"),

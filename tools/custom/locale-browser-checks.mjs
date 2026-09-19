@@ -17,7 +17,7 @@ export async function verifyImportErrorFollowsLocale(cdp, sessionId) {
     (await cdp.evaluate(
       sessionId,
       "document.querySelector('.import-card p')?.textContent?.trim() ?? ''",
-    )) === "BC5R1 数据编码无效",
+    )) === "数据 Payload 的 Base64 编码无效",
   );
 
   await chooseLocale(cdp, sessionId, "English", "en");
@@ -25,7 +25,7 @@ export async function verifyImportErrorFollowsLocale(cdp, sessionId) {
     (await cdp.evaluate(
       sessionId,
       "document.querySelector('.import-card p')?.textContent?.trim() ?? ''",
-    )) === "Invalid BC5R1 data encoding",
+    )) === "Invalid Base64 data payload",
   );
 }
 

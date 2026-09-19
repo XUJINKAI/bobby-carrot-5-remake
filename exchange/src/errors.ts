@@ -1,7 +1,7 @@
 export const EXCHANGE_ERROR_CODES = {
   invalidJson: "data-exchange.invalid-json",
   unknownRepresentation: "data-exchange.unknown-representation",
-  invalidBase64Url: "data-exchange.invalid-base64url",
+  invalidPayload: "data-exchange.invalid-payload",
   damagedGzip: "data-exchange.damaged-gzip",
   unsupportedVersion: "data-exchange.unsupported-version",
 } as const;

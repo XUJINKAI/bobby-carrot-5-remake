@@ -22,8 +22,8 @@ const ERROR_TRANSLATION_KEYS = {
     "common.error.dataExchange.invalidJson",
   [EXCHANGE_ERROR_CODES.unknownRepresentation]:
     "common.error.dataExchange.unknownRepresentation",
-  [EXCHANGE_ERROR_CODES.invalidBase64Url]:
-    "common.error.dataExchange.invalidBase64Url",
+  [EXCHANGE_ERROR_CODES.invalidPayload]:
+    "common.error.dataExchange.invalidPayload",
   [EXCHANGE_ERROR_CODES.damagedGzip]:
     "common.error.dataExchange.damagedGzip",
   [EXCHANGE_ERROR_CODES.unsupportedVersion]:

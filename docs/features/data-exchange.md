@@ -7,9 +7,12 @@ Data Exchange 是 Bobby Carrot 5 Remake 面向地图、Adventure Save、Explore 
 用户可以直接编辑或粘贴以下任一表示，并使用同一个导入动作：
 
 - Plain JSON；
-- `BC5R1:<payload>` 压缩文本；
+- 裸 `<payload>`；
+- `BC5R1:<payload>` 文本；
 - 以 `/import/v1#<payload>` 结尾的完整分享 URL；
 - 内容为上述任一表示的文本文件；文件扩展名不参与格式判断。
+
+三种携带 payload 的外层表示使用同一个 decoder。Payload 可以是 Base64 / Base64URL 编码的 UTF-8 JSON，也可以是 Base64 / Base64URL 编码的 gzip(JSON)；decoder 根据解码后字节的 gzip header 自动判断，不靠外层形式猜测。
 
 `.bc5r` 是 UTF-8 文本文件，MIME 为 `text/plain;charset=utf-8`。压缩状态下载的文件内容与 TextBox 当前内容完全一致；正式站点配置 `publicBaseUrl` 后，该内容通常是可点击的完整分享 URL。Plain 状态下载 `.json`。
 
@@ -21,7 +24,7 @@ Settings 的存档管理读取浏览器中实际存在的 `bc5r:adventure` 和 `
 
 Adventure Save 固定使用 `scope: "adventure"`。每份 Explore Save 对应一个 collection，并使用 `scope: "explore/<collection>"`，例如 `explore/original` 与 `explore/engine-lab`。Settings 导入时要求 `scope` 与当前 Tab 完全一致；Home 与 `/import/v1` 根据 `scope` 定位并覆盖对应的独立存档 record。
 
-Home 导入弹窗接受 Plain JSON、`BC5R1`、完整分享 URL 和任意扩展名的文本文件。`/import/v1` 只接受 URL fragment 中的 gzip + Base64URL payload。两者在 transport 解码后共用相同的 JSON 识别顺序：
+Home 导入弹窗接受 Plain JSON、裸 payload、`BC5R1`、完整分享 URL 和任意扩展名的文本文件。`/import/v1` 从 URL fragment 取得 payload；所有入口在 transport 解码后共用相同的 JSON 识别顺序：
 
 ```text
 MapDocument / LevelMap → 创建 imported Explore gameplay session
@@ -40,13 +43,13 @@ Explore Save           → 根据 scope 覆盖对应 collection 存档
 JSON text → UTF-8 → gzip → Base64URL payload
 ```
 
-Base64URL 只使用 `A-Z a-z 0-9 - _`，省略尾部 padding。raw representation 为 `BC5R1:<payload>`。分享地址为：
+Encoder 的规范输出仍使用 gzip + Base64URL；Base64URL 只使用 `A-Z a-z 0-9 - _`，省略尾部 padding。默认 raw representation 为 `BC5R1:<payload>`。分享地址为：
 
 ```text
 <publicBaseUrl>/import/v1#<payload>
 ```
 
-Payload 位于 fragment，浏览器只在客户端读取。Decoder 只还原 `unknown` JSON；公共 map parser 识别 `LevelMap` / `MapDocument`，Web import pipeline 根据存档 `scope` 识别 Adventure Save 与 Explore Save。
+Payload 位于 fragment，浏览器只在客户端读取。Decoder 同时接受未压缩 JSON payload 和 gzip payload，并只还原 `unknown` JSON；公共 map parser 识别 `LevelMap` / `MapDocument`，Web import pipeline 根据存档 `scope` 识别 Adventure Save 与 Explore Save。
 
 ## 站点根地址
 
@@ -63,7 +66,7 @@ Vite `base` 负责构建资源路径，`publicBaseUrl` 负责分享地址。构�
 
 ## 公共层职责
 
-`@bobby/exchange` 提供 gzip、Base64URL、`BC5R1`、格式识别、分享 URL payload 提取与公共 map parser。它只依赖 `@bobby/model`，不依赖 Web、Editor、存档 storage 或 UI。Home、`/import/v1` 与 Embed 的 `map` / `mapUrl` 都先经过这一层，因此 Plain LevelMap JSON、MapDocument JSON、`BC5R1:` 和完整 `/import/v1#` URL 使用同一组 decoder。
+`@bobby/exchange` 提供 gzip、Base64 / Base64URL、裸 payload、`BC5R1`、格式识别、分享 URL payload 提取与公共 map parser。它只依赖 `@bobby/model`，不依赖 Web、Editor、存档 storage 或 UI。Home、`/import/v1` 与 Embed 的 `map` / `mapUrl` 都先经过这一层，因此 Plain LevelMap JSON、MapDocument JSON、裸 payload、`BC5R1:` 和完整 `/import/v1#` URL 使用同一组 decoder。
 
 `web/src/shared/data-exchange/` 只提供文本文件 I/O，以及可配置左右 toolbar、label 和 placeholder 的 `DataExchangePanel`。`web/src/services/import/importPipeline.ts` 在公共包之上组织存档识别与应用；Home 和 `/import/v1` 共享该 pipeline，只分别提供文本/文件输入和 URL fragment 输入。地图游玩、确认 UI 与页面导航仍由消费页面负责。
 

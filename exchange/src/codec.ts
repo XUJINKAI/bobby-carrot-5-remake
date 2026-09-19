@@ -22,14 +22,14 @@ export function encodeBase64Url(bytes: Uint8Array): string {
 
 export function decodeBase64Url(text: string): Uint8Array {
   if (!/^[A-Za-z0-9_-]+$/.test(text))
-    throw new ExchangeError(EXCHANGE_ERROR_CODES.invalidBase64Url);
+    throw new ExchangeError(EXCHANGE_ERROR_CODES.invalidPayload);
   const standard = text.replace(/-/g, "+").replace(/_/g, "/");
   const padded = standard.padEnd(Math.ceil(standard.length / 4) * 4, "=");
   try {
     return Uint8Array.from(atob(padded), (character) => character.charCodeAt(0));
   } catch (cause) {
     throw new ExchangeError(
-      EXCHANGE_ERROR_CODES.invalidBase64Url,
+      EXCHANGE_ERROR_CODES.invalidPayload,
       { cause },
     );
   }
@@ -58,14 +58,14 @@ export async function encodeBc5rV1(jsonText: string): Promise<string> {
 }
 
 export async function decodeBc5rV1(payload: string): Promise<string> {
-  return gunzipText(decodeBase64Url(payload));
+  return decodePayloadText(payload);
 }
 
-/** `/import/v1#` 已经确定 transport，这里只接受 fragment 中的 raw payload。 */
+/** 解码裸 payload；内容可以是 Base64(JSON) 或 Base64(gzip(JSON))。 */
 export async function decodeExchangePayload(
   payload: string,
 ): Promise<DecodedExchangeData> {
-  const jsonText = await decodeBc5rV1(payload);
+  const jsonText = await decodePayloadText(payload);
   return { value: parseJson(jsonText), format: "bc5r1", jsonText };
 }
 
@@ -90,9 +90,11 @@ export async function decodeExchangeText(
     ? source.slice(PREFIX.length)
     : extractImportPayload(source);
   if (payload !== null) return decodeExchangePayload(payload);
-  if (!source.startsWith("{") && !source.startsWith("["))
+  if (source.startsWith("{") || source.startsWith("["))
+    return { value: parseJson(source), format: "json", jsonText: source };
+  if (!source)
     throw new ExchangeError(EXCHANGE_ERROR_CODES.unknownRepresentation);
-  return { value: parseJson(source), format: "json", jsonText: source };
+  return decodeExchangePayload(source);
 }
 
 export function detectExchangeFormat(text: string): ExchangeFormat {
@@ -102,7 +104,48 @@ export function detectExchangeFormat(text: string): ExchangeFormat {
     JSON.parse(source);
     return "json";
   } catch {
-    return "unknown";
+    return looksLikePayload(source) ? "bc5r1" : "unknown";
+  }
+}
+
+async function decodePayloadText(payload: string): Promise<string> {
+  const bytes = decodePayloadBase64(payload.trim());
+  if (isGzip(bytes)) return gunzipText(bytes);
+  try {
+    return new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+  } catch (cause) {
+    throw new ExchangeError(EXCHANGE_ERROR_CODES.invalidJson, { cause });
+  }
+}
+
+function decodePayloadBase64(text: string): Uint8Array {
+  const urlSafe = /^[A-Za-z0-9_-]+={0,2}$/.test(text);
+  const standard = /^[A-Za-z0-9+/]+={0,2}$/.test(text);
+  if ((!urlSafe && !standard) || text.length % 4 === 1)
+    throw new ExchangeError(EXCHANGE_ERROR_CODES.invalidPayload);
+  const unpadded = text.replace(/=+$/, "");
+  const normalized = unpadded.replace(/-/g, "+").replace(/_/g, "/");
+  const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=");
+  try {
+    return Uint8Array.from(atob(padded), (character) => character.charCodeAt(0));
+  } catch (cause) {
+    throw new ExchangeError(EXCHANGE_ERROR_CODES.invalidPayload, { cause });
+  }
+}
+
+function isGzip(bytes: Uint8Array): boolean {
+  return bytes[0] === 0x1f && bytes[1] === 0x8b;
+}
+
+function looksLikePayload(source: string): boolean {
+  if (!source) return false;
+  try {
+    const bytes = decodePayloadBase64(source);
+    if (isGzip(bytes)) return true;
+    JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(bytes));
+    return true;
+  } catch {
+    return false;
   }
 }
 

@@ -41,7 +41,7 @@ const catalog = {
   "common.unsyncedChanges": "There are unapplied changes. Apply them before syncing.",
   "common.error.dataExchange.invalidJson": "Invalid JSON",
   "common.error.dataExchange.unknownRepresentation": "Unrecognized data format",
-  "common.error.dataExchange.invalidBase64Url": "Invalid BC5R1 data encoding",
+  "common.error.dataExchange.invalidPayload": "Invalid Base64 data payload",
   "common.error.dataExchange.damagedGzip": "BC5R1 compressed data is corrupted",
   "common.error.dataExchange.unsupportedVersion": "Unsupported BC5R data version",
   "common.error.save.invalidAdventureProfile": "This is not a valid Adventure save.",

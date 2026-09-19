@@ -61,19 +61,19 @@ test("Data Exchange 错误保存语义码并随 locale 重新本地化", async (
     error = caught;
   }
   assert.ok(error instanceof ExchangeError);
-  assert.equal(error.code, EXCHANGE_ERROR_CODES.invalidBase64Url);
-  assert.equal(error.message, EXCHANGE_ERROR_CODES.invalidBase64Url);
-  assert.equal(resolveWebText(errorDisplayText(error)), "BC5R1 数据编码无效");
+  assert.equal(error.code, EXCHANGE_ERROR_CODES.invalidPayload);
+  assert.equal(error.message, EXCHANGE_ERROR_CODES.invalidPayload);
+  assert.equal(resolveWebText(errorDisplayText(error)), "数据 Payload 的 Base64 编码无效");
 
   await setWebLocale("en");
   assert.equal(getWebLocale(), "en");
   assert.equal(
     resolveWebText(errorDisplayText(error)),
-    "Invalid BC5R1 data encoding",
+    "Invalid Base64 data payload",
   );
 
   await setWebLocale("zh-CN");
-  assert.equal(resolveWebText(errorDisplayText(error)), "BC5R1 数据编码无效");
+  assert.equal(resolveWebText(errorDisplayText(error)), "数据 Payload 的 Base64 编码无效");
 });
 
 test("Import 无法分类的数据使用集中错误码", () => {
