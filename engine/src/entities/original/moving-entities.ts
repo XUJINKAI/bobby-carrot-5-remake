@@ -292,7 +292,7 @@ function nextRoute(
         ),
         ...(entity.state?.moving === true ? [initial] : []),
       ]
-    : [launchDirection ?? leafDirectionAt(query, entity.anchor, initial), initial];
+    : leafRouteCandidates(query, entity, launchDirection, initial);
   const direction = candidates.find((candidate) =>
     canEnterMovingDomain(query, entity, addDirection(entity.anchor, candidate), candidate)
   );
@@ -301,6 +301,22 @@ function nextRoute(
     direction,
     movement: movementFor(query, entity),
   };
+}
+
+function leafRouteCandidates(
+  query: WorldQueryApi,
+  entity: Readonly<EntityInstance>,
+  launchDirection: Direction | null,
+  currentDirection: Direction,
+): Direction[] {
+  const preferredDirection =
+    launchDirection ?? leafDirectionAt(query, entity.anchor, currentDirection);
+
+  // 只有正在漂流的 Leaf 才能在水流改向受阻后沿原方向续行。
+  // 停在 Tide / Waterfall 上时必须等待水流前方清空，不能把默认朝向当成退路。
+  return entity.state?.moving === true
+    ? [preferredDirection, currentDirection]
+    : [preferredDirection];
 }
 
 function movementFor(

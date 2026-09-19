@@ -252,3 +252,39 @@ test("停在潮流上的 Leaf 会在前方清空后继续漂流", () => {
   world.update({ tick: 2, stepMs: CLOUD_MOVEMENT.cellMs });
   assert.deepEqual(world.entity(leaf.id).anchor, { x: 2, y: 0 });
 });
+
+test("初始位于向左潮流上的 Leaf 前方受阻时原地等待", () => {
+  const world = new World({
+    schemaVersion: 1,
+    width: 3,
+    height: 1,
+    entities: [
+      { type: MapEntityTypeId.WATER, x: 0, y: 0 },
+      { type: MapEntityTypeId.WATER, x: 1, y: 0 },
+      { type: MapEntityTypeId.WATER, x: 2, y: 0 },
+      { type: MapEntityTypeId.PLANK, x: 0, y: 0 },
+      { type: MapEntityTypeId.TIDE, x: 1, y: 0, direction: "left" },
+      { type: MapEntityTypeId.LEAF, x: 1, y: 0 },
+    ],
+  });
+  const leaf = world.query.entitiesMatching({
+    kind: "type",
+    value: MapEntityTypeId.LEAF,
+  })[0];
+  const plank = world.query.entitiesMatching({
+    kind: "type",
+    value: MapEntityTypeId.PLANK,
+  })[0];
+
+  world.update({ tick: 1, stepMs: 1 });
+  world.update({ tick: 2, stepMs: CLOUD_MOVEMENT.cellMs });
+  assert.deepEqual(world.entity(leaf.id).anchor, { x: 1, y: 0 });
+  assert.equal(world.entity(leaf.id).state?.moving, false);
+  assert.equal(world.actions.active.length, 1);
+
+  const commands = new CommandQueue();
+  commands.destroy(plank.id);
+  world.committer.commit(commands, { worldTick: null, worldTimeMs: 0 });
+  world.update({ tick: 3, stepMs: CLOUD_MOVEMENT.cellMs });
+  assert.deepEqual(world.entity(leaf.id).anchor, { x: 0, y: 0 });
+});
