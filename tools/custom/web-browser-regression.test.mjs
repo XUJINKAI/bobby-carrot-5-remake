@@ -613,10 +613,12 @@ async function verifyReplayPanel(cdp, url) {
     "document.querySelector('[data-replay-action=\"load-builtin\"]')?.click(); true",
   );
   await waitFor(async () =>
-    (await cdp.evaluate(
-      sessionId,
-      "document.querySelector('[data-replay-verification]')?.textContent ?? ''",
-    )) === "当前关卡暂无内置过法",
+    ["当前关卡暂无内置过法", "No built-in solution is available for this level"].includes(
+      await cdp.evaluate(
+        sessionId,
+        "document.querySelector('[data-replay-verification]')?.textContent ?? ''",
+      ),
+    ),
   );
 
   await cdp.evaluate(
