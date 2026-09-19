@@ -38,6 +38,8 @@ test("Embed 框架使用固定首页、地图打开动作与操作提示", async
 
   assert.match(mountSource, /https:\/\/bc5r\.xujinkai\.net\//);
   assert.match(mountSource, /frameControls\.open\.href = playUrl/);
+  assert.match(mountSource, /encodeExchangeText\(JSON\.stringify\(level\)/);
+  assert.doesNotMatch(mountSource, /CompressionStream|\bbtoa\(/);
   assert.match(mountSource, /runtime\.game\.restart\(\)/);
   assert.match(
     mountSource,

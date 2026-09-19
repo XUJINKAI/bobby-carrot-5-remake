@@ -5,6 +5,7 @@ import {
   type GameplayRuntime,
   type ImageManager,
 } from "@bobby/engine";
+import { encodeExchangeText } from "@bobby/exchange";
 import type { LevelMap } from "@bobby/model";
 import {
   EMBED_RUNTIME_CATALOGS,
@@ -541,19 +542,9 @@ function embedRuntimeText(locale: Locale, key: EmbedRuntimeKey): string {
 }
 
 async function officialPlayUrl(level: LevelMap): Promise<string> {
-  const stream = new Blob([JSON.stringify(level)])
-    .stream()
-    .pipeThrough(new CompressionStream("gzip"));
-  const bytes = new Uint8Array(await new Response(stream).arrayBuffer());
-  let binary = "";
-  for (const byte of bytes) binary += String.fromCharCode(byte);
-  const payload = btoa(binary)
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=+$/, "");
-  const url = new URL("import/v1", publicBaseUrl);
-  url.hash = payload;
-  return url.href;
+  return encodeExchangeText(JSON.stringify(level), {
+    publicBaseUrl: publicBaseUrl.href,
+  });
 }
 
 function embedArtUrl(path: string): string {

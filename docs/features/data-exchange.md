@@ -69,6 +69,8 @@ Vite `base` 负责构建资源路径，`publicBaseUrl` 负责分享地址。构�
 
 `web/src/shared/data-exchange/` 只提供文本文件 I/O，以及可配置左右 toolbar、label 和 placeholder 的 `DataExchangePanel`。`web/src/services/import/importPipeline.ts` 在公共包之上组织存档识别与应用；Home 和 `/import/v1` 共享该 pipeline，只分别提供文本/文件输入和 URL fragment 输入。地图游玩、确认 UI 与页面导航仍由消费页面负责。
 
+Embed 的 `map` / `mapUrl` 解码和“在官网打开”分享 URL 编码也都调用 `@bobby/exchange`；Embed runtime 不自行实现 gzip、Base64URL 或分享 URL 拼接。
+
 公共 map parser 遇到带 Bobby Carrot 游戏标识和 `scope` 的存档时，会明确返回“存档不是地图”，不会把它误报成 transport 编码错误。Embed 不再自行维护 prefix、Base64URL、gzip 或 URL payload 规则。
 
 Transport 区分 JSON 格式错误、未知表示、无效 Base64/Base64URL 与损坏 gzip。领域 parser 提供业务类型错误；解析失败时保留 TextBox draft，且不修改业务数据。
