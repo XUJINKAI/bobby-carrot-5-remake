@@ -19,6 +19,7 @@ test("Embed 生成代码与首页示例统一使用 queue + async", async () => 
   }
   assert.doesNotMatch(page, /BC5R\.mount\(\$\{JSON\.stringify/);
   assert.match(page, /Loading Bobby Carrot 5 Remake…/);
-  assert.match(page, /border:1px solid #254868/);
+  assert.match(page, /width:100%;height:520px;display:grid;place-items:center;\\n  border:1px solid #254868/);
+  assert.doesNotMatch(page, /selectAllCode|@click="selectAllCode"|ref="codeBlock"/);
   assert.doesNotMatch(page, /if \(!source\)/);
 });
