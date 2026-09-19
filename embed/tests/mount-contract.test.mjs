@@ -57,13 +57,13 @@ test("Embed 服从 LevelMap 的地图音乐选择", async () => {
 });
 
 
-test("Embed 在 mount 开头只解析一次 locale 并贯穿全部 UI", async () => {
+test("Embed 接受浏览器 locale tag，并在 mount 开头只解析一次 locale 贯穿全部 UI", async () => {
   const [typesSource, mountSource] = await Promise.all([
     readFile(new URL("../src/types.ts", import.meta.url), "utf8"),
     readFile(new URL("../src/mount.ts", import.meta.url), "utf8"),
   ]);
 
-  assert.match(typesSource, /lang\?: Locale \| "auto"/);
+  assert.match(typesSource, /lang\?: string/);
   assert.match(mountSource, /const locale = resolveEmbedLocale\(options\.lang\)/);
   assert.match(mountSource, /root\.dataset\.lang = locale/);
   assert.match(mountSource, /createFrameControls\(audio\.enabled, locale\)/);
