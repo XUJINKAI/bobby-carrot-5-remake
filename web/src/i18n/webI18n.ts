@@ -96,13 +96,14 @@ export function setWebLocale(nextLocale: Locale): Promise<void> {
 export async function preloadWebI18nScopes(
   scopes: readonly TranslationScope[],
 ): Promise<void> {
-  await loadScopesForDesiredLocale(scopes);
+  await loadScopesForRender(scopes);
 }
 
-export function setWebI18nRouteScopes(
+export async function setWebI18nRouteScopes(
   scopes: readonly TranslationScope[],
-): void {
+): Promise<void> {
   routeScopes = new Set(scopes);
+  await loadScopesForRender(scopes);
 }
 
 export function openWebI18nScope(
@@ -113,7 +114,7 @@ export function openWebI18nScope(
     transientScopes.set(scope, (transientScopes.get(scope) ?? 0) + 1);
 
   let active = true;
-  const ready = loadScopesForDesiredLocale(ownedScopes).catch((error) => {
+  const ready = loadScopesForRender(ownedScopes).catch((error) => {
     if (active) {
       active = false;
       releaseTransientScopes(ownedScopes);
@@ -161,13 +162,23 @@ function activeScopes(): Set<TranslationScope> {
   ]);
 }
 
-async function loadScopesForDesiredLocale(
+async function loadScopesForRender(
   scopes: readonly TranslationScope[],
 ): Promise<void> {
   while (true) {
+    const currentLocale = locale.value;
     const targetLocale = desiredLocale;
-    await loadScopes(scopes, targetLocale);
-    if (targetLocale === desiredLocale) return;
+    await Promise.all([
+      loadScopes(scopes, currentLocale),
+      ...(targetLocale === currentLocale
+        ? []
+        : [loadScopes(scopes, targetLocale)]),
+    ]);
+    if (
+      currentLocale === locale.value &&
+      targetLocale === desiredLocale
+    )
+      return;
   }
 }
 
