@@ -6,6 +6,8 @@ import {
   type ReplayReport,
 } from "@bobby/engine";
 import { downloadExchangeText } from "../../shared/data-exchange/dataExchangeFile.js";
+import { WEB_ERROR_CODES, WebError } from "../../errors/errorCodes.js";
+import { errorDisplayText } from "../../errors/errorPresentation.js";
 import {
   loadReplayAsset,
   parseReplayText,
@@ -21,12 +23,6 @@ import {
 
 const REPLAY_PARSE_DELAY_MS = 300;
 
-class LocalizedReplayError extends Error {
-  constructor(readonly text: WebLocalizedText) {
-    super(resolveWebText(text));
-    this.name = "LocalizedReplayError";
-  }
-}
 
 export function replayVerificationPresentation(
   report: ReplayReport,
@@ -56,9 +52,9 @@ export function validateBuiltinReplaySave(
 ): ReplayReport {
   const report = game.verifyReplay(replay);
   if (replay.finalState.status !== "won")
-    throw new LocalizedReplayError(localizedText("game.replay.builtinMustWin"));
+    throw new WebError(WEB_ERROR_CODES.replay.builtinMustWin);
   if (report.actual.status !== "won")
-    throw new LocalizedReplayError(localizedText("game.replay.builtinNotWon"));
+    throw new WebError(WEB_ERROR_CODES.replay.builtinNotWon);
   return report;
 }
 
@@ -151,10 +147,7 @@ export function bindReplayPanel(options: {
   };
 
   const showError = (error: unknown): void => {
-    setVerification(
-      error instanceof LocalizedReplayError ? error.text : errorMessage(error),
-      true,
-    );
+    setVerification(errorDisplayText(error), true);
   };
 
   const clearSpeedError = (): void => {
@@ -495,7 +488,7 @@ export function bindReplayPanel(options: {
       clearReplayParseTimer();
       replayTextDirty = false;
       if (!open) setOpen(true);
-      showError("interactive host choice is not supported by replay");
+      showError(new WebError(WEB_ERROR_CODES.replay.interactiveHostUnsupported));
       update();
     },
   );
@@ -545,9 +538,6 @@ function safeFilename(value: string): string {
   );
 }
 
-function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
-}
 
 function isInteractiveTarget(target: EventTarget | null): boolean {
   return (
