@@ -77,14 +77,19 @@ function errorDetail(locale: Locale, error: unknown): string {
   return text(locale, "embedRuntime.unknownError");
 }
 
+type EmbedRuntimeKey = keyof (typeof EMBED_RUNTIME_CATALOGS)["zh-CN"];
+
 function text(
   locale: Locale,
-  key: string,
+  key: EmbedRuntimeKey,
   params?: Readonly<Record<string, string | number>>,
 ): string {
-  const template = EMBED_RUNTIME_CATALOGS[locale][key] ?? key;
+  const catalog: Readonly<Record<string, string>> = EMBED_RUNTIME_CATALOGS[locale];
+  const template = catalog[key] ?? key;
   if (!params) return template;
-  return template.replace(/\{([A-Za-z0-9_.-]+)\}/g, (match, name: string) =>
-    params[name] === undefined ? match : String(params[name])
+  return template.replace(
+    /\{([A-Za-z0-9_.-]+)\}/g,
+    (match: string, name: string) =>
+      params[name] === undefined ? match : String(params[name]),
   );
 }
