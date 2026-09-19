@@ -21,20 +21,15 @@ const emit = defineEmits<{
   metadataFlush: [];
   saved: [];
 }>();
-const exchangeLevel = computed<EditorMap>(() => {
-  const meta = { ...props.level.meta };
-  delete meta.author;
-  delete meta.note;
-  return {
-    ...props.level,
-    meta: {
-      ...meta,
-      name: props.nameValue,
-      ...(props.authorValue ? { author: props.authorValue } : {}),
-      ...(props.noteValue ? { note: props.noteValue } : {}),
-    },
-  };
-});
+const exchangeLevel = computed<EditorMap>(() => ({
+  ...props.level,
+  meta: {
+    ...props.level.meta,
+    name: props.nameValue,
+    author: props.authorValue,
+    note: props.noteValue,
+  },
+}));
 const embedUrl = computed(() => new URL("embed", publicBaseUrl()).href);
 const toolbar = {
   left: [

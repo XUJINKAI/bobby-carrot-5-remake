@@ -134,6 +134,11 @@ test("Editor metadata command 只修改显式字段并保留空字符串", () =>
   assert.equal(emptyNote.meta.name, "Note Test");
   assert.equal(emptyNote.meta.author, "xjk");
   assert.equal(emptyNote.meta.note, "");
+  assert.deepEqual(JSON.parse(serializeEditorLevel(emptyNote)).meta, {
+    game: BC5R_GAME_ID,
+    name: "Note Test",
+    author: "xjk",
+  });
 });
 
 test("Editor 背景音乐使用省略字段表达默认随机", () => {

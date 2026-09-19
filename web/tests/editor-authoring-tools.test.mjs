@@ -258,6 +258,10 @@ test("Level 与分享 metadata 直接绑定地图字段并使用统一输入防�
   assert.match(pageState, /pendingMetadataFields\.add\(field\)/);
   assert.doesNotMatch(levelInfo, /useEditorMetadataDraft|metadataValue|v-model="metadata\./);
   assert.match(levelInfo, /:value="nameValue"/);
+  assert.match(fileDialog, /name: props\.nameValue/);
+  assert.match(fileDialog, /author: props\.authorValue/);
+  assert.match(fileDialog, /note: props\.noteValue/);
+  assert.doesNotMatch(fileDialog, /delete meta\.|authorValue \?|noteValue \?/);
   assert.match(levelInfo, /@input="emit\('metadataField', 'name'/);
   assert.match(fileDialog, /live-value/);
   assert.match(fileDialog, /@downloaded="downloaded"/);

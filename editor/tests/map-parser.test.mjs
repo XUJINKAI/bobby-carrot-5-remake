@@ -226,7 +226,7 @@ test("MapDocument 输出补充固定 game 标识，但不依赖输入标识", ()
   assert.equal(parseMapDocument(unrelatedMarker).meta.game, BC5R_GAME_ID);
 });
 
-test("MapDocument 序列化统一字段顺序并省略默认 stackOrder", () => {
+test("MapDocument 序列化统一字段顺序并省略默认表示", () => {
   const source = {
     entities: [
       { type: "grass", x: 0, y: 0, stackOrder: 0, variant: "ts-10-1" },
@@ -234,7 +234,7 @@ test("MapDocument 序列化统一字段顺序并省略默认 stackOrder", () => 
     ],
     height: 1,
     width: 1,
-    meta: {},
+    meta: { name: "", author: "", note: "" },
     schemaVersion: 1,
   };
   const serialized = serializeMapDocument(source);
@@ -248,6 +248,7 @@ test("MapDocument 序列化统一字段顺序并省略默认 stackOrder", () => 
       { type: "bobby", x: 0, y: 0, stackOrder: 1 },
     ],
   });
+  assert.deepEqual(source.meta, { name: "", author: "", note: "" });
   assert.equal(source.entities[0].stackOrder, 0);
 });
 

@@ -37,6 +37,7 @@ export function serializeMapDocument(value: unknown): string {
   const document = parseMapDocument(value);
   return `${JSON.stringify({
     ...document,
+    meta: canonicalMapMeta(document.meta),
     entities: document.entities.map(canonicalMapEntity),
   }, null, 2)}\n`;
 }
@@ -151,6 +152,13 @@ function parseLevelEntity(
 function canonicalMapEntity(entity: LevelEntity): LevelEntity {
   const canonical = structuredClone(entity);
   if (canonical.stackOrder === 0) delete canonical.stackOrder;
+  return canonical;
+}
+
+function canonicalMapMeta(meta: MapMeta): MapMeta {
+  const canonical = structuredClone(meta);
+  for (const key of ["name", "author", "note"] as const)
+    if (canonical[key] === "") delete canonical[key];
   return canonical;
 }
 

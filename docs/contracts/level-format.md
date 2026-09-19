@@ -287,12 +287,12 @@ interface MapDocument extends LevelMap {
 }
 ```
 
-`meta` 中的字段全部可省略，字符串允许为空。`MapDocument` 输出默认在 `meta.game` 写入与存档相同的产品标识；输入不要求携带该字段，地图识别也不依赖它。`MapDocument` 不持久化资源 ID 和导航关系。collection 与 map ID 来自 `/assets/maps/<collection>/<map-id>.json` 路径；列表、分组和前后关导航由 collection `index.json` 决定。地图内音乐使用 `LevelMap.music`；地图名称、作者与注记统一位于 `MapDocument.meta`，由 Web 等产品层消费，不进入 Engine 的 `LevelMap`。
+`meta` 中的字段全部可省略，字符串输入允许为空。`MapDocument` 规范输出省略空字符串的 `name / author / note`，并默认在 `meta.game` 写入与存档相同的产品标识；输入不要求携带该字段，地图识别也不依赖它。`MapDocument` 不持久化资源 ID 和导航关系。collection 与 map ID 来自 `/assets/maps/<collection>/<map-id>.json` 路径；列表、分组和前后关导航由 collection `index.json` 决定。地图内音乐使用 `LevelMap.music`；地图名称、作者与注记统一位于 `MapDocument.meta`，由 Web 等产品层消费，不进入 Engine 的 `LevelMap`。
 
 > `LevelMap.music` 的字段归属已经确定，运行时由哪一层解析选曲仍待决策，参见
 > [背景音乐选曲职责 ADR](../decisions/background-music-selection-ownership.md)。本节字段合同暂予保留。
 
-`@bobby/model` 的 `parseMapDocument()` 是持久化文档入口，`parseLevelMap()` 校验后只返回 gameplay 字段，`serializeMapDocument()` 输出统一字段顺序、补充 `meta.game` 并省略 `stackOrder: 0` 等默认表示。地图结构错误、越界坐标和非法规则会被拒绝；Entity type 或实例字段合同问题由可定位 warning、primitive 规范化与惰性占位行为承接。
+`@bobby/model` 的 `parseMapDocument()` 是持久化文档入口，`parseLevelMap()` 校验后只返回 gameplay 字段，`serializeMapDocument()` 输出统一字段顺序、补充 `meta.game`，并省略空字符串 metadata 字段与 `stackOrder: 0` 等默认表示。地图结构错误、越界坐标和非法规则会被拒绝；Entity type 或实例字段合同问题由可定位 warning、primitive 规范化与惰性占位行为承接。
 
 ## Editor JSON
 
