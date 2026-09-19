@@ -7,6 +7,15 @@ import type {
   EmbedJoystickMode,
   EmbedMusicStyle,
 } from "@bobby/embed";
+import { EMBED_RUNTIME_CATALOGS, normalizeLocale } from "@bobby/i18n";
+import {
+  getWebLocale,
+  resolveWebText,
+  webT,
+  type WebDisplayText,
+} from "../../i18n/webI18n.js";
+import { WEB_ERROR_CODES, WebError } from "../../errors/errorCodes.js";
+import { errorDisplayText } from "../../errors/errorPresentation.js";
 
 const props = defineProps<{ publicBaseUrl: string }>();
 
@@ -16,7 +25,7 @@ type BC5RGlobal = { mount?: EmbedMount };
 const mapMode = ref<"map" | "mapUrl">("map");
 const map = ref(location.hash.slice(1));
 const mapUrl = ref("");
-const lang = ref("zh-CN");
+const lang = ref(getWebLocale());
 const audioEnabled = ref(true);
 const audioVolumePercent = ref(100);
 const musicStyle = ref<EmbedMusicStyle>("modern");
@@ -31,7 +40,8 @@ const wheelZoom = ref(false);
 const info = ref("");
 const preview = ref<HTMLElement | null>(null);
 const codeBlock = ref<HTMLElement | null>(null);
-const previewError = ref("");
+const previewError = ref<WebDisplayText | null>(null);
+const copyError = ref<WebDisplayText | null>(null);
 const previewReady = ref(false);
 const apiReady = ref(false);
 let embedMount: EmbedMount | null = null;
@@ -58,9 +68,10 @@ const options = computed(() => ({
   ...(info.value.trim() ? { info: info.value.trim() } : {}),
 }));
 
-const infoPlaceholder = computed(() =>
-  lang.value === "en" ? "Move with WASD / arrow keys" : "WASD / 方向键移动",
-);
+const infoPlaceholder = computed(() => {
+  const locale = normalizeLocale(lang.value) ?? "zh-CN";
+  return EMBED_RUNTIME_CATALOGS[locale]["embedRuntime.movementHint"];
+});
 
 const embedCode = computed(() => {
   const config = {
@@ -88,7 +99,14 @@ const embedCode = computed(() => {
   return `<div id="bc5r" style="width:100%;height:520px"></div>\n<script src="${standaloneUrl()}"><\/script>\n<script>\nBC5R.mount(${JSON.stringify(config, null, 2)});\n<\/script>`;
 });
 
-watch(options, () => void refreshPreview(), { deep: true });
+watch(
+  options,
+  () => {
+    copyError.value = null;
+    void refreshPreview();
+  },
+  { deep: true },
+);
 
 onMounted(async () => {
   try {
@@ -96,7 +114,7 @@ onMounted(async () => {
     apiReady.value = true;
     await refreshPreview();
   } catch (error) {
-    previewError.value = error instanceof Error ? error.message : String(error);
+    previewError.value = errorDisplayText(error);
   }
 });
 
@@ -104,7 +122,7 @@ async function refreshPreview(): Promise<void> {
   const serial = ++renderSerial;
   handle?.destroy();
   handle = null;
-  previewError.value = "";
+  previewError.value = null;
   previewReady.value = false;
   const target = preview.value;
   if (!target || !embedMount) return;
@@ -124,7 +142,7 @@ async function refreshPreview(): Promise<void> {
     previewReady.value = true;
   } catch (error) {
     if (serial === renderSerial)
-      previewError.value = error instanceof Error ? error.message : String(error);
+      previewError.value = errorDisplayText(error);
   }
 }
 
@@ -139,13 +157,19 @@ async function resolveEmbedMount(): Promise<EmbedMount> {
     script.addEventListener("load", () => resolve(), { once: true });
     script.addEventListener(
       "error",
-      () => reject(new Error(`无法加载 ${script.src}`)),
+      () =>
+        reject(
+          new WebError(WEB_ERROR_CODES.embed.runtimeLoadFailed, {
+            params: { url: script.src },
+          }),
+        ),
       { once: true },
     );
     document.head.append(script);
   });
   const loaded = globalBc5r()?.mount;
-  if (!loaded) throw new Error("bc5r.js 未暴露 BC5R.mount()");
+  if (!loaded)
+    throw new WebError(WEB_ERROR_CODES.embed.runtimeUnavailable);
   return loaded;
 }
 
@@ -158,7 +182,14 @@ function standaloneUrl(): string {
 }
 
 async function copyCode(): Promise<void> {
-  await navigator.clipboard.writeText(embedCode.value);
+  copyError.value = null;
+  try {
+    await navigator.clipboard.writeText(embedCode.value);
+  } catch (cause) {
+    copyError.value = errorDisplayText(
+      new WebError(WEB_ERROR_CODES.common.clipboardUnavailable, { cause }),
+    );
+  }
 }
 
 function selectAllCode(): void {
@@ -183,8 +214,8 @@ onBeforeUnmount(() => handle?.destroy());
     <header class="embed-heading">
       <div>
         <p class="eyebrow">BC5R Embed v1</p>
-        <h1>内嵌到其他网页</h1>
-        <p>粘贴 Editor 分享数据或填写你自己托管的地图链接，调整参数后复制代码。</p>
+        <h1>{{ webT("embed.title") }}</h1>
+        <p>{{ webT("embed.description") }}</p>
       </div>
     </header>
 
@@ -192,34 +223,34 @@ onBeforeUnmount(() => handle?.destroy());
       <section class="embed-config">
         <div class="field-group">
           <div class="segmented">
-            <button :class="{ active: mapMode === 'map' }" @click="mapMode = 'map'">地图数据</button>
-            <button :class="{ active: mapMode === 'mapUrl' }" @click="mapMode = 'mapUrl'">地图链接</button>
+            <button :class="{ active: mapMode === 'map' }" @click="mapMode = 'map'">{{ webT("embed.mapData") }}</button>
+            <button :class="{ active: mapMode === 'mapUrl' }" @click="mapMode = 'mapUrl'">{{ webT("embed.mapUrl") }}</button>
           </div>
-          <textarea v-if="mapMode === 'map'" v-model="map" rows="5" wrap="soft" placeholder="BC5R1:... 或 https://bc5r.com/import/v1#..."></textarea>
+          <textarea v-if="mapMode === 'map'" v-model="map" rows="5" wrap="soft" :placeholder="webT('embed.mapDataPlaceholder')"></textarea>
           <input v-else v-model="mapUrl" type="url" placeholder="https://example.com/map.txt" />
         </div>
 
         <fieldset class="config-group">
-          <legend>通用</legend>
-          <label>语言
+          <legend>{{ webT("embed.general") }}</legend>
+          <label>{{ webT("embed.language") }}
             <select v-model="lang">
               <option value="zh-CN">中文</option>
               <option value="en">English</option>
             </select>
           </label>
-          <label class="field-group">自定义信息<input v-model="info" class="info-input" :placeholder="infoPlaceholder" /></label>
+          <label class="field-group">{{ webT("embed.customInfo") }}<input v-model="info" class="info-input" :placeholder="infoPlaceholder" /></label>
         </fieldset>
 
         <fieldset class="config-group">
-          <legend>声音</legend>
-          <label class="check-line"><input v-model="audioEnabled" type="checkbox" /> 声音</label>
+          <legend>{{ webT("embed.sound") }}</legend>
+          <label class="check-line"><input v-model="audioEnabled" type="checkbox" /> {{ webT("embed.sound") }}</label>
           <label class="range-field">
-            <span>音量 <strong>{{ audioVolumePercent }}%</strong></span>
+            <span>{{ webT("embed.volume") }} <strong>{{ audioVolumePercent }}%</strong></span>
             <input v-model.number="audioVolumePercent" type="range" min="0" max="300" step="1" :disabled="!audioEnabled" />
           </label>
           <div class="choice-row">
-            <span>音乐风格</span>
-            <div class="choice-toggle" role="radiogroup" aria-label="音乐风格">
+            <span>{{ webT("embed.musicStyle") }}</span>
+            <div class="choice-toggle" role="radiogroup" :aria-label="webT('embed.musicStyle')">
               <button
                 type="button"
                 role="radio"
@@ -239,49 +270,50 @@ onBeforeUnmount(() => handle?.destroy());
         </fieldset>
 
         <fieldset class="config-group">
-          <legend>控制</legend>
+          <legend>{{ webT("embed.controls") }}</legend>
           <div class="settings-grid">
-            <label>键盘
+            <label>{{ webT("embed.keyboard") }}
               <select v-model="keyboard" class="keyboard-select">
                 <option value="focus">Focus</option>
                 <option value="global">Global</option>
               </select>
             </label>
-            <label>摇杆
+            <label>{{ webT("embed.joystick") }}
               <select v-model="joystick">
                 <option value="auto">Auto</option>
-                <option :value="true">显示</option>
-                <option :value="false">隐藏</option>
+                <option :value="true">{{ webT("embed.show") }}</option>
+                <option :value="false">{{ webT("embed.hide") }}</option>
               </select>
             </label>
           </div>
-          <label class="check-line"><input v-model="pointer" type="checkbox" /> 滑动屏幕</label>
+          <label class="check-line"><input v-model="pointer" type="checkbox" /> {{ webT("embed.pointer") }}</label>
         </fieldset>
 
         <fieldset class="config-group">
-          <legend>镜头</legend>
+          <legend>{{ webT("embed.camera") }}</legend>
           <div class="settings-grid">
-            <label>初始 Zoom<input v-model.number="zoom" type="number" min="0.1" step="0.1" /></label>
-            <label>最小 Zoom<input v-model.number="minZoom" type="number" min="0.1" step="0.1" /></label>
-            <label>最大 Zoom<input v-model.number="maxZoom" type="number" min="0.1" step="0.1" /></label>
+            <label>{{ webT("embed.initialZoom") }}<input v-model.number="zoom" type="number" min="0.1" step="0.1" /></label>
+            <label>{{ webT("embed.minZoom") }}<input v-model.number="minZoom" type="number" min="0.1" step="0.1" /></label>
+            <label>{{ webT("embed.maxZoom") }}<input v-model.number="maxZoom" type="number" min="0.1" step="0.1" /></label>
           </div>
           <div class="checks">
-            <label><input v-model="pinchZoom" type="checkbox" /> Pinch 缩放</label>
-            <label><input v-model="wheelZoom" type="checkbox" /> 滚轮缩放</label>
+            <label><input v-model="pinchZoom" type="checkbox" /> {{ webT("embed.pinchZoom") }}</label>
+            <label><input v-model="wheelZoom" type="checkbox" /> {{ webT("embed.wheelZoom") }}</label>
           </div>
         </fieldset>
       </section>
 
       <section class="embed-output">
-        <h2>预览</h2>
+        <h2>{{ webT("embed.preview") }}</h2>
         <div ref="preview" class="preview"></div>
-        <p v-if="previewError" class="error">{{ previewError }}</p>
+        <p v-if="previewError" class="error">{{ resolveWebText(previewError) }}</p>
 
         <div class="code-heading">
-          <h2>代码</h2>
-          <button @click="copyCode">复制</button>
+          <h2>{{ webT("embed.code") }}</h2>
+          <button @click="copyCode">{{ webT("embed.copy") }}</button>
         </div>
         <pre ref="codeBlock" class="code-block" @click="selectAllCode"><code>{{ embedCode }}</code></pre>
+        <p v-if="copyError" class="error" aria-live="polite">{{ resolveWebText(copyError) }}</p>
       </section>
     </div>
   </main>

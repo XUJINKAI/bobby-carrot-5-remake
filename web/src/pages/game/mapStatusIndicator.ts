@@ -4,6 +4,7 @@ import type {
   ShellIndicatorDetail,
 } from "../../shell/shellBridge.js";
 import type { GamePageMode } from "./gamePageCapabilities.js";
+import { webT } from "../../i18n/webI18n.js";
 
 export function mapStatusIndicator(
   mode: GamePageMode,
@@ -17,33 +18,33 @@ export function mapStatusIndicator(
   const details: ShellIndicatorDetail[] = [
     {
       id: "verification",
-      label: "通关验证",
+      label: webT("game.map.verification"),
       text: mapVerificationText(mode, verified),
     },
     {
       id: "map-id",
-      label: "关卡 ID",
+      label: webT("game.map.id"),
       text: mapId,
     },
     {
       id: "map-name",
-      label: "关卡名字",
+      label: webT("game.map.name"),
       text: mapName,
     },
     ...(author
-      ? [{ id: "author", label: "作者", text: author }]
+      ? [{ id: "author", label: webT("game.map.author"), text: author }]
       : []),
     ...(note
-      ? [{ id: "note", label: "注记", text: note, kind: "note" as const }]
+      ? [{ id: "note", label: webT("game.map.note"), text: note, kind: "note" as const }]
       : []),
   ];
   return {
     id: "map-status",
     icon: author || note ? "map-details" : "map-status",
     tone: verified ? "success" : "muted",
-    label: `地图状态：${details
-      .map((detail) => `${detail.label} ${detail.text}`)
-      .join("；")}`,
+    label: webT("game.map.status", {
+      details: details.map((detail) => `${detail.label} ${detail.text}`).join(" · "),
+    }),
     details,
   };
 }
@@ -53,11 +54,11 @@ export function mapVerificationText(
   verified: boolean,
 ): string {
   if (mode === "explore") {
-    return verified ? "已验证可通关" : "尚未进行通关验证";
+    return verified ? webT("game.map.verified") : webT("game.map.unverified");
   }
   return verified
-    ? "已在自由探索模式中验证可通关"
-    : "尚未进行通关验证";
+    ? webT("game.map.verifiedExplore")
+    : webT("game.map.unverified");
 }
 
 function normalizedMetadataText(value: string | undefined): string | null {

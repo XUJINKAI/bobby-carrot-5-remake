@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "vitest";
+import { WEB_ERROR_CODES, WebError } from "../src/errors/errorCodes.ts";
 import {
   loadReplayAsset,
   saveReplayAsset,
@@ -25,7 +26,9 @@ test("reports a missing built-in replay", async () => {
       "/assets/replays/original/missing.json",
       async () => new Response("", { status: 404 }),
     ),
-    /当前关卡暂无内置过法/,
+    (error) =>
+      error instanceof WebError &&
+      error.code === WEB_ERROR_CODES.replay.builtinMissing,
   );
 });
 

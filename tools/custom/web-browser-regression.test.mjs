@@ -9,6 +9,10 @@ import { waitForBrowserState } from "./browser-regression-wait.mjs";
 import { verifyEditorExperience } from "./editor-browser-checks.mjs";
 import { verifyGameplayDialogKeyboard } from "./gameplay-dialog-browser-checks.mjs";
 import {
+  verifyImportErrorFollowsLocale,
+  verifyLocaleSwitchPreservesGameSession,
+} from "./locale-browser-checks.mjs";
+import {
   replayLayout,
   verifyReplayPanelShortcut,
 } from "./replay-browser-checks.mjs";
@@ -78,6 +82,14 @@ test(
         await openPage(cdp, `${origin}/edit`),
       );
       await verifyReplayPanel(cdp, `${origin}/import/v1#${replayPayload()}`);
+      await verifyLocaleSwitchPreservesGameSession(
+        cdp,
+        await openPage(cdp, `${origin}/import/v1#${replayPayload()}`),
+      );
+      await verifyImportErrorFollowsLocale(
+        cdp,
+        await openPage(cdp, `${origin}/import/v1#%`),
+      );
       await verifyAdventureDeveloperTools(
         cdp,
         `${origin}/adventure/play/1-1`,
@@ -325,17 +337,27 @@ async function verifyAdventureDeveloperTools(cdp, url) {
   );
   await verifyReplaySaveButton(cdp, sessionId);
 
-  await cdp.evaluate(
-    sessionId,
-    "document.querySelector('[data-replay-action=\"load-builtin\"]')?.click(); true",
-  );
   await waitFor(async () =>
-    String(
+    Boolean(
       await cdp.evaluate(
         sessionId,
-        "document.querySelector('[data-replay-verification]')?.textContent ?? ''",
+        `(() => {
+          const load = document.querySelector('[data-replay-action="load-builtin"]');
+          const verification = document.querySelector('[data-replay-verification]');
+          const text = verification?.textContent ?? '';
+          if (
+            load &&
+            !load.disabled &&
+            ['等待录制', 'Waiting for recording'].includes(text)
+          ) {
+            load.click();
+          }
+          return ['内置过法已载入', 'Built-in solution loaded'].includes(
+            verification?.textContent ?? '',
+          );
+        })()`,
       ),
-    ).includes("内置过法已载入"),
+    ),
   );
 
   await clickWhenPresent(cdp, sessionId, "#replay-record");
@@ -399,10 +421,12 @@ async function verifyReplayPanel(cdp, url) {
     "document.querySelector('[data-replay-action=\"record\"]')?.click(); true",
   );
   await waitFor(async () =>
-    (await cdp.evaluate(
-      sessionId,
-      "document.querySelector('[data-replay-status]')?.textContent ?? ''",
-    )) === "正在录制",
+    Boolean(
+      await cdp.evaluate(
+        sessionId,
+        "document.querySelector('[data-replay-panel]')?.classList.contains('recording')",
+      ),
+    ),
   );
   await new Promise((resolve) => setTimeout(resolve, 1_000));
   await dispatchKey(cdp, sessionId, "keyDown", "ArrowRight", 39);
@@ -421,12 +445,19 @@ async function verifyReplayPanel(cdp, url) {
     "document.querySelector('[data-replay-action=\"record\"]')?.click(); true",
   );
   await waitFor(async () =>
-    String(
+    Boolean(
       await cdp.evaluate(
         sessionId,
-        "document.querySelector('[data-replay-verification]')?.textContent ?? ''",
+        `(() => {
+          const verification = document.querySelector('[data-replay-verification]');
+          return Boolean(
+            verification &&
+            !verification.classList.contains('failed') &&
+            verification.textContent?.includes('ticks')
+          );
+        })()`,
       ),
-    ).includes("复跑完成"),
+    ),
   );
   const replay = await cdp.evaluate(
     sessionId,
@@ -490,17 +521,17 @@ async function verifyReplayPanel(cdp, url) {
     throw new Error("Replay output was not editable");
   if (controls.speedType !== "number" || controls.speedValue !== "1")
     throw new Error("Replay playback speed was not an editable number");
-  for (const label of [
-    "播放",
-    "停止",
-    "跳到起点",
-    "跳到终点",
-    "复制",
-    "下载",
-    "加载内置过法",
+  for (const action of [
+    "play",
+    "stop-playback",
+    "beginning",
+    "end",
+    "copy",
+    "download",
+    "load-builtin",
   ])
-    if (!controls.actions.some((action) => action.label === label))
-      throw new Error(`Replay panel action missing: ${label}`);
+    if (!controls.actions.some((button) => button.action === action))
+      throw new Error(`Replay panel action missing: ${action}`);
   for (const action of ["slower", "faster"])
     if (!controls.actions.some((button) => button.action === action))
       throw new Error(`Replay speed action missing: ${action}`);
@@ -562,10 +593,10 @@ async function verifyReplayPanel(cdp, url) {
   if (!playbackControls.invalidRejected)
     throw new Error("Replay playback accepted an empty speed");
   if (
-    playbackControls.runningLabel !== "暂停" ||
+    !["暂停", "Pause"].includes(playbackControls.runningLabel) ||
     !playbackControls.stopWasEnabled ||
-    playbackControls.pausedLabel !== "播放" ||
-    playbackControls.pausedStatus !== "播放已暂停"
+    !["播放", "Play"].includes(playbackControls.pausedLabel) ||
+    !["播放已暂停", "Playback paused"].includes(playbackControls.pausedStatus)
   )
     throw new Error("Replay play, pause and stop controls did not reflect state");
   if (
@@ -582,10 +613,12 @@ async function verifyReplayPanel(cdp, url) {
     "document.querySelector('[data-replay-action=\"load-builtin\"]')?.click(); true",
   );
   await waitFor(async () =>
-    (await cdp.evaluate(
-      sessionId,
-      "document.querySelector('[data-replay-verification]')?.textContent ?? ''",
-    )) === "当前关卡暂无内置过法",
+    ["当前关卡暂无内置过法", "No built-in solution is available for this level"].includes(
+      await cdp.evaluate(
+        sessionId,
+        "document.querySelector('[data-replay-verification]')?.textContent ?? ''",
+      ),
+    ),
   );
 
   await cdp.evaluate(

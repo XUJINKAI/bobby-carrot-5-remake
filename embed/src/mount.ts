@@ -6,6 +6,11 @@ import {
   type ImageManager,
 } from "@bobby/engine";
 import type { LevelMap } from "@bobby/model";
+import {
+  EMBED_RUNTIME_CATALOGS,
+  normalizeLocale,
+  type Locale,
+} from "@bobby/i18n";
 import { loadEmbedMap } from "./mapInput.js";
 import type { BC5RHandle, BC5RMountOptions } from "./types.js";
 
@@ -60,12 +65,13 @@ export function mount(options: BC5RMountOptions): BC5RHandle {
   let destroyed = false;
   const cleanup: Array<() => void> = [];
   const audio = resolveAudio(options.audio);
+  const locale = resolveEmbedLocale(options.lang);
 
   const shadow = target.shadowRoot ?? target.attachShadow({ mode: "open" });
   shadow.replaceChildren();
   const root = document.createElement("div");
   root.className = "bc5r-embed";
-  root.dataset.lang = options.lang ?? "zh-CN";
+  root.dataset.lang = locale;
   const frame = document.createElement("div");
   frame.className = "bc5r-frame";
   const frameLink = document.createElement("a");
@@ -74,16 +80,16 @@ export function mount(options: BC5RMountOptions): BC5RHandle {
   frameLink.target = "_blank";
   frameLink.rel = "noopener noreferrer";
   frameLink.textContent = "Bobby Carrot 5 Remake";
-  const frameControls = createFrameControls(audio.enabled, options.lang);
+  const frameControls = createFrameControls(audio.enabled, locale);
   frame.append(frameLink, frameControls.root);
   const canvasWrap = document.createElement("div");
   canvasWrap.className = "bc5r-canvas-wrap";
   canvasWrap.tabIndex = 0;
   const canvas = document.createElement("canvas");
   canvas.className = "bc5r-canvas";
-  const terminal = createTerminalOverlay(options.lang ?? "zh-CN");
+  const terminal = createTerminalOverlay(locale);
   canvasWrap.append(canvas, terminal.root);
-  const info = createInfoFooter(options.info, options.lang);
+  const info = createInfoFooter(options.info, locale);
   root.append(styleElement(), frame, canvasWrap, info.root);
   shadow.append(root);
 
@@ -175,17 +181,17 @@ export function mount(options: BC5RMountOptions): BC5RHandle {
       frameControls.sound,
       audio.enabled,
       audioLevels,
-      options.lang,
+      locale,
       cleanup,
     );
     installJoystickToggle(
       runtime,
       info.joystick,
       joystick,
-      options.lang,
+      locale,
       cleanup,
     );
-    installTerminalOverlay(runtime, terminal, canvasWrap, cleanup);
+    installTerminalOverlay(runtime, terminal, canvasWrap, locale, cleanup);
     const resumeAudio = (): void => runtime?.audio.resume();
     root.addEventListener("pointerdown", resumeAudio, { passive: true });
     cleanup.push(() => root.removeEventListener("pointerdown", resumeAudio));
@@ -218,15 +224,17 @@ function resolveTarget(target: string | HTMLElement): HTMLElement {
 
 function createFrameControls(
   soundEnabled: boolean,
-  lang: string | undefined,
+  locale: Locale,
 ): FrameControls {
-  const copy = controlCopy(lang);
+  const copy = controlCopy(locale);
   const root = document.createElement("div");
   root.className = "bc5r-frame-actions";
   const restart = createIconButton("restart", copy.restart);
+  restart.dataset.action = "restart";
   restart.disabled = true;
   const open = document.createElement("a");
   open.className = "bc5r-icon-button";
+  open.dataset.action = "open";
   open.target = "_blank";
   open.rel = "noopener noreferrer";
   open.title = copy.open;
@@ -234,7 +242,7 @@ function createFrameControls(
   open.setAttribute("aria-disabled", "true");
   open.tabIndex = -1;
   open.append(createIcon("open"));
-  const sound = createSoundButton(soundEnabled, lang);
+  const sound = createSoundButton(soundEnabled, locale);
   root.append(restart, open, sound);
   return { root, restart, open, sound };
 }
@@ -271,22 +279,23 @@ function createIcon(name: "restart" | "open" | "joystick"): SVGSVGElement {
 
 function createSoundButton(
   enabled: boolean,
-  lang: string | undefined,
+  locale: Locale,
 ): HTMLButtonElement {
   const button = document.createElement("button");
   button.type = "button";
   button.className = "bc5r-icon-button bc5r-sound";
+  button.dataset.action = "sound";
   button.disabled = true;
-  renderSoundButton(button, enabled, lang);
+  renderSoundButton(button, enabled, locale);
   return button;
 }
 
 function renderSoundButton(
   button: HTMLButtonElement,
   enabled: boolean,
-  lang: string | undefined,
+  locale: Locale,
 ): void {
-  const copy = controlCopy(lang);
+  const copy = controlCopy(locale);
   button.textContent = enabled ? "🔊" : "🔇";
   button.title = enabled ? copy.mute : copy.unmute;
   button.setAttribute("aria-label", button.title);
@@ -295,15 +304,15 @@ function renderSoundButton(
 
 function createInfoFooter(
   value: string | undefined,
-  lang: string | undefined,
+  locale: Locale,
 ): InfoFooter {
   const root = document.createElement("div");
   root.className = "bc5r-info";
   const copy = document.createElement("span");
   copy.className = "bc5r-info-copy";
   const custom = value?.trim();
-  copy.textContent = custom || controlCopy(lang).movementHint;
-  const joystick = createIconButton("joystick", controlCopy(lang).joystick);
+  copy.textContent = custom || controlCopy(locale).movementHint;
+  const joystick = createIconButton("joystick", controlCopy(locale).joystick);
   joystick.disabled = true;
   root.append(copy, joystick);
   return { root, joystick };
@@ -363,7 +372,7 @@ function installSoundToggle(
   button: HTMLButtonElement,
   initialEnabled: boolean,
   levels: AudioLevels,
-  lang: string | undefined,
+  locale: Locale,
   cleanup: Array<() => void>,
 ): void {
   let enabled = initialEnabled;
@@ -379,10 +388,10 @@ function installSoundToggle(
       runtime.audio.setMusicGain(0);
       runtime.audio.setSoundGain(0);
     }
-    renderSoundButton(button, enabled, lang);
+    renderSoundButton(button, enabled, locale);
   };
   button.disabled = false;
-  renderSoundButton(button, enabled, lang);
+  renderSoundButton(button, enabled, locale);
   button.addEventListener("click", toggle);
   cleanup.push(() => button.removeEventListener("click", toggle));
 }
@@ -391,12 +400,12 @@ function installJoystickToggle(
   runtime: GameplayRuntime,
   button: HTMLButtonElement,
   initialEnabled: boolean,
-  lang: string | undefined,
+  locale: Locale,
   cleanup: Array<() => void>,
 ): void {
   let enabled = initialEnabled;
   const render = (): void => {
-    const copy = controlCopy(lang);
+    const copy = controlCopy(locale);
     button.disabled = false;
     button.title = copy.joystick;
     button.setAttribute("aria-label", copy.joystick);
@@ -429,8 +438,8 @@ function resolveCameraOptions(options: BC5RMountOptions): CameraOptions {
   return { zoom, minZoom: min, maxZoom: max };
 }
 
-function createTerminalOverlay(lang: string | undefined): TerminalOverlay {
-  const copy = terminalCopy(lang);
+function createTerminalOverlay(locale: Locale): TerminalOverlay {
+  const copy = terminalCopy(locale);
   const root = document.createElement("div");
   root.className = "bc5r-terminal";
   root.hidden = true;
@@ -459,11 +468,10 @@ function installTerminalOverlay(
   runtime: GameplayRuntime,
   terminal: TerminalOverlay,
   focusTarget: HTMLElement,
+  locale: Locale,
   cleanup: Array<() => void>,
 ): void {
-  const copy = terminalCopy(
-    focusTarget.closest<HTMLElement>(".bc5r-embed")?.dataset.lang,
-  );
+  const copy = terminalCopy(locale);
   const render = (): void => {
     const status = runtime.game.state.status;
     terminal.root.hidden = status === "playing";
@@ -480,30 +488,21 @@ function installTerminalOverlay(
   render();
 }
 
-function terminalCopy(lang: string | undefined): {
+function terminalCopy(locale: Locale): {
   won: string;
   dead: string;
   restart: string;
   official: string;
 } {
-  const value = lang && lang !== "auto" ? lang : navigator.language;
-  const chinese = value.toLowerCase().startsWith("zh");
-  return chinese
-    ? {
-        won: "通关",
-        dead: "失败",
-        restart: "重新开始",
-        official: "前往官网",
-      }
-    : {
-        won: "Level complete",
-        dead: "Game over",
-        restart: "Restart",
-        official: "Visit BC5R",
-      };
+  return {
+    won: embedRuntimeText(locale, "embedRuntime.won"),
+    dead: embedRuntimeText(locale, "embedRuntime.dead"),
+    restart: embedRuntimeText(locale, "embedRuntime.restart"),
+    official: embedRuntimeText(locale, "embedRuntime.official"),
+  };
 }
 
-function controlCopy(lang: string | undefined): {
+function controlCopy(locale: Locale): {
   restart: string;
   open: string;
   mute: string;
@@ -511,24 +510,34 @@ function controlCopy(lang: string | undefined): {
   joystick: string;
   movementHint: string;
 } {
-  const value = lang && lang !== "auto" ? lang : navigator.language;
-  return value.toLowerCase().startsWith("zh")
-    ? {
-        restart: "重新开始",
-        open: "在新窗口打开",
-        mute: "关闭声音",
-        unmute: "打开声音",
-        joystick: "切换屏幕摇杆",
-        movementHint: "WASD / 方向键移动",
-      }
-    : {
-        restart: "Restart",
-        open: "Open in new window",
-        mute: "Mute",
-        unmute: "Unmute",
-        joystick: "Toggle screen joystick",
-        movementHint: "Move with WASD / arrow keys",
-      };
+  return {
+    restart: embedRuntimeText(locale, "embedRuntime.restart"),
+    open: embedRuntimeText(locale, "embedRuntime.open"),
+    mute: embedRuntimeText(locale, "embedRuntime.mute"),
+    unmute: embedRuntimeText(locale, "embedRuntime.unmute"),
+    joystick: embedRuntimeText(locale, "embedRuntime.joystick"),
+    movementHint: embedRuntimeText(locale, "embedRuntime.movementHint"),
+  };
+}
+
+type EmbedRuntimeKey =
+  | "embedRuntime.won"
+  | "embedRuntime.dead"
+  | "embedRuntime.restart"
+  | "embedRuntime.official"
+  | "embedRuntime.open"
+  | "embedRuntime.mute"
+  | "embedRuntime.unmute"
+  | "embedRuntime.joystick"
+  | "embedRuntime.movementHint";
+
+function resolveEmbedLocale(lang: string | undefined): Locale {
+  const requested = lang && lang !== "auto" ? lang : navigator.language;
+  return normalizeLocale(requested) ?? "en";
+}
+
+function embedRuntimeText(locale: Locale, key: EmbedRuntimeKey): string {
+  return EMBED_RUNTIME_CATALOGS[locale][key] ?? key;
 }
 
 async function officialPlayUrl(level: LevelMap): Promise<string> {

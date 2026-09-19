@@ -12,6 +12,7 @@ import {
   type ReplayPanelController,
 } from "../game/bindReplayPanel.js";
 import { getWebSettings } from "../../storage/settingsStorage.js";
+import { getWebLocale } from "../../i18n/webI18n.js";
 import {
   computed,
   nextTick,
@@ -83,9 +84,13 @@ watch(
     page.tool.value,
     page.leftPanel.value,
     page.surfaceTool.value,
+    getWebLocale(),
     shellIssues.value.map((issue) => `${issue.level}:${issue.message}`).join("|"),
   ],
-  syncShell,
+  () => {
+    syncShell();
+    replayPanel?.update();
+  },
 );
 
 async function togglePlay(): Promise<void> {

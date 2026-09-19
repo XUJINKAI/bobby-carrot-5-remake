@@ -28,6 +28,7 @@ import type {
   AdventureLevelRow,
   AdventureNightTrainDestination,
 } from "./types.js";
+import { webT } from "../../i18n/webI18n.js";
 
 export function renderAdventureHome(context: PageContext): PageController {
   const { app, adventure, audio, images, navigate } = context;
@@ -46,7 +47,7 @@ export function renderAdventureHome(context: PageContext): PageController {
       images,
       onNavigate: navigate,
     },
-    adventureShell(),
+    () => adventureShell(),
   );
 }
 
@@ -67,7 +68,7 @@ export function renderAdventureChapters(context: PageContext): PageController {
     app,
     AdventureChaptersPage,
     { rows, images, onNavigate: navigate },
-    adventureShell("/adventure"),
+    () => adventureShell("/adventure"),
   );
 }
 
@@ -101,7 +102,7 @@ export function renderAdventureChapter(
       rows,
       onNavigate: navigate,
     },
-    adventureShell("/adventure/chapters"),
+    () => adventureShell("/adventure/chapters"),
   );
 }
 
@@ -136,7 +137,7 @@ export function renderAdventureNightTrain(context: PageContext): PageController 
     app,
     AdventureNightTrainPage,
     { images, destinations, onNavigate: navigate },
-    adventureShell("/adventure"),
+    () => adventureShell("/adventure"),
   );
 }
 
@@ -157,13 +158,15 @@ function mountAdventure(
   root: HTMLDivElement,
   component: Component,
   props: Record<string, unknown>,
-  shell: ShellConfig,
+  shell: () => ShellConfig,
 ): PageController {
-  configureShell(shell);
+  const syncShell = (): void => configureShell(shell());
+  syncShell();
   root.replaceChildren();
   const app = createApp(component, props);
   app.mount(root);
   return {
+    localeChanged: syncShell,
     destroy(): void {
       app.unmount();
     },
@@ -175,14 +178,14 @@ function adventureShell(backPath?: string): ShellConfig {
     topBar: {
       visible: true,
       fixed: true,
-      identity: pageIdentity("冒险模式", "/adventure", false),
+      identity: pageIdentity(webT("nav.adventure"), "/adventure", false),
       ...(backPath
         ? {
             back: {
               id: "back",
               icon: "back",
-              label: "返回",
-              title: "返回",
+              label: webT("shell.back"),
+              title: webT("shell.back"),
               href: backPath,
             },
           }

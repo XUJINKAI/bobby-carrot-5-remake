@@ -1,10 +1,16 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { test } from "vitest";
+import { beforeAll, test } from "vitest";
+import { preloadWebI18nScopes, initializeWebI18n } from "../src/i18n/webI18n.ts";
 import {
   completedResultHtml,
   failedResultHtml,
 } from "../src/pages/game/resultFormatting.ts";
+
+beforeAll(async () => {
+  await initializeWebI18n("zh-CN");
+  await preloadWebI18nScopes(["game"]);
+});
 
 function visibleLines(html) {
   return html

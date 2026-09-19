@@ -1,15 +1,27 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
-import { test } from "vitest";
+import { beforeAll, test } from "vitest";
+import {
+  initializeWebI18n,
+  preloadWebI18nScopes,
+  resolveWebText,
+} from "../src/i18n/webI18n.ts";
 import {
   replayVerificationPresentation,
   validateBuiltinReplaySave,
 } from "../src/pages/game/bindReplayPanel.ts";
 import { replayPathId } from "../src/pages/game/replayAssets.ts";
+import { WEB_ERROR_CODES, WebError } from "../src/errors/errorCodes.ts";
+import { errorDisplayText } from "../src/errors/errorPresentation.ts";
 import {
   loadReplayPanelOpen,
   storeReplayPanelOpen,
 } from "../src/pages/game/replayPanelState.ts";
+
+beforeAll(async () => {
+  await initializeWebI18n("zh-CN");
+  await preloadWebI18nScopes(["game"]);
+});
 
 const replayPanelSource = fs.readFileSync(
   new URL("../src/pages/game/ReplayPanel.vue", import.meta.url),
@@ -41,9 +53,13 @@ test("Replay 面板提示复跑终局与记录不一致", () => {
   );
 
   assert.deepEqual(presentation, {
-    text: "终局不一致 · 记录 won / 复跑 playing",
+    text: {
+      key: "game.replay.finalStateMismatch",
+      params: { recorded: "won", actual: "playing" },
+    },
     failed: true,
   });
+  assert.equal(resolveWebText(presentation.text), "终局不一致 · 记录 won / 复跑 playing");
 });
 
 test("Replay 使用 collection 与地图 ID 组成路径身份", () => {
@@ -67,19 +83,66 @@ test("Replay 未声明 status 时只报告复跑完成", () => {
   );
 
   assert.deepEqual(presentation, {
-    text: "复跑完成 · 2 ticks",
+    text: { key: "game.replay.completed", params: { ticks: 2 } },
     failed: false,
   });
+  assert.equal(resolveWebText(presentation.text), "复跑完成 · 2 ticks");
 });
 
-test("阻塞对话终止录制时清空 take 并显示诊断", () => {
+test("阻塞对话终止录制时清空 take 并使用统一错误码", () => {
   assert.match(replayBindingSource, /"replay-recording-aborted"/);
   assert.match(replayBindingSource, /replay = null;\s+output\.value = ""/);
   assert.match(
     replayBindingSource,
-    /interactive host choice is not supported by replay/,
+    /WEB_ERROR_CODES\.replay\.interactiveHostUnsupported/,
   );
   assert.match(replayBindingSource, /unsubscribeRecordingAbort\(\)/);
+});
+
+test("Replay 持久提示保存翻译语义并在 update 时重新解析", () => {
+  assert.match(replayBindingSource, /verificationState: \{ text: WebDisplayText; failed: boolean \}/);
+  assert.match(replayBindingSource, /verification\.textContent = resolveWebText\(verificationState\.text\)/);
+  assert.match(replayBindingSource, /const update = \(\): void => \{\s+renderVerification\(\)/);
+  assert.doesNotMatch(replayBindingSource, /verification\.textContent = webT\(/);
+  assert.match(replayBindingSource, /setVerification\(errorDisplayText\(error\), true\)/);
+});
+
+test("Replay 动态文案只由 controller 渲染", () => {
+  for (const selector of [
+    "data-replay-status",
+    "data-replay-ticks",
+    "data-replay-verification",
+  ]) {
+    assert.match(
+      replayPanelSource,
+      new RegExp(`<[^>]+\\b${selector}\\b[^>]*/>`),
+    );
+  }
+  for (const action of ["record", "play", "load-builtin", "save-builtin"]) {
+    const marker = `data-replay-action="${action}"`;
+    const markerIndex = replayPanelSource.indexOf(marker);
+    assert.notEqual(markerIndex, -1, `missing replay action: ${action}`);
+    const start = replayPanelSource.lastIndexOf("<button", markerIndex);
+    const end = replayPanelSource.indexOf("</button>", markerIndex);
+    assert.ok(start >= 0 && end > markerIndex, `invalid replay action markup: ${action}`);
+    const button = replayPanelSource.slice(start, end + "</button>".length);
+    assert.doesNotMatch(button, /webT\(/);
+  }
+  assert.match(replayBindingSource, /status\.textContent = recording/);
+  assert.match(replayBindingSource, /ticks\.textContent = recording/);
+  assert.match(replayBindingSource, /record\.textContent = recording/);
+  assert.match(replayBindingSource, /play\.textContent = playing/);
+});
+
+test("Replay 复制失败使用共享 Clipboard 语义错误", () => {
+  assert.match(
+    replayBindingSource,
+    /WEB_ERROR_CODES\.common\.clipboardUnavailable/,
+  );
+  assert.doesNotMatch(
+    replayBindingSource,
+    /WEB_ERROR_CODES\.dataExchange\.clipboardUnavailable/,
+  );
 });
 
 test("Replay 面板使用一帧一行的统一序列化", () => {
@@ -100,7 +163,7 @@ test("Replay 面板在播放按钮上方提供跳过思考时间选项", () => {
 
   assert.notEqual(checkboxIndex, -1);
   assert.ok(checkboxIndex < playButtonIndex);
-  assert.match(replayPanelSource, /<span>跳过思考时间<\/span>/);
+  assert.match(replayPanelSource, /webT\("game\.replay\.skipThinking"\)/);
   assert.match(replayBindingSource, /skipIdleTime: skipThinking\.checked/);
 });
 
@@ -152,7 +215,10 @@ test("保存内置过法只要求声明与实际复跑终局均为 won", () => {
       { verifyReplay: () => report },
       { finalState: { status: "playing" } },
     ),
-    /必须声明 won 终局/,
+    (error) =>
+      error instanceof WebError &&
+      error.code === WEB_ERROR_CODES.replay.builtinMustWin &&
+      resolveWebText(errorDisplayText(error)) === "内置过法必须声明 won 终局",
   );
   assert.throws(
     () => validateBuiltinReplaySave(
@@ -164,7 +230,10 @@ test("保存内置过法只要求声明与实际复跑终局均为 won", () => {
       },
       replay,
     ),
-    /复跑后未通关/,
+    (error) =>
+      error instanceof WebError &&
+      error.code === WEB_ERROR_CODES.replay.builtinNotWon &&
+      resolveWebText(errorDisplayText(error)) === "Replay 在当前关卡复跑后未通关",
   );
 });
 

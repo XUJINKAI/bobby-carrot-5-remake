@@ -1,92 +1,208 @@
 import {
   createTranslator,
+  loadTranslationCatalog,
   normalizeLocale,
   type Locale,
-  type TranslationCatalog,
-  type Translator,
+  type TranslationKey,
+  type TranslationParams,
+  type TranslationScope,
 } from "@bobby/i18n";
+import { ref } from "vue";
 
-const WEB_CATALOGS = {
-  "zh-CN": {
-    "shell.music": "音乐",
-    "shell.musicInteractionTip": "点击页面即可播放音乐",
-    "shell.settings": "设置",
-    "shell.help": "帮助",
-    "settings.quickTitle": "快速设置",
-    "settings.language": "语言",
-    "settings.theme": "主题",
-    "settings.themeBobby": "Bobby",
-    "settings.themeFc": "FC",
-    "settings.music": "音乐",
-    "settings.musicFollowTheme": "跟随主题",
-    "settings.musicModern": "现代",
-    "settings.volume": "音量",
-    "settings.more": "更多设置",
-    "adventure.bonusKey.permanentOwned": "你的永久钥匙可以直接打开这把锁。",
-    "adventure.bonusKey.lockKeyHeld": "你已经带着一把关卡钥匙了。",
-    "adventure.bonusKey.trialGranted": "第一次免费送你一把体验钥匙。找到锁以后，倒计时才会开始！",
-    "adventure.bonusKey.purchased": "成交！这把钥匙只够开一次锁。",
-    "adventure.bonusKey.insufficient": "Bonus Coin 不足；这把关卡钥匙需要 {price} 枚。",
-  },
-  en: {
-    "shell.music": "Music",
-    "shell.musicInteractionTip": "Click the page to play music",
-    "shell.settings": "Settings",
-    "shell.help": "Help",
-    "settings.quickTitle": "Quick settings",
-    "settings.language": "Language",
-    "settings.theme": "Theme",
-    "settings.themeBobby": "Bobby",
-    "settings.themeFc": "FC",
-    "settings.music": "Music",
-    "settings.musicFollowTheme": "Follow theme",
-    "settings.musicModern": "Modern",
-    "settings.volume": "Volume",
-    "settings.more": "More settings",
-    "adventure.bonusKey.permanentOwned": "Your permanent key can open this lock directly.",
-    "adventure.bonusKey.lockKeyHeld": "You are already carrying a level key.",
-    "adventure.bonusKey.trialGranted": "Your first trial key is free. The countdown starts only after you open the lock.",
-    "adventure.bonusKey.purchased": "Deal! This key opens one lock.",
-    "adventure.bonusKey.insufficient": "Not enough Bonus Coins; a level key costs {price}.",
-  },
-} satisfies Readonly<Record<Locale, TranslationCatalog>>;
+const FALLBACK_LOCALE: Locale = "zh-CN";
+const CORE_SCOPES = new Set<TranslationScope>(["shell"]);
+const locale = ref<Locale>(FALLBACK_LOCALE);
+const translator = createTranslator({
+  locale: FALLBACK_LOCALE,
+  fallbackLocale: FALLBACK_LOCALE,
+});
+let routeScopes = new Set<TranslationScope>();
+const transientScopes = new Map<TranslationScope, number>();
+let localeGeneration = 0;
+let desiredLocale: Locale = FALLBACK_LOCALE;
+let localeTransition: { locale: Locale; promise: Promise<void> } | null = null;
 
-export type WebTranslationKey = keyof (typeof WEB_CATALOGS)["zh-CN"];
+export type WebTranslationKey = TranslationKey;
 
-let translator: Translator | null = null;
+export interface WebLocalizedText {
+  readonly key: WebTranslationKey;
+  readonly params?: TranslationParams;
+}
+
+export type WebDisplayText = string | WebLocalizedText;
+
+export interface WebI18nScope {
+  readonly ready: Promise<void>;
+  readonly active: boolean;
+  dispose(): void;
+}
 
 export function resolveBrowserLocale(browserLocales: readonly string[]): Locale {
   for (const candidate of browserLocales) {
-    const locale = normalizeLocale(candidate);
-    if (locale) return locale;
+    const resolved = normalizeLocale(candidate);
+    if (resolved) return resolved;
   }
   return "en";
 }
 
-export function initializeWebI18n(locale: Locale): Locale {
-  ensureTranslator().setLocale(locale);
-  document.documentElement.lang = locale;
-  return locale;
+export async function initializeWebI18n(initialLocale: Locale): Promise<Locale> {
+  desiredLocale = initialLocale;
+  await loadScopes(CORE_SCOPES, initialLocale);
+  translator.setLocale(initialLocale);
+  locale.value = initialLocale;
+  if (typeof document !== "undefined") document.documentElement.lang = initialLocale;
+  return initialLocale;
 }
 
 export function getWebLocale(): Locale {
-  return ensureTranslator().locale;
+  return locale.value;
 }
 
-export function setWebLocale(locale: Locale): void {
-  ensureTranslator().setLocale(locale);
-  document.documentElement.lang = locale;
+export function setWebLocale(nextLocale: Locale): Promise<void> {
+  if (nextLocale === locale.value && nextLocale === desiredLocale)
+    return Promise.resolve();
+  if (localeTransition?.locale === nextLocale)
+    return localeTransition.promise;
+
+  desiredLocale = nextLocale;
+  const generation = ++localeGeneration;
+  const promise = (async (): Promise<void> => {
+    try {
+      await loadScopes(activeScopes(), nextLocale);
+    } catch (error) {
+      if (generation === localeGeneration && desiredLocale === nextLocale)
+        desiredLocale = locale.value;
+      throw error;
+    }
+    if (generation !== localeGeneration || nextLocale !== desiredLocale) return;
+    translator.setLocale(nextLocale);
+    locale.value = nextLocale;
+    if (typeof document !== "undefined")
+      document.documentElement.lang = nextLocale;
+    if (typeof window !== "undefined")
+      window.dispatchEvent(
+        new CustomEvent("web-locale-change", { detail: nextLocale }),
+      );
+  })();
+
+  localeTransition = { locale: nextLocale, promise };
+  const clearTransition = (): void => {
+    if (localeTransition?.promise === promise) localeTransition = null;
+  };
+  void promise.then(clearTransition, clearTransition);
+  return promise;
 }
 
-export function webT(key: WebTranslationKey): string {
-  return ensureTranslator().t(key);
+export async function preloadWebI18nScopes(
+  scopes: readonly TranslationScope[],
+): Promise<void> {
+  await loadScopesForRender(scopes);
 }
 
-function ensureTranslator(): Translator {
-  translator ??= createTranslator({
-    locale: "zh-CN",
-    fallbackLocale: "zh-CN",
-    catalogs: WEB_CATALOGS,
+export async function setWebI18nRouteScopes(
+  scopes: readonly TranslationScope[],
+): Promise<void> {
+  routeScopes = new Set(scopes);
+  await loadScopesForRender(scopes);
+}
+
+export function openWebI18nScope(
+  scopes: readonly TranslationScope[],
+): WebI18nScope {
+  const ownedScopes = [...new Set(scopes)];
+  for (const scope of ownedScopes)
+    transientScopes.set(scope, (transientScopes.get(scope) ?? 0) + 1);
+
+  let active = true;
+  const ready = loadScopesForRender(ownedScopes).catch((error) => {
+    if (active) {
+      active = false;
+      releaseTransientScopes(ownedScopes);
+    }
+    throw error;
   });
-  return translator;
+
+  return {
+    get active(): boolean {
+      return active;
+    },
+    ready,
+    dispose(): void {
+      if (!active) return;
+      active = false;
+      releaseTransientScopes(ownedScopes);
+    },
+  };
+}
+
+export function webT(
+  key: WebTranslationKey,
+  params?: TranslationParams,
+): string {
+  locale.value;
+  return translator.t(key, params);
+}
+
+export function localizedText(
+  key: WebTranslationKey,
+  params?: TranslationParams,
+): WebLocalizedText {
+  return params ? { key, params } : { key };
+}
+
+export function resolveWebText(value: WebDisplayText): string {
+  return typeof value === "string" ? value : webT(value.key, value.params);
+}
+
+function activeScopes(): Set<TranslationScope> {
+  return new Set([
+    ...CORE_SCOPES,
+    ...routeScopes,
+    ...transientScopes.keys(),
+  ]);
+}
+
+async function loadScopesForRender(
+  scopes: readonly TranslationScope[],
+): Promise<void> {
+  while (true) {
+    const currentLocale = locale.value;
+    const targetLocale = desiredLocale;
+    await Promise.all([
+      loadScopes(scopes, currentLocale),
+      ...(targetLocale === currentLocale
+        ? []
+        : [loadScopes(scopes, targetLocale)]),
+    ]);
+    if (
+      currentLocale === locale.value &&
+      targetLocale === desiredLocale
+    )
+      return;
+  }
+}
+
+async function loadScopes(
+  scopes: Iterable<TranslationScope>,
+  targetLocale: Locale,
+): Promise<void> {
+  await Promise.all(
+    [...scopes].map((scope) => loadAndRegister(scope, targetLocale)),
+  );
+}
+
+function releaseTransientScopes(scopes: readonly TranslationScope[]): void {
+  for (const scope of scopes) {
+    const count = transientScopes.get(scope) ?? 0;
+    if (count <= 1) transientScopes.delete(scope);
+    else transientScopes.set(scope, count - 1);
+  }
+}
+
+async function loadAndRegister(
+  scope: TranslationScope,
+  targetLocale: Locale,
+): Promise<void> {
+  const catalog = await loadTranslationCatalog(scope, targetLocale);
+  translator.registerCatalog(targetLocale, catalog);
 }

@@ -44,7 +44,7 @@ test("Embed 框架使用固定首页、地图打开动作与操作提示", async
     /createOriginalGameplayImageManager\(embedArtUrl\)/,
   );
   assert.doesNotMatch(mountSource, /"bobby-left":/);
-  assert.match(mountSource, /WASD \/ 方向键移动/);
+  assert.match(mountSource, /embedRuntimeText\(locale, "embedRuntime\.movementHint"\)/);
 });
 
 test("Embed 服从 LevelMap 的地图音乐选择", async () => {
@@ -54,4 +54,23 @@ test("Embed 服从 LevelMap 的地图音乐选择", async () => {
   );
 
   assert.doesNotMatch(mountSource, /playMusic\(["']ingame1["']\)/);
+});
+
+
+test("Embed 接受浏览器 locale tag，并在 mount 开头只解析一次 locale 贯穿全部 UI", async () => {
+  const [typesSource, mountSource] = await Promise.all([
+    readFile(new URL("../src/types.ts", import.meta.url), "utf8"),
+    readFile(new URL("../src/mount.ts", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(typesSource, /lang\?: string/);
+  assert.match(mountSource, /const locale = resolveEmbedLocale\(options\.lang\)/);
+  assert.match(mountSource, /root\.dataset\.lang = locale/);
+  assert.match(mountSource, /createFrameControls\(audio\.enabled, locale\)/);
+  assert.match(mountSource, /createTerminalOverlay\(locale\)/);
+  assert.match(mountSource, /createInfoFooter\(options\.info, locale\)/);
+  assert.match(mountSource, /installTerminalOverlay\(runtime, terminal, canvasWrap, locale, cleanup\)/);
+  assert.equal((mountSource.match(/resolveEmbedLocale\(/g) ?? []).length, 2);
+  assert.match(mountSource, /function resolveEmbedLocale\(lang: string \| undefined\): Locale/);
+  assert.doesNotMatch(mountSource, /options\.lang \?\? "zh-CN"/);
 });

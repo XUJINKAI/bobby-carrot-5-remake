@@ -1,4 +1,5 @@
 import type { Replay } from "@bobby/engine";
+import { WEB_ERROR_CODES, WebError } from "../../errors/errorCodes.js";
 
 export interface LoadedReplayAsset {
   replay: Replay;
@@ -17,9 +18,11 @@ export async function loadReplayAsset(
     headers: { accept: "application/json" },
   });
   if (response.status === 404)
-    throw new Error("当前关卡暂无内置过法");
+    throw new WebError(WEB_ERROR_CODES.replay.builtinMissing);
   if (!response.ok)
-    throw new Error(`读取内置过法失败（HTTP ${response.status}）`);
+    throw new WebError(WEB_ERROR_CODES.replay.builtinLoadFailed, {
+      params: { status: response.status },
+    });
   const text = await response.text();
   return { replay: parseReplayText(text), text };
 }
@@ -35,12 +38,19 @@ export async function saveReplayAsset(
     body: text,
   });
   if (!response.ok)
-    throw new Error(`保存内置过法失败（HTTP ${response.status}）`);
+    throw new WebError(WEB_ERROR_CODES.replay.builtinSaveFailed, {
+      params: { status: response.status },
+    });
 }
 
 export function parseReplayText(text: string): Replay {
-  const value: unknown = JSON.parse(text);
+  let value: unknown;
+  try {
+    value = JSON.parse(text);
+  } catch (cause) {
+    throw new WebError(WEB_ERROR_CODES.replay.invalidJson, { cause });
+  }
   if (!value || typeof value !== "object" || Array.isArray(value))
-    throw new Error("Replay JSON 必须是对象");
+    throw new WebError(WEB_ERROR_CODES.replay.invalidDocument);
   return value as Replay;
 }

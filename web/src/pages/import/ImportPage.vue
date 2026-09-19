@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import type { ImportedSaveData } from "../../services/import/importPipeline.js";
 import ImportSaveConfirmation from "./ImportSaveConfirmation.vue";
+import { resolveWebText, webT, type WebDisplayText } from "../../i18n/webI18n.js";
 
 defineProps<{
   status: "save" | "error" | "unknown";
   data?: ImportedSaveData;
-  message?: string;
+  message?: WebDisplayText;
   rawText?: string;
 }>();
 const emit = defineEmits<{ confirm: []; cancel: []; home: [] }>();
@@ -21,10 +22,10 @@ const emit = defineEmits<{ confirm: []; cancel: []; home: [] }>();
         @cancel="emit('cancel')"
       />
       <template v-else>
-        <h1>数据导入</h1>
-        <p>{{ message }}</p>
-        <details v-if="rawText"><summary>查看原始数据</summary><pre>{{ rawText }}</pre></details>
-        <div class="import-actions"><button type="button" @click="emit('home')">返回首页</button></div>
+        <h1>{{ webT("import.title") }}</h1>
+        <p>{{ status === "unknown" ? webT("import.unknown") : message ? resolveWebText(message) : "" }}</p>
+        <details v-if="rawText"><summary>{{ webT("import.raw") }}</summary><pre>{{ rawText }}</pre></details>
+        <div class="import-actions"><button type="button" @click="emit('home')">{{ webT("import.home") }}</button></div>
       </template>
     </section>
   </main>

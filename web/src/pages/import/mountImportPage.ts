@@ -8,6 +8,7 @@ import {
 } from "../../services/import/importPipeline.js";
 import { configureShell } from "../../shell/shellBridge.js";
 import ImportPage from "./ImportPage.vue";
+import { webT, type WebDisplayText } from "../../i18n/webI18n.js";
 
 export function importedLevelMap(level: EditorMap) {
   return toLevelMap(level);
@@ -17,17 +18,19 @@ export function renderImportMessage(
   context: PageContext,
   options:
     | { status: "save"; data: ImportedSaveData }
-    | { status: "error" | "unknown"; message: string; rawText?: string },
+    | { status: "unknown"; rawText?: string }
+    | { status: "error"; message: WebDisplayText; rawText?: string },
 ): PageController {
-  configureShell({
+  const syncShell = (): void => configureShell({
     topBar: {
       visible: true,
       fixed: true,
-      identity: pageIdentity("导入数据", "/import/v1"),
+      identity: pageIdentity(webT("context.import"), "/import/v1"),
       actions: globalActions(),
     },
     bottomBar: { visible: false },
   });
+  syncShell();
   context.app.replaceChildren();
   const app = createApp(ImportPage, {
     ...options,
@@ -39,5 +42,5 @@ export function renderImportMessage(
     onHome: () => context.navigate("/"),
   });
   app.mount(context.app);
-  return { destroy: () => app.unmount() };
+  return { localeChanged: syncShell, destroy: () => app.unmount() };
 }

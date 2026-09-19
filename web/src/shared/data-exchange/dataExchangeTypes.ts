@@ -13,18 +13,3 @@ export interface DataExchangeToolbar {
   right: DataExchangeControlConfig[];
 }
 
-export class DataExchangeError extends Error {
-  constructor(
-    public readonly code:
-      | "invalid-json"
-      | "unknown-representation"
-      | "invalid-base64url"
-      | "damaged-gzip"
-      | "unsupported-version",
-    message: string,
-    options?: ErrorOptions,
-  ) {
-    super(message, options);
-    this.name = "DataExchangeError";
-  }
-}

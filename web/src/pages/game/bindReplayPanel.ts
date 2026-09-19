@@ -6,31 +6,42 @@ import {
   type ReplayReport,
 } from "@bobby/engine";
 import { downloadExchangeText } from "../../shared/data-exchange/dataExchangeFile.js";
+import { WEB_ERROR_CODES, WebError } from "../../errors/errorCodes.js";
+import { errorDisplayText } from "../../errors/errorPresentation.js";
 import {
   loadReplayAsset,
   parseReplayText,
   saveReplayAsset,
 } from "./replayAssets.js";
+import {
+  localizedText,
+  resolveWebText,
+  webT,
+  type WebDisplayText,
+  type WebLocalizedText,
+} from "../../i18n/webI18n.js";
 
 const REPLAY_PARSE_DELAY_MS = 300;
+
 
 export function replayVerificationPresentation(
   report: ReplayReport,
   expected: Replay,
-): { text: string; failed: boolean } {
+): { text: WebLocalizedText; failed: boolean } {
   if (
     expected.finalState.status !== undefined &&
     report.actual.status !== expected.finalState.status
   ) {
     return {
-      text:
-        `终局不一致 · 记录 ${expected.finalState.status} / ` +
-        `复跑 ${report.actual.status}`,
+      text: localizedText("game.replay.finalStateMismatch", {
+        recorded: expected.finalState.status,
+        actual: report.actual.status,
+      }),
       failed: true,
     };
   }
   return {
-    text: `复跑完成 · ${report.endTick} ticks`,
+    text: localizedText("game.replay.completed", { ticks: report.endTick }),
     failed: false,
   };
 }
@@ -41,9 +52,9 @@ export function validateBuiltinReplaySave(
 ): ReplayReport {
   const report = game.verifyReplay(replay);
   if (replay.finalState.status !== "won")
-    throw new Error("内置过法必须声明 won 终局");
+    throw new WebError(WEB_ERROR_CODES.replay.builtinMustWin);
   if (report.actual.status !== "won")
-    throw new Error("Replay 在当前关卡复跑后未通关");
+    throw new WebError(WEB_ERROR_CODES.replay.builtinNotWon);
   return report;
 }
 
@@ -104,6 +115,10 @@ export function bindReplayPanel(options: {
   let replayTextDirty = false;
   let replayParseTimer: number | null = null;
   let destroyed = false;
+  let verificationState: { text: WebDisplayText; failed: boolean } = {
+    text: localizedText("game.replay.waitRecord"),
+    failed: false,
+  };
 
   const setOpen = (value: boolean, notify = true): void => {
     open = value;
@@ -113,15 +128,26 @@ export function bindReplayPanel(options: {
     window.dispatchEvent(new Event("resize"));
   };
 
+  const renderVerification = (): void => {
+    verification.textContent = resolveWebText(verificationState.text);
+    verification.classList.toggle("failed", verificationState.failed);
+  };
+
+  const setVerification = (
+    text: WebDisplayText,
+    failed = false,
+  ): void => {
+    verificationState = { text, failed };
+    renderVerification();
+  };
+
   const showReport = (report: ReplayReport, expected: Replay): void => {
     const presentation = replayVerificationPresentation(report, expected);
-    verification.textContent = presentation.text;
-    verification.classList.toggle("failed", presentation.failed);
+    setVerification(presentation.text, presentation.failed);
   };
 
   const showError = (error: unknown): void => {
-    verification.textContent = errorMessage(error);
-    verification.classList.add("failed");
+    setVerification(errorDisplayText(error), true);
   };
 
   const clearSpeedError = (): void => {
@@ -161,15 +187,13 @@ export function bindReplayPanel(options: {
     const text = output.value.trim();
     if (!text) {
       replay = null;
-      verification.textContent = "等待录制";
-      verification.classList.remove("failed");
+      setVerification(localizedText("game.replay.waitRecord"));
       update();
       return null;
     }
     try {
       replay = parseReplayText(text);
-      verification.textContent = "Replay JSON 已更新";
-      verification.classList.remove("failed");
+      setVerification(localizedText("game.replay.updated"));
     } catch (error) {
       replay = null;
       showError(error);
@@ -189,8 +213,7 @@ export function bindReplayPanel(options: {
       output.value = "";
       clearReplayParseTimer();
       replayTextDirty = false;
-      verification.textContent = "正在录制";
-      verification.classList.remove("failed");
+      setVerification(localizedText("game.replay.recording"));
       update();
     } catch (error) {
       showError(error);
@@ -283,9 +306,11 @@ export function bindReplayPanel(options: {
     if (!output.value) return;
     try {
       await navigator.clipboard.writeText(output.value);
-      verification.textContent = "Replay JSON 已复制";
-    } catch (error) {
-      showError(error);
+      setVerification(localizedText("game.replay.copied"));
+    } catch (cause) {
+      showError(
+        new WebError(WEB_ERROR_CODES.common.clipboardUnavailable, { cause }),
+      );
     }
   };
 
@@ -301,8 +326,7 @@ export function bindReplayPanel(options: {
   const loadBuiltinReplay = async (): Promise<void> => {
     if (!builtinReplayUrl) return;
     loadingBuiltin = true;
-    verification.textContent = "正在读取内置过法";
-    verification.classList.remove("failed");
+    setVerification(localizedText("game.replay.readingBuiltin"));
     update();
     try {
       const loaded = await loadReplayAsset(builtinReplayUrl);
@@ -312,8 +336,7 @@ export function bindReplayPanel(options: {
       output.value = loaded.text;
       clearReplayParseTimer();
       replayTextDirty = false;
-      verification.textContent = "内置过法已载入";
-      verification.classList.remove("failed");
+      setVerification(localizedText("game.replay.builtinLoaded"));
     } catch (error) {
       if (!destroyed) showError(error);
     } finally {
@@ -325,15 +348,15 @@ export function bindReplayPanel(options: {
   const saveBuiltinReplay = async (): Promise<void> => {
     if (!builtinReplayUrl) return;
     savingBuiltin = true;
-    verification.textContent = "正在保存内置过法";
-    verification.classList.remove("failed");
+    setVerification(localizedText("game.replay.savingBuiltin"));
     update();
     try {
       const selectedReplay = replayForAction();
       if (!selectedReplay) return;
       validateBuiltinReplaySave(options.game, selectedReplay);
       await saveReplayAsset(builtinReplayUrl, output.value);
-      if (!destroyed) verification.textContent = "内置过法已保存";
+      if (!destroyed)
+        setVerification(localizedText("game.replay.builtinSaved"));
     } catch (error) {
       if (!destroyed) showError(error);
     } finally {
@@ -346,9 +369,13 @@ export function bindReplayPanel(options: {
     options.game.stopReplayPlayback();
     clearReplayParseTimer();
     replayTextDirty = true;
-    verification.textContent =
-      output.value.length > 0 ? "等待校验" : "等待录制";
-    verification.classList.remove("failed");
+    setVerification(
+      localizedText(
+        output.value.length > 0
+          ? "game.replay.waitVerify"
+          : "game.replay.waitRecord",
+      ),
+    );
     replayParseTimer = window.setTimeout(() => {
       replayParseTimer = null;
       parseReplayOutput();
@@ -403,30 +430,35 @@ export function bindReplayPanel(options: {
   window.addEventListener("keydown", onKeyDown);
 
   const update = (): void => {
+    renderVerification();
     const recording = options.game.replayRecording;
     const playing = options.game.replayPlaying;
     const paused = options.game.replayPaused;
     panel.classList.toggle("recording", recording);
     panel.classList.toggle("playing", playing && !paused);
     status.textContent = recording
-      ? "正在录制"
+      ? webT("game.replay.recording")
       : paused
-        ? "播放已暂停"
+        ? webT("game.replay.paused")
         : playing
-          ? "正在播放"
+          ? webT("game.replay.playing")
           : replay
-            ? "Replay 已载入"
-            : "准备录制";
+            ? webT("game.replay.loaded")
+            : webT("game.replay.ready");
     ticks.textContent = recording
       ? `World ${options.game.replayTickCount} ticks`
       : playing && replay
         ? `World ${options.game.replayTickCount} / ${replay.endTick} ticks`
         : replay
-          ? `从关卡起点记录 · ${replay.endTick} ticks`
-          : "从关卡起点记录 · 0 ticks";
-    record.textContent = recording ? "停止录制" : "重新开始并录制";
+          ? webT("game.replay.fromStart", { ticks: replay.endTick })
+          : webT("game.replay.fromStart", { ticks: 0 });
+    record.textContent = recording
+      ? webT("game.replay.stopRecord")
+      : webT("game.replay.restartRecord");
     record.disabled = playing || loadingBuiltin;
-    play.textContent = playing && !paused ? "暂停" : "播放";
+    play.textContent = playing && !paused
+      ? webT("game.replay.pause")
+      : webT("game.replay.play");
     play.disabled =
       replayTextDirty || replay === null || recording || loadingBuiltin;
     stopPlayback.disabled = !playing;
@@ -439,11 +471,15 @@ export function bindReplayPanel(options: {
     download.disabled = output.value.length === 0 || loadingBuiltin;
     if (loadBuiltin) {
       loadBuiltin.disabled = recording || playing || loadingBuiltin || savingBuiltin;
-      loadBuiltin.textContent = loadingBuiltin ? "读取中…" : "加载内置过法";
+      loadBuiltin.textContent = loadingBuiltin
+        ? webT("game.replay.loading")
+        : webT("game.replay.loadBuiltin");
     }
     if (saveBuiltin) {
       saveBuiltin.disabled = savingBuiltin || loadingBuiltin;
-      saveBuiltin.textContent = savingBuiltin ? "保存中…" : "保存内置过法";
+      saveBuiltin.textContent = savingBuiltin
+        ? webT("game.replay.saving")
+        : webT("game.replay.saveBuiltin");
     }
   };
   const unsubscribeRecordingAbort = options.game.on(
@@ -454,7 +490,7 @@ export function bindReplayPanel(options: {
       clearReplayParseTimer();
       replayTextDirty = false;
       if (!open) setOpen(true);
-      showError("interactive host choice is not supported by replay");
+      showError(new WebError(WEB_ERROR_CODES.replay.interactiveHostUnsupported));
       update();
     },
   );
@@ -504,9 +540,6 @@ function safeFilename(value: string): string {
   );
 }
 
-function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
-}
 
 function isInteractiveTarget(target: EventTarget | null): boolean {
   return (

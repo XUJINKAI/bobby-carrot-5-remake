@@ -1,6 +1,14 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from "vue";
 import {
+  localizedText,
+  resolveWebText,
+  webT,
+  type WebDisplayText,
+} from "../../i18n/webI18n.js";
+import { WEB_ERROR_CODES, WebError } from "../../errors/errorCodes.js";
+import { errorDisplayText } from "../../errors/errorPresentation.js";
+import {
   decodeExchangeText,
   detectExchangeFormat,
   encodeExchangeText,
@@ -43,7 +51,7 @@ const emit = defineEmits<{
 }>();
 
 const draft = ref("");
-const feedback = ref("");
+const feedback = ref<WebDisplayText | null>(null);
 const busy = ref(false);
 const fileInput = ref<HTMLInputElement | null>(null);
 const draftDirty = ref(false);
@@ -51,6 +59,9 @@ let liveValueTimer: ReturnType<typeof setTimeout> | null = null;
 let refreshVersion = 0;
 const format = computed(() => detectExchangeFormat(draft.value));
 const compressed = computed(() => format.value === "bc5r1");
+const feedbackText = computed(() =>
+  feedback.value === null ? "" : resolveWebText(feedback.value),
+);
 const acceptedFiles = computed(() =>
   [...props.toolbar.left, ...props.toolbar.right]
     .filter((control) => control.type === "importFile")
@@ -58,7 +69,7 @@ const acceptedFiles = computed(() =>
     .join(",") || DEFAULT_EXCHANGE_ACCEPT,
 );
 const status = computed(() => {
-  const label = format.value === "json" ? "JSON" : format.value === "bc5r1" ? "BC5R1" : "未知格式";
+  const label = format.value === "json" ? "JSON" : format.value === "bc5r1" ? "BC5R1" : webT("common.unknownFormat");
   return `${label} · ${formatBytes(new Blob([draft.value]).size)}`;
 });
 const encodeOptions = (): { publicBaseUrl?: string } =>
@@ -94,11 +105,11 @@ async function refreshDraft(
 ): Promise<void> {
   liveValueTimer = null;
   if (!force && draftDirty.value) {
-    feedback.value = "地图内容有未应用的修改；应用后再同步地图信息。";
+    feedback.value = localizedText("common.unsyncedChanges");
     return;
   }
   const version = ++refreshVersion;
-  feedback.value = "";
+  feedback.value = null;
   if (props.value === undefined) {
     draft.value = "";
     draftDirty.value = false;
@@ -134,7 +145,7 @@ async function importDraft(): Promise<void> {
       ? await encodeExchangeText(plain, encodeOptions())
       : plain;
     draftDirty.value = false;
-    feedback.value = "已导入";
+    feedback.value = localizedText("common.imported");
   } catch (error) {
     report(error);
   } finally {
@@ -167,7 +178,7 @@ async function toggleCompression(event: Event): Promise<void> {
       ? await encodeExchangeText(plain, encodeOptions())
       : plain;
     draftDirty.value = wasDirty;
-    feedback.value = "";
+    feedback.value = null;
   } catch (error) {
     report(error);
   } finally {
@@ -179,10 +190,14 @@ async function copyDraft(): Promise<void> {
   try {
     await flushLiveValue();
     await navigator.clipboard.writeText(draft.value);
-    feedback.value = "已复制";
+    feedback.value = localizedText("common.copied");
     emit("copied");
   } catch (cause) {
-    report(new Error("无法访问剪贴板", { cause }));
+    report(
+      new WebError(WEB_ERROR_CODES.common.clipboardUnavailable, {
+        cause,
+      }),
+    );
   }
 }
 
@@ -194,7 +209,7 @@ async function downloadDraft(): Promise<void> {
       filename: props.filename,
       compressed: compressed.value,
     });
-    feedback.value = "已下载";
+    feedback.value = localizedText("common.downloaded");
     emit("downloaded");
   } catch (error) {
     report(error);
@@ -204,7 +219,7 @@ async function downloadDraft(): Promise<void> {
 function onDraftInput(): void {
   refreshVersion++;
   draftDirty.value = true;
-  feedback.value = "";
+  feedback.value = null;
 }
 
 function selectDraft(event: FocusEvent): void {
@@ -213,7 +228,7 @@ function selectDraft(event: FocusEvent): void {
 
 function report(value: unknown): void {
   const error = value instanceof Error ? value : new Error(String(value));
-  feedback.value = error.message;
+  feedback.value = errorDisplayText(error);
   emit("error", error);
 }
 
@@ -226,11 +241,11 @@ function formatBytes(bytes: number): string {
 }
 
 function label(control: DataExchangeControlConfig): string {
-  if (control.type === "importText") return control.label ?? "导入文本";
-  if (control.type === "importFile") return control.label ?? "导入文件";
-  if (control.type === "compress") return control.label ?? "压缩";
-  if (control.type === "copy") return control.label ?? "复制";
-  if (control.type === "download") return control.label ?? "下载";
+  if (control.type === "importText") return control.label ?? webT("common.importText");
+  if (control.type === "importFile") return control.label ?? webT("common.importFile");
+  if (control.type === "compress") return control.label ?? webT("common.compress");
+  if (control.type === "copy") return control.label ?? webT("common.copy");
+  if (control.type === "download") return control.label ?? webT("common.download");
   return "";
 }
 
@@ -274,7 +289,7 @@ onBeforeUnmount(() => {
       </div>
     </div>
     <input ref="fileInput" type="file" hidden :accept="acceptedFiles" @change="selectFile">
-    <p v-if="feedback" class="data-exchange-feedback" aria-live="polite">{{ feedback }}</p>
+    <p v-if="feedbackText" class="data-exchange-feedback" aria-live="polite">{{ feedbackText }}</p>
   </section>
 </template>
 

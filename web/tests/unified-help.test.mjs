@@ -1,33 +1,26 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { test } from "vitest";
-import { createSSRApp } from "vue";
-import { renderToString } from "vue/server-renderer";
-import { renderBuildMarkdown } from "../build/markdownHtmlPlugin.ts";
-import HelpDialog from "../src/app/dialogs/HelpDialog.vue";
-import { unifiedHelpContent } from "../src/shell/shellBridge.ts";
+import { loadTranslationCatalog } from "@bobby/i18n";
 
-test("所有页面共用完整的操作说明", () => {
-  const content = unifiedHelpContent();
-  assert.match(content, /<h2>游戏<\/h2>/);
-  assert.match(content, /<h2>Editor<\/h2>/);
-  assert.match(content, /<li><strong>WASD \/ 方向键<\/strong>：控制移动<\/li>/);
-  assert.match(content, /<li><strong>Ctrl\+Z<\/strong>：撤销<\/li>/);
-  assert.match(content, /<li><strong>滚轮 \/ \+\/- \/ 双指捏合<\/strong>：缩放地图与平移地图<\/li>/);
+test("Help 文案集中在 i18n 并提供中英文", async () => {
+  const [zh, en] = await Promise.all([
+    loadTranslationCatalog("help", "zh-CN"),
+    loadTranslationCatalog("help", "en"),
+  ]);
+  assert.match(zh["help.html"], /<h2>游戏<\/h2>/);
+  assert.match(zh["help.html"], /<h2>Editor<\/h2>/);
+  assert.match(en["help.html"], /<h2>Game<\/h2>/);
+  assert.match(en["help.html"], /<strong>Ctrl\+Z<\/strong>/);
 });
 
-test("构建期 Markdown 将原始 HTML 转为文本", () => {
-  const content = renderBuildMarkdown("## 测试\n\n<script>alert(1)</script>");
-  assert.match(content, /&lt;script&gt;alert\(1\)&lt;\/script&gt;/);
-  assert.doesNotMatch(content, /<script>/);
-});
-
-test("Help Dialog 渲染 Markdown 标题和列表", async () => {
-  const app = createSSRApp(HelpDialog, { html: unifiedHelpContent() });
-  const html = await renderToString(app);
-  assert.match(html, /<h2>游戏<\/h2>/);
-  assert.match(html, /<ul>/);
-  assert.match(html, /<strong>Ctrl\+Z<\/strong>/);
+test("Help 只在打开时加载对应 scope", async () => {
+  const source = await readFile(
+    new URL("../src/app/AppRoot.vue", import.meta.url),
+    "utf8",
+  );
+  assert.match(source, /openWebI18nScope\(\["help"\]\)/);
+  assert.match(source, /webT\("help\.html"\)/);
 });
 
 test("页面配置不维护完整快捷键清单", async () => {
@@ -41,5 +34,41 @@ test("页面配置不维护完整快捷键清单", async () => {
   assert.doesNotMatch(source, /BROWSE_HELP|GAME_HELP|EDITOR_HELP/);
   assert.doesNotMatch(source, /录制 Replay 测试输入（Tab）/);
   assert.doesNotMatch(source, /方向键 \/ WASD 移动/);
-  assert.doesNotMatch(source, /title: "(?:选择|画笔|填充|删除) \([1-4]\)"/);
+});
+
+
+test("lazy i18n scope readiness covers both rendered and requested locales", async () => {
+  const source = await readFile(
+    new URL("../src/i18n/webI18n.ts", import.meta.url),
+    "utf8",
+  );
+  assert.match(source, /const currentLocale = locale\.value;/);
+  assert.match(source, /const targetLocale = desiredLocale;/);
+  assert.match(
+    source,
+    /Promise\.all\(\[\s*loadScopes\(scopes, currentLocale\),[\s\S]*loadScopes\(scopes, targetLocale\)/,
+  );
+  assert.match(
+    source,
+    /currentLocale === locale\.value[\s\S]*targetLocale === desiredLocale/,
+  );
+  assert.match(
+    source,
+    /export async function setWebI18nRouteScopes[\s\S]*await loadScopesForRender\(scopes\)/,
+  );
+});
+
+test("route i18n activation keeps stale-route protection across awaits", async () => {
+  const source = await readFile(
+    new URL("../src/app/BobbyApp.ts", import.meta.url),
+    "utf8",
+  );
+  assert.match(
+    source,
+    /private async activateI18nRoute\([\s\S]*if \(!this\.canCommitRoute\(generation\)\) return false;[\s\S]*await setWebI18nRouteScopes[\s\S]*return this\.canCommitRoute\(generation\)/,
+  );
+  assert.match(
+    source,
+    /if \(!\(await this\.activateI18nRoute\(generation, loadGamePage\)\)\) return;/,
+  );
 });

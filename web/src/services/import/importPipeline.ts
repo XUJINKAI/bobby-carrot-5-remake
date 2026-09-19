@@ -1,4 +1,5 @@
 import type { AdventureSave } from "@bobby/adventure";
+import { WEB_ERROR_CODES, WebError } from "../../errors/errorCodes.js";
 import {
   fromLevelMap,
   parseEditorLevel,
@@ -55,7 +56,7 @@ export async function decodeImportedPayload(
 export function requireImportedJson(value: unknown): ImportedData {
   const imported = classifyImportedJson(value);
   if (!imported)
-    throw new Error("无法识别这段 Bobby Carrot 5 Remake 数据。");
+    throw new WebError(WEB_ERROR_CODES.import.unrecognizedData);
   return imported;
 }
 

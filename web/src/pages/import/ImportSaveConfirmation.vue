@@ -2,6 +2,7 @@
 import { completedAdventureLevelCount } from "@bobby/adventure";
 import { computed } from "vue";
 import type { ImportedSaveData } from "../../services/import/importPipeline.js";
+import { webT } from "../../i18n/webI18n.js";
 
 const props = defineProps<{ data: ImportedSaveData }>();
 const emit = defineEmits<{ confirm: []; cancel: [] }>();
@@ -25,26 +26,26 @@ const exploreCollectionCount = computed(() =>
   <section class="import-save-confirmation">
     <template v-if="data.type === 'adventure-save'">
       <h1>Adventure Save</h1>
-      <p>即将导入冒险进度：</p>
+      <p>{{ webT("import.adventureIncoming") }}</p>
       <dl>
-        <div><dt>已完成</dt><dd>{{ completedAdventureLevelCount(data.value) }}</dd></div>
+        <div><dt>{{ webT("import.completed") }}</dt><dd>{{ completedAdventureLevelCount(data.value) }}</dd></div>
         <div><dt>Bonus Coin</dt><dd>{{ data.value.economy.bonusCoins }}</dd></div>
         <div><dt>Golden Carrot</dt><dd>{{ data.value.economy.goldenCarrots }}</dd></div>
       </dl>
-      <p>导入会覆盖当前 Adventure Save。</p>
+      <p>{{ webT("import.adventureOverwrite") }}</p>
     </template>
     <template v-else>
       <h1>Explore Save</h1>
-      <p>即将导入自由探索进度：</p>
+      <p>{{ webT("import.exploreIncoming") }}</p>
       <dl>
-        <div><dt>地图集合</dt><dd>{{ exploreCollectionCount }}</dd></div>
-        <div><dt>已完成</dt><dd>{{ exploreCompletedCount }}</dd></div>
+        <div><dt>{{ webT("import.collections") }}</dt><dd>{{ exploreCollectionCount }}</dd></div>
+        <div><dt>{{ webT("import.completed") }}</dt><dd>{{ exploreCompletedCount }}</dd></div>
       </dl>
-      <p>导入会覆盖当前 Explore Save。</p>
+      <p>{{ webT("import.exploreOverwrite") }}</p>
     </template>
     <div class="import-save-actions">
-      <button type="button" @click="emit('cancel')">取消</button>
-      <button type="button" @click="emit('confirm')">导入并覆盖</button>
+      <button type="button" @click="emit('cancel')">{{ webT("common.cancel") }}</button>
+      <button type="button" @click="emit('confirm')">{{ webT("import.confirm") }}</button>
     </div>
   </section>
 </template>

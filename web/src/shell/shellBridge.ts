@@ -1,5 +1,5 @@
 import type { AppIconName } from "../shared/icons/types.js";
-import unifiedHelpHtml from "../content/help.md";
+import { webT } from "../i18n/webI18n.js";
 
 export type ShellIcon = AppIconName;
 
@@ -80,7 +80,6 @@ export interface ShellConfig {
 
 export interface ShellViewState {
   config: ShellConfig;
-  helpHtml: string;
 }
 
 export interface ShellBridge {
@@ -128,7 +127,9 @@ export function mergeShellRuntimeWarnings(
   )
     return config;
   const first = warnings[0]!;
-  const suffix = warnings.length > 1 ? ` · 共 ${warnings.length} 个警告` : "";
+  const suffix = warnings.length > 1
+    ? ` · ${webT("shell.warningCount", { count: warnings.length })}`
+    : "";
   return {
     ...config,
     bottomBar: {
@@ -138,6 +139,3 @@ export function mergeShellRuntimeWarnings(
   };
 }
 
-export function unifiedHelpContent(): string {
-  return unifiedHelpHtml;
-}

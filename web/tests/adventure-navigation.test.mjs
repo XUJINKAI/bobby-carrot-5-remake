@@ -8,7 +8,7 @@ test("Adventure 首页在 Beaver Shop 入口显示 Bonus Coin 余额", async () 
     "utf8",
   );
 
-  assert.match(source, /购买全局物品，当前金币数：\{\{ view\.bonusCoins \}\}/);
+  assert.match(source, /webT\("adventure\.shopDescription", \{ coins: view\.bonusCoins \}\)/);
   assert.doesNotMatch(source, /adventure-wallet/);
   assert.doesNotMatch(source, /view\.goldenCarrots/);
 });

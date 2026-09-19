@@ -1,4 +1,5 @@
 import { BC5R_GAME_ID } from "@bobby/model";
+import { WEB_ERROR_CODES, WebError } from "../errors/errorCodes.js";
 import {
   EXPLORE_STORAGE_PREFIX,
   exploreStorageKey,
@@ -57,7 +58,14 @@ export function resetExploreCollection(collection: string): void {
 }
 
 export function parseExploreCollectionExchange(value: unknown): ExploreCollectionStorage {
-  return normalizeExploreCollectionSave(value, true);
+  try {
+    return normalizeExploreCollectionSave(value, true);
+  } catch (cause) {
+    throw new WebError(
+      WEB_ERROR_CODES.saveExchange.invalidExploreCollection,
+      { cause },
+    );
+  }
 }
 
 export function serializeExploreCollectionSave(save: ExploreCollectionStorage): string {
@@ -106,7 +114,14 @@ export function saveExploreProgressSave(
 }
 
 export function parseExploreProgressExchange(value: unknown): ExploreProgressSave {
-  return normalizeExploreProgressSave(value);
+  try {
+    return normalizeExploreProgressSave(value);
+  } catch (cause) {
+    throw new WebError(
+      WEB_ERROR_CODES.saveExchange.invalidExploreSave,
+      { cause },
+    );
+  }
 }
 
 export function serializeExploreProgressSave(save: ExploreProgressSave): string {

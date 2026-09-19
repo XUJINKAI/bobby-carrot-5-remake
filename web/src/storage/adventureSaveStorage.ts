@@ -6,6 +6,7 @@ import {
   type AdventureSave,
 } from "@bobby/adventure";
 import { BC5R_GAME_ID } from "@bobby/model";
+import { WEB_ERROR_CODES, WebError } from "../errors/errorCodes.js";
 import { ADVENTURE_STORAGE_KEY } from "./contracts.js";
 
 export function loadAdventureSave(): AdventureSave {
@@ -39,9 +40,16 @@ export function parseAdventureProfileExchange(value: unknown): AdventureSave {
     typeof (value as Record<string, unknown>).campaign !== "object" ||
     typeof (value as Record<string, unknown>).economy !== "object"
   ) {
-    throw new Error("这段数据不是有效 Adventure Profile");
+    throw new WebError(WEB_ERROR_CODES.saveExchange.invalidAdventureProfile);
   }
-  return parseAdventureSave(JSON.stringify(value));
+  try {
+    return parseAdventureSave(JSON.stringify(value));
+  } catch (cause) {
+    throw new WebError(
+      WEB_ERROR_CODES.saveExchange.invalidAdventureProfile,
+      { cause },
+    );
+  }
 }
 
 export { parseAdventureSave, serializeAdventureSave };

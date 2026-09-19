@@ -4,6 +4,7 @@ import type { ShellConfig } from "./shellBridge.js";
 import ShellActionButton from "./ShellActionButton.vue";
 import ShellIdentity from "./ShellIdentity.vue";
 import AppIcon from "../shared/icons/AppIcon.vue";
+import { webT } from "../i18n/webI18n.js";
 
 const props = defineProps<{ config: NonNullable<ShellConfig["topBar"]> }>();
 const emit = defineEmits<{ navigate: [path: string]; action: [id: string] }>();
@@ -36,7 +37,7 @@ function action(id: string): void {
     <div class="shell-topbar-right">
       <ShellActionButton v-for="item in config.actions ?? []" :key="item.id" :action="item" @action="emit('action', $event)" @navigate="emit('navigate', $event)" />
       <details v-if="overflowActions.length" class="shell-overflow" :open="overflowOpen">
-        <summary title="更多操作" aria-label="更多操作" @click.prevent="overflowOpen = !overflowOpen">
+        <summary :title="webT('shell.moreActions')" :aria-label="webT('shell.moreActions')" @click.prevent="overflowOpen = !overflowOpen">
           <AppIcon name="menu" />
         </summary>
         <div class="shell-overflow-menu">

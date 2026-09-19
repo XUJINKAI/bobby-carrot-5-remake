@@ -5,6 +5,7 @@ import OriginalFlightScene from "../../shared/original-scenes/OriginalFlightScen
 import OriginalStarfield from "../../shared/original-scenes/OriginalStarfield.vue";
 import AdventureViewport from "./AdventureViewport.vue";
 import AppIcon from "../../shared/icons/AppIcon.vue";
+import { webT } from "../../i18n/webI18n.js";
 
 defineProps<{ view: AdventureHomeView; images: ImageManager }>();
 const emit = defineEmits<{ navigate: [path: string] }>();
@@ -17,14 +18,14 @@ const emit = defineEmits<{ navigate: [path: string] }>();
       <div class="adventure-home-hero" aria-hidden="true">
         <OriginalFlightScene :images="images" :show-stars="false" />
       </div>
-      <nav class="adventure-menu" aria-label="冒险模式">
-        <span class="eyebrow adventure-menu-eyebrow">冒险模式</span>
+      <nav class="adventure-menu" :aria-label="webT('adventure.homeAria')">
+        <span class="eyebrow adventure-menu-eyebrow">{{ webT("adventure.homeTitle") }}</span>
         <a
           class="adventure-menu-card primary"
           :href="'/adventure/play/' + view.resumeLevelId"
           @click.prevent="emit('navigate', '/adventure/play/' + view.resumeLevelId)"
         >
-          <strong>继续冒险</strong>
+          <strong>{{ webT("adventure.continue") }}</strong>
           <span>{{ view.resumeLevelId.toUpperCase() }} · {{ view.resumeChapterTitle }}</span>
           <AppIcon name="next" />
         </a>
@@ -33,8 +34,8 @@ const emit = defineEmits<{ navigate: [path: string] }>();
           href="/adventure/chapters"
           @click.prevent="emit('navigate', '/adventure/chapters')"
         >
-          <strong>章节选择</strong>
-          <span>选择章节与已解锁关卡</span>
+          <strong>{{ webT("adventure.chapters") }}</strong>
+          <span>{{ webT("adventure.chaptersDescription") }}</span>
           <AppIcon name="next" />
         </a>
         <a
@@ -42,8 +43,8 @@ const emit = defineEmits<{ navigate: [path: string] }>();
           href="/adventure/beaver-shop"
           @click.prevent="emit('navigate', '/adventure/beaver-shop')"
         >
-          <strong>海狸商店</strong>
-          <span>购买全局物品，当前金币数：{{ view.bonusCoins }}</span>
+          <strong>{{ webT("adventure.shop") }}</strong>
+          <span>{{ webT("adventure.shopDescription", { coins: view.bonusCoins }) }}</span>
           <AppIcon name="next" />
         </a>
         <a
@@ -51,8 +52,8 @@ const emit = defineEmits<{ navigate: [path: string] }>();
           href="/adventure/night-train"
           @click.prevent="emit('navigate', '/adventure/night-train')"
         >
-          <strong>夜间列车</strong>
-          <span>Dream Machine · Cloud 9 · Dreamland Reward</span>
+          <strong>{{ webT("adventure.nightTrain") }}</strong>
+          <span>{{ webT("adventure.nightTrainDescription") }}</span>
           <AppIcon name="next" />
         </a>
       </nav>

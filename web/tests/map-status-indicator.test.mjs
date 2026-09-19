@@ -1,10 +1,16 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { test } from "vitest";
+import { beforeAll, test } from "vitest";
+import { preloadWebI18nScopes, initializeWebI18n } from "../src/i18n/webI18n.ts";
 import {
   mapStatusIndicator,
   mapVerificationText,
 } from "../src/pages/game/mapStatusIndicator.ts";
+
+beforeAll(async () => {
+  await initializeWebI18n("zh-CN");
+  await preloadWebI18nScopes(["game"]);
+});
 
 test("地图状态在没有作者和注记时使用 Minus Circle", () => {
   assert.deepEqual(
@@ -13,15 +19,15 @@ test("地图状态在没有作者和注记时使用 Minus Circle", () => {
       id: "map-status",
       icon: "map-status",
       tone: "success",
-      label: "地图状态：通关验证 已验证可通关；关卡 ID original/1-1；关卡名字 第一关",
+      label: "地图状态：验证 已验证可通关 · ID original/1-1 · 名字 第一关",
       details: [
         {
           id: "verification",
-          label: "通关验证",
+          label: "验证",
           text: "已验证可通关",
         },
-        { id: "map-id", label: "关卡 ID", text: "original/1-1" },
-        { id: "map-name", label: "关卡名字", text: "第一关" },
+        { id: "map-id", label: "ID", text: "original/1-1" },
+        { id: "map-name", label: "名字", text: "第一关" },
       ],
     },
   );
@@ -45,11 +51,11 @@ test("地图状态用 Caret Circle Up 承载作者与长注记", () => {
   assert.deepEqual(indicator.details, [
     {
       id: "verification",
-      label: "通关验证",
-      text: "尚未进行通关验证",
+      label: "验证",
+      text: "未验证",
     },
-    { id: "map-id", label: "关卡 ID", text: "imported/custom-level" },
-    { id: "map-name", label: "关卡名字", text: "测试地图" },
+    { id: "map-id", label: "ID", text: "imported/custom-level" },
+    { id: "map-name", label: "名字", text: "测试地图" },
     { id: "author", label: "作者", text: "Alice" },
     {
       id: "note",
@@ -63,7 +69,7 @@ test("地图状态用 Caret Circle Up 承载作者与长注记", () => {
 test("Adventure 状态明确通关验证来自自由探索模式", () => {
   assert.equal(
     mapVerificationText("adventure", true),
-    "已在自由探索模式中验证可通关",
+    "已在自由探索中验证",
   );
   assert.equal(
     mapStatusIndicator(

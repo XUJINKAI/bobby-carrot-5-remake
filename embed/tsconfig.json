@@ -9,8 +9,17 @@
     "sourceMap": true
   },
   "references": [
-    { "path": "../model" },
-    { "path": "../engine" }
+    {
+      "path": "../model"
+    },
+    {
+      "path": "../i18n"
+    },
+    {
+      "path": "../engine"
+    }
   ],
-  "include": ["src/**/*.ts"]
+  "include": [
+    "src/**/*.ts"
+  ]
 }

@@ -1,15 +1,16 @@
 <script setup lang="ts">
 import AppIcon from "../../shared/icons/AppIcon.vue";
+import { webT } from "../../i18n/webI18n.js";
 
 defineProps<{ html: string }>();
 const emit = defineEmits<{ close: [] }>();
 </script>
 
 <template>
-  <section class="global-dialog help-dialog" role="dialog" aria-label="帮助">
+  <section class="global-dialog help-dialog" role="dialog" :aria-label="webT('shell.help')">
     <header>
-      操作说明
-      <button type="button" aria-label="关闭" @click="emit('close')">
+      {{ webT("help.title") }}
+      <button type="button" :aria-label="webT('common.close')" @click="emit('close')">
         <AppIcon name="close" />
       </button>
     </header>

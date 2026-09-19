@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { MapCollectionSummary } from "../../services/catalog/catalog.js";
 import { exploreCollectionPath } from "../../app/routes.js";
+import { webT } from "../../i18n/webI18n.js";
 
 defineProps<{
   activeCollection: string;
@@ -10,7 +11,7 @@ const emit = defineEmits<{ navigate: [path: string] }>();
 </script>
 
 <template>
-  <nav class="explore-tabs" aria-label="自由探索地图集合">
+  <nav class="explore-tabs" :aria-label="webT('explore.tabsAria')">
     <a
       v-for="collection in collections"
       :key="collection.id"

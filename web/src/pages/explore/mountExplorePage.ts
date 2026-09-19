@@ -17,6 +17,7 @@ import {
   globalActions,
   pageIdentity,
 } from "../../app/pageChrome.js";
+import { webT } from "../../i18n/webI18n.js";
 
 export async function renderLevels(
   context: PageContext,
@@ -40,15 +41,16 @@ export async function renderLevels(
     );
 
   audio.playMusic("title");
-  configureShell({
+  const syncShell = (): void => configureShell({
     topBar: {
       visible: true,
       fixed: true,
-      identity: pageIdentity("自由探索模式", "/explore"),
+      identity: pageIdentity(webT("nav.explore"), "/explore"),
       actions: globalActions(),
     },
     bottomBar: { visible: false },
   });
+  syncShell();
   app.replaceChildren();
   const exploreApp = createApp(ExplorePage, {
     activeCollection: collection,
@@ -70,9 +72,16 @@ export async function renderLevels(
   });
   exploreApp.mount(app);
   await nextTick();
-  if (collection.filters.length > 0) mountLevelFilters(collection, images);
+  const filters = collection.filters.length > 0
+    ? mountLevelFilters(collection, images)
+    : null;
   return {
+    localeChanged(): void {
+      syncShell();
+      filters?.localeChanged();
+    },
     destroy(): void {
+      filters?.destroy();
       exploreApp.unmount();
     },
   };

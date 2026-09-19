@@ -18,6 +18,7 @@ import {
 import HomePage from "./HomePage.vue";
 import { createHomeDemoLevel } from "./homeDemoLevel.js";
 import type { HomeViewState } from "./types.js";
+import { webT } from "../../i18n/webI18n.js";
 
 export async function renderHome(
   context: PageContext,
@@ -25,7 +26,7 @@ export async function renderHome(
   const { app, audio, images, navigate } = context;
 
   audio.playMusic("title");
-  configureShell({
+  const syncShell = (): void => configureShell({
     topBar: {
       visible: true,
       fixed: true,
@@ -46,11 +47,12 @@ export async function renderHome(
       ],
     },
   });
+  syncShell();
   app.replaceChildren();
   const initialScreenControlEnabled =
     getWebSettings().controls.screenControlEnabled;
   const view = reactive<HomeViewState>({
-    demoStatus: "WASD / 方向键移动",
+    demoStatus: webT("home.demoMove"),
     demoResult: null,
     deathReason: "",
     importFeedback: "",
@@ -126,13 +128,13 @@ export async function renderHome(
         : null;
     view.demoStatus =
       state.status === "won"
-        ? "正在进入冒险模式…"
+        ? webT("home.demoEnteringAdventure")
         : state.status === "dead"
-          ? "Bobby 遇到了危险，可以重新开始。"
-          : `WASD / 方向键移动${remaining === null ? "" : ` · 剩余目标 ${remaining}`}`;
+          ? webT("home.demoDead")
+          : `${webT("home.demoMove")}${remaining === null ? "" : ` · ${webT("home.demoRemaining", { count: remaining })}`}`;
     view.demoResult =
       state.status === "dead" ? "death" : null;
-    view.deathReason = state.deathReason ?? "Bobby 没能继续前进。";
+    view.deathReason = state.deathReason ?? webT("home.demoDeathReason");
     if (state.status === "won" && !navigatingToAdventure) {
       navigatingToAdventure = true;
       queueMicrotask(() => {
@@ -162,6 +164,10 @@ export async function renderHome(
   window.addEventListener("shell-dialog-close", onDialogClose);
   window.addEventListener("screen-control-change", onScreenControlChange);
   return {
+    localeChanged(): void {
+      syncShell();
+      updateDemo();
+    },
     destroy(): void {
       shellDialogLease?.release();
       window.removeEventListener("shell-dialog-open", onDialogOpen);

@@ -9,6 +9,7 @@ export type Navigate = (path: string) => void;
 
 export interface PageController {
   destroy(): void;
+  localeChanged?(): void;
 }
 
 export const NOOP_CONTROLLER: PageController = {

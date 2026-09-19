@@ -6,7 +6,6 @@ import {
   installShellBridge,
   type ShellConfig,
   type ShellViewState,
-  unifiedHelpContent,
 } from "../shell/shellBridge.js";
 import AppRoot from "./AppRoot.vue";
 import {
@@ -23,6 +22,20 @@ import {
   parseMapPlayUrl,
   type ExploreMapRef,
 } from "./routes.js";
+import { setWebI18nRouteScopes } from "../i18n/webI18n.js";
+import { errorDisplayText } from "../errors/errorPresentation.js";
+import {
+  localizedPageScopes,
+  type LocalizedPageLoader,
+  loadAdventurePages,
+  loadEditorPage,
+  loadEmbedPage,
+  loadExplorePage,
+  loadGamePage,
+  loadHomePage,
+  loadImportPage,
+  loadSettingsPage,
+} from "./pageLoaders.js";
 
 interface AppRootHandle {
   openSettings(): void;
@@ -40,6 +53,8 @@ export class BobbyApp {
   private vueApp: VueApp<Element> | null = null;
   private vueRoot: AppRootHandle | null = null;
   private buttonFocusPolicy: ButtonFocusPolicy | null = null;
+  private routeGeneration = 0;
+  private routeRenderQueue: Promise<void> = Promise.resolve();
 
   constructor(mount: HTMLDivElement) {
     this.mount = mount;
@@ -65,6 +80,7 @@ export class BobbyApp {
     document.addEventListener("pointerdown", this.resumeAudio, { passive: true });
     document.addEventListener("keydown", this.resumeAudio);
     window.addEventListener("popstate", this.onPopState);
+    window.addEventListener("web-locale-change", this.onLocaleChange);
     await contentReady;
     await this.renderRoute();
   }
@@ -76,6 +92,7 @@ export class BobbyApp {
     document.removeEventListener("pointerdown", this.resumeAudio);
     document.removeEventListener("keydown", this.resumeAudio);
     window.removeEventListener("popstate", this.onPopState);
+    window.removeEventListener("web-locale-change", this.onLocaleChange);
     installShellBridge(null);
     this.vueApp?.unmount();
     this.audio.destroy();
@@ -93,6 +110,10 @@ export class BobbyApp {
 
   private readonly onPopState = (): void => {
     void this.renderRoute();
+  };
+
+  private readonly onLocaleChange = (): void => {
+    this.controller.localeChanged?.();
   };
 
   private readonly navigate = (path: string): void => {
@@ -113,40 +134,53 @@ export class BobbyApp {
     };
   }
 
-  private async renderRoute(): Promise<void> {
-    try {
-      await this.renderCurrentRoute();
-    } finally {
-      await nextTick();
-      this.buttonFocusPolicy?.refresh();
-    }
+  private renderRoute(): Promise<void> {
+    const generation = ++this.routeGeneration;
+    const render = async (): Promise<void> => {
+      if (generation !== this.routeGeneration) return;
+      try {
+        await this.renderCurrentRoute(generation);
+      } finally {
+        await nextTick();
+        this.buttonFocusPolicy?.refresh();
+      }
+    };
+    this.routeRenderQueue = this.routeRenderQueue.then(render, render);
+    return this.routeRenderQueue;
   }
 
-  private async renderCurrentRoute(): Promise<void> {
+  private async renderCurrentRoute(generation: number): Promise<void> {
     this.controller.destroy();
     this.controller = NOOP_CONTROLLER;
     this.clearIdleTasks();
     const path = localRoutePath();
 
     if (path === "/") {
-      const { renderHome } = await import("../pages/home/mountHomePage.js");
+      const { renderHome } = await loadHomePage();
+      if (!this.canCommitRoute(generation)) return;
+      if (!(await this.activateI18nRoute(generation, loadHomePage))) return;
       const context = this.pageContext();
       this.controller = await renderHome(context);
       this.scheduleHomePrefetch();
       return;
     }
     if (path === "/embed") {
-      const { renderEmbedPage } = await import("../pages/embed/mountEmbedPage.js");
+      const { renderEmbedPage } = await loadEmbedPage();
+      if (!this.canCommitRoute(generation)) return;
+      if (!(await this.activateI18nRoute(generation, loadEmbedPage))) return;
       const context = this.pageContext();
       this.controller = renderEmbedPage(context);
       return;
     }
     if (path === "/import/v1") {
-      await this.renderImport();
+      await loadImportPage();
+      if (!this.canCommitRoute(generation)) return;
+      if (!(await this.activateI18nRoute(generation, loadImportPage))) return;
+      await this.renderImport(generation);
       return;
     }
     if (path.startsWith("/explore/play/")) {
-      await this.renderExplorePlay(path);
+      await this.renderExplorePlay(path, generation);
       return;
     }
     if (path === "/explore" || path.startsWith("/explore/")) {
@@ -154,25 +188,27 @@ export class BobbyApp {
         ? "original"
         : decodeURIComponent(path.split("/")[2] ?? "").toLowerCase();
       const [{ renderLevels }] = await Promise.all([
-        import("../pages/explore/mountExplorePage.js"),
+        loadExplorePage(),
         this.catalog.loadCollectionsIndex(),
         this.catalog.loadCollection(collection),
       ]);
+      if (!this.canCommitRoute(generation)) return;
+      if (!(await this.activateI18nRoute(generation, loadExplorePage))) return;
       this.controller = await renderLevels(this.pageContext(), collection);
       return;
     }
     if (path === "/settings") {
-      const { renderSettingsPage } = await import(
-        "../pages/settings/mountSettingsPage.js"
-      );
+      const { renderSettingsPage } = await loadSettingsPage();
+      if (!this.canCommitRoute(generation)) return;
+      if (!(await this.activateI18nRoute(generation, loadSettingsPage))) return;
       const context = this.pageContext();
       this.controller = renderSettingsPage(context);
       return;
     }
     if (path === "/edit") {
-      const { renderEditorPage } = await import(
-        "../pages/editor/mountEditorPage.js"
-      );
+      const { renderEditorPage } = await loadEditorPage();
+      if (!this.canCommitRoute(generation)) return;
+      if (!(await this.activateI18nRoute(generation, loadEditorPage))) return;
       this.controller = await renderEditorPage(this.pageContext());
       return;
     }
@@ -180,10 +216,12 @@ export class BobbyApp {
       this.navigate("/");
       return;
     }
-    await this.catalog.loadAdventure();
-    const adventurePages = await import(
-      "../pages/adventure/mountAdventurePages.js"
-    );
+    const [, adventurePages] = await Promise.all([
+      this.catalog.loadAdventure(),
+      loadAdventurePages(),
+    ]);
+    if (!this.canCommitRoute(generation)) return;
+    if (!(await this.activateI18nRoute(generation, loadAdventurePages))) return;
     const context = this.pageContext();
     if (path === "/adventure") {
       this.controller = adventurePages.renderAdventureHome(context);
@@ -194,7 +232,7 @@ export class BobbyApp {
       return;
     }
     if (path === "/adventure/beaver-shop") {
-      await this.renderAdventureScene("beaver-shop", context, "/adventure");
+      await this.renderAdventureScene("beaver-shop", context, "/adventure", generation);
       return;
     }
     if (path === "/adventure/night-train") {
@@ -206,6 +244,7 @@ export class BobbyApp {
         "dream-machine",
         context,
         "/adventure/night-train",
+        generation,
       );
       return;
     }
@@ -214,6 +253,7 @@ export class BobbyApp {
         "cloud-9",
         context,
         "/adventure/night-train",
+        generation,
       );
       return;
     }
@@ -222,6 +262,7 @@ export class BobbyApp {
         "dreamland-reward",
         context,
         "/adventure/night-train",
+        generation,
       );
       return;
     }
@@ -235,13 +276,17 @@ export class BobbyApp {
       return;
     }
     if (path.startsWith("/adventure/play/")) {
-      await this.renderAdventurePlay(path, adventurePages.findAdventureLevel);
+      await this.renderAdventurePlay(
+        path,
+        adventurePages.findAdventureLevel,
+        generation,
+      );
       return;
     }
     this.navigate("/");
   }
 
-  private async renderImport(): Promise<void> {
+  private async renderImport(generation: number): Promise<void> {
     const payload = location.hash.slice(1);
     try {
       const { decodeImportedPayload } = await import(
@@ -251,8 +296,10 @@ export class BobbyApp {
       if (imported.type === "map") {
         const [{ serializeEditorLevel }, { renderGamePage }] = await Promise.all([
           import("@bobby/editor"),
-          import("../pages/game/mountGamePage.js"),
+          loadGamePage(),
         ]);
+        if (!this.canCommitRoute(generation)) return;
+        if (!(await this.activateI18nRoute(generation, loadImportPage, loadGamePage))) return;
         sessionStorage.setItem(
           "bc5r:pending-editor-level",
           serializeEditorLevel(imported.value),
@@ -271,14 +318,12 @@ export class BobbyApp {
         });
         return;
       }
-      const { renderImportMessage } = await import(
-        "../pages/import/mountImportPage.js"
-      );
+      const { renderImportMessage } = await loadImportPage();
+      if (!this.canCommitRoute(generation)) return;
       const context = this.pageContext();
       this.controller = imported.type === "unknown"
         ? renderImportMessage(context, {
             status: "unknown",
-            message: "无法识别这段 Bobby Carrot 5 Remake 数据。",
             rawText: imported.rawText,
           })
         : renderImportMessage(context, {
@@ -286,17 +331,20 @@ export class BobbyApp {
             data: imported,
           });
     } catch (error) {
-      const { renderImportMessage } = await import(
-        "../pages/import/mountImportPage.js"
-      );
+      const { renderImportMessage } = await loadImportPage();
+      if (!this.canCommitRoute(generation)) return;
+      if (!(await this.activateI18nRoute(generation, loadImportPage))) return;
       this.controller = renderImportMessage(this.pageContext(), {
         status: "error",
-        message: error instanceof Error ? error.message : String(error),
+        message: errorDisplayText(error),
       });
     }
   }
 
-  private async renderExplorePlay(path: string): Promise<void> {
+  private async renderExplorePlay(
+    path: string,
+    generation: number,
+  ): Promise<void> {
     const ref = parseMapPlayUrl(path);
     if (!ref) {
       this.navigate("/explore");
@@ -312,9 +360,11 @@ export class BobbyApp {
       }
       const [editor, importPage, gamePage] = await Promise.all([
         import("@bobby/editor"),
-        import("../pages/import/mountImportPage.js"),
-        import("../pages/game/mountGamePage.js"),
+        loadImportPage(),
+        loadGamePage(),
       ]);
+      if (!this.canCommitRoute(generation)) return;
+      if (!(await this.activateI18nRoute(generation, loadImportPage, loadGamePage))) return;
       const level = editor.parseEditorLevel(pending);
       sessionStorage.setItem("bc5r:pending-editor-level", pending);
       this.controller = await gamePage.renderGamePage({
@@ -330,10 +380,12 @@ export class BobbyApp {
     try {
       const [maps, gamePage, collection] = await Promise.all([
         import("../services/catalog/exploreMaps.js"),
-        import("../pages/game/mountGamePage.js"),
+        loadGamePage(),
         this.catalog.loadCollection(ref.collection).catch(() => null),
       ]);
       const resolved = await maps.resolveMapDocument(ref);
+      if (!this.canCommitRoute(generation)) return;
+      if (!(await this.activateI18nRoute(generation, loadGamePage))) return;
       const currentIndex =
         collection?.maps.findIndex((item) => item.id === ref.id) ?? -1;
       const explorePreviousMapId =
@@ -369,6 +421,7 @@ export class BobbyApp {
     findAdventureLevel: typeof import(
       "../pages/adventure/mountAdventurePages.js"
     )["findAdventureLevel"],
+    generation: number,
   ): Promise<void> {
     const id = decodeURIComponent(path.split("/").pop() ?? "").toLowerCase();
     const adventure = this.catalog.adventure;
@@ -381,13 +434,15 @@ export class BobbyApp {
     if (!ref) throw new Error(`无效 Adventure map reference：${found.level.map}`);
     const [maps, gamePage, collection] = await Promise.all([
       import("../services/catalog/exploreMaps.js"),
-      import("../pages/game/mountGamePage.js"),
+      loadGamePage(),
       this.catalog.loadCollection(ref.collection),
     ]);
     const resolved = await maps.resolveMapDocument(ref);
     const verified = collection.maps.some(
       (map) => map.id === ref.id && map.verified === true,
     );
+    if (!this.canCommitRoute(generation)) return;
+    if (!(await this.activateI18nRoute(generation, loadAdventurePages, loadGamePage))) return;
     this.controller = await gamePage.renderGamePage({
       ...this.pageContext(),
       level: resolved.level,
@@ -412,6 +467,7 @@ export class BobbyApp {
     sceneId: string,
     context: PageContext,
     backPath: string,
+    generation: number,
   ): Promise<void> {
     const scene = this.catalog.adventure.specialScenes.find(
       (item) => item.id === sceneId,
@@ -424,13 +480,15 @@ export class BobbyApp {
     if (!ref) throw new Error(`无效 Adventure scene map reference：${scene.map}`);
     const [maps, gamePage, collection] = await Promise.all([
       import("../services/catalog/exploreMaps.js"),
-      import("../pages/game/mountGamePage.js"),
+      loadGamePage(),
       this.catalog.loadCollection(ref.collection),
     ]);
     const resolved = await maps.resolveMapDocument(ref);
     const verified = collection.maps.some(
       (map) => map.id === ref.id && map.verified === true,
     );
+    if (!this.canCommitRoute(generation)) return;
+    if (!(await this.activateI18nRoute(generation, loadAdventurePages, loadGamePage))) return;
     this.controller = await gamePage.renderGamePage({
       ...context,
       level: resolved.level,
@@ -448,6 +506,19 @@ export class BobbyApp {
       mode: "adventure",
       source: "adventure",
     });
+  }
+
+  private canCommitRoute(generation: number): boolean {
+    return generation === this.routeGeneration;
+  }
+
+  private async activateI18nRoute(
+    generation: number,
+    ...loaders: LocalizedPageLoader<unknown>[]
+  ): Promise<boolean> {
+    if (!this.canCommitRoute(generation)) return false;
+    await setWebI18nRouteScopes(localizedPageScopes(...loaders));
+    return this.canCommitRoute(generation);
   }
 
   private scheduleHomePrefetch(): void {
@@ -501,7 +572,6 @@ function adventureNeighborRefs(
 function defaultShellState(): ShellViewState {
   return {
     config: {},
-    helpHtml: unifiedHelpContent(),
   };
 }
 

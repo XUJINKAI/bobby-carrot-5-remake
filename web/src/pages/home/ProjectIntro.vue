@@ -3,6 +3,7 @@ import type { ImageManager } from "@bobby/engine";
 import NightTrainScene from "../../shared/original-scenes/NightTrainScene.vue";
 import EmbedFeaturePreview from "./EmbedFeaturePreview.vue";
 import PushboxFeaturePreview from "./PushboxFeaturePreview.vue";
+import { webT } from "../../i18n/webI18n.js";
 
 defineProps<{ images: ImageManager }>();
 </script>
@@ -11,8 +12,8 @@ defineProps<{ images: ImageManager }>();
   <section class="home-about" aria-labelledby="home-about-title">
     <header class="home-about-heading">
       <span class="eyebrow">BOBBY CARROT 5 REMAKE</span>
-      <h2 id="home-about-title">《兔子波比5》重制版</h2>
-      <p>从原版关卡、美术与机关出发，把兔子波比 5 重新带到现代 Web。</p>
+      <h2 id="home-about-title">{{ webT("home.intro.title") }}</h2>
+      <p>{{ webT("home.intro.lead") }}</p>
     </header>
 
     <article class="feature-story feature-story-train">
@@ -21,10 +22,8 @@ defineProps<{ images: ImageManager }>();
       </div>
       <div class="feature-copy">
         <span>CLASSIC REMAKE</span>
-        <h3>复刻经典</h3>
-        <p>
-          还原原版冒险体验，复刻400个关卡+80个奖励关，海狸商店等机制也悉数还原。
-        </p>
+        <h3>{{ webT("home.intro.classicTitle") }}</h3>
+        <p>{{ webT("home.intro.classicDescription") }}</p>
       </div>
     </article>
 
@@ -34,10 +33,8 @@ defineProps<{ images: ImageManager }>();
       </div>
       <div class="feature-copy">
         <span>MAP EDITOR</span>
-        <h3>地图编辑器</h3>
-        <p>
-          增强的地图编辑器不仅可以创建原版机制的地图，还有很多新的机制提供，例如推箱子和传送门。
-        </p>
+        <h3>{{ webT("home.intro.editorTitle") }}</h3>
+        <p>{{ webT("home.intro.editorDescription") }}</p>
       </div>
     </article>
 
@@ -47,16 +44,12 @@ defineProps<{ images: ImageManager }>();
       </div>
       <div class="feature-copy">
         <span>SHARE &amp; EMBED</span>
-        <h3>尽情分享</h3>
-        <p>
-          提供多种分享方式，例如链接、文件、网页内嵌，你可以将自己创建的地图嵌入自己的网页中。
-        </p>
+        <h3>{{ webT("home.intro.shareTitle") }}</h3>
+        <p>{{ webT("home.intro.shareDescription") }}</p>
       </div>
     </article>
 
-    <p class="home-about-note">
-      项目代码与原创文档遵循仓库许可证；原版 Bobby Carrot 资产的权利边界以 THIRD_PARTY_ASSETS.md 为准。
-    </p>
+    <p class="home-about-note">{{ webT("home.intro.legalNote") }}</p>
   </section>
 </template>
 

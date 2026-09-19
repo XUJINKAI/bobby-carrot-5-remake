@@ -1,3 +1,5 @@
+import { webT } from "../../i18n/webI18n.js";
+
 export function escapeHtml(value: string): string {
   const entities: Record<string, string> = {
     "&": "&amp;",
@@ -28,31 +30,31 @@ export interface CompletedResultDetails {
 export function completedResultHtml(details: CompletedResultDetails): string {
   const totalCoins = details.totalCoins === undefined
     ? ""
-    : `<p>总金币: ${details.totalCoins}</p>`;
+    : `<p>${escapeHtml(webT("game.totalCoins", { total: details.totalCoins }))}</p>`;
   const nextAttributes = details.nextId
     ? ` data-next="${escapeHtml(details.nextId)}"`
     : " disabled";
   return [
-    "<h2>关卡完成！</h2>",
+    `<h2>${escapeHtml(webT("game.complete"))}</h2>`,
     '<div class="result-statistics">',
-    `<p>用时: ${formatElapsed(details.elapsedMs)}</p>`,
-    `<p>步数: ${details.moves}</p>`,
-    `<p>金币: ${details.collectedCoins}/${details.availableCoins}</p>`,
+    `<p>${escapeHtml(webT("game.time", { time: formatElapsed(details.elapsedMs) }))}</p>`,
+    `<p>${escapeHtml(webT("game.moves", { moves: details.moves }))}</p>`,
+    `<p>${escapeHtml(webT("game.coins", { collected: details.collectedCoins, available: details.availableCoins }))}</p>`,
     totalCoins,
     "</div>",
     '<div class="result-actions">',
-    '<button class="ghost-btn" data-result="levels">返回</button>',
-    `<button class="primary-btn" data-result="next"${nextAttributes}>下一关</button>`,
+    `<button class="ghost-btn" data-result="levels">${escapeHtml(webT("game.back"))}</button>`,
+    `<button class="primary-btn" data-result="next"${nextAttributes}>${escapeHtml(webT("game.next"))}</button>`,
     "</div>",
   ].join("");
 }
 
 export function failedResultHtml(): string {
   return [
-    "<h2>失败</h2>",
+    `<h2>${escapeHtml(webT("game.failed"))}</h2>`,
     '<div class="result-actions">',
-    '<button class="ghost-btn" data-result="levels">返回</button>',
-    '<button class="primary-btn" data-result="retry">重新开始</button>',
+    `<button class="ghost-btn" data-result="levels">${escapeHtml(webT("game.back"))}</button>`,
+    `<button class="primary-btn" data-result="retry">${escapeHtml(webT("game.retry"))}</button>`,
     "</div>",
   ].join("");
 }

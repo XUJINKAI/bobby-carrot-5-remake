@@ -9,7 +9,7 @@ import AppBottomBar from "../shell/AppBottomBar.vue";
 import AppTopBar from "../shell/AppTopBar.vue";
 import type { Navigate } from "./pageContracts.js";
 import type { ShellViewState } from "../shell/shellBridge.js";
-import { webT } from "../i18n/webI18n.js";
+import { openWebI18nScope, type WebI18nScope, webT } from "../i18n/webI18n.js";
 
 const props = defineProps<{
   shell: ShellViewState;
@@ -20,6 +20,8 @@ const props = defineProps<{
 const content = ref<HTMLDivElement | null>(null);
 const quickSettingsOpen = ref(false);
 const helpOpen = ref(false);
+const helpHtml = ref("");
+let helpScope: WebI18nScope | null = null;
 const musicInteractionRequired = ref(audioInteractionRequired());
 const settings = useGlobalSettings(props.audio);
 const disposeMusicInteraction = props.audio.onMusicInteractionRequiredChange(
@@ -31,7 +33,7 @@ const disposeMusicInteraction = props.audio.onMusicInteractionRequiredChange(
 function openSettings(): void {
   settings.refresh();
   if (!quickSettingsOpen.value && !helpOpen.value) notifySurfaceOpen();
-  helpOpen.value = false;
+  dismissHelp();
   quickSettingsOpen.value = true;
 }
 
@@ -41,7 +43,18 @@ function closeSettings(): void {
   notifySurfaceClose();
 }
 
-function openHelp(): void {
+async function openHelp(): Promise<void> {
+  const scope = openWebI18nScope(["help"]);
+  helpScope?.dispose();
+  helpScope = scope;
+  try {
+    await scope.ready;
+  } catch {
+    if (helpScope === scope) helpScope = null;
+    return;
+  }
+  if (!scope.active || helpScope !== scope) return;
+  helpHtml.value = webT("help.html");
   if (!helpOpen.value && !quickSettingsOpen.value) notifySurfaceOpen();
   quickSettingsOpen.value = false;
   helpOpen.value = true;
@@ -49,8 +62,14 @@ function openHelp(): void {
 
 function closeHelp(): void {
   if (!helpOpen.value) return;
-  helpOpen.value = false;
+  dismissHelp();
   notifySurfaceClose();
+}
+
+function dismissHelp(): void {
+  helpOpen.value = false;
+  helpScope?.dispose();
+  helpScope = null;
 }
 
 function notifySurfaceOpen(): void {
@@ -69,7 +88,7 @@ function openSettingsPage(): void {
 function dispatchAction(action: string): void {
   if (action === "music") settings.toggleMusic();
   else if (action === "settings") openSettings();
-  else if (action === "help") openHelp();
+  else if (action === "help") void openHelp();
   else if (action === "screen-control") {
     settings.setScreenControl(!settings.state.screenControlEnabled);
     updateActionPressed("screen-control", settings.state.screenControlEnabled);
@@ -127,12 +146,16 @@ watch(
   () => {
     localizeGlobalActions(shellActions());
     updateMusicInteractionTip();
+    if (helpOpen.value) helpHtml.value = webT("help.html");
   },
   { immediate: true },
 );
 
 defineExpose({ openSettings });
-onBeforeUnmount(disposeMusicInteraction);
+onBeforeUnmount(() => {
+  helpScope?.dispose();
+  disposeMusicInteraction();
+});
 onMounted(() => {
   if (content.value) props.onContentReady(content.value);
 });
@@ -191,7 +214,7 @@ onMounted(() => {
 
     <GlobalDialogLayer
       v-if="helpOpen"
-      :help-html="shell.helpHtml"
+      :help-html="helpHtml"
       @close="closeHelp"
     />
   </div>

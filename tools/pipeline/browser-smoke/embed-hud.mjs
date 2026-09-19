@@ -16,18 +16,15 @@ export const embedHudSmokeScript = `
   if (!hud || !value) throw new Error('missing Embed gameplay HUD');
   const home = shadow.querySelector('.bc5r-home-link');
   const frameActions = [...shadow.querySelectorAll('.bc5r-frame-actions > *')];
-  const open = frameActions.find(
-    (element) => element.getAttribute('aria-label') === '在新窗口打开',
-  );
-  const restart = frameActions.find(
-    (element) => element.getAttribute('aria-label') === '重新开始',
-  );
+  const open = shadow.querySelector('[data-action="open"]');
+  const restart = shadow.querySelector('[data-action="restart"]');
+  const sound = shadow.querySelector('[data-action="sound"]');
   const joystick = shadow.querySelector('.bc5r-info .bc5r-icon-button');
   const joystickLayer = shadow.querySelector('.engine-screen-joystick-layer');
   const infoInput = document.querySelector('.info-input');
   const keyboardSelect = document.querySelector('.keyboard-select');
   if (
-    !home || !open || !restart || !joystick || !joystickLayer ||
+    !home || !open || !restart || !sound || !joystick || !joystickLayer ||
     !infoInput || !keyboardSelect
   )
     throw new Error('missing Embed frame controls');
@@ -48,6 +45,7 @@ export const embedHudSmokeScript = `
     openPath: new URL(open.href).pathname,
     openHash: new URL(open.href).hash,
     openTarget: open.target,
+    actionIds: frameActions.map((element) => element.getAttribute('data-action')),
     actionLabels: frameActions.map((element) => element.getAttribute('aria-label')),
     info: shadow.querySelector('.bc5r-info-copy')?.textContent,
     infoPlaceholder: infoInput.placeholder,
@@ -73,9 +71,11 @@ export function assertEmbedHudSmoke(payload) {
     payload.openPath !== "/import/v1" ||
     !payload.openHash ||
     payload.openTarget !== "_blank" ||
-    JSON.stringify(payload.actionLabels) !==
-      JSON.stringify(["重新开始", "在新窗口打开", "关闭声音"]) ||
-    payload.info !== "WASD / 方向键移动" ||
+    JSON.stringify(payload.actionIds) !==
+      JSON.stringify(["restart", "open", "sound"]) ||
+    !payload.actionLabels.every((label) => typeof label === "string" && label.length > 0) ||
+    typeof payload.info !== "string" ||
+    payload.info.length === 0 ||
     payload.infoPlaceholder !== payload.info ||
     JSON.stringify(payload.keyboardOptions) !== JSON.stringify(["focus", "global"]) ||
     !payload.gameplayAssetsLoaded ||

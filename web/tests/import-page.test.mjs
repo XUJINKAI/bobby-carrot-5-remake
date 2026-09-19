@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { createAdventureSave } from "@bobby/adventure";
 import { BC5R_GAME_ID } from "@bobby/model";
 import { test } from "vitest";
+import { WEB_ERROR_CODES, WebError } from "../src/errors/errorCodes.ts";
 import {
   classifyImportedJson,
   decodeImportedPayload,
@@ -103,6 +104,8 @@ test("无法识别的 JSON 在 URL 中保留原文，在首页返回领域错误
   });
   assert.throws(
     () => requireImportedJson({}),
-    /无法识别这段 Bobby Carrot 5 Remake 数据/,
+    (error) =>
+      error instanceof WebError &&
+      error.code === WEB_ERROR_CODES.import.unrecognizedData,
   );
 });

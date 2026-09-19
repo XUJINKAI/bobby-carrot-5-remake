@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "vitest";
+import { WEB_ERROR_CODES, WebError } from "../src/errors/errorCodes.ts";
 import {
   decodeExchangeText,
   detectExchangeFormat,
@@ -55,6 +56,8 @@ test("格式识别接受 JSON、BC5R1 与任意站点的 import/v1 URL", () => {
 test("未知 transport 版本返回明确错误", async () => {
   await assert.rejects(
     decodeExchangeText("BC5R2:PAYLOAD"),
-    (error) => error.code === "unsupported-version",
+    (error) =>
+      error instanceof WebError &&
+      error.code === WEB_ERROR_CODES.dataExchange.unsupportedVersion,
   );
 });

@@ -63,10 +63,9 @@ try {
       'class="home-sky-brand"',
       'class="home-demo-screen-control"',
       'href="https://github.com/XUJINKAI/bobby-carrot-5-remake"',
-      "导入地图",
-      "导入自定义地图或存档",
+      "data-home-import",
     ],
-    ["本项目还在开发中"],
+    ['class="adventure-menu"'],
   );
   await interactiveDataExchangeSmoke(`${origin}/`);
   const mapPayload = exchangePayload(
@@ -76,7 +75,7 @@ try {
     ),
   );
   const embedUrl = `${origin}/embed#${mapPayload}`;
-  await smoke(embedUrl, ['class="embed-page"', "BC5R Embed v1", "English", "Modern", "滑动屏幕"]);
+  await smoke(embedUrl, ['class="embed-page"', "BC5R Embed v1", "English", "Modern", 'class="keyboard-select"']);
   await interactiveEmbedHudSmoke(embedUrl);
   await expectStatus(`${origin}/embed/v1/bc5r.js`, 200, "text/javascript");
   await smoke(
@@ -93,7 +92,7 @@ try {
       "Dreamland Reward",
       'href="/explore/play/original/campaign-intro"',
     ],
-    ["进入冒险模式"],
+    ['class="adventure-menu"'],
   );
   await exploreDifficultySmoke(`${origin}/explore`);
   await interactiveFilterSmoke(`${origin}/explore`);
@@ -131,7 +130,6 @@ try {
     'id="map-status"',
     'data-icon="map-details"',
     'class="shell-indicator-button tone-muted"',
-    'aria-label="地图状态：通关验证 尚未进行通关验证；关卡 ID loma-pushbox/01-01；关卡名字 01-01；作者 Aymeric du Peloux"',
     "01-01",
   ]);
   await interactiveMapStatusSmoke(
@@ -140,7 +138,7 @@ try {
       icon: "map-details",
       tone: "muted",
       details: {
-        verification: "尚未进行通关验证",
+        verification: ["未验证", "Not verified"],
         "map-id": "loma-pushbox/01-01",
         "map-name": "01-01",
         author: "Aymeric du Peloux",
@@ -156,22 +154,18 @@ try {
     'id="redo"',
     'id="previous-level"',
     'id="next-level"',
-    'aria-label="上一关"',
-    'aria-label="下一关"',
     'class="shell-topbar-left"',
     'class="shell-topbar-center"',
     'class="shell-topbar-right"',
     'id="map-status"',
     'data-icon="map-status"',
     'class="shell-indicator-button tone-success"',
-    'aria-label="地图状态：通关验证 已验证可通关；关卡 ID original/1-1；关卡名字 1"',
   ]);
   await smoke(
     `${origin}/explore/play/original/unlisted-smoke`,
     [
       'class="game-page"',
       'id="game"',
-      'aria-label="地图状态：通关验证 尚未进行通关验证；关卡 ID original/unlisted-smoke；关卡名字 1"',
     ],
   );
   await smoke(
@@ -179,14 +173,13 @@ try {
     [
       'class="game-page"',
       'id="game"',
-      'aria-label="地图状态：通关验证 尚未进行通关验证；关卡 ID standalone-smoke/standalone；关卡名字 1"',
     ],
   );
   await interactiveMapStatusSmoke(`${origin}/explore/play/original/1-1`, {
     icon: "map-status",
     tone: "success",
     details: {
-      verification: "已验证可通关",
+      verification: ["已验证可通关", "Verified completable"],
       "map-id": "original/1-1",
       "map-name": "1",
     },
@@ -199,12 +192,12 @@ try {
   await smoke(`${origin}/adventure`, [
     "adventure-viewport-auto",
     'class="adventure-menu"',
-    'class="shell-context-name">冒险模式',
+    'class="shell-context-name"',
   ]);
   await smoke(`${origin}/adventure/chapters`, [
     'class="adventure-chapters"',
     'class="chapter-stars"',
-    'class="shell-context-name">冒险模式',
+    'class="shell-context-name"',
     'href="/adventure/chapter/1"',
     'href="/adventure/chapter/5"',
     'href="/adventure/chapter/37"',
@@ -222,7 +215,6 @@ try {
       'id="map-status"',
       'data-icon="map-status"',
       'class="shell-indicator-button tone-success"',
-      'aria-label="地图状态：通关验证 已在自由探索模式中验证可通关；关卡 ID original/1-1；关卡名字 1"',
     ],
     ['id="undo"', 'id="replay-record"', "data-replay-panel"],
   );
@@ -245,7 +237,7 @@ try {
   const importedMapUrl = `${origin}/import/v1#${mapPayload}`;
   await smoke(importedMapUrl, [
     'class="game-page"',
-    'class="shell-context-name">导入数据',
+    'class="shell-context-name"',
     'id="game"',
     'id="map-status"',
     'data-icon="map-details"',
@@ -254,7 +246,7 @@ try {
     icon: "map-details",
     tone: "muted",
     details: {
-      verification: "尚未进行通关验证",
+      verification: ["未验证", "Not verified"],
       "map-id": "imported/shared-map",
       "map-name": "Engine Mechanics Smoke Map",
       author: "bc5r",
@@ -263,9 +255,9 @@ try {
   });
   await smoke(`${origin}/import/v1#${profilePayload}`, [
     'class="import-page"',
-    'class="shell-context-name">导入数据',
+    'class="shell-context-name"',
     "Adventure Save",
-    "导入并覆盖",
+    'class="import-save-actions"',
   ]);
   const explorePayload = exchangePayload(JSON.stringify({
     game: BC5R_GAME_ID,
@@ -276,11 +268,11 @@ try {
   await smoke(`${origin}/import/v1#${explorePayload}`, [
     'class="import-page"',
     "Explore Save",
-    "导入并覆盖",
+    'class="import-save-actions"',
   ]);
   await smoke(`${origin}/import/v1#${exchangePayload("{}")}`, [
     'class="import-page"',
-    "无法识别这段 Bobby Carrot 5 Remake 数据",
+    'class="import-card"',
   ]);
   await smoke(`${origin}/import/v1#INVALID`, [
     'class="import-page"',
@@ -476,9 +468,10 @@ async function interactiveDataExchangeSmoke(url) {
   if (!textarea) throw new Error('missing import textarea');
   textarea.value = JSON.stringify(source);
   textarea.dispatchEvent(new Event('input', { bubbles: true }));
-  const open = [...document.querySelectorAll('.home-import-dialog button')]
-    .find((button) => button.textContent?.trim() === '打开');
-  if (!open) throw new Error('missing open button');
+  const open = document.querySelector(
+    '.home-import-dialog .data-exchange-toolbar-right button:first-of-type',
+  );
+  if (!open) throw new Error('missing import-text button');
   open.click();
   for (let i = 0; i < 120 && !document.querySelector('.import-save-confirmation'); i += 1)
     await delay(50);

@@ -1,8 +1,10 @@
 import fs from "node:fs";
 import path from "node:path";
 import { root, run, tscCommand } from "../lib/fs.mjs";
+
+run("npm", ["run", "build", "--workspace=@bobby/i18n"]);
+
 if (
-  !fs.existsSync(path.join(root, "i18n/dist/index.js")) ||
   !fs.existsSync(path.join(root, "adventure/dist/index.js")) ||
   !fs.existsSync(path.join(root, "engine/dist/index.js")) ||
   !fs.existsSync(path.join(root, "editor/dist/index.js")) ||
@@ -11,7 +13,6 @@ if (
   run(tscCommand(), [
     "-b",
     "model",
-    "i18n",
     "adventure",
     "engine",
     "editor",

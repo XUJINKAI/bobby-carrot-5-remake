@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { computed, onBeforeUnmount, ref } from "vue";
 import type {
   ImportedData,
   ImportedSaveData,
@@ -7,6 +7,7 @@ import type {
 import DataExchangePanel from "../../shared/data-exchange/DataExchangePanel.vue";
 import AppIcon from "../../shared/icons/AppIcon.vue";
 import ImportSaveConfirmation from "../import/ImportSaveConfirmation.vue";
+import { openWebI18nScope, type WebI18nScope, webT } from "../../i18n/webI18n.js";
 
 const emit = defineEmits<{
   navigate: [path: string];
@@ -14,13 +15,14 @@ const emit = defineEmits<{
 }>();
 const importOpen = ref(false);
 const pendingSave = ref<ImportedSaveData | null>(null);
-const toolbar = {
+let importScope: WebI18nScope | null = null;
+const toolbar = computed(() => ({
   left: [],
   right: [
-    { type: "importText" as const, label: "打开" },
-    { type: "importFile" as const, label: "导入文件", accept: "*/*" },
+    { type: "importText" as const, label: webT("home.importOpen") },
+    { type: "importFile" as const, label: webT("common.importFile"), accept: "*/*" },
   ],
-};
+}));
 
 async function parseImport(value: unknown): Promise<ImportedData> {
   const { requireImportedJson } = await import(
@@ -33,13 +35,23 @@ function serializeImport(value: unknown): string {
   return JSON.stringify((value as ImportedData).value, null, 2);
 }
 
-function acceptImport(data: unknown): void {
+async function acceptImport(data: unknown): Promise<void> {
   const imported = data as ImportedData;
   if (imported.type === "map") {
     closeImport();
     emit("importData", imported);
     return;
   }
+  const scope = openWebI18nScope(["import"]);
+  importScope?.dispose();
+  importScope = scope;
+  try {
+    await scope.ready;
+  } catch {
+    if (importScope === scope) importScope = null;
+    return;
+  }
+  if (!scope.active || importScope !== scope) return;
   pendingSave.value = imported;
 }
 
@@ -50,17 +62,27 @@ function confirmSave(): void {
   emit("importData", data);
 }
 
-function closeImport(): void {
+function cancelPendingSave(): void {
   pendingSave.value = null;
+  importScope?.dispose();
+  importScope = null;
+}
+
+function closeImport(): void {
+  cancelPendingSave();
   importOpen.value = false;
 }
+
+onBeforeUnmount(() => {
+  importScope?.dispose();
+});
 </script>
 
 <template>
-  <nav class="home-mode-panel" aria-label="选择模式">
+  <nav class="home-mode-panel" :aria-label="webT('home.modeAria')">
     <header>
       <span class="eyebrow">PLAY YOUR WAY</span>
-      <span>选择模式</span>
+      <span>{{ webT("home.modeTitle") }}</span>
     </header>
     <div class="home-mode-grid">
       <a
@@ -68,8 +90,8 @@ function closeImport(): void {
         href="/adventure"
         @click.prevent="emit('navigate', '/adventure')"
       >
-        <strong>冒险模式</strong>
-        <span>还原原版关卡体验</span>
+        <strong>{{ webT("home.adventure") }}</strong>
+        <span>{{ webT("home.adventureDescription") }}</span>
         <AppIcon name="next" />
       </a>
       <a
@@ -77,8 +99,8 @@ function closeImport(): void {
         href="/explore"
         @click.prevent="emit('navigate', '/explore')"
       >
-        <strong>自由探索</strong>
-        <span>浏览原版与扩展地图集合</span>
+        <strong>{{ webT("home.explore") }}</strong>
+        <span>{{ webT("home.exploreDescription") }}</span>
         <AppIcon name="next" />
       </a>
       <a
@@ -86,8 +108,8 @@ function closeImport(): void {
         href="/edit"
         @click.prevent="emit('navigate', '/edit')"
       >
-        <strong>地图编辑器</strong>
-        <span>创建或编辑已有地图，并分享给他人</span>
+        <strong>{{ webT("home.editor") }}</strong>
+        <span>{{ webT("home.editorDescription") }}</span>
         <AppIcon name="next" />
       </a>
       <button
@@ -96,8 +118,8 @@ function closeImport(): void {
         type="button"
         @click="importOpen ? closeImport() : importOpen = true"
       >
-        <strong>导入地图</strong>
-        <span>导入自定义地图或存档</span>
+        <strong>{{ webT("home.import") }}</strong>
+        <span>{{ webT("home.importDescription") }}</span>
         <AppIcon name="place" />
       </button>
     </div>
@@ -106,7 +128,7 @@ function closeImport(): void {
       href="/embed"
       @click.prevent="emit('navigate', '/embed')"
     >
-      <span>将自制地图内嵌到其他网页</span>
+      <span>{{ webT("home.embed") }}</span>
       <AppIcon name="next" />
     </a>
     <div
@@ -115,10 +137,10 @@ function closeImport(): void {
       role="presentation"
       @click.self="closeImport"
     >
-      <section class="home-import-dialog" role="dialog" aria-modal="true" aria-label="导入数据">
+      <section class="home-import-dialog" role="dialog" aria-modal="true" :aria-label="webT('home.importDialog')">
         <header>
-          <strong>导入数据</strong>
-          <button type="button" aria-label="关闭" @click="closeImport">
+          <strong>{{ webT("home.importDialog") }}</strong>
+          <button type="button" :aria-label="webT('common.close')" @click="closeImport">
             <AppIcon name="close" />
           </button>
         </header>
@@ -126,14 +148,14 @@ function closeImport(): void {
           v-if="pendingSave"
           :data="pendingSave"
           @confirm="confirmSave"
-          @cancel="pendingSave = null"
+          @cancel="cancelPendingSave"
         />
         <DataExchangePanel
           v-else
           class="home-data-exchange"
           :serialize="serializeImport"
           :parse="parseImport"
-          placeholder="粘贴 JSON、BC5R1 文本或分享链接……"
+          :placeholder="webT('home.importPlaceholder')"
           filename="bc5r-data"
           :toolbar="toolbar"
           @import="acceptImport"

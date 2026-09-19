@@ -3,19 +3,18 @@ import type { Plugin } from "vite";
 
 const markdown = new MarkdownIt({ html: false, linkify: false });
 
-export function renderBuildMarkdown(source: string): string {
+export function renderMarkdown(source: string): string {
   return markdown.render(source);
 }
 
-/** 仓库维护的 Markdown 在 Vite 变换阶段生成 HTML，浏览器只接收结果字符串。 */
-export function markdownHtmlPlugin(): Plugin {
+export function markdownPlugin(): Plugin {
   return {
-    name: "bc5r-markdown-html",
+    name: "bc5r-i18n-markdown",
     enforce: "pre",
     transform(source, id) {
       if (!id.split("?", 1)[0]?.endsWith(".md")) return null;
       return {
-        code: `export default ${JSON.stringify(renderBuildMarkdown(source))};`,
+        code: `export default ${JSON.stringify(renderMarkdown(source))};`,
         map: null,
       };
     },
