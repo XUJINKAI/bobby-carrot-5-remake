@@ -3,6 +3,7 @@ import { beforeAll, test } from "vitest";
 import {
   getWebLocale,
   initializeWebI18n,
+  preloadWebI18nScopes,
   resolveWebText,
   setWebI18nRouteScopes,
   setWebLocale,
@@ -17,6 +18,11 @@ import {
 } from "../src/errors/errorPresentation.ts";
 import { decodeBase64Url } from "../src/shared/data-exchange/dataExchangeCodec.ts";
 import { requireImportedJson } from "../src/services/import/importPipeline.ts";
+import { parseAdventureProfileExchange } from "../src/storage/adventureSaveStorage.ts";
+import {
+  parseExploreCollectionExchange,
+  parseExploreProgressExchange,
+} from "../src/storage/exploreProgressStorage.ts";
 import {
   loadReplayAsset,
   parseReplayText,
@@ -70,6 +76,70 @@ test("Import 无法分类的数据使用集中错误码", () => {
       resolveWebText(errorDisplayText(error)) ===
         "无法识别这段 Bobby Carrot 5 Remake 数据。",
   );
+});
+
+test("存档交换错误在 Web 边界转换为可重新本地化的语义错误", async () => {
+  const cases = [
+    {
+      parse: () => parseAdventureProfileExchange({}),
+      code: WEB_ERROR_CODES.saveExchange.invalidAdventureProfile,
+      zh: "这段数据不是有效的冒险存档。",
+      en: "This is not a valid Adventure save.",
+    },
+    {
+      parse: () => parseExploreProgressExchange({}),
+      code: WEB_ERROR_CODES.saveExchange.invalidExploreSave,
+      zh: "这段数据不是有效的自由探索存档。",
+      en: "This is not a valid Explore save.",
+    },
+    {
+      parse: () => parseExploreCollectionExchange({}),
+      code: WEB_ERROR_CODES.saveExchange.invalidExploreCollection,
+      zh: "这段数据不是有效的自由探索地图集合存档。",
+      en: "This is not a valid Explore collection save.",
+    },
+  ];
+
+  for (const entry of cases) {
+    let error;
+    try {
+      entry.parse();
+    } catch (caught) {
+      error = caught;
+    }
+    assert.ok(error instanceof WebError);
+    assert.equal(error.code, entry.code);
+    assert.equal(resolveWebText(errorDisplayText(error)), entry.zh);
+
+    await setWebLocale("en");
+    assert.equal(resolveWebText(errorDisplayText(error)), entry.en);
+    await setWebLocale("zh-CN");
+  }
+});
+
+test("共享 Clipboard 与 Embed 加载错误使用集中语义码", async () => {
+  const clipboard = new WebError(WEB_ERROR_CODES.common.clipboardUnavailable);
+  assert.equal(resolveWebText(errorDisplayText(clipboard)), "无法访问剪贴板");
+
+  await preloadWebI18nScopes(["embed"]);
+  const embedError = new WebError(WEB_ERROR_CODES.embed.runtimeLoadFailed, {
+    params: { url: "https://example.test/bc5r.js" },
+  });
+  assert.equal(
+    resolveWebText(errorDisplayText(embedError)),
+    "无法加载内嵌运行时：https://example.test/bc5r.js",
+  );
+
+  await setWebLocale("en");
+  assert.equal(
+    resolveWebText(errorDisplayText(clipboard)),
+    "Clipboard access unavailable",
+  );
+  assert.equal(
+    resolveWebText(errorDisplayText(embedError)),
+    "Failed to load the embed runtime: https://example.test/bc5r.js",
+  );
+  await setWebLocale("zh-CN");
 });
 
 test("Replay 资产和 JSON 解析使用集中错误码", async () => {
