@@ -23,6 +23,7 @@ import {
   type ExploreMapRef,
 } from "./routes.js";
 import { setWebI18nRouteScopes } from "../i18n/webI18n.js";
+import { errorDisplayText } from "../errors/errorPresentation.js";
 import {
   localizedPageScopes,
   type LocalizedPageLoader,
@@ -335,7 +336,7 @@ export class BobbyApp {
       if (!(await this.activateI18nRoute(generation, loadImportPage))) return;
       this.controller = renderImportMessage(this.pageContext(), {
         status: "error",
-        message: error instanceof Error ? error.message : String(error),
+        message: errorDisplayText(error),
       });
     }
   }
