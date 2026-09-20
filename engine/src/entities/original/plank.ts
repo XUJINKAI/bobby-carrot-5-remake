@@ -51,7 +51,7 @@ const plankDecayVisual: TransientVisualDefinition = {
   id: "plank-decay",
   eventType: "plank-decay-started",
   durationMs: PLANK_DECAY_DURATION_MS,
-  renderPass: "world",
+  renderPass: "world-effect",
   resolve({ progress }) {
     const atlas = tileAnimationCell(
       MapEntityTypeId.PLANK,

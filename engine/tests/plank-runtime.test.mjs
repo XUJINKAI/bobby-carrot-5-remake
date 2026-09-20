@@ -78,7 +78,7 @@ test("Destroyed Plank on ordinary ground leaves the ground walkable", () => {
   assert.equal(move(world, actor.id, "left").moves[0].moved, true);
 });
 
-test("Plank decay survives Entity destruction as a transient Presentation visual", () => {
+test("Plank decay stays above the world after Entity destruction", () => {
   const world = worldWithPlank(MapEntityTypeId.WATER);
   const actor = world.query.entitiesWithFact("player")[0];
   move(world, actor.id, "right");
@@ -93,10 +93,15 @@ test("Plank decay survives Entity destruction as a transient Presentation visual
   visual.consumeWorldDeltas(world, result.deltas, start, options);
   visual.update(start, "linear");
 
-  let transient = visual.scene(world).world.find(
+  let scene = visual.scene(world);
+  let transient = scene.worldEffect.find(
     (item) => item.presence.entityId < 0,
   );
   assert.ok(transient);
+  assert.equal(
+    scene.world.some((item) => item.presence.entityId < 0),
+    false,
+  );
   assert.deepEqual(transient.composition.layers[0], {
     kind: "atlas",
     column: 5,
@@ -110,7 +115,8 @@ test("Plank decay survives Entity destruction as a transient Presentation visual
     deltaMs: PLANK_DECAY_PHASE_MS,
   };
   visual.update(fragment, "linear");
-  transient = visual.scene(world).world.find(
+  scene = visual.scene(world);
+  transient = scene.worldEffect.find(
     (item) => item.presence.entityId < 0,
   );
   assert.ok(transient);
@@ -127,7 +133,7 @@ test("Plank decay survives Entity destruction as a transient Presentation visual
   };
   visual.update(finished, "linear");
   assert.equal(
-    visual.scene(world).world.some((item) => item.presence.entityId < 0),
+    visual.scene(world).worldEffect.some((item) => item.presence.entityId < 0),
     false,
   );
   assert.equal(visual.isAnimating, false);
@@ -135,7 +141,7 @@ test("Plank decay survives Entity destruction as a transient Presentation visual
   // Presentation rewind may replay the transient without restoring the World Entity.
   visual.update(start, "linear");
   assert.equal(
-    visual.scene(world).world.some((item) => item.presence.entityId < 0),
+    visual.scene(world).worldEffect.some((item) => item.presence.entityId < 0),
     true,
   );
 });
