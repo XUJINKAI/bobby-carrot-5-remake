@@ -16,7 +16,11 @@ import {
 import type { Behavior } from "../../world/behavior/Behavior.js";
 import type { WorldCommandApi } from "../../world/behavior/CommandQueue.js";
 import type { WorldQueryApi } from "../../world/behavior/WorldQueryApi.js";
-import type { EntityId, EntityInstance } from "../../world/entity/EntityInstance.js";
+import type {
+  EntityId,
+  EntityInstance,
+  EntityState,
+} from "../../world/entity/EntityInstance.js";
 import type {
   EntityModule,
   EntityModuleDefinition,
@@ -82,18 +86,21 @@ const movingPlatformBehavior: Behavior = {
     if (tideDirection === oppositeDirection(direction)) return;
 
     // 潮流只禁止逆流启动；首格保留 Bobby 的进入方向，后续再尝试随流。
+    const actionActive = self.entity.state?.movingActionActive === true;
     commands.setState(self.entity.id, {
       ...self.entity.state,
       moving: true,
       runtimeStarted: true,
+      movingActionActive: true,
+      launchDirection: direction,
     });
     commands.setDirection(self.entity.id, direction);
+    if (actionActive) return;
     const movementCadence = movementFor(query, self.entity);
     commands.startAction(
       createMovingEntityAction(
         self.entity.id,
         primeDeadlineForHandoff(movementCadence.cellMs, movement?.motion),
-        tideDirection !== null ? direction : null,
       ),
     );
   },
@@ -105,6 +112,7 @@ const movingPlatformBehavior: Behavior = {
       ...self.entity.state,
       moving: false,
       runtimeStarted: true,
+      movingActionActive: true,
     });
     commands.startAction(
       createMovingEntityAction(
@@ -132,19 +140,19 @@ const movingEntityAction: RuntimeActionDefinition = {
     if (isCloud(entity.type) && isMatchingCloudParking(query, entity))
       return stopMovingEntity(entity, commands, false);
 
-    const launchDirection = directionState(action.state.launchDirection);
+    const launchDirection = directionState(entity.state?.launchDirection);
     const route = nextRoute(query, entity, launchDirection);
     if (!route)
       return stopMovingEntity(entity, commands, hasAutomaticCurrent(query, entity));
 
     if (!consumeActionDeadline(action, route.movement.cellMs, time.stepMs / 2))
       return "running";
-    if (launchDirection !== null) delete action.state.launchDirection;
     if (entity.direction !== route.direction)
       commands.setDirection(entityId, route.direction);
     commands.setState(entityId, {
-      ...entity.state,
+      ...withoutLaunchDirection(entity.state),
       moving: true,
+      movingActionActive: true,
       ...(route.windFocusHandoff
         ? { windFocusHandoff: route.direction }
         : {}),
@@ -176,8 +184,9 @@ const movingEntityAction: RuntimeActionDefinition = {
     const entityId = action.ownerEntityId;
     const entity = entityId === undefined ? undefined : query.entity(entityId);
     if (!entity) return;
-    stopMovingEntity(entity, commands);
-    if (!hasAutomaticCurrent(query, entity)) commands.cancelAction(action.id);
+    const keepAction = hasAutomaticCurrent(query, entity);
+    stopMovingEntity(entity, commands, keepAction);
+    if (!keepAction) commands.cancelAction(action.id);
   },
   onCancel({ action, reason, query, commands }) {
     const entityId = action.ownerEntityId;
@@ -275,7 +284,6 @@ function movingEntityModule(
 function createMovingEntityAction(
   ownerEntityId: EntityId,
   initialElapsedMs: number,
-  launchDirection: Direction | null = null,
 ): RuntimeActionSpec {
   return {
     kind: MOVING_ENTITY_ACTION,
@@ -283,7 +291,6 @@ function createMovingEntityAction(
     state: {
       elapsedMs: initialElapsedMs,
       cadenceCarryMs: 0,
-      ...(launchDirection !== null ? { launchDirection } : {}),
     },
   };
 }
@@ -564,9 +571,27 @@ function stopMovingEntity(
   commands: WorldCommandApi,
   keepAction = false,
 ) {
-  if (entity.state?.moving === true)
-    commands.setState(entity.id, { ...entity.state, moving: false });
+  if (
+    entity.state?.moving === true ||
+    entity.state?.movingActionActive !== keepAction ||
+    (!keepAction && entity.state?.launchDirection !== undefined)
+  )
+    commands.setState(entity.id, {
+      ...(keepAction
+        ? entity.state
+        : withoutLaunchDirection(entity.state)),
+      moving: false,
+      movingActionActive: keepAction,
+    });
   return keepAction ? "running" as const : "complete" as const;
+}
+
+function withoutLaunchDirection(
+  state: Readonly<EntityState> | undefined,
+): EntityState {
+  const next = { ...(state ?? {}) };
+  delete next.launchDirection;
+  return next;
 }
 
 function isCloud(type: EntityType): boolean {

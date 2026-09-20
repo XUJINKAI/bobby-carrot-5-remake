@@ -227,6 +227,7 @@ test("Leaf can launch perpendicular to Tide and follows Tide after the first cel
         { type: "grass", variant: "ts-10-1", x: 0, y: 1 },
         { type: MapEntityTypeId.WATER, x: 1, y: 1 },
         { type: MapEntityTypeId.WATER, x: 2, y: 1 },
+        { type: MapEntityTypeId.WATER, x: 1, y: 2 },
         { type: MapEntityTypeId.WATER, x: 2, y: 2 },
         { type: MapEntityTypeId.TIDE, x: 1, y: 1, direction: "down" },
         { type: MapEntityTypeId.TIDE, x: 2, y: 1, direction: "down" },
@@ -238,6 +239,8 @@ test("Leaf can launch perpendicular to Tide and follows Tide after the first cel
   );
   const actor = world.query.entitiesWithFact("player")[0];
   const leaf = world.query.entitiesMatching({ kind: "type", value: MapEntityTypeId.LEAF })[0];
+  // 先让 Tide 建立自动漂流 Action，再从侧面登叶，覆盖真实 gameplay 时序。
+  world.update({ tick: 0, stepMs: 1 });
   assert.equal(move(world, actor.id, "right").moves[0].moved, true);
 
   let sawPerpendicularCell = false;
