@@ -50,7 +50,6 @@ const runtime = await createGameplayRuntime({
       zoom: 1,
       minZoom: 0.25,
       maxZoom: 4,
-      followDurationMs: 320,
       panBounds: "viewport",
     },
     timing: {
@@ -154,11 +153,11 @@ RuntimeAction 按 action id 稳定顺序在 WorldClock 上推进，通过同一 
 ```ts
 {
   blocksInput?: boolean;
-  focus?: { entityId: EntityId };
+  focus?: { entityIds: readonly EntityId[] };
 }
 ```
 
-`inputBlocked` 从当前 active actions 派生，不依靠手工 `counter++ / counter--` 配平。`focus` 只是 gameplay policy；Camera 如何平滑跟随仍属于 Presentation。
+`inputBlocked` 从当前 active actions 派生，不依靠手工 `counter++ / counter--` 配平。`focus` 可以声明一个或多个 Entity；Camera 如何平滑跟随和多目标构图仍属于 Presentation。
 
 RuntimeAction 只产生 semantic `MoveIntent`，由 World 回传带 action identity 的权威
 `MoveResult`。Blocked、边界与 destination conflict 在 `onIntentResult` 处理；取消时
@@ -363,7 +362,6 @@ runtime: {
     zoom: 1,
     minZoom: 0.25,
     maxZoom: 4,
-    followDurationMs: 320,
     panBounds: "viewport",
   },
   timing: {
@@ -374,7 +372,7 @@ runtime: {
 }
 ```
 
-`camera.zoom / minZoom / maxZoom / followDurationMs / panBounds` 在 `Game` 构造期间应用，第一次加载与渲染关卡时已经生效。`followDurationMs` 控制 Portal、Debug Teleport 等非连续目标跳转的镜头过渡时长。宿主可以为不同产品体验提供不同初值和范围；运行中的手势与产品操作继续使用 `Game` façade 调整 Camera。
+`camera.zoom / minZoom / maxZoom / panBounds` 在 `Game` 构造期间应用，第一次加载与渲染关卡时已经生效。Portal、Debug Teleport 与机关 focus 等非连续目标跳转统一使用 Engine 的全局 Camera 运动曲线；宿主不为具体机关设置独立镜头速度。宿主可以为不同产品体验提供不同缩放初值和范围；运行中的手势与产品操作继续使用 `Game` façade 调整 Camera。
 
 `setZoom()` 围绕 Canvas 中心缩放；`setZoomAt()` 接收 Canvas 的浏览器 client 坐标，并保持该屏幕点下的世界位置不动。Camera 首次加载地图时使用视口边界构图：大于视口的地图贴住窗口边缘，小地图居中。`panBounds: "viewport"` 在后续 Pan 中继续维持该边界；`panBounds: "map-edge"` 允许用户操作后把地图四条边移动到视口中心，同时避免把整张地图拖离视口。
 

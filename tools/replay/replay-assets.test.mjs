@@ -4,6 +4,7 @@ import test from "node:test";
 import { root } from "../lib/fs.mjs";
 import { replayMapFile, replayMapRef } from "./replay-fixture.mjs";
 import {
+  assertReplayReachedFinalState,
   replayFixtureFiles,
   verifyReplayFixture,
 } from "./verify-fixtures.mjs";
@@ -11,16 +12,31 @@ import {
 const replayRoot = path.join(root, "assets/replays");
 const replayFiles = replayFixtureFiles();
 
-test("assets/replays 至少包含一个内置过法", () => {
+test("assets/replays 至少包含一个内置 Replay", () => {
   assert.ok(replayFiles.length > 0);
 });
 
 for (const replayFile of replayFiles) {
   const relative = path.relative(replayRoot, replayFile);
-  test(`内置过法可在对应地图复跑：${relative}`, () => {
+  test(`内置 Replay 可复跑至声明的 finalState：${relative}`, () => {
     verifyReplayFixture(replayFile);
   });
 }
+
+test("内置 Replay 的实际状态必须匹配声明的 finalState.status", () => {
+  for (const status of ["playing", "won", "dead"])
+    assert.doesNotThrow(() =>
+      assertReplayReachedFinalState(`${status}.json`, status, status),
+    );
+  assert.throws(
+    () => assertReplayReachedFinalState("missing.json", "playing", undefined),
+    /必须声明 finalState\.status/,
+  );
+  assert.throws(
+    () => assertReplayReachedFinalState("mismatch.json", "won", "playing"),
+    /实际状态必须匹配 finalState\.status/,
+  );
+});
 
 test("Replay fixture 文件名可以独立于关联地图", () => {
   const replay = {

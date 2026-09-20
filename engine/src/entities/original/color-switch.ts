@@ -1,5 +1,5 @@
 import { MapEntityTypeId } from "@bobby/model";
-import { colorSwitchBehavior } from "./switch-runtime.js";
+import type { Behavior } from "../../world/behavior/Behavior.js";
 import type {
   EntityModule,
   EntityModuleDefinition,
@@ -30,6 +30,45 @@ const definition: EntityModuleDefinition = {
     },
   ],
   presentation: { name: "Color Switch" },
+};
+
+const colorSwitchBehavior: Behavior = {
+  id: "color-switch-global-toggle",
+  onEnter({ actor, self, query, commands }) {
+    if (!query.entityHasFact(actor.id, "player")) return;
+
+    const color = self.entity.state?.color === "pink" ? "pink" : "yellow";
+    for (const entity of query.entitiesMatching({
+      kind: "type",
+      value: MapEntityTypeId.COLOR_SWITCH,
+    })) {
+      if (
+        entity.type !== MapEntityTypeId.COLOR_SWITCH ||
+        entity.state?.color !== color
+      )
+        continue;
+      commands.setState(entity.id, {
+        ...entity.state,
+        state: entity.state?.state === "state-2" ? "state-1" : "state-2",
+      });
+    }
+
+    for (const entity of query.entitiesMatching({
+      kind: "type",
+      value: MapEntityTypeId.COLOR_BLOCK,
+    })) {
+      if (
+        entity.type !== MapEntityTypeId.COLOR_BLOCK ||
+        entity.state?.color !== color
+      )
+        continue;
+      commands.setState(entity.id, {
+        ...entity.state,
+        // 未显式保存 raised 时遵循 Definition 默认值，第一次翻转应落下。
+        raised: entity.state?.raised === false,
+      });
+    }
+  },
 };
 
 export const colorSwitch: EntityModule = originalModule(

@@ -7,8 +7,8 @@ import {
 } from "../dist/entities/registry.js";
 import { builtinEngineEnvironment } from "../dist/public.js";
 import {
-  LEAF_SUPPORT_HEIGHT_PX,
-} from "../dist/entities/original/moving-entities.js";
+  MOVING_PLATFORM_SUPPORT_HEIGHT_PX,
+} from "../dist/entities/original/moving-platform.js";
 import { EntityStore } from "../dist/world/entity/EntityStore.js";
 import { SpatialIndex } from "../dist/world/spatial/SpatialIndex.js";
 import { SpatialVisualQuery } from "../dist/visual/SpatialVisualQuery.js";
@@ -109,7 +109,7 @@ for (const cadenceMs of [496, 248]) {
     assert.equal(carrierState.progress, 0.5);
     assert.equal(passengerState.progress, 0.5);
     assert.equal(passengerState.animation, "carry");
-    assert.equal(passengerState.elevationPx, LEAF_SUPPORT_HEIGHT_PX);
+    assert.equal(passengerState.elevationPx, MOVING_PLATFORM_SUPPORT_HEIGHT_PX);
     assert.equal(passengerState.direction, undefined);
   });
 }
@@ -145,27 +145,33 @@ function bobbyVisualOnSurface(surfaceType, runtime, state = {}) {
 test("Bobby self movement on a Leaf uses the ordinary walking strip", () => {
   const visual = bobbyVisualOnSurface(MapEntityTypeId.LEAF, {
     offsetX: -0.5,
-    elevationPx: LEAF_SUPPORT_HEIGHT_PX,
+    elevationPx: MOVING_PLATFORM_SUPPORT_HEIGHT_PX,
     moving: true,
     progress: 0.5,
     direction: "right",
   });
   assert.equal(visual.layers[0].asset, "bobby-right");
   assert.equal(visual.layers[0].frameIndex, 7);
-  assert.equal(visual.layers[0].offsetY, -12 - LEAF_SUPPORT_HEIGHT_PX);
+  assert.equal(
+    visual.layers[0].offsetY,
+    -12 - MOVING_PLATFORM_SUPPORT_HEIGHT_PX,
+  );
 });
 
 test("Bobby carried by a Leaf keeps its own facing and standing frame", () => {
   const visual = bobbyVisualOnSurface(MapEntityTypeId.LEAF, {
     offsetX: -0.5,
-    elevationPx: LEAF_SUPPORT_HEIGHT_PX,
+    elevationPx: MOVING_PLATFORM_SUPPORT_HEIGHT_PX,
     moving: true,
     progress: 0.5,
     animation: "carry",
   });
   assert.equal(visual.layers[0].asset, "bobby-right");
   assert.equal(visual.layers[0].frameIndex, 3);
-  assert.equal(visual.layers[0].offsetY, -12 - LEAF_SUPPORT_HEIGHT_PX);
+  assert.equal(
+    visual.layers[0].offsetY,
+    -12 - MOVING_PLATFORM_SUPPORT_HEIGHT_PX,
+  );
 });
 
 test("blocked Bobby facing uses the attempted direction and standing end frame", () => {
@@ -188,31 +194,42 @@ test("blocked Bobby facing uses the attempted direction and standing end frame",
   assert.equal(visual.layers[0].frameIndex, 3);
 });
 
-test("Bobby steps up onto Leaf exactly at movement midpoint", () => {
-  const world = carryWorld();
-  const bobby = world.query.entitiesWithFact("player")[0];
-  const runtime = new VisualRuntime(createBuiltinVisualRegistry(), 48);
-  const entering = motion(
-    1,
-    bobby.id,
-    { type: "player-input" },
-    100,
-  );
-  runtime.consumeWorldDeltas(
-    world,
-    [delta(1, entering)],
-    { frame: 0, nowMs: 1000, deltaMs: 0 },
-    presentationOptions(),
-  );
+for (const platformType of [MapEntityTypeId.LEAF, MapEntityTypeId.CLOUD]) {
+  test(`Bobby steps up onto ${platformType} exactly at movement midpoint`, () => {
+    const world = new World({
+      schemaVersion: 1,
+      width: 2,
+      height: 1,
+      entities: [
+        { type: "grass", variant: "ts-10-1", x: 0, y: 0 },
+        { type: platformType, x: 1, y: 0 },
+        { type: MapEntityTypeId.BOBBY, x: 1, y: 0, direction: "right" },
+      ],
+    });
+    const bobby = world.query.entitiesWithFact("player")[0];
+    const runtime = new VisualRuntime(createBuiltinVisualRegistry(), 48);
+    const entering = motion(
+      1,
+      bobby.id,
+      { type: "player-input" },
+      100,
+    );
+    runtime.consumeWorldDeltas(
+      world,
+      [delta(1, entering)],
+      { frame: 0, nowMs: 1000, deltaMs: 0 },
+      presentationOptions(),
+    );
 
-  runtime.update({ frame: 1, nowMs: 1049, deltaMs: 49 }, "linear");
-  assert.equal(runtime.inspectEntity(world, bobby.id).runtime.elevationPx, 0);
-  runtime.update({ frame: 2, nowMs: 1050, deltaMs: 1 }, "linear");
-  assert.equal(
-    runtime.inspectEntity(world, bobby.id).runtime.elevationPx,
-    LEAF_SUPPORT_HEIGHT_PX,
-  );
-});
+    runtime.update({ frame: 1, nowMs: 1049, deltaMs: 49 }, "linear");
+    assert.equal(runtime.inspectEntity(world, bobby.id).runtime.elevationPx, 0);
+    runtime.update({ frame: 2, nowMs: 1050, deltaMs: 1 }, "linear");
+    assert.equal(
+      runtime.inspectEntity(world, bobby.id).runtime.elevationPx,
+      MOVING_PLATFORM_SUPPORT_HEIGHT_PX,
+    );
+  });
+}
 
 test("Bobby steps down from Leaf exactly at movement midpoint", () => {
   const world = new World({
@@ -245,7 +262,7 @@ test("Bobby steps down from Leaf exactly at movement midpoint", () => {
   runtime.update({ frame: 1, nowMs: 1049, deltaMs: 49 }, "linear");
   assert.equal(
     runtime.inspectEntity(world, bobby.id).runtime.elevationPx,
-    LEAF_SUPPORT_HEIGHT_PX,
+    MOVING_PLATFORM_SUPPORT_HEIGHT_PX,
   );
   runtime.update({ frame: 2, nowMs: 1050, deltaMs: 1 }, "linear");
   assert.equal(runtime.inspectEntity(world, bobby.id).runtime.elevationPx, 0);

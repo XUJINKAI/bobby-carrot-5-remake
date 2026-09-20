@@ -10,7 +10,7 @@ export type RuntimeActionId = number;
 export type RuntimeActionState = Record<string, JsonValue>;
 
 export interface RuntimeActionFocus {
-  entityId: EntityId;
+  entityIds: readonly EntityId[];
 }
 
 /** 创建一个跨多个 WorldTick 持续存在的 gameplay 过程。 */

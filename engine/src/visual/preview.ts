@@ -93,6 +93,7 @@ function resolveInstantiatedVisualPreview(
     inBounds: () => true,
     presencesAt: () => [],
     entity: (id) => (id === entity.id ? entity : undefined),
+    entitiesOfType: (type) => entity.type === type ? [entity] : [],
     entitiesWithFact: (fact) =>
       entityFacts.includes(fact) || facts.includes(fact) ? [entity] : [],
   };

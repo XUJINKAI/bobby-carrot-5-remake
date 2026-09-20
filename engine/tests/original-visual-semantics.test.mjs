@@ -6,7 +6,9 @@ import {
   createBuiltinVisualRegistry,
 } from "../dist/entities/registry.js";
 import { builtinEngineEnvironment } from "../dist/public.js";
-import { LEAF_SUPPORT_HEIGHT_PX } from "../dist/entities/original/moving-entities.js";
+import {
+  MOVING_PLATFORM_SUPPORT_HEIGHT_PX,
+} from "../dist/entities/original/moving-platform.js";
 import { EntityStore } from "../dist/world/entity/EntityStore.js";
 import { SpatialIndex } from "../dist/world/spatial/SpatialIndex.js";
 import { SpatialVisualQuery } from "../dist/visual/SpatialVisualQuery.js";
@@ -48,6 +50,17 @@ test("Carousel Switch pressed and raised visuals match original DAT states", () 
   });
 });
 
-test("Leaf support raises Bobby by twelve pixels", () => {
-  assert.equal(LEAF_SUPPORT_HEIGHT_PX, 12);
+test("Cloud and Leaf raise Bobby by twelve pixels", () => {
+  assert.equal(MOVING_PLATFORM_SUPPORT_HEIGHT_PX, 12);
+
+  const visuals = createBuiltinVisualRegistry();
+  const entities = createBuiltinEntityRegistry();
+  assert.equal(
+    visuals.supportHeightFor(entities.require(MapEntityTypeId.CLOUD)),
+    MOVING_PLATFORM_SUPPORT_HEIGHT_PX,
+  );
+  assert.equal(
+    visuals.supportHeightFor(entities.require(MapEntityTypeId.LEAF)),
+    MOVING_PLATFORM_SUPPORT_HEIGHT_PX,
+  );
 });

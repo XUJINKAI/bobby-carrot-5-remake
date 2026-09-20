@@ -130,7 +130,7 @@ RuntimeAction：
 - 可以并存多个 Action，但不是 Promise 并发；
 - 只通过 CommandQueue 修改 World；
 - 可以声明 `blocksInput`；
-- 可以声明 `cameraTarget`；
+- 可以声明一个或多个 Camera focus target；
 - gameplay state 可进入 World snapshot。
 
 原版 Fireball 存活时每拍刷新共享 aT=16，所以普通方向输入路径被挡住；但 Speed continuation、Ice forced continuation、airborne flight 在 aT 检查之前，世界子系统也继续推进。现代 blocking Action 必须表达“挡普通输入”而不是误写成 World pause。
@@ -167,6 +167,25 @@ Undo 恢复后 VisualRuntime 丢弃当前 transition，并直接从恢复后的 
 避免与可执行目录重复维护坐标表。
 
 Web Runtime 的 Original Visual resolver 应按最终确认的原版毫秒节拍计算 phase，而不是把 `time.tick % 4` 当作原版事实。Renderer 的 image layer 支持 `frameWidth + frameHeight + frameIndex`，这项能力仍属于纯表现层。
+
+Windmill 还受同方向 Wind Switch 的状态门控：关闭时始终显示静态 `ts.png`，开启时才按
+`bF` 播放叶片。原版 gameplay paint 在 moving entity 之后、Bobby 之前绘制三段风场；
+三段都读取同一个 `52 + bF`（纵向）或 `55 + bF`（横向）帧。首段从 Windmill 中心
+开始，另外两段沿风向各错开一格，因此整条风场从半格处延伸三格。
+
+Wind Switch 从 Off 切到 On 时设置 `aT=64` 并把 Camera target 指向对应 Windmill；
+Camera 的 `Y()` 使用全局逐步加减速：每次 `Y()` 积分调用增加 1 source px/step，focus
+期间最高 24 source px/step。只有 Camera 的实际位置 `bI/bJ` 到达目标 `bO/bP` 后，
+`aT` 才开始递减，Cloud 也才允许接受新开启风向的强制接管。这 64 个 gameplay step
+继续锁住普通输入；Engine 与已实测的慢速移动共用 `26ms/step` 墙钟校准，约为
+`64 × 26ms = 1.664s`。第一朵真正被该方向改向的 Cloud
+会接过 Camera target，并把 `aT` 重置为 64；On 切到 Off 只关闭该方向并替换 Switch
+图块，不设置 Camera focus。
+
+原版 `Y()` 分别计算横纵轴速度。这里的 `Y()` 积分调用与 Engine Camera 的逻辑步不是
+同一计数单位：Engine 不复刻原版函数调用次数，而是按实测墙钟以 `26ms` 为一个校准步，
+每步使用 2 source px 的加减速幅度。Engine 由较长轴决定总行程时间，再把同一进度按
+目标位移比例应用到两轴，使斜向镜头转移保持直线路径。
 
 Bonus Coin 的随机门控也已完整恢复：`bE==0` 的四步窗口每步更新 `bH`，窗口结束时 gate 为 true 的稳态概率为 `1/8`；随后 `bE=1/2/3` 三帧各保持 4 step，一次可见闪耀固定约 372ms。
 
@@ -262,7 +281,9 @@ Fireball 的现代实现以 `FIREBALL_MOVEMENT` 统一声明墙钟毫秒：整�
 Visual 直接读取 Presentation 毫秒选择素材帧，不依赖渲染帧数。
 
 持有 Shovel 的 Bobby 首次撞到 Snow 时停在原位；清雪期间普通输入被锁住。
-动作结束后目标 Snow 被清除，Bobby 按碰撞时保存的方向重新执行一次普通移动判定。
+第 32 个 gameplay step 清除目标 Snow 并结束铲雪姿势，下一 gameplay step 才按碰撞时保存的
+方向重新执行一次普通移动判定。`b8.png` 的三行按约 186ms 一行循环，而不是在整个动作
+期间只播放一遍；开始移动后立即使用对应方向的普通行走素材。
 Engine 用可快照的 RuntimeAction 推进这段 gameplay，`b8.png` 铲雪动画读取开始事件；
 原版地图展开的 Snow 下方已有 `ts-8-13` 地面，独立放置的 Snow 清除时生成同款可走地面。
 

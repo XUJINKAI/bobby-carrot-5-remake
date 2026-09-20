@@ -51,7 +51,7 @@ export interface DebugSnapshot {
     animating: boolean;
     actionCount: number;
     inputBlocked: boolean;
-    cameraTarget: EntityId | null;
+    cameraTargets: readonly EntityId[];
   };
   actors: readonly DebugActorOption[];
   actor: DebugEntitySnapshot | null;
@@ -182,7 +182,7 @@ export function buildDebugSnapshot(options: {
     animating: visual.isAnimating,
     actionCount: actions.length,
     inputBlocked: world?.inputBlocked ?? false,
-    cameraTarget: world?.cameraTarget ?? null,
+    cameraTargets: world?.cameraTargets ?? [],
   };
   const actorEntities = world?.query.entitiesWithFact("player") ?? [];
   const actors = actorEntities.map((entity) => ({
@@ -337,6 +337,10 @@ function renderSceneItems(scene: RenderScene | null): Array<{
   if (!scene) return [];
   return [
     ...scene.world.map((item) => ({ pass: "world" as const, item })),
+    ...scene.worldEffect.map((item) => ({
+      pass: "world-effect" as const,
+      item,
+    })),
     ...scene.standing.map((item) => ({ pass: "standing" as const, item })),
     ...scene.effect.map((item) => ({ pass: "effect" as const, item })),
   ];

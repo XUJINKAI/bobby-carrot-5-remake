@@ -75,6 +75,13 @@ export class Renderer {
         deviceScale,
         bounds,
       );
+    this.drawPass(
+      context,
+      scene.worldEffect ?? [],
+      camera,
+      deviceScale,
+      bounds,
+    );
     this.drawPass(context, scene.standing, camera, deviceScale, bounds);
     this.drawPass(context, scene.effect, camera, deviceScale, bounds);
     for (const callout of scene.callouts ?? [])
@@ -86,7 +93,18 @@ export class Renderer {
         bounds,
         deviceScale,
       );
-    for (const item of scene.ambientForeground ?? [])
+    for (const item of scene.ambientForeground ?? []) {
+      if (item.clip) {
+        context.save();
+        context.beginPath();
+        context.rect(
+          item.clip.x,
+          item.clip.y,
+          item.clip.width,
+          item.clip.height,
+        );
+        context.clip();
+      }
       drawVisualComposition(
         context,
         this.images,
@@ -97,6 +115,8 @@ export class Renderer {
         deviceScale,
         bounds,
       );
+      if (item.clip) context.restore();
+    }
 
     if (this.debug) {
       this.drawDebugGrid(context, scene.worldWidth, scene.worldHeight, camera);

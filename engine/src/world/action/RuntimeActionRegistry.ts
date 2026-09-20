@@ -4,7 +4,10 @@ export class RuntimeActionRegistry {
   private readonly definitions = new Map<string, RuntimeActionDefinition>();
 
   register(definition: RuntimeActionDefinition): void {
-    if (this.definitions.has(definition.kind))
+    const registered = this.definitions.get(definition.kind);
+    // 多个 EntityModule 可以显式声明同一份共享 Action；对象身份保证它们引用同一定义。
+    if (registered === definition) return;
+    if (registered)
       throw new Error(`重复 RuntimeAction：${definition.kind}`);
     this.definitions.set(definition.kind, definition);
   }

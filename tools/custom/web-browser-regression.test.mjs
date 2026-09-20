@@ -325,16 +325,7 @@ async function verifyAdventureDeveloperTools(cdp, url) {
     sessionId,
   );
   await cdp.send("Page.reload", {}, sessionId);
-  await waitFor(
-    async () =>
-      Boolean(
-        await cdp.evaluate(
-          sessionId,
-          "document.querySelector('#replay-record') && document.querySelector('[data-replay-panel]')",
-        ),
-      ),
-    20_000,
-  );
+  await waitForReplayPanelReady(cdp, sessionId);
   await verifyReplaySaveButton(cdp, sessionId);
 
   await waitFor(async () =>
@@ -392,15 +383,7 @@ async function verifyReplayPanel(cdp, url) {
     sessionId,
   );
   await cdp.send("Page.reload", {}, sessionId);
-  await waitFor(async () =>
-    Boolean(
-      await cdp.evaluate(
-        sessionId,
-        "document.querySelector('#replay-record') && document.querySelector('[data-replay-panel]')",
-      ),
-    ),
-    20_000,
-  );
+  await waitForReplayPanelReady(cdp, sessionId);
   await verifyReplaySaveButton(cdp, sessionId);
   await clickWhenPresent(cdp, sessionId, "#replay-record");
   await waitFor(async () =>
@@ -731,6 +714,25 @@ async function verifyReplaySaveButton(cdp, sessionId) {
     })()`,
   );
   if (!adjacent) throw new Error("内置过法加载与保存按钮未并排显示");
+}
+
+async function waitForReplayPanelReady(cdp, sessionId) {
+  await waitFor(
+    async () =>
+      Boolean(
+        await cdp.evaluate(
+          sessionId,
+          `(() => {
+            const shellButton = document.querySelector('#replay-record');
+            const panel = document.querySelector('[data-replay-panel]');
+            const status = panel?.querySelector('[data-replay-status]');
+            const record = panel?.querySelector('[data-replay-action="record"]');
+            return shellButton && panel && status?.textContent && record?.textContent;
+          })()`,
+        ),
+      ),
+    20_000,
+  );
 }
 
 async function clickWhenPresent(cdp, sessionId, selector) {

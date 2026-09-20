@@ -26,31 +26,6 @@ InputController 两个阶段。
 
 先用可持续按键的最小地图确认是否存在实际解法差异，再决定是否增加同拍 handoff。
 
-## 移动平台与风
-
-### Q12. Wind Switch 是否需要原版镜头和输入过程
-
-**现象差异**
-
-原版把 Wind Switch 从 Off 切到 On 后，镜头先看 Windmill，再跟随第一朵真正改变方向的
-Cloud；这段过程约持续 `64` 个 gameplay step，并锁住普通输入。当前 Engine 立即切换风和
-路线，Camera 与玩家输入没有这段过程。
-
-**可能影响**
-
-玩家可能看不到远处哪朵 Cloud 被改变，也能在机关演示期间继续行动，造成下一步状态与原版
-不同。
-
-**原理说明**
-
-状态切换是即时 World mutation，镜头目标和输入锁是持续 gameplay 生命周期。若保留，应该
-由 RuntimeAction 表达，Camera 只负责平滑跟随。
-
-**待确认**
-
-确认 Adventure 的信息边界是否需要这段强制演示，以及 Explore / 自定义地图是否使用同一
-规则。
-
 ## 组合顺序与 World 时点
 
 ### Q14. 多个持续机关在同一 tick 更新时采用什么顺序

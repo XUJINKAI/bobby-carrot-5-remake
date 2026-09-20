@@ -10,8 +10,6 @@ import {
 } from "../behaviorLibrary.js";
 import { RuntimeEntityTypeId } from "../runtime-types.js";
 import {
-  atlasVisual,
-  originalModule,
   tileCell,
   staticEntity,
 } from "./module.js";
@@ -121,21 +119,6 @@ export const staticSurfaceModules: readonly EntityModule[] = [
 
 const beanstalkCoverFacts = ["climbable", "contact-cover", "walkable"] as const;
 
-const windmillDefinition: EntityModuleDefinition = {
-  type: MapEntityTypeId.WINDMILL,
-  presenceFacts: ["blocking"],
-  presentation: { name: "Windmill" },
-};
-
-const windmill = originalModule(
-  windmillDefinition,
-  atlasVisual(windmillDefinition, (context) =>
-    tileCell(MapEntityTypeId.WINDMILL, {
-      fields: { direction: context.entity.direction ?? "right" },
-    }),
-  ),
-);
-
 export const staticContentModules: readonly EntityModule[] = [
   content(
     MapEntityTypeId.BEANSTALK,
@@ -147,7 +130,6 @@ export const staticContentModules: readonly EntityModule[] = [
   content(MapEntityTypeId.BEAN, "Bean", tileCell(MapEntityTypeId.BEAN), [], [
     { behavior: pickupBehavior },
   ]),
-  windmill,
   content(MapEntityTypeId.GAS, "Gas", tileCell(MapEntityTypeId.GAS), [], [
     { behavior: pickupBehavior },
   ]),

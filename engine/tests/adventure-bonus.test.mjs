@@ -149,6 +149,67 @@ test("requireKey Lock 消耗一把关卡内钥匙并启动死亡倒计时", () =
   assert.equal(world.dead, true);
 });
 
+test("Lock 在移动中点才消耗钥匙并启动死亡倒计时", () => {
+  const world = new World(
+    corridor([{
+      type: MapEntityTypeId.LOCK,
+      x: 1,
+      y: 0,
+      requireKey: true,
+      deathCountdownSeconds: 60,
+    }]),
+    { motionDurationMs: 100 },
+  );
+  world.entities.require(actor(world).id).state = { lockKeys: 1 };
+
+  const started = move(world, "right");
+  assert.equal(started.moves[0].moved, true);
+  assert.equal(actor(world).state?.lockKeys, 1);
+  assert.equal(
+    world.query.entitiesMatching({
+      kind: "type",
+      value: MapEntityTypeId.LOCK,
+    }).length,
+    1,
+  );
+  assert.equal(
+    world.query.entitiesMatching({
+      kind: "type",
+      value: "timed-challenge",
+    }).length,
+    0,
+  );
+  assert.equal(started.events.length, 0);
+
+  world.update({ stepMs: 49, tick: 1 });
+  assert.equal(actor(world).state?.lockKeys, 1);
+
+  const opened = world.update({ stepMs: 1, tick: 2 });
+  assert.equal(actor(world).state?.lockKeys, 0);
+  assert.equal(
+    world.query.entitiesMatching({
+      kind: "type",
+      value: MapEntityTypeId.LOCK,
+    }).length,
+    0,
+  );
+  assert.equal(
+    world.query.entitiesMatching({
+      kind: "type",
+      value: "timed-challenge",
+    }).length,
+    1,
+  );
+  assert.equal(
+    opened.events.some((event) => event.type === "death-countdown-started"),
+    true,
+  );
+  assert.deepEqual(
+    opened.events.find((event) => event.type === "music-state")?.data,
+    { source: "timed-bonus", track: "bonus" },
+  );
+});
+
 test("requireKey Lock 缺少钥匙时报告完整 missing-item 事件", () => {
   const world = new World(
     corridor([{
@@ -196,10 +257,16 @@ test("GameplayState 投影等待开锁与运行中的 Timed Challenge", () => {
   assert.equal(session.state.timedChallengePhase, "waiting");
   assert.equal(session.state.timedChallengeRemainingMs, 60_000);
   move(session.world, "right");
-  assert.equal(session.state.timedChallengePhase, "running");
+  assert.equal(session.state.timedChallengePhase, "waiting");
   assert.equal(session.state.timedChallengeRemainingMs, 60_000);
   session.world.update({ stepMs: 100, tick: 2 });
+  assert.equal(session.state.timedChallengePhase, "waiting");
+  assert.equal(session.state.timedChallengeRemainingMs, 60_000);
+  session.world.update({ stepMs: 100, tick: 3 });
+  assert.equal(session.state.timedChallengePhase, "running");
   assert.equal(session.state.timedChallengeRemainingMs, 59_900);
+  session.world.update({ stepMs: 100, tick: 4 });
+  assert.equal(session.state.timedChallengeRemainingMs, 59_800);
 });
 
 test("缺省 Lock 不要求钥匙", () => {

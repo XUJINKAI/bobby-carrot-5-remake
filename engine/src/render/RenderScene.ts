@@ -13,6 +13,13 @@ export interface ScreenOverlayItem {
   x: number;
   y: number;
   size: number;
+  /** 屏幕坐标裁剪区；用于天气只覆盖当前地图可见范围。 */
+  clip?: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  };
 }
 
 export interface RenderItem {
@@ -29,6 +36,8 @@ export interface RenderScene {
   worldWidth: number;
   worldHeight: number;
   world: readonly RenderItem[];
+  /** 静态世界之后、站立 Entity 之前绘制的 Entity 特效。 */
+  worldEffect: readonly RenderItem[];
   standing: readonly RenderItem[];
   effect: readonly RenderItem[];
   /** 静态世界之后、standing Entity 之前绘制的世界坐标环境效果。 */

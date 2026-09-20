@@ -123,11 +123,17 @@ test("Snow 铲雪动作锁住原位，结束后清雪并按原方向重新移动
   assert.equal(world.query.entityCountMatching({ kind: "type", value: MapEntityTypeId.SNOW }), 1);
   assert.deepEqual(world.entity(player.id)?.anchor, { x: 0, y: 0 });
 
-  const completed = world.update({ tick: 32, stepMs: 31 });
-  assert.equal(completed.events.filter((event) => event.type === "shovel").length, 1);
-  assert.equal(completed.moves[0].moved, true);
+  const cleared = world.update({ tick: 32, stepMs: 31 });
+  assert.equal(cleared.events.filter((event) => event.type === "shovel").length, 1);
+  assert.equal(cleared.moves.length, 0);
   assert.equal(world.query.entityCountMatching({ kind: "type", value: MapEntityTypeId.SNOW }), 0);
   assert.equal(world.query.entityCountMatching({ kind: "type", value: "shovel-cleared-ground" }), 0);
+  assert.deepEqual(world.entity(player.id)?.anchor, { x: 0, y: 0 });
+  assert.equal(world.actions.isInputBlockedFor(player.id), true);
+
+  const completed = world.update({ tick: 33, stepMs: 31 });
+  assert.equal(completed.moves[0].moved, true);
+  assert.deepEqual(completed.motions[0].cause, { type: "forced" });
   assert.deepEqual(world.entity(player.id)?.anchor, { x: 1, y: 0 });
   assert.equal(world.actions.isInputBlockedFor(player.id), false);
 });
@@ -158,6 +164,8 @@ test("独立 Snow 清除后生成可走地面，动作进度可从快照恢复",
   for (let tick = 13; tick <= 32; tick += 1)
     world.update({ tick, stepMs: 31 });
   assert.equal(world.query.entityCountMatching({ kind: "type", value: "shovel-cleared-ground" }), 1);
+  assert.deepEqual(world.entity(actor(world).id)?.anchor, { x: 0, y: 0 });
+  world.update({ tick: 33, stepMs: 31 });
   assert.deepEqual(world.entity(actor(world).id)?.anchor, { x: 1, y: 0 });
 });
 

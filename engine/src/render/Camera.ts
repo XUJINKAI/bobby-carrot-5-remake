@@ -11,7 +11,6 @@ export interface CameraOptions {
   zoom?: number;
   minZoom?: number;
   maxZoom?: number;
-  followDurationMs?: number;
   panBounds?: CameraPanBounds;
 }
 
@@ -19,9 +18,15 @@ export const DEFAULT_CAMERA_OPTIONS: Readonly<Required<CameraOptions>> = {
   zoom: 1,
   minZoom: .25,
   maxZoom: 4,
-  followDurationMs: 320,
   panBounds: "viewport",
 } as const;
+
+/** 原版 Camera 聚焦移动的最高速度为 24 source px/step。 */
+export const CAMERA_FOLLOW_MAX_SPEED_SOURCE_PX_PER_STEP = 24;
+/** Engine Camera 每个 26ms 墙钟校准步共用的加减速幅度，不对应一次原版 Y() 调用。 */
+export const CAMERA_FOLLOW_ACCELERATION_SOURCE_PX_PER_STEP = 2;
+/** 与原版实测 416ms/16-step 慢速移动共用同一 gameplay 循环墙钟。 */
+export const CAMERA_FOLLOW_STEP_MS = 26;
 
 interface PanReturn {
   fromX: number;
@@ -43,7 +48,6 @@ interface FollowTransition {
   fromX: number;
   fromY: number;
   startedAtMs: number;
-  durationMs: number;
 }
 
 const FOLLOW_JUMP_THRESHOLD_CELLS = 0.5;
@@ -67,7 +71,6 @@ export class Camera {
   private followedWorldWidth = 0;
   private followedWorldHeight = 0;
   private followTransition: FollowTransition | null = null;
-  private readonly followDurationMs: number;
   private readonly panBounds: CameraPanBounds;
   private panInteractionActive = false;
   private shakeState: CameraShake | null = null;
@@ -76,10 +79,6 @@ export class Camera {
 
   constructor(sourceTileSize = 48, options: CameraOptions = {}) {
     this.sourceTileSize = sourceTileSize;
-    this.followDurationMs = nonNegativeFinite(
-      options.followDurationMs,
-      DEFAULT_CAMERA_OPTIONS.followDurationMs,
-    );
     this.panBounds =
       options.panBounds === "map-edge"
         ? "map-edge"
@@ -279,10 +278,11 @@ export class Camera {
     points: readonly CameraPoint[],
     worldWidth: number,
     worldHeight: number,
+    frame?: PresentationFrame,
   ): void {
     if (points.length === 0) return;
     if (points.length === 1) {
-      this.follow(points[0]!, worldWidth, worldHeight);
+      this.follow(points[0]!, worldWidth, worldHeight, frame);
       return;
     }
     const minX = Math.max(0, Math.min(...points.map((point) => point.x)) - 0.5);
@@ -305,6 +305,7 @@ export class Camera {
       { x: (minX + maxX) / 2 - 0.5, y: (minY + maxY) / 2 - 0.5 },
       worldWidth,
       worldHeight,
+      frame,
     );
   }
 
@@ -321,12 +322,11 @@ export class Camera {
       hasFollowTarget &&
       Math.hypot(baseX - this.followedX!, baseY - this.followedY!) >
         FOLLOW_JUMP_THRESHOLD_CELLS;
-    if (targetJumped && frame && this.followDurationMs > 0) {
+    if (targetJumped && frame) {
       this.followTransition = {
         fromX: this.centerX,
         fromY: this.centerY,
         startedAtMs: frame.nowMs,
-        durationMs: this.followDurationMs,
       };
     }
     this.followedX = baseX;
@@ -355,14 +355,22 @@ export class Camera {
       return;
     }
 
-    const raw = Math.min(
-      1,
-      Math.max(0, (frame.nowMs - transition.startedAtMs) / transition.durationMs),
+    const steps = Math.max(
+      0,
+      Math.floor((frame.nowMs - transition.startedAtMs) / CAMERA_FOLLOW_STEP_MS),
     );
-    const eased = 1 - (1 - raw) ** 3;
-    this.centerX = transition.fromX + (desired.x - transition.fromX) * eased;
-    this.centerY = transition.fromY + (desired.y - transition.fromY) * eased;
-    if (raw >= 1) this.followTransition = null;
+    const position = cameraFollowPosition(
+      transition.fromX,
+      transition.fromY,
+      desired.x,
+      desired.y,
+      this.sourceTileSize,
+      steps,
+    );
+    this.centerX = position.x;
+    this.centerY = position.y;
+    if (this.centerX === desired.x && this.centerY === desired.y)
+      this.followTransition = null;
   }
 
   worldToScreen(x: number, y: number): CameraPoint {
@@ -507,10 +515,6 @@ function positiveFinite(value: number | undefined, fallback: number): number {
   return Number.isFinite(value) && Number(value) > 0 ? Number(value) : fallback;
 }
 
-function nonNegativeFinite(value: number | undefined, fallback: number): number {
-  return Number.isFinite(value) && Number(value) >= 0 ? Number(value) : fallback;
-}
-
 function steppedShakeOffset(stage: number, axis: number, span: number): number {
   if (span <= 0) return 0;
   let hash = Math.imul(stage + 1, 0x45d9f3b) ^ Math.imul(axis + 7, 0x119de1f3);
@@ -519,6 +523,118 @@ function steppedShakeOffset(stage: number, axis: number, span: number): number {
   hash ^= hash >>> 16;
   const sample = (hash >>> 0) / 0x1_0000_0000;
   return Math.floor(sample * (span + 1)) - (span >> 1);
+}
+
+/**
+ * 计算原版全局 Camera 速度曲线经过指定步数后的位置。
+ *
+ * `stoppingDistance` 对应逆向字段 bS / bT；接近目标时使用同一套状态逐步减速，
+ * 因此近距离聚焦不会套用固定时长，远距离聚焦也不会瞬间掠过地图。
+ */
+export function cameraFollowAxisPosition(
+  from: number,
+  target: number,
+  sourceTileSize: number,
+  steps: number,
+): number {
+  const deltaSourcePx = (target - from) * sourceTileSize;
+  const direction = Math.sign(deltaSourcePx);
+  let remaining = Math.abs(deltaSourcePx);
+  let speed = 0;
+  let stoppingDistance = 0;
+  let moved = 0;
+  const safeSteps = Math.max(0, Math.floor(steps));
+  for (let step = 0; step < safeSteps && remaining > 0; step += 1) {
+    if (remaining > stoppingDistance + speed) {
+      if (speed < CAMERA_FOLLOW_MAX_SPEED_SOURCE_PX_PER_STEP) {
+        speed = Math.min(
+          CAMERA_FOLLOW_MAX_SPEED_SOURCE_PX_PER_STEP,
+          speed + CAMERA_FOLLOW_ACCELERATION_SOURCE_PX_PER_STEP,
+        );
+        stoppingDistance += speed;
+      }
+    } else if (remaining < stoppingDistance + speed && speed > 1) {
+      stoppingDistance -= speed;
+      speed = Math.max(
+        1,
+        speed - CAMERA_FOLLOW_ACCELERATION_SOURCE_PX_PER_STEP,
+      );
+    }
+    speed = Math.min(speed, remaining);
+    remaining -= speed;
+    moved += speed;
+  }
+  if (remaining <= 0) return target;
+  return from + direction * moved / sourceTileSize;
+}
+
+/** 较长轴驱动统一进度，避免两轴独立减速形成先斜后直的折线路径。 */
+function cameraFollowPosition(
+  fromX: number,
+  fromY: number,
+  targetX: number,
+  targetY: number,
+  sourceTileSize: number,
+  steps: number,
+): CameraPoint {
+  const deltaX = targetX - fromX;
+  const deltaY = targetY - fromY;
+  const dominantDistance = Math.max(
+    Math.abs(deltaX),
+    Math.abs(deltaY),
+  );
+  if (dominantDistance === 0) return { x: targetX, y: targetY };
+  const dominantPosition = cameraFollowAxisPosition(
+    0,
+    dominantDistance,
+    sourceTileSize,
+    steps,
+  );
+  const progress = dominantPosition / dominantDistance;
+  return {
+    x: progress >= 1 ? targetX : fromX + deltaX * progress,
+    y: progress >= 1 ? targetY : fromY + deltaY * progress,
+  };
+}
+
+/** World 侧只使用确定性的聚焦路程预算，不读取 Presentation Camera 状态。 */
+export function cameraFollowTravelDurationMs(
+  deltaXSourcePx: number,
+  deltaYSourcePx: number,
+): number {
+  return Math.max(
+    cameraFollowTravelSteps(deltaXSourcePx),
+    cameraFollowTravelSteps(deltaYSourcePx),
+  ) * CAMERA_FOLLOW_STEP_MS;
+}
+
+function cameraFollowTravelSteps(deltaSourcePx: number): number {
+  let remaining = Math.abs(deltaSourcePx);
+  if (remaining <= 0) return 0;
+  let speed = 0;
+  let stoppingDistance = 0;
+  let steps = 0;
+  while (remaining > 0) {
+    if (remaining > stoppingDistance + speed) {
+      if (speed < CAMERA_FOLLOW_MAX_SPEED_SOURCE_PX_PER_STEP) {
+        speed = Math.min(
+          CAMERA_FOLLOW_MAX_SPEED_SOURCE_PX_PER_STEP,
+          speed + CAMERA_FOLLOW_ACCELERATION_SOURCE_PX_PER_STEP,
+        );
+        stoppingDistance += speed;
+      }
+    } else if (remaining < stoppingDistance + speed && speed > 1) {
+      stoppingDistance -= speed;
+      speed = Math.max(
+        1,
+        speed - CAMERA_FOLLOW_ACCELERATION_SOURCE_PX_PER_STEP,
+      );
+    }
+    speed = Math.min(speed, remaining);
+    remaining -= speed;
+    steps += 1;
+  }
+  return steps;
 }
 
 function clampViewportAxis(

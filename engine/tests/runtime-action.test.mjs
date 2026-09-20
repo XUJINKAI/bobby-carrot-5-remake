@@ -41,31 +41,57 @@ function blockedMoveResult(direction = "right") {
   };
 }
 
+test("RuntimeActionRegistry 去重同一共享定义并拒绝同名异义定义", () => {
+  const registry = new RuntimeActionRegistry();
+  const shared = { kind: "shared-action", update() {} };
+  registry.register(shared);
+  registry.register(shared);
+
+  assert.equal(registry.require("shared-action"), shared);
+  assert.throws(
+    () => registry.register({ kind: "shared-action", update() {} }),
+    /重复 RuntimeAction：shared-action/,
+  );
+});
+
 test("RuntimeAction focus owns camera and necessarily blocks controlled input", () => {
   const scheduler = new RuntimeActionScheduler(createBuiltinRuntimeActionRegistry());
   scheduler.start(
     createDelayRuntimeAction(125, {
       ownerEntityId: 7,
-      focus: { entityId: 7 },
+      focus: { entityIds: [7] },
       reason: "test-motion",
     }),
   );
   assert.equal(scheduler.inputBlocked, true);
-  assert.equal(scheduler.cameraTarget, 7);
+  assert.deepEqual(scheduler.cameraTargets, [7]);
   assert.equal(scheduler.active.length, 1);
 
   scheduler.update({ tick: 0, stepMs: 62.5 }, query, commands);
   assert.equal(scheduler.inputBlocked, true);
   scheduler.update({ tick: 1, stepMs: 62.5 }, query, commands);
   assert.equal(scheduler.inputBlocked, false);
-  assert.equal(scheduler.cameraTarget, null);
+  assert.deepEqual(scheduler.cameraTargets, []);
+});
+
+test("RuntimeAction focus preserves multiple camera targets", () => {
+  const scheduler = new RuntimeActionScheduler(createBuiltinRuntimeActionRegistry());
+  scheduler.start(
+    createDelayRuntimeAction(125, {
+      focus: { entityIds: [7, 8] },
+      reason: "multi-focus-test",
+    }),
+  );
+
+  assert.deepEqual(scheduler.cameraTargets, [7, 8]);
+  assert.equal(scheduler.inputBlocked, true);
 });
 
 test("RuntimeAction may block input without taking camera focus", () => {
   const scheduler = new RuntimeActionScheduler(createBuiltinRuntimeActionRegistry());
   scheduler.start(createDelayRuntimeAction(125, { blocksInput: true }));
   assert.equal(scheduler.inputBlocked, true);
-  assert.equal(scheduler.cameraTarget, null);
+  assert.deepEqual(scheduler.cameraTargets, []);
 });
 
 test("owner-scoped RuntimeAction 只阻塞所属 actor", () => {

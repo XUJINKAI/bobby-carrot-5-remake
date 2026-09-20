@@ -88,7 +88,7 @@ export function createDelayRuntimeAction(
   options: {
     ownerEntityId?: EntityId;
     blocksInput?: boolean;
-    focus?: { entityId: EntityId };
+    focus?: { entityIds: readonly EntityId[] };
     reason?: string;
   } = {},
 ): RuntimeActionSpec {
@@ -118,7 +118,7 @@ export function createDelayedMoveRuntimeAction(
     mechanism?: string;
     sourceEntityId?: EntityId;
     blocksInput?: boolean;
-    focus?: { entityId: EntityId };
+    focus?: { entityIds: readonly EntityId[] };
     moveCadenceMs?: number;
     impactOnBlocked?: boolean;
   } = {},

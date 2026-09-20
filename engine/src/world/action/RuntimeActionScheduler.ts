@@ -47,11 +47,11 @@ export class RuntimeActionScheduler {
   }
 
   /** 第一个声明 focus 的活跃 Action 获得镜头；顺序按稳定 action id。 */
-  get cameraTarget(): EntityId | null {
+  get cameraTargets(): readonly EntityId[] {
     for (const action of [...this.actions.values()].sort((a, b) => a.id - b.id)) {
-      if (action.focus) return action.focus.entityId;
+      if (action.focus) return [...action.focus.entityIds];
     }
-    return null;
+    return [];
   }
 
   start(spec: RuntimeActionSpec): RuntimeActionId {

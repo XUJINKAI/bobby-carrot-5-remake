@@ -11,6 +11,7 @@ import { RuntimeEntityTypeId } from "../runtime-types.js";
 import { staticEntity, tileCell } from "./module.js";
 
 const SHOVEL_ACTION = "shovel-snow";
+const SHOVEL_MOVE_PHASE = "move";
 const ORIGINAL_GAMEPLAY_STEP_MS = 31;
 export const SHOVEL_ACTION_DURATION_MS = 32 * ORIGINAL_GAMEPLAY_STEP_MS;
 
@@ -63,18 +64,30 @@ const shovelAction: RuntimeActionDefinition = {
   update({ action, time, query, commands }) {
     const actorId = action.ownerEntityId;
     const actor = actorId === undefined ? undefined : query.entity(actorId);
-    const snowId = integerState(action.state.snowId);
-    const snow = snowId === null ? undefined : query.entity(snowId);
     const originX = integerState(action.state.originX);
     const originY = integerState(action.state.originY);
     const direction = directionState(action.state.direction);
-    if (!actor || !snow || originX === null || originY === null ||
-      !direction || actor.anchor.x !== originX || actor.anchor.y !== originY ||
-      snow.type !== MapEntityTypeId.SNOW ||
+    if (!actor || originX === null || originY === null || !direction ||
+      actor.anchor.x !== originX || actor.anchor.y !== originY ||
       !readBobbyInventory(actor.state).shovel ||
       bobbyMountId(actor.state) !== null)
       return "complete";
 
+    if (action.state.phase === SHOVEL_MOVE_PHASE) {
+      return {
+        status: "complete",
+        intents: [{
+          type: "move",
+          actorId: actor.id,
+          direction,
+          cause: { type: "forced" },
+        }],
+      };
+    }
+
+    const snowId = integerState(action.state.snowId);
+    const snow = snowId === null ? undefined : query.entity(snowId);
+    if (!snow || snow.type !== MapEntityTypeId.SNOW) return "complete";
     const target = adjacentCell(originX, originY, direction);
     if (snow.anchor.x !== target.x || snow.anchor.y !== target.y)
       return "complete";
@@ -98,15 +111,9 @@ const shovelAction: RuntimeActionDefinition = {
       y: target.y,
       direction,
     });
-    return {
-      status: "complete",
-      intents: [{
-        type: "move",
-        actorId: actor.id,
-        direction,
-        cause: { type: "forced", mechanism: "shovel" },
-      }],
-    };
+    // 原版本拍只把 bc 清零并设置 bo；保存方向的 M() 重试发生在下一拍。
+    action.state.phase = SHOVEL_MOVE_PHASE;
+    return "running";
   },
 };
 
@@ -138,7 +145,14 @@ function createShovelAction(
     kind: SHOVEL_ACTION,
     ownerEntityId: actorId,
     blocksInput: true,
-    state: { snowId, originX, originY, direction, elapsedMs: 0 },
+    state: {
+      snowId,
+      originX,
+      originY,
+      direction,
+      elapsedMs: 0,
+      phase: "clearing",
+    },
   };
 }
 

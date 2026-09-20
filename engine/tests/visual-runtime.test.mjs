@@ -468,19 +468,26 @@ test("Speed Mower 每 31ms 切换人物帧", () => {
   assert.equal(mower.layers.at(-1).sourceY, 83);
 });
 
-test("Bobby snowplow uses three rows inside the attempted direction column", () => {
-  const shovel = bobbyVisual({
+test("Bobby snowplow 按原版 186ms 节拍循环三行", () => {
+  const frameAt = (nowMs) => bobbyVisual({
     runtime: {
       moving: false,
-      progress: 0.5,
+      progress: nowMs / 992,
+      animationStartedAtMs: 0,
       animation: "shovel",
       direction: "down",
     },
-  });
-  assert.equal(shovel.layers[0].asset, "bobby-snowplow");
-  assert.equal(shovel.layers[0].frameColumns, 4);
-  assert.equal(shovel.layers[0].frameRows, 3);
-  assert.equal(shovel.layers[0].frameIndex, 7);
+    time: { frame: nowMs, nowMs, deltaMs: 0 },
+  }).layers[0];
+  assert.equal(frameAt(0).asset, "bobby-snowplow");
+  assert.equal(frameAt(0).frameColumns, 4);
+  assert.equal(frameAt(0).frameRows, 3);
+  assert.deepEqual(
+    [0, 185, 186, 371, 372, 557, 558, 930].map((time) =>
+      frameAt(time).frameIndex
+    ),
+    [3, 3, 7, 7, 11, 11, 3, 11],
+  );
 });
 
 test("Snow 开始事件让 Bobby 播放铲雪动作", () => {
@@ -515,6 +522,15 @@ test("Snow 开始事件让 Bobby 播放铲雪动作", () => {
   assert.equal(visual.runtimeStates.get(actor.id)?.direction, "right");
   visual.update({ frame: 2, nowMs: 496, deltaMs: 496 }, "linear");
   assert.equal(visual.runtimeStates.get(actor.id)?.progress, 0.5);
+
+  for (let tick = 1; tick <= 32; tick += 1)
+    world.update({ tick, stepMs: 31 });
+  const moved = world.update({ tick: 33, stepMs: 31 });
+  visual.consumeWorldDeltas(world, moved.deltas,
+    { frame: 3, nowMs: 1023, deltaMs: 527 },
+    { motionDuration: (motion) => motion.durationMs, stationaryDeathDurationMs: 350 });
+  assert.equal(visual.runtimeStates.get(actor.id)?.moving, true);
+  assert.equal(visual.runtimeStates.get(actor.id)?.animation, undefined);
 });
 
 test("VisualRuntime motion interpolation follows PresentationFrame milliseconds", () => {

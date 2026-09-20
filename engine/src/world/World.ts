@@ -261,8 +261,8 @@ export class World {
     return this.actors.state(actorId);
   }
 
-  get cameraTarget(): EntityId | null {
-    return this.actions.cameraTarget;
+  get cameraTargets(): readonly EntityId[] {
+    return this.actions.cameraTargets;
   }
 
   entity(id: EntityId): Readonly<EntityInstance> | undefined {

@@ -4,6 +4,8 @@ import { beanField } from "./bean-field.js";
 import { carousel } from "./carousel.js";
 import { carouselSwitch } from "./carousel-switch.js";
 import { carrot } from "./carrot.js";
+import { cloud } from "./cloud.js";
+import { cloudParking } from "./cloud-parking.js";
 import { colorBlock } from "./color-block.js";
 import { colorSwitch } from "./color-switch.js";
 import { dragon } from "./dragon.js";
@@ -18,8 +20,8 @@ import { ice } from "./ice.js";
 import { iceBlock } from "./ice-block.js";
 import { lock, timedChallenge } from "./lock.js";
 import { lockKey } from "./lock-key.js";
+import { leaf } from "./leaf.js";
 import { mirror } from "./mirror.js";
-import { cloud, cloudParking, leaf } from "./moving-entities.js";
 import { crumblyRock, mower, mowerParkingTile } from "./mower.js";
 import { plank } from "./plank.js";
 import { sandman } from "./sandman.js";
@@ -35,6 +37,7 @@ import { tideSwitch } from "./tide-switch.js";
 import { trap } from "./trap.js";
 import { originalVariantModules } from "./variants.js";
 import { windSwitch } from "./wind-switch.js";
+import { windmill } from "./windmill.js";
 
 export const originalEntityModules: readonly EntityModule[] = [
   ...staticSurfaceModules,
@@ -58,6 +61,7 @@ export const originalEntityModules: readonly EntityModule[] = [
   iceBlock,
   carrot,
   egg,
+  windmill,
   ...staticContentModules,
   cloud,
   cloudParking,

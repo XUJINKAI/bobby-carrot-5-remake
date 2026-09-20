@@ -31,7 +31,7 @@ test("Bonus Coin 共用 1/8 gate，并以 124ms 播放三帧闪光", () => {
   assert.deepEqual(repeated, sequence);
 });
 
-test("Snow 与 Butterfly 数量按可见地图面积计算并留在地图边界内", () => {
+test("Snow 按 Canvas 面积计算，Butterfly 按可见地图面积计算", () => {
   assert.equal(densityCount(240, 320, 65), 5);
   assert.equal(densityCount(480, 640, 65), 20);
   assert.equal(densityCount(240, 320, 13), 1);
@@ -53,29 +53,25 @@ test("Snow 与 Butterfly 数量按可见地图面积计算并留在地图边界�
   snowRuntime.camera.setViewport(240, 320);
   snowRuntime.update({ frame: 0, nowMs: 0, deltaMs: 0 }, "linear");
   let snow = snowRuntime.scene(snowWorld).ambientForeground;
-  assert.equal(snow.length, 1);
-  assertScreenItemsInsideMap(snow, snowWorld, snowRuntime.camera);
+  assert.equal(snow.length, 5);
   snowRuntime.camera.setViewport(480, 640);
   snow = snowRuntime.scene(snowWorld).ambientForeground;
-  assert.equal(snow.length, 1);
-  assertScreenItemsInsideMap(snow, snowWorld, snowRuntime.camera);
+  assert.equal(snow.length, 20);
 
   const largeSnowWorld = terrainWorld(20, 20, [
     { type: MapEntityTypeId.SNOW, x: 0, y: 0 },
     { type: MapEntityTypeId.BOBBY, x: 10, y: 10 },
   ]);
   const largeSnowRuntime = new VisualRuntime(visuals, 48, {}, {
-    ambient: { seed: 7, snowDensity: 65 },
+    ambient: { seed: 7 },
   });
   largeSnowRuntime.camera.setViewport(240, 320);
   largeSnowRuntime.update({ frame: 0, nowMs: 0, deltaMs: 0 }, "linear");
   snow = largeSnowRuntime.scene(largeSnowWorld).ambientForeground;
-  assert.equal(snow.length, 5);
-  assertScreenItemsInsideMap(snow, largeSnowWorld, largeSnowRuntime.camera);
+  assert.equal(snow.length, 1);
   largeSnowRuntime.camera.setViewport(480, 640);
   snow = largeSnowRuntime.scene(largeSnowWorld).ambientForeground;
-  assert.equal(snow.length, 20);
-  assertScreenItemsInsideMap(snow, largeSnowWorld, largeSnowRuntime.camera);
+  assert.equal(snow.length, 5);
 
   const outdoorWorld = new World({
     schemaVersion: 1,
@@ -96,6 +92,90 @@ test("Snow 与 Butterfly 数量按可见地图面积计算并留在地图边界�
     outdoorWorld,
     butterflyRuntime.camera,
   );
+});
+
+test("Snow 使用原版素材，并按原版固定步长下落和横向抖动", () => {
+  const world = terrainWorld(20, 20, [
+    { type: MapEntityTypeId.SNOW, x: 0, y: 0 },
+    { type: MapEntityTypeId.BOBBY, x: 10, y: 10 },
+  ]);
+  const runtime = new VisualRuntime(createBuiltinVisualRegistry(), 48, {}, {
+    ambient: { seed: 17, snowDensity: 65 },
+  });
+  runtime.camera.setViewport(320, 320);
+  runtime.update({ frame: 0, nowMs: 0, deltaMs: 0 }, "linear");
+  const start = runtime.scene(world).ambientForeground;
+  const layer = start[0].composition.layers[0];
+  assert.deepEqual(
+    {
+      kind: layer.kind,
+      asset: layer.asset,
+      sourceX: layer.sourceX,
+      sourceY: layer.sourceY,
+      frameWidth: layer.frameWidth,
+      frameHeight: layer.frameHeight,
+    },
+    {
+      kind: "image",
+      asset: "hud-atlas",
+      sourceX: 338,
+      sourceY: 0,
+      frameWidth: 12,
+      frameHeight: 8,
+    },
+  );
+
+  runtime.update({ frame: 1, nowMs: 30, deltaMs: 30 }, "linear");
+  assert.deepEqual(runtime.scene(world).ambientForeground, start);
+  runtime.update({ frame: 2, nowMs: 31, deltaMs: 1 }, "linear");
+  const moved = runtime.scene(world).ambientForeground;
+  for (let index = 0; index < start.length; index += 1) {
+    assert.equal(moved[index].y - start[index].y, 3);
+    assert.ok([-1, 0, 1].includes(moved[index].x - start[index].x));
+  }
+
+  runtime.camera.setZoom(2);
+  const zoomed = runtime.scene(world).ambientForeground;
+  assert.ok(zoomed.length < moved.length);
+  assert.equal(zoomed[0].size, 96);
+  assert.equal(zoomed[0].x + (96 - 24) / 2, moved[0].x + (48 - 12) / 2);
+  assert.equal(zoomed[0].y + (96 - 16) / 2, moved[0].y + (48 - 8) / 2);
+  runtime.update({ frame: 3, nowMs: 62, deltaMs: 31 }, "linear");
+  const zoomedMoved = runtime.scene(world).ambientForeground;
+  for (let index = 0; index < zoomed.length; index += 1) {
+    assert.equal(zoomedMoved[index].y - zoomed[index].y, 6);
+    assert.ok([-2, 0, 2].includes(zoomedMoved[index].x - zoomed[index].x));
+  }
+});
+
+test("Snow 使用 Canvas 屏幕空间，并以地图边界裁剪 Camera pan", () => {
+  const world = new World({
+    schemaVersion: 1,
+    width: 1,
+    height: 1,
+    entities: [
+      { type: "grass", variant: "ts-10-1", x: 0, y: 0 },
+      { type: MapEntityTypeId.SNOW, x: 0, y: 0 },
+    ],
+  });
+  const runtime = new VisualRuntime(createBuiltinVisualRegistry(), 48, {}, {
+    ambient: { seed: 23, snowDensity: 65 },
+  });
+  runtime.camera.setViewport(320, 320);
+  runtime.update({ frame: 0, nowMs: 0, deltaMs: 0 }, "linear");
+  const beforePan = runtime.scene(world).ambientForeground;
+
+  runtime.camera.centerX += 1;
+  runtime.camera.centerY += 1;
+
+  const afterPan = runtime.scene(world).ambientForeground;
+  assert.deepEqual(
+    afterPan.map(withoutClip),
+    beforePan.map(withoutClip),
+  );
+  assert.notDeepEqual(afterPan[0].clip, beforePan[0].clip);
+  assert.equal(beforePan[0].clip.width, 48);
+  assert.equal(beforePan[0].clip.height, 48);
 });
 
 test("纯 Sky 地图不显示蝴蝶，混合地图保留蝴蝶", () => {
@@ -239,7 +319,7 @@ test("Snow 天气不关闭空 Sky 格的 shimmer", () => {
     assert.ok(scene.ambientForeground.length > 0);
     assert.equal(
       scene.ambientForeground[0].composition.layers[0].kind,
-      "canvas",
+      "image",
     );
     sawShimmer ||= scene.ambientBackground.length > 0;
   }
@@ -282,6 +362,10 @@ function terrainWorld(width, height, extraEntities = []) {
       entities.push({ type: "grass", variant: "ts-10-1", x, y });
   entities.push(...extraEntities);
   return new World({ schemaVersion: 1, width, height, entities });
+}
+
+function withoutClip({ clip: _clip, ...item }) {
+  return item;
 }
 
 function assertScreenItemsInsideMap(items, world, camera) {

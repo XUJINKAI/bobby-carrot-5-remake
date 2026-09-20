@@ -1,6 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { Camera } from "../dist/render/Camera.js";
+import {
+  Camera,
+  CAMERA_FOLLOW_ACCELERATION_SOURCE_PX_PER_STEP,
+  CAMERA_FOLLOW_STEP_MS,
+  cameraFollowTravelDurationMs,
+} from "../dist/render/Camera.js";
 
 const frame = (nowMs, deltaMs = 0, index = 0) => ({
   frame: index,
@@ -106,23 +111,80 @@ test("viewport pan bounds keep map edges against the viewport", () => {
   assert.deepEqual(camera.worldToScreen(20, 20), { x: 480, y: 288 });
 });
 
-test("camera smooths discontinuous follow target changes", () => {
-  const camera = new Camera(48, { followDurationMs: 400 });
+test("camera uses the configured global acceleration curve for discontinuous targets", () => {
+  const camera = new Camera(48);
   camera.setViewport(480, 320);
-  camera.follow({ x: 1, y: 1 }, 20, 20, frame(0));
+  camera.follow({ x: 10, y: 10 }, 40, 40, frame(0));
   const from = { x: camera.centerX, y: camera.centerY };
+  const travelSteps = cameraFollowTravelDurationMs(10 * 48, 0) /
+    CAMERA_FOLLOW_STEP_MS;
 
-  camera.follow({ x: 15, y: 15 }, 20, 20, frame(100));
+  camera.follow({ x: 20, y: 10 }, 40, 40, frame(100));
   assert.deepEqual({ x: camera.centerX, y: camera.centerY }, from);
 
-  camera.follow({ x: 15, y: 15 }, 20, 20, frame(300));
-  assert.ok(camera.centerX > from.x && camera.centerX < 15.5);
-  assert.ok(camera.centerY > from.y && camera.centerY < 15.5);
+  camera.follow(
+    { x: 20, y: 10 },
+    40,
+    40,
+    frame(100 + CAMERA_FOLLOW_STEP_MS),
+  );
+  assert.equal(
+    camera.centerX,
+    from.x + CAMERA_FOLLOW_ACCELERATION_SOURCE_PX_PER_STEP / 48,
+  );
+  assert.equal(camera.centerY, from.y);
 
-  camera.follow({ x: 15, y: 15 }, 20, 20, frame(500));
+  camera.follow(
+    { x: 20, y: 10 },
+    40,
+    40,
+    frame(100 + (travelSteps - 1) * CAMERA_FOLLOW_STEP_MS),
+  );
+  assert.ok(camera.centerX > from.x && camera.centerX < 20.5);
+
+  camera.follow(
+    { x: 20, y: 10 },
+    40,
+    40,
+    frame(100 + travelSteps * CAMERA_FOLLOW_STEP_MS),
+  );
   assert.deepEqual(
     { x: camera.centerX, y: camera.centerY },
-    { x: 15, y: 15.5 },
+    { x: 20.5, y: 10.5 },
+  );
+});
+
+test("camera applies one proportional progress to both axes", () => {
+  const camera = new Camera(48);
+  camera.setViewport(480, 320);
+  camera.follow({ x: 10, y: 10 }, 40, 40, frame(0));
+  const from = { x: camera.centerX, y: camera.centerY };
+  const target = { x: 20.5, y: 15.5 };
+  const travelSteps = cameraFollowTravelDurationMs(10 * 48, 5 * 48) /
+    CAMERA_FOLLOW_STEP_MS;
+
+  camera.follow({ x: 20, y: 15 }, 40, 40, frame(100));
+  camera.follow(
+    { x: 20, y: 15 },
+    40,
+    40,
+    frame(100 + 10 * CAMERA_FOLLOW_STEP_MS),
+  );
+
+  const xProgress = (camera.centerX - from.x) / (target.x - from.x);
+  const yProgress = (camera.centerY - from.y) / (target.y - from.y);
+  assert.ok(Math.abs(xProgress - yProgress) < 1e-10);
+  assert.ok(xProgress > 0 && xProgress < 1);
+
+  camera.follow(
+    { x: 20, y: 15 },
+    40,
+    40,
+    frame(100 + travelSteps * CAMERA_FOLLOW_STEP_MS),
+  );
+  assert.deepEqual(
+    { x: camera.centerX, y: camera.centerY },
+    target,
   );
 });
 

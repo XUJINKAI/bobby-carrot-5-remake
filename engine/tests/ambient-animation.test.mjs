@@ -17,7 +17,7 @@ import { SpatialIndex } from "../dist/world/spatial/SpatialIndex.js";
 const AMBIENT_STEP_MS = 124;
 const factRegistry = builtinEngineEnvironment.facts;
 
-function resolveAt(type, nowMs, direction, winState, variant) {
+function resolveAt(type, nowMs, direction, winState, variant, extraEntities = []) {
   const entities = createBuiltinEntityRegistry();
   const visuals = createBuiltinVisualRegistry();
   const store = new EntityStore([
@@ -28,6 +28,7 @@ function resolveAt(type, nowMs, direction, winState, variant) {
       ...(direction ? { direction } : {}),
       ...(variant ? { variant } : {}),
     },
+    ...extraEntities,
   ]);
   const spatial = new SpatialIndex(store, entities, 1, 1, factRegistry);
   const entity = store.all()[0];
@@ -48,7 +49,23 @@ function resolveAt(type, nowMs, direction, winState, variant) {
 }
 
 function expectAnimated(type, frameIndex, direction, variant) {
-  const layer = resolveAt(type, AMBIENT_STEP_MS, direction, undefined, variant);
+  const extraEntities = type === MapEntityTypeId.WINDMILL
+    ? [{
+        type: MapEntityTypeId.WIND_SWITCH,
+        x: 0,
+        y: 0,
+        direction,
+        active: true,
+      }]
+    : [];
+  const layer = resolveAt(
+    type,
+    AMBIENT_STEP_MS,
+    direction,
+    undefined,
+    variant,
+    extraEntities,
+  );
   assert.equal(layer.kind, "image");
   assert.equal(layer.asset, "original-animated-tiles");
   assert.equal(layer.frameWidth, 48);
@@ -63,6 +80,57 @@ test("original ta.png ambient phase zero keeps the static ts.png atlas frame", (
     resolveAt(MapEntityTypeId.WATER, AMBIENT_STEP_MS * 8, undefined, undefined, "ripple").kind,
     "atlas",
   );
+});
+
+test("Windmill 只在同方向 Wind Switch 开启时播放叶片动画", () => {
+  const inactive = resolveAt(
+    MapEntityTypeId.WINDMILL,
+    AMBIENT_STEP_MS,
+    "right",
+    undefined,
+    undefined,
+    [{
+      type: MapEntityTypeId.WIND_SWITCH,
+      x: 0,
+      y: 0,
+      direction: "right",
+      active: false,
+    }],
+  );
+  assert.equal(inactive.kind, "atlas");
+
+  const wrongDirection = resolveAt(
+    MapEntityTypeId.WINDMILL,
+    AMBIENT_STEP_MS,
+    "right",
+    undefined,
+    undefined,
+    [{
+      type: MapEntityTypeId.WIND_SWITCH,
+      x: 0,
+      y: 0,
+      direction: "left",
+      active: true,
+    }],
+  );
+  assert.equal(wrongDirection.kind, "atlas");
+
+  const active = resolveAt(
+    MapEntityTypeId.WINDMILL,
+    AMBIENT_STEP_MS,
+    "right",
+    undefined,
+    undefined,
+    [{
+      type: MapEntityTypeId.WIND_SWITCH,
+      x: 0,
+      y: 0,
+      direction: "right",
+      active: true,
+    }],
+  );
+  assert.equal(active.kind, "image");
+  assert.equal(active.frameIndex, 24);
 });
 
 test("original ta.png confirmed fixed Entity mappings use PresentationTime", () => {

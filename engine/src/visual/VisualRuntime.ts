@@ -386,51 +386,41 @@ export class VisualRuntime {
     }
   }
 
-  /** 多 player 始终共同构图；单 player 时 camera focus 可临时接管。 */
-  scene(world: World, cameraTarget: EntityId | null = null): RenderScene {
-    const actorIds = world.query
-      .entitiesWithFact("player")
-      .map((entity) => entity.id);
+  /** 多 player 始终共同构图；Action focus 可以声明一个或多个临时目标。 */
+  scene(world: World, cameraTargets: readonly EntityId[] = []): RenderScene {
+    const actors = world.query.entitiesWithFact("player");
+    const actorIds = actors.map((entity) => entity.id);
     this.ensureStationaryActorStates(world, actorIds);
-    if (actorIds.length > 1) {
-      const targets = actorIds
-        .map((id) => world.entity(id))
-        .filter((entity) => entity !== undefined)
-        .map((entity) => {
-          const runtime = this.entityRuntime.get(entity.id);
-          return {
-            x: entity.anchor.x + (runtime?.offsetX ?? 0),
-            y: entity.anchor.y + (runtime?.offsetY ?? 0),
-          };
-        });
-      const focus = cameraTarget === null ? undefined : world.entity(cameraTarget);
-      if (focus && !actorIds.includes(focus.id)) {
-        const runtime = this.entityRuntime.get(focus.id);
-        targets.push({
-          x: focus.anchor.x + (runtime?.offsetX ?? 0),
-          y: focus.anchor.y + (runtime?.offsetY ?? 0),
-        });
-      }
-      this.camera.followPoints(targets, world.width, world.height);
-    } else {
-      const defaultTargetId = actorIds[0];
-      const target =
-        (cameraTarget !== null ? world.entity(cameraTarget) : undefined) ??
-        (defaultTargetId !== undefined
-          ? world.entity(defaultTargetId)
-          : undefined);
-      if (target) {
-        const runtime = this.entityRuntime.get(target.id);
-        this.camera.follow(
-          {
-            x: target.anchor.x + (runtime?.offsetX ?? 0),
-            y: target.anchor.y + (runtime?.offsetY ?? 0),
-          },
-          world.width,
-          world.height,
-          this.frame ?? undefined,
-        );
-      }
+    const focused = cameraTargets
+      .map((id) => world.entity(id))
+      .filter((entity) => entity !== undefined);
+    const targets = actors.length > 1
+      ? [
+          ...actors,
+          ...focused.filter((entity) => !actorIds.includes(entity.id)),
+        ]
+      : focused.length > 0 ? focused : actors;
+    const points = targets.map((entity) => {
+      const runtime = this.entityRuntime.get(entity.id);
+      return {
+        x: entity.anchor.x + (runtime?.offsetX ?? 0),
+        y: entity.anchor.y + (runtime?.offsetY ?? 0),
+      };
+    });
+    if (points.length > 1) {
+      this.camera.followPoints(
+        points,
+        world.width,
+        world.height,
+        this.frame ?? undefined,
+      );
+    } else if (points[0]) {
+      this.camera.follow(
+        points[0],
+        world.width,
+        world.height,
+        this.frame ?? undefined,
+      );
     }
     const scene = buildVisualScene(
       world,
@@ -611,7 +601,10 @@ export class VisualRuntime {
       if (!composition) continue;
       const pass = transient.definition.renderPass ?? "effect";
       // 基础场景已排序；只有实际追加特效的 pass 才需要复制和重排。
-      const items = passes[pass] ?? (passes[pass] = [...scene[pass]]);
+      const sceneItems = pass === "world-effect"
+        ? scene.worldEffect
+        : scene[pass];
+      const items = passes[pass] ?? (passes[pass] = [...sceneItems]);
       items.push({
         presence: {
           entityId: -transient.id,
@@ -626,11 +619,20 @@ export class VisualRuntime {
         depthY: transient.y,
       });
     }
-    if (!passes.world && !passes.standing && !passes.effect) return scene;
+    if (
+      !passes.world &&
+      !passes["world-effect"] &&
+      !passes.standing &&
+      !passes.effect
+    )
+      return scene;
     return {
       worldWidth: scene.worldWidth,
       worldHeight: scene.worldHeight,
       world: passes.world ? sortRenderItems(passes.world) : scene.world,
+      worldEffect: passes["world-effect"]
+        ? sortRenderItems(passes["world-effect"])
+        : scene.worldEffect,
       standing: passes.standing
         ? sortStandingRenderItems(passes.standing)
         : scene.standing,
