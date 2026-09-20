@@ -12,11 +12,11 @@
 
 | 现有条件 | 地图叶子数 | 目标实现 | 当前回归入口 |
 | --- | ---: | --- | --- |
-| `collect-all / carrot` | 357 | `carrotGoal` | `engine/tests/selector-count.test.mjs` |
-| `fill-all / egg-nest / filled-egg` | 42 | `eggGoal` | `engine/tests/entity-runtime-semantics.test.mjs` |
-| `fill-all / push-goal / pushable` | 187 | `pushGoal` | `tools/custom/loma-pushbox.test.mjs` |
-| `reach / exit` | 492 | `exitGoal` | `engine/tests/world-runtime.test.mjs` |
-| `reach / golden-carrot` | 80 | `goldenCarrotGoal` | `engine/tests/adventure-bonus.test.mjs` |
+| `collect-all / carrot` | 357 | `carrotGoal` | `tests/module/engine/selector-count.test.mjs` |
+| `fill-all / egg-nest / filled-egg` | 42 | `eggGoal` | `tests/module/engine/entity-runtime-semantics.test.mjs` |
+| `fill-all / push-goal / pushable` | 187 | `pushGoal` | `tests/integration/custom/loma-pushbox.test.mjs` |
+| `reach / exit` | 492 | `exitGoal` | `tests/module/engine/world-runtime.test.mjs` |
+| `reach / golden-carrot` | 80 | `goldenCarrotGoal` | `tests/module/engine/adventure-bonus.test.mjs` |
 
 `assets/replays/original/1-1.json` 和 `1-2.json` 包含旧条件的终态摘要。地图与 Replay
 需在 Goal 阶段一起更新，并用正式 Runner 重放确认哈希和终态。

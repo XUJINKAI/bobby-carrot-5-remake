@@ -49,7 +49,7 @@ Editor Inspector 使用的是同一份语义；类型检查只负责验证结构
   坐标的行优先换算、decoded 标签校验和 objects 图块区边界。
 - [`tools/original/dat/record.mjs`](../tools/original/dat/record.mjs)：level record 的字节布局
   与 `dynamic_slots` 派生。
-- [`tools/original/dat-tests/entity-adapter.test.mjs`](../tools/original/dat-tests/entity-adapter.test.mjs)：
+- [`tests/integration/original/entity-adapter.test.mjs`](../tests/integration/original/entity-adapter.test.mjs)：
   两个 Adapter 特例的可执行审阅样例。
 - [`tools/pipeline/verify.mjs`](../tools/pipeline/verify.mjs)：仓库强制门禁的编排入口。
 
