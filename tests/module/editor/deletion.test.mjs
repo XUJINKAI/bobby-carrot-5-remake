@@ -1,0 +1,62 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { MapEntityTypeId } from "@bobby/model";
+import { builtinEngineEnvironment } from "../../../engine/dist/public.js";
+import {
+  builtinEditorDefinition,
+  createBlankLevel,
+  resolveDeletion,
+} from "../../../editor/dist/index.js";
+
+const environment = builtinEngineEnvironment;
+const catalog = environment.catalog;
+
+test("single-cell deletion removes only the top non-Surface entity", () => {
+  const level = createBlankLevel(5, 5);
+  level.entities.push(
+    { type: MapEntityTypeId.CARROT, x: 1, y: 1, stackOrder: 1 },
+    { type: MapEntityTypeId.BONUS_COIN, x: 1, y: 1, stackOrder: 2 },
+  );
+
+  const refs = resolveDeletion(
+    level,
+    environment,
+    { anchor: { x: 1, y: 1 }, focus: { x: 1, y: 1 } },
+    builtinEditorDefinition,
+  );
+  assert.equal(refs.length, 1);
+  assert.equal(level.entities[refs[0].index].type, MapEntityTypeId.BONUS_COIN);
+});
+
+test("multi-cell deletion removes only the highest stackOrder layer", () => {
+  const level = createBlankLevel(5, 5);
+  level.entities.push(
+    { type: MapEntityTypeId.CARROT, x: 1, y: 1, stackOrder: 1 },
+    { type: MapEntityTypeId.BONUS_COIN, x: 1, y: 1, stackOrder: 2 },
+    { type: MapEntityTypeId.BONUS_COIN, x: 2, y: 1, stackOrder: 2 },
+    { type: MapEntityTypeId.CARROT, x: 2, y: 1, stackOrder: 1 },
+  );
+
+  const refs = resolveDeletion(
+    level,
+    environment,
+    { anchor: { x: 1, y: 1 }, focus: { x: 2, y: 1 } },
+    builtinEditorDefinition,
+  );
+  assert.equal(refs.length, 2);
+  assert.deepEqual(
+    refs.map((ref) => level.entities[ref.index].stackOrder).sort(),
+    [2, 2],
+  );
+});
+
+test("Palette deletion never selects Surface", () => {
+  const level = createBlankLevel(5, 5);
+  const refs = resolveDeletion(
+    level,
+    environment,
+    { anchor: { x: 1, y: 1 }, focus: { x: 1, y: 1 } },
+    builtinEditorDefinition,
+  );
+  assert.deepEqual(refs, []);
+});

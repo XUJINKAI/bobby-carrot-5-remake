@@ -1,0 +1,69 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import {
+  ORIGINAL_BOBBY_LOCOMOTION_TIMING,
+  resolveBobbyLocomotionTiming,
+} from "../../../engine/dist/entities/player/BobbyLocomotion.js";
+import { applyMotionEasing } from "../../../engine/dist/visual/tuning/PresentationTuning.js";
+import {
+  ORIGINAL_TUNING,
+  resolveOriginalTuning,
+} from "../../../engine/dist/visual/tuning/original.js";
+
+test("Bobby owns the canonical original locomotion cadence", () => {
+  assert.equal(ORIGINAL_BOBBY_LOCOMOTION_TIMING.moveMs, 350);
+  assert.equal(
+    ORIGINAL_TUNING.motion.normalMs,
+    ORIGINAL_BOBBY_LOCOMOTION_TIMING.moveMs,
+  );
+  assert.equal(ORIGINAL_TUNING.motion.easing, "linear");
+  assert.equal(ORIGINAL_TUNING.levelTransition.enterMs, 620);
+  assert.equal(ORIGINAL_TUNING.levelTransition.exitMs, 558);
+  assert.deepEqual(ORIGINAL_TUNING.impactShake, {
+    stageMs: 26,
+    stages: 8,
+    initialSpanSourcePx: 42,
+  });
+});
+
+test("presentation override does not mutate canonical Bobby gameplay timing", () => {
+  const presentation = resolveOriginalTuning({
+    motion: {
+      normalMs: 20,
+      easing: "ease-in-out",
+    },
+    levelTransition: {
+      enterMs: 40,
+      exitMs: 30,
+    },
+    impactShake: {
+      stageMs: 20,
+      stages: 6,
+      initialSpanSourcePx: 30,
+    },
+  });
+  const gameplay = resolveBobbyLocomotionTiming();
+
+  assert.equal(presentation.motion.normalMs, 20);
+  assert.equal(presentation.levelTransition.enterMs, 40);
+  assert.equal(presentation.levelTransition.exitMs, 30);
+  assert.deepEqual(presentation.impactShake, {
+    stageMs: 20,
+    stages: 6,
+    initialSpanSourcePx: 30,
+  });
+  assert.equal(gameplay.moveMs, 350);
+});
+
+test("Bobby gameplay cadence can be overridden independently from presentation", () => {
+  const bobby = resolveBobbyLocomotionTiming({ moveMs: 420 });
+  assert.equal(bobby.moveMs, 420);
+  assert.equal(ORIGINAL_TUNING.motion.normalMs, 350);
+});
+
+test("motion easing remains pure presentation math", () => {
+  assert.equal(applyMotionEasing(0.5, "linear"), 0.5);
+  assert.equal(applyMotionEasing(0.5, "ease-in"), 0.25);
+  assert.equal(applyMotionEasing(0.5, "ease-out"), 0.75);
+  assert.equal(applyMotionEasing(0.5, "ease-in-out"), 0.5);
+});

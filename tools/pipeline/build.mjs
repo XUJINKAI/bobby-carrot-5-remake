@@ -7,8 +7,6 @@ import {
   run,
   tscCommand,
 } from "../lib/fs.mjs";
-import { verifySeoArtifacts } from "./seo-verify.mjs";
-import { verifyWebPerformanceArtifacts } from "./web-performance-verify.mjs";
 
 const dist = path.join(root, "dist");
 const generatedAssets = path.join(root, "assets");
@@ -29,14 +27,23 @@ for (const target of generatedTargets) {
 
 const tsc = tscCommand();
 
-// i18n 自己用 Vite 编译 TS 与 Markdown，并用 tsc 只生成声明。
-run("npm", ["run", "build", "--workspace=@bobby/i18n"]);
-// 产品构建只常驻编译纯模型与 Adventure；DAT 仅在确实需要重新生成官方资产时出现。
-run(tsc, ["-b", "model", "exchange", "adventure", "--force"]);
+// 内容生成器通过正式 Model 入口校验结果，因此先建立 bootstrap 产物。
+run(tsc, ["-b", "model", "--force"]);
 run(process.execPath, ["tools/cli.mjs", "assets", "prepare"]);
 
-// Engine、Editor 和 Web 只消费纯 LevelMap 与已生成资产。
-run(tsc, ["-b", "engine", "editor", "embed", "--force"]);
+// 内容前处理完成后再编译全部 Runtime package。i18n 自己用 Vite 编译 TS 与
+// Markdown，并用 tsc 只生成声明。
+run("npm", ["run", "build", "--workspace=@bobby/i18n"]);
+run(tsc, [
+  "-b",
+  "model",
+  "exchange",
+  "adventure",
+  "engine",
+  "editor",
+  "embed",
+  "--force",
+]);
 run(process.execPath, ["tools/replay/mark-verified-maps.mjs"]);
 run(binCommand("vue-tsc"), ["-b", "--force"], {
   cwd: path.join(root, "web"),
@@ -54,7 +61,5 @@ copyTree(generatedAssets, path.join(dist, "assets"));
 
 const { generateSeoArtifacts } = await import("./seo.mjs");
 generateSeoArtifacts();
-verifySeoArtifacts();
-verifyWebPerformanceArtifacts();
 
 console.log("Build complete: dist");

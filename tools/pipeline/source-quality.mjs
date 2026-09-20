@@ -14,6 +14,7 @@ const SOURCE_ROOTS = [
   "embed",
   "web",
   "tools",
+  "tests",
 ];
 const SOURCE_EXTENSIONS = new Set([
   ".ts",
@@ -49,9 +50,20 @@ const ENTITY_SPATIAL_ROOTS = [
   "engine/src/world/spatial/",
   "model/src/map/entity/",
 ];
+const TEST_CATEGORIES = new Set([
+  "unit",
+  "module",
+  "entity",
+  "integration",
+  "smoke",
+  "support",
+  "fixtures",
+]);
 
 const errors = [];
 const warnings = [];
+
+checkRepositoryStructure();
 
 for (const sourceRoot of SOURCE_ROOTS) {
   walk(path.join(root, sourceRoot), (file) => {
@@ -186,6 +198,53 @@ function obsoleteSiteReferences() {
     throw new Error(`无法扫描旧站点地址：${result.stderr.trim()}`);
   }
   return result.stdout.split(/\r?\n/).filter(Boolean);
+}
+
+function checkRepositoryStructure() {
+  const packageJson = JSON.parse(
+    fs.readFileSync(path.join(root, "package.json"), "utf8"),
+  );
+  for (const [name, command] of Object.entries(packageJson.scripts ?? {})) {
+    if (!String(command).startsWith("node tools/cli.mjs ")) {
+      errors.push(`npm script 必须是 tools/cli.mjs alias：${name}`);
+    }
+  }
+
+  const listed = spawnSync(
+    "git",
+    ["ls-files", "--cached", "--others", "--exclude-standard"],
+    { cwd: root, encoding: "utf8" },
+  );
+  if (listed.status !== 0) {
+    throw new Error(`无法扫描仓库文件：${listed.stderr.trim()}`);
+  }
+  for (const relative of listed.stdout.split(/\r?\n/).filter(Boolean)) {
+    if (
+      /\.test\.(?:mjs|ts)$/.test(relative) &&
+      !relative.startsWith("tests/")
+    ) {
+      errors.push(`${relative}: 测试文件必须位于根 tests/`);
+    }
+  }
+
+  const testsRoot = path.join(root, "tests");
+  for (const entry of fs.readdirSync(testsRoot, { withFileTypes: true })) {
+    if (entry.isDirectory() && !TEST_CATEGORIES.has(entry.name)) {
+      errors.push(`tests/${entry.name}: tests 一级测试分类未登记`);
+    }
+  }
+
+  for (const file of [
+    "custom-maps/loma-pushbox/01/01-01.json",
+    "custom-maps/novoban-pushbox/01.json",
+  ]) {
+    const ignored = spawnSync("git", ["check-ignore", "--quiet", file], {
+      cwd: root,
+    });
+    if (ignored.status !== 0) {
+      errors.push(`${file}: 生成的自定义地图必须被 Git 忽略`);
+    }
+  }
 }
 
 function checkCompactCode(file, text, relative) {
