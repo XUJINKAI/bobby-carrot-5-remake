@@ -32,3 +32,26 @@ test("Night Train 提供 Dreamland Reward 目的地和路由", async () => {
     /renderAdventureScene\(\s*"dreamland-reward",\s*context,\s*"\/adventure\/night-train"/,
   );
 });
+
+test("Night Train 与 Adventure Special Scene 使用原版音乐职责", async () => {
+  const [adventureSource, gameSource] = await Promise.all([
+    readFile(
+      new URL("../src/pages/adventure/mountAdventurePages.ts", import.meta.url),
+      "utf8",
+    ),
+    readFile(
+      new URL("../src/pages/game/mountGamePage.ts", import.meta.url),
+      "utf8",
+    ),
+  ]);
+  const nightTrain = adventureSource.match(
+    /export function renderAdventureNightTrain[\s\S]*?\n}\n\nexport function findAdventureLevel/,
+  )?.[0] ?? "";
+
+  assert.match(nightTrain, /audio\.playMusic\("train"\)/);
+  assert.doesNotMatch(nightTrain, /audio\.playMusic\("title"\)/);
+  assert.doesNotMatch(
+    gameSource,
+    /adventureScene\s*\?\s*\{\s*levelMusicOverride/,
+  );
+});

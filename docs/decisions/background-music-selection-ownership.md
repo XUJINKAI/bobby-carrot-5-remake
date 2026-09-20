@@ -13,9 +13,10 @@
 - `random` 或省略字段时，从 `ingame0..2` 选择一首。
 
 `runtime.levelMusicOverride` 允许宿主在创建 runtime 时覆盖基础曲目。字符串表示页面指定曲目，
-`null` 表示基础曲目静音，省略则完全服从地图。Home Demo 与 Adventure Special Scene 使用
-`title`，Editor Play Test 的基础曲目静音；普通 Game 与 Embed 直接使用地图音乐。终局曲目
-不属于基础曲目覆盖，所有 session 仍按 Outcome 播放。
+`null` 表示基础曲目静音，省略则完全服从地图。Home Demo 使用 `title`，Editor Play Test
+的基础曲目静音；Adventure Special Scene、普通 Game 与 Embed 直接使用地图音乐。Night
+Train 导航场景由 Web 播放 `train`。终局曲目不属于基础曲目覆盖，所有 session 仍按
+Outcome 播放。
 
 ## 地图内覆盖
 

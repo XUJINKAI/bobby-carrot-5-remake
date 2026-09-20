@@ -311,7 +311,6 @@ export async function renderGamePage(
         ? { bobbyLocomotion: { moveMs: plan.bobbyMoveMs } }
         : {}),
       camera: GAME_CAMERA_OPTIONS[mode],
-      ...(adventureScene ? { levelMusicOverride: "title" } : {}),
       hud: resolveGameplayHudConfig(
         mode,
         adventureScene?.id,
