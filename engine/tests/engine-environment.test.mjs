@@ -5,6 +5,7 @@ import {
   createEngineEnvironment,
   defineEntityModule,
 } from "../dist/public.js";
+import { cloud } from "../dist/entities/original/cloud.js";
 
 test("EngineEnvironment 为 Session 与查询交付同一份能力组合", () => {
   const module = defineEntityModule({
@@ -43,4 +44,19 @@ test("EngineEnvironment 在组合时拒绝未声明的 Fact", () => {
     () => createEngineEnvironment({ modules: [module] }),
     /未注册 Fact：missing-fact/,
   );
+});
+
+test("Cloud 模块独立组合时注册自己的共享移动 Action", () => {
+  const environment = createEngineEnvironment({ modules: [cloud] });
+  const session = new GameplaySession({ environment });
+  session.loadLevel({
+    schemaVersion: 1,
+    meta: { name: "Cloud-only Environment" },
+    width: 1,
+    height: 1,
+    entities: [{ type: "cloud", x: 0, y: 0, color: "red" }],
+  });
+
+  assert.equal(environment.actions.require("moving-entity").kind, "moving-entity");
+  assert.doesNotThrow(() => session.advanceTicks(2));
 });

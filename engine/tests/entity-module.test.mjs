@@ -41,6 +41,11 @@ test("EntityModule 显式组合通用 Mechanism 与对象 Behavior", () => {
   const speed = moduleFor(MapEntityTypeId.SPEED);
   assert.deepEqual(bindingIds(speed), ["speed-boost"]);
   assert.deepEqual(speed.runtimeActions?.map((action) => action.kind), ["speed-run"]);
+
+  const cloud = moduleFor(MapEntityTypeId.CLOUD);
+  const leaf = moduleFor(MapEntityTypeId.LEAF);
+  assert.deepEqual(cloud.runtimeActions?.map((action) => action.kind), ["moving-entity"]);
+  assert.equal(cloud.runtimeActions?.[0], leaf.runtimeActions?.[0]);
 });
 
 test("BehaviorRegistry is built from the same builtin EntityModule list", () => {

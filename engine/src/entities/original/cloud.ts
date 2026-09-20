@@ -5,6 +5,7 @@ import type {
 } from "../EntityModule.js";
 import { cloudColor } from "./cloud-movement.js";
 import {
+  movingEntityAction,
   movingPlatformBehavior,
   MOVING_PLATFORM_SUPPORT_HEIGHT_PX,
 } from "./moving-platform.js";
@@ -30,7 +31,7 @@ const definition: EntityModuleDefinition = {
   presentation: { name: "Cloud" },
 };
 
-export const cloud: EntityModule = originalModule(
+const module = originalModule(
   definition,
   {
     ...atlasVisual(definition, (context) =>
@@ -42,3 +43,8 @@ export const cloud: EntityModule = originalModule(
   },
   [{ behavior: movingPlatformBehavior }],
 );
+
+export const cloud: EntityModule = {
+  ...module,
+  runtimeActions: [movingEntityAction],
+};

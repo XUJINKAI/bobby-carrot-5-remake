@@ -41,6 +41,19 @@ function blockedMoveResult(direction = "right") {
   };
 }
 
+test("RuntimeActionRegistry 去重同一共享定义并拒绝同名异义定义", () => {
+  const registry = new RuntimeActionRegistry();
+  const shared = { kind: "shared-action", update() {} };
+  registry.register(shared);
+  registry.register(shared);
+
+  assert.equal(registry.require("shared-action"), shared);
+  assert.throws(
+    () => registry.register({ kind: "shared-action", update() {} }),
+    /重复 RuntimeAction：shared-action/,
+  );
+});
+
 test("RuntimeAction focus owns camera and necessarily blocks controlled input", () => {
   const scheduler = new RuntimeActionScheduler(createBuiltinRuntimeActionRegistry());
   scheduler.start(
