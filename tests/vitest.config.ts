@@ -14,8 +14,10 @@ export default mergeConfig(
     test: {
       dir: projectRoot,
       include: [
-        "tests/unit/web/**/*.test.{mjs,ts}",
-        "tests/module/web/**/*.test.{mjs,ts}",
+        "tests/unit/**/*.test.{mjs,ts}",
+        "tests/module/**/*.test.{mjs,ts}",
+        "tests/entity/**/*.test.{mjs,ts}",
+        "tests/integration/**/*.test.{mjs,ts}",
       ],
     },
   }),

@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import ts from "typescript";
 import {
   binCommand,
   root,
@@ -8,10 +9,6 @@ import {
 } from "../tools/lib/fs.mjs";
 
 const TEST_CATEGORIES = new Set(["unit", "module", "entity", "integration"]);
-const WEB_TEST_ROOTS = [
-  path.join(root, "tests/unit/web"),
-  path.join(root, "tests/module/web"),
-];
 const filters = process.argv.slice(2);
 const selectionRoot = resolveSelectionRoot(filters);
 
@@ -35,18 +32,25 @@ if (discovered.length === 0) {
   throw new Error(`没有发现测试：${path.relative(root, selectionRoot)}`);
 }
 
-const webTests = discovered.filter(isWebTest);
-const nodeTests = discovered.filter((file) => !isWebTest(file));
+const frameworkByFile = new Map(
+  discovered.map((file) => [file, detectTestFramework(file)]),
+);
+const nodeTests = discovered.filter(
+  (file) => frameworkByFile.get(file) === "node:test",
+);
+const vitestTests = discovered.filter(
+  (file) => frameworkByFile.get(file) === "vitest",
+);
 
 if (nodeTests.length > 0) {
   run(process.execPath, ["--test", ...nodeTests.map(relativeToRoot)]);
 }
-if (webTests.length > 0) {
+if (vitestTests.length > 0) {
   run(binCommand("vitest"), [
     "run",
     "--config",
     "tests/vitest.config.ts",
-    ...webTests,
+    ...vitestTests,
   ]);
 }
 
@@ -85,10 +89,49 @@ function discoverTests(directory) {
     .sort();
 }
 
-function isWebTest(file) {
-  return WEB_TEST_ROOTS.some(
-    (directory) => file.startsWith(`${directory}${path.sep}`),
+function detectTestFramework(file) {
+  const source = fs.readFileSync(file, "utf8");
+  const sourceFile = ts.createSourceFile(
+    file,
+    source,
+    ts.ScriptTarget.Latest,
+    true,
+    file.endsWith(".ts") ? ts.ScriptKind.TS : ts.ScriptKind.JS,
   );
+  const frameworks = new Set();
+  for (const statement of sourceFile.statements) {
+    if (
+      ts.isImportDeclaration(statement) &&
+      ts.isStringLiteral(statement.moduleSpecifier) &&
+      isRuntimeImport(statement)
+    ) {
+      const moduleName = statement.moduleSpecifier.text;
+      if (moduleName === "node:test" || moduleName === "vitest") {
+        frameworks.add(moduleName);
+      }
+    }
+  }
+  const relative = relativeToRoot(file);
+  if (frameworks.size === 0) {
+    throw new Error(
+      `${relative}: 测试文件必须直接导入 node:test 或 vitest`,
+    );
+  }
+  if (frameworks.size > 1) {
+    throw new Error(
+      `${relative}: 测试文件只能选择 node:test 或 vitest 之一`,
+    );
+  }
+  return frameworks.values().next().value;
+}
+
+function isRuntimeImport(statement) {
+  const clause = statement.importClause;
+  if (!clause) return false;
+  if (clause.isTypeOnly) return false;
+  if (clause.name || !clause.namedBindings) return true;
+  if (ts.isNamespaceImport(clause.namedBindings)) return true;
+  return clause.namedBindings.elements.some((element) => !element.isTypeOnly);
 }
 
 function relativeToRoot(file) {

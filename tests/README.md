@@ -30,8 +30,12 @@ Model bootstrap
 → 自定义地图与 collection 前处理
 → i18n build 与 Runtime TypeScript project build
 → 自动发现 unit / module / entity / integration
-→ tests/unit/web 与 tests/module/web 交给 Vitest
-→ 其余测试交给 Node Test
+→ 直接导入 vitest 的测试交给 Vitest
+→ 直接导入 node:test 的测试交给 Node Test
 ```
+
+每个非 smoke 测试必须直接导入且只导入一种测试 API。运行时由该 import
+声明，与测试所在的业务目录无关；缺少声明或同时导入两种 API 会使 runner
+直接失败。
 
 `npm run verify` 在源码质量门禁后调用完整 `npm test`，随后执行 production build、build smoke、browser smoke、SEO 与性能检查。`smoke/` 只在这一流程中运行。
