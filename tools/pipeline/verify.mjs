@@ -170,6 +170,13 @@ if (adventureLevels.length !== 480 || adventure.specialScenes.length !== 5)
 const exploreSpecialScenes = original.maps.filter(
   (map) => map.chapter === originalSpecialChapter.id,
 );
+const originalSpecialSceneMusic = new Map([
+  ["beaver-shop", "shop"],
+  ["cloud-9", "sandman"],
+  ["dream-machine", "shop"],
+  ["dreamland-reward", "sandman"],
+  ["campaign-intro", "sandman"],
+]);
 if (
   JSON.stringify(exploreSpecialScenes.map((map) => map.id)) !==
     JSON.stringify(adventure.specialScenes.map((scene) => scene.id)) ||
@@ -192,7 +199,10 @@ for (const scene of adventure.specialScenes) {
   assertMapDocument(document, relative);
   if (ref.collection === "original") {
     assertOriginalStartContract(document, relative);
-    assertOriginalMusicContract(document, undefined, relative);
+    const expectedMusic = originalSpecialSceneMusic.get(scene.id);
+    if (!expectedMusic)
+      throw new Error(`缺少 Original Special Scene 音乐合同：${scene.id}`);
+    assertOriginalMusicContract(document, expectedMusic, relative);
   }
 }
 

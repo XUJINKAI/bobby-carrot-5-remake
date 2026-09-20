@@ -24,12 +24,12 @@ const mapsRoot = path.join(adapted, "maps");
 const releaseOrder = new Map(
   RELEASES.map((release) => [release.id, release.order]),
 );
-const specialLabels = {
-  "beaver-shop": "Beaver Shop",
-  "cloud-9": "Cloud 9",
-  "dream-machine": "Dream Machine",
-  "dreamland-reward": "Dreamland Reward",
-  "campaign-intro": "Adventure Welcome",
+const specialSceneMetadata = {
+  "beaver-shop": { name: "Beaver Shop", music: "shop" },
+  "cloud-9": { name: "Cloud 9", music: "sandman" },
+  "dream-machine": { name: "Dream Machine", music: "shop" },
+  "dreamland-reward": { name: "Dreamland Reward", music: "sandman" },
+  "campaign-intro": { name: "Adventure Welcome", music: "sandman" },
 };
 
 function readJson(file) {
@@ -176,15 +176,19 @@ function buildSpecialScenes(index, target) {
     if (source.schemaVersion !== 1)
       throw new Error(`base/${sourceName}: decoded map schemaVersion 必须为 1`);
     const id = specialSceneIdForSource(sourceLevelIndex);
+    const metadata = specialSceneMetadata[id];
+    if (!metadata) throw new Error(`缺少 Special Scene metadata：${id}`);
     target.set(
       id,
-      createMapDocument(source, {
-        name: specialLabels[id] ?? id,
-      }),
+      createMapDocument(
+        source,
+        { name: metadata.name },
+        { music: metadata.music },
+      ),
     );
     result.push({
       id,
-      name: specialLabels[id] ?? id,
+      name: metadata.name,
       sourceLevelIndex,
       source: sourceReference(base, source, sourceName),
       path: `maps/${id}.json`,

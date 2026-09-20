@@ -68,8 +68,10 @@ Original collection 在 40 个正式章节后追加 ID 为 `special-scenes` 的�
 分组，5 张地图通过 `chapter: "special-scenes"` 进入该分组。该分组只表达 Explore
 的尾部布局，不进入 Adventure 的 Campaign chapter 编号。
 
-Original Bonus 地图显式保存 `music: "bonus"`；普通关卡省略 `music`，由播放页面
-在 `ingame0..2` 中随机选择。
+Original Bonus 地图显式保存 `music: "shop"`，Lock 打开后的 `bonus` 覆盖由 Engine
+根据地图状态选择；普通关卡省略 `music`，由播放页面在 `ingame0..2` 中随机选择。
+5 个 Special Scene 按原版固定保存地图音乐：Beaver Shop 与 Dream Machine 使用
+`shop`，Cloud 9、Dreamland Reward 与 Campaign Intro 使用 `sandman`。
 
 filter option 的 Gameplay 图标使用统一 Entity preview descriptor，不区分 Original/Custom，也不区分 Terrain/Object。每个 option 通过 `icons` 数组按顺序提供一个或多个图标：
 
