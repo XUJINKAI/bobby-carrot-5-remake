@@ -20,13 +20,19 @@ import {
 
 const unlock: Behavior = {
   id: "lock",
-  canEnter({ actor, self, commands }) {
+  canEnter({ actor, self }) {
     if (bobbyMountId(actor.state) !== null)
       return { passable: false, reason: "mounted-actor-cannot-unlock" };
     const requireKey = self.entity.state?.requireKey === true;
     const inventory = readBobbyInventory(actor.state);
     if (requireKey && inventory.lockKeys === 0)
       return { passable: false, reason: "lock-needs-key" };
+
+    return { passable: true, reason: "lock-can-unlock" };
+  },
+  onEnter({ actor, self, commands }) {
+    const requireKey = self.entity.state?.requireKey === true;
+    const inventory = readBobbyInventory(actor.state);
 
     const seconds = boundedInt(
       self.entity.state?.deathCountdownSeconds,
@@ -65,7 +71,6 @@ const unlock: Behavior = {
         type: "music-state",
         data: { source: "timed-bonus", track: "bonus" },
       });
-    return { passable: true, reason: "lock-unlocked" };
   },
   onTouch({ actor, self, query, commands }) {
     if (
