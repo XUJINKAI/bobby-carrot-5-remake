@@ -329,7 +329,7 @@ export async function renderGamePage(
   const { game, input, gates } = session;
 
   let visibleResult: "death" | "complete" | null = null;
-  let audibleResult: "death" | "complete" | null = null;
+  let capturedResult: "death" | "complete" | null = null;
   let resultElapsedMs = 0;
   let completionRecorded = false;
   let completionNextId: string | undefined;
@@ -382,12 +382,11 @@ export async function renderGamePage(
           adventureRewards.discard();
           resultElapsedMs = 0;
           visibleResult = null;
-          audibleResult = null;
+          capturedResult = null;
           completionRecorded = false;
           completionNextId = undefined;
           completionNavigationStarted = false;
           gameResult.hidden = true;
-          game.resumeMusicState();
         },
       })
     : NOOP_REPLAY_PANEL_CONTROLLER;
@@ -423,18 +422,16 @@ export async function renderGamePage(
     if (kind === "death") adventureRewards.discard();
     if (kind === "complete") recordLevelCompletion();
     if (!kind) {
-      if (audibleResult !== null) game.resumeMusicState();
-      audibleResult = null;
       resultElapsedMs = 0;
+      capturedResult = null;
       completionRecorded = false;
       completionNextId = undefined;
       closeResult();
       return;
     }
-    if (audibleResult !== kind) {
-      audibleResult = kind;
+    if (capturedResult !== kind) {
+      capturedResult = kind;
       resultElapsedMs = state.elapsedMs;
-      audio.playMusic(kind === "complete" ? "cleared" : "death");
     }
     if (game.isAnimating) return;
     if (

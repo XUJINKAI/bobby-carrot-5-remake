@@ -70,9 +70,6 @@ DAT package <-> metadata + level records
 
 `engine/` 是唯一地图内游戏规则实现。核心目标是：**给 Engine 一个纯语义 `LevelMap` 和少量运行配置，就应当能够独立把这张地图完整地玩起来。**
 
-> 背景音乐选曲是否包含在“完整地玩起来”中尚待统一，参见
-> [背景音乐选曲职责 ADR](decisions/background-music-selection-ownership.md)。本节现有边界表述暂予保留。
-
 Engine 负责：
 
 - `Game` / `World`；
@@ -81,7 +78,7 @@ Engine 负责：
 - Camera / Renderer；
 - 基础 Gameplay HUD 的状态与渲染；
 - 可配置 Screen Joystick 的渲染与拖动输入；
-- Audio 抽象；
+- Audio 抽象，以及地图基础、机关覆盖与终局音乐协调；
 - semantic Definition 与 Object Layout；
 - 通用 `InputController`。
 

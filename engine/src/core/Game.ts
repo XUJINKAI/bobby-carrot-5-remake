@@ -479,6 +479,7 @@ export class Game {
   ): void {
     this.replayRecorder = null;
     this.replayPlayback.start(replay, options);
+    this.music.syncWorld(this.world);
     this.resetSessionView();
     this.render();
     this.emit("change");
@@ -908,6 +909,9 @@ export class Game {
 
   private emitTerminalEvents(): void {
     if (!this.worldValue) return;
+    this.music.setOutcome(
+      this.world.dead ? "dead" : this.world.completed ? "won" : "playing",
+    );
     if (this.world.dead) this.emit("death");
     if (this.world.completed) this.emit("level-complete");
   }

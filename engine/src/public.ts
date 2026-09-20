@@ -76,6 +76,7 @@ export {
 export {
   LevelMusicController,
   resolveLevelMusic,
+  type LevelMusicOutcome,
 } from "./audio/LevelMusicController.js";
 export {
   ImageManager,
