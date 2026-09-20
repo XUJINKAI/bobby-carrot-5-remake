@@ -23,7 +23,7 @@ export const DEFAULT_CAMERA_OPTIONS: Readonly<Required<CameraOptions>> = {
 
 /** 原版 Camera 聚焦移动的最高速度为 24 source px/step。 */
 export const CAMERA_FOLLOW_MAX_SPEED_SOURCE_PX_PER_STEP = 24;
-/** Engine Camera 每个逻辑步共用的加减速幅度。 */
+/** Engine Camera 每个 26ms 墙钟校准步共用的加减速幅度，不对应一次原版 Y() 调用。 */
 export const CAMERA_FOLLOW_ACCELERATION_SOURCE_PX_PER_STEP = 2;
 /** 与原版实测 416ms/16-step 慢速移动共用同一 gameplay 循环墙钟。 */
 export const CAMERA_FOLLOW_STEP_MS = 26;

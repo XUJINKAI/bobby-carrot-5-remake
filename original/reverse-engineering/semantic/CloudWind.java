@@ -42,7 +42,10 @@ public final class CloudWind {
     private int windmillRightX;
     private int windmillRightY;
 
-    /** 对应原版 `aZ`：刚由 Off→On 打开的风向，等待捕获第一朵被该风改向的 Cloud。 */
+    /** 刚由 Off→On 打开的风向；Camera 到达 Windmill 后才允许其作用于 Cloud。 */
+    private int pendingWindActivationDirection = -1;
+
+    /** 对应原版 `aZ`：风生效后等待捕获第一朵被该风改向的 Cloud。 */
     private int pendingCameraWindDirection = -1;
 
     /** 对应原版 `aE`：被镜头跟踪的 moving entity index。 */
@@ -55,8 +58,8 @@ public final class CloudWind {
      * 对应 `a.J()` 的 Wind Switch 分支。
      * 同方向的全部 Switch 会被统一替换成同一状态，而不是只修改当前格。
      *
-     * On→Off 只关风并换图；Off→On 还会立即把镜头目标切到对应 Windmill，
-     * 并保存刚开启的方向，等待 P() 中第一朵真正被这股风改向的 Cloud。
+     * On→Off 只关风并换图；Off→On 立即把镜头目标切到对应 Windmill，
+     * 但 Camera 抵达前保持风向待启用。抵达后 P() 才能用这股风改向 Cloud。
      */
     void stepWindSwitch(int rawSwitch) {
         switch (rawSwitch & 0xFF) {
@@ -65,7 +68,6 @@ public final class CloudWind {
                 replaceAll(SWITCH_UP_ON, SWITCH_UP_OFF);
                 return;
             case SWITCH_UP_OFF:
-                windUpEnabled = true;
                 replaceAll(SWITCH_UP_OFF, SWITCH_UP_ON);
                 beginWindCameraHandoff(UP, windmillUpX, windmillUpY);
                 return;
@@ -74,7 +76,6 @@ public final class CloudWind {
                 replaceAll(SWITCH_DOWN_ON, SWITCH_DOWN_OFF);
                 return;
             case SWITCH_DOWN_OFF:
-                windDownEnabled = true;
                 replaceAll(SWITCH_DOWN_OFF, SWITCH_DOWN_ON);
                 beginWindCameraHandoff(DOWN, windmillDownX, windmillDownY);
                 return;
@@ -83,7 +84,6 @@ public final class CloudWind {
                 replaceAll(SWITCH_LEFT_ON, SWITCH_LEFT_OFF);
                 return;
             case SWITCH_LEFT_OFF:
-                windLeftEnabled = true;
                 replaceAll(SWITCH_LEFT_OFF, SWITCH_LEFT_ON);
                 beginWindCameraHandoff(LEFT, windmillLeftX, windmillLeftY);
                 return;
@@ -92,7 +92,6 @@ public final class CloudWind {
                 replaceAll(SWITCH_RIGHT_ON, SWITCH_RIGHT_OFF);
                 return;
             case SWITCH_RIGHT_OFF:
-                windRightEnabled = true;
                 replaceAll(SWITCH_RIGHT_OFF, SWITCH_RIGHT_ON);
                 beginWindCameraHandoff(RIGHT, windmillRightX, windmillRightY);
                 return;
@@ -102,13 +101,14 @@ public final class CloudWind {
     }
 
     private void beginWindCameraHandoff(int direction, int windmillX, int windmillY) {
+        pendingWindActivationDirection = direction;
         pendingCameraWindDirection = direction;
         cameraHoldSteps = CAMERA_HOLD_STEPS;
         setCameraTarget(windmillX * 48, windmillY * 48);
     }
 
     /**
-     * 对应 `a.P()` 已确认的 Windmill 三格作用域。
+     * 对应 `a.P()` 已确认的 Windmill 三格作用域；待启用风向在 Camera 抵达前仍为 false。
      * 返回 -1 表示当前格未受到开启 Windmill 的强制改向。
      */
     int forcedDirectionAt(int x, int y, int currentDirection) {
@@ -181,12 +181,33 @@ public final class CloudWind {
             return;
         }
 
+        enablePendingWind();
         cameraHoldSteps--;
         if (cameraHoldSteps == 0) {
             pendingCameraWindDirection = -1;
             cameraTrackedMovingEntity = -1;
             restoreCameraToBobby();
         }
+    }
+
+    private void enablePendingWind() {
+        switch (pendingWindActivationDirection) {
+            case UP:
+                windUpEnabled = true;
+                break;
+            case DOWN:
+                windDownEnabled = true;
+                break;
+            case LEFT:
+                windLeftEnabled = true;
+                break;
+            case RIGHT:
+                windRightEnabled = true;
+                break;
+            default:
+                return;
+        }
+        pendingWindActivationDirection = -1;
     }
 
     /** 原版 Cloud 只有停在同色 Parking object 上才命中特殊停车条件。 */
