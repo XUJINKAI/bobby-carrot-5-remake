@@ -41,10 +41,10 @@ test("winning World cancels remaining RuntimeActions with world-finished", () =>
     kind: "terminal-watch",
     ownerEntityId: actor.id,
     blocksInput: true,
-    focus: { entityId: actor.id },
+    focus: { entityIds: [actor.id] },
   });
   assert.equal(world.inputBlocked, true);
-  assert.equal(world.cameraTarget, actor.id);
+  assert.deepEqual(world.cameraTargets, [actor.id]);
 
   const result = move(world, actor.id, "right", {
     type: "forced",
@@ -55,7 +55,7 @@ test("winning World cancels remaining RuntimeActions with world-finished", () =>
   assert.deepEqual(cancelled, ["world-finished"]);
   assert.equal(world.actions.active.length, 0);
   assert.equal(world.inputBlocked, false);
-  assert.equal(world.cameraTarget, null);
+  assert.deepEqual(world.cameraTargets, []);
   assert.ok(
     result.deltas.some(
       (delta) =>

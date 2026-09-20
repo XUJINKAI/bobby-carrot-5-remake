@@ -153,11 +153,11 @@ RuntimeAction 按 action id 稳定顺序在 WorldClock 上推进，通过同一 
 ```ts
 {
   blocksInput?: boolean;
-  focus?: { entityId: EntityId };
+  focus?: { entityIds: readonly EntityId[] };
 }
 ```
 
-`inputBlocked` 从当前 active actions 派生，不依靠手工 `counter++ / counter--` 配平。`focus` 只是 gameplay policy；Camera 如何平滑跟随仍属于 Presentation。
+`inputBlocked` 从当前 active actions 派生，不依靠手工 `counter++ / counter--` 配平。`focus` 可以声明一个或多个 Entity；Camera 如何平滑跟随和多目标构图仍属于 Presentation。
 
 RuntimeAction 只产生 semantic `MoveIntent`，由 World 回传带 action identity 的权威
 `MoveResult`。Blocked、边界与 destination conflict 在 `onIntentResult` 处理；取消时

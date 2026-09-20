@@ -58,7 +58,7 @@ test("开启 Wind Switch 后等待全局 Camera 行程，再聚焦 Windmill 约 
   assert.equal(move(world, actor.id, "right").moves[0].moved, true);
   world.update({ tick: 1, stepMs: 100 });
   assert.equal(world.entity(windSwitch.id).state.active, true);
-  assert.equal(world.cameraTarget, windmill.id);
+  assert.deepEqual(world.cameraTargets, [windmill.id]);
   assert.equal(world.isInputBlockedFor(actor.id), true);
   assert.equal(world.actions.active[0].state.phase, "travel");
   assert.equal(world.entity(windSwitch.id).state.windPending, true);
@@ -69,7 +69,7 @@ test("开启 Wind Switch 后等待全局 Camera 行程，再聚焦 Windmill 约 
       tick,
       stepMs: ORIGINAL_GAMEPLAY_STEP_MS,
     });
-    assert.equal(world.cameraTarget, windmill.id);
+    assert.deepEqual(world.cameraTargets, [windmill.id]);
     tick += 1;
   }
   assert.equal(world.actions.active[0].state.phase, "hold");
@@ -79,7 +79,7 @@ test("开启 Wind Switch 后等待全局 Camera 行程，再聚焦 Windmill 约 
     world.update({ tick, stepMs: ORIGINAL_GAMEPLAY_STEP_MS });
     tick += 1;
   }
-  assert.equal(world.cameraTarget, null);
+  assert.deepEqual(world.cameraTargets, []);
   assert.equal(world.isInputBlockedFor(actor.id), false);
 });
 
@@ -145,7 +145,7 @@ test("Camera 抵达 Windmill 前 Cloud 不接受刚开启的风向", () => {
   );
   tick += 1;
   world.update({ tick, stepMs: ORIGINAL_GAMEPLAY_STEP_MS });
-  assert.equal(world.cameraTarget, cloud.id);
+  assert.deepEqual(world.cameraTargets, [cloud.id]);
   assert.equal(world.actions.active[0].state.elapsedHoldMs, 0);
 });
 
@@ -161,6 +161,76 @@ test("关闭 Wind Switch 只关闭对应方向且不聚焦 Camera", () => {
   assert.equal(move(world, actor.id, "right").moves[0].moved, true);
   world.update({ tick: 1, stepMs: 100 });
   assert.equal(world.entity(windSwitch.id).state.active, false);
-  assert.equal(world.cameraTarget, null);
+  assert.deepEqual(world.cameraTargets, []);
   assert.equal(world.actions.active.length, 0);
+});
+
+test("同方向的多个 Windmill 共同获得焦点并分别吹动 Cloud", () => {
+  const entities = [
+    { type: "grass", variant: "ts-10-1", x: 0, y: 0 },
+    { type: "grass", variant: "ts-10-1", x: 1, y: 0 },
+    { type: MapEntityTypeId.BOBBY, x: 0, y: 0, direction: "right" },
+    {
+      type: MapEntityTypeId.WIND_SWITCH,
+      x: 1,
+      y: 0,
+      direction: "right",
+      active: false,
+    },
+    { type: MapEntityTypeId.WINDMILL, x: 2, y: 1, direction: "right" },
+    { type: MapEntityTypeId.WINDMILL, x: 2, y: 2, direction: "right" },
+    { type: MapEntityTypeId.CLOUD, x: 3, y: 1, color: "red" },
+    { type: MapEntityTypeId.CLOUD, x: 3, y: 2, color: "purple" },
+    ...[1, 2].flatMap((y) =>
+      Array.from({ length: 8 }, (_, x) => ({
+        type: MapEntityTypeId.STARFIELD,
+        x,
+        y,
+        variant: "large-star",
+      }))
+    ),
+  ];
+  const world = new World({
+    schemaVersion: 1,
+    width: 8,
+    height: 3,
+    entities,
+  }, { motionDurationMs: 100 });
+  const actor = world.query.entitiesWithFact("player")[0];
+  const windSwitch = world.query.entitiesMatching({
+    kind: "type",
+    value: MapEntityTypeId.WIND_SWITCH,
+  })[0];
+  const windmills = world.query.entitiesMatching({
+    kind: "type",
+    value: MapEntityTypeId.WINDMILL,
+  });
+  const clouds = world.query.entitiesMatching({
+    kind: "type",
+    value: MapEntityTypeId.CLOUD,
+  });
+  assert.ok(actor && windSwitch);
+
+  move(world, actor.id, "right");
+  let tick = 1;
+  world.update({ tick, stepMs: 100 });
+  tick += 1;
+  assert.deepEqual(
+    world.cameraTargets,
+    windmills.map((windmill) => windmill.id),
+  );
+
+  while (world.entity(windSwitch.id).state.windPending === true) {
+    world.update({ tick, stepMs: ORIGINAL_GAMEPLAY_STEP_MS });
+    tick += 1;
+  }
+  const result = world.update({ tick, stepMs: CLOUD_MOVEMENT.cellMs });
+  const movingCloudIds = result.motions
+    .filter((motion) => clouds.some((cloud) => cloud.id === motion.entityId))
+    .map((motion) => motion.entityId)
+    .sort((a, b) => a - b);
+  assert.deepEqual(
+    movingCloudIds,
+    clouds.map((cloud) => cloud.id).sort((a, b) => a - b),
+  );
 });

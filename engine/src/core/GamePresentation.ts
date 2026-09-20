@@ -226,7 +226,7 @@ export class GamePresentation {
       this.visual.restartBobbyIdle(world, this.clock.current);
     const viewport = this.renderer.measureViewport();
     this.visual.camera.setViewport(viewport.width, viewport.height);
-    const scene = this.visual.scene(world, world.cameraTarget);
+    const scene = this.visual.scene(world, world.cameraTargets);
     this.sceneValue = scene;
     this.renderer.render(scene, this.visual.camera, viewport);
   }

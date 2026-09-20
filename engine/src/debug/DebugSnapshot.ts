@@ -51,7 +51,7 @@ export interface DebugSnapshot {
     animating: boolean;
     actionCount: number;
     inputBlocked: boolean;
-    cameraTarget: EntityId | null;
+    cameraTargets: readonly EntityId[];
   };
   actors: readonly DebugActorOption[];
   actor: DebugEntitySnapshot | null;
@@ -182,7 +182,7 @@ export function buildDebugSnapshot(options: {
     animating: visual.isAnimating,
     actionCount: actions.length,
     inputBlocked: world?.inputBlocked ?? false,
-    cameraTarget: world?.cameraTarget ?? null,
+    cameraTargets: world?.cameraTargets ?? [],
   };
   const actorEntities = world?.query.entitiesWithFact("player") ?? [];
   const actors = actorEntities.map((entity) => ({

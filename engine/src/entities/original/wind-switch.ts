@@ -48,7 +48,7 @@ const windCameraFocusAction: RuntimeActionDefinition = {
     }).filter((entity) => entity.state?.windFocusHandoff === direction);
     const handoffCloud = handoffClouds[0];
     if (handoffCloud) {
-      action.focus = { entityId: handoffCloud.id };
+      action.focus = { entityIds: [handoffCloud.id] };
       action.state.phase = "hold";
       action.state.elapsedHoldMs = 0;
       for (const cloud of handoffClouds)
@@ -94,12 +94,12 @@ const toggleWindDirection: Behavior = {
     const direction = self.entity.direction;
     if (!direction) return;
     const active = self.entity.state?.active !== true;
-    const windmill = active
+    const windmills = active
       ? query.entitiesMatching({
           kind: "type",
           value: MapEntityTypeId.WINDMILL,
-        }).find((entity) => entity.direction === direction)
-      : undefined;
+        }).filter((entity) => entity.direction === direction)
+      : [];
 
     for (const entity of query.entitiesMatching({ kind: "type", value: MapEntityTypeId.WIND_SWITCH })) {
       if (entity.type !== MapEntityTypeId.WIND_SWITCH) continue;
@@ -107,16 +107,18 @@ const toggleWindDirection: Behavior = {
       commands.setState(entity.id, {
         ...entity.state,
         active,
-        windPending: active && windmill !== undefined,
+        windPending: windmills.length > 0,
         windFocusPending: false,
       });
     }
-    if (windmill) {
+    if (windmills.length > 0) {
+      const center = windmillFocusCenter(windmills);
       commands.startAction(createWindCameraFocus(
-        windmill.id,
+        self.entity.id,
+        windmills.map((windmill) => windmill.id),
         direction,
-        windmill.anchor.x - actor.anchor.x,
-        windmill.anchor.y - actor.anchor.y,
+        center.x - actor.anchor.x,
+        center.y - actor.anchor.y,
       ));
     }
   },
@@ -151,15 +153,16 @@ export const windSwitch: EntityModule = {
 };
 
 function createWindCameraFocus(
-  windmillId: number,
+  switchId: number,
+  windmillIds: readonly number[],
   direction: Direction,
   deltaXCells: number,
   deltaYCells: number,
 ): RuntimeActionSpec {
   return {
     kind: WIND_CAMERA_FOCUS_ACTION,
-    ownerEntityId: windmillId,
-    focus: { entityId: windmillId },
+    ownerEntityId: switchId,
+    focus: { entityIds: windmillIds },
     state: {
       direction,
       phase: "travel",
@@ -168,6 +171,17 @@ function createWindCameraFocus(
         deltaYCells * ORIGINAL_TILE_SIZE,
       ),
     },
+  };
+}
+
+function windmillFocusCenter(
+  windmills: readonly { anchor: { x: number; y: number } }[],
+): { x: number; y: number } {
+  const x = windmills.map((windmill) => windmill.anchor.x);
+  const y = windmills.map((windmill) => windmill.anchor.y);
+  return {
+    x: (Math.min(...x) + Math.max(...x)) / 2,
+    y: (Math.min(...y) + Math.max(...y)) / 2,
   };
 }
 

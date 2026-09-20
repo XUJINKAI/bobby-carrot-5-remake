@@ -278,10 +278,11 @@ export class Camera {
     points: readonly CameraPoint[],
     worldWidth: number,
     worldHeight: number,
+    frame?: PresentationFrame,
   ): void {
     if (points.length === 0) return;
     if (points.length === 1) {
-      this.follow(points[0]!, worldWidth, worldHeight);
+      this.follow(points[0]!, worldWidth, worldHeight, frame);
       return;
     }
     const minX = Math.max(0, Math.min(...points.map((point) => point.x)) - 0.5);
@@ -304,6 +305,7 @@ export class Camera {
       { x: (minX + maxX) / 2 - 0.5, y: (minY + maxY) / 2 - 0.5 },
       worldWidth,
       worldHeight,
+      frame,
     );
   }
 

@@ -182,7 +182,7 @@ function createFireballAction(
   return {
     kind: FIREBALL_ACTION,
     ownerEntityId,
-    focus: { entityId: ownerEntityId },
+    focus: { entityIds: [ownerEntityId] },
     state: {
       cadenceCarryMs: 0,
       ...(inputLockActionId === null ? {} : { inputLockActionId }),

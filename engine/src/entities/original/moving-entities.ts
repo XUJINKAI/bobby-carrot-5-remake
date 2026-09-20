@@ -478,8 +478,9 @@ function windAppliesAt(
   requireReady = false,
 ): boolean {
   if (!windEnabled(query, direction, requireReady)) return false;
-  const windmill = windmillFor(query, direction);
-  return windmill !== undefined && insideWindRange(cell, windmill.anchor, direction);
+  return windmillsFor(query, direction).some(
+    (windmill) => insideWindRange(cell, windmill.anchor, direction),
+  );
 }
 
 function windEnabled(
@@ -496,11 +497,11 @@ function windEnabled(
   );
 }
 
-function windmillFor(
+function windmillsFor(
   query: WorldQueryApi,
   direction: Direction,
-): Readonly<EntityInstance> | undefined {
-  return query.entitiesMatching({ kind: "type", value: MapEntityTypeId.WINDMILL }).find(
+): readonly Readonly<EntityInstance>[] {
+  return query.entitiesMatching({ kind: "type", value: MapEntityTypeId.WINDMILL }).filter(
     (entity) =>
       entity.type === MapEntityTypeId.WINDMILL &&
       entity.direction === direction,

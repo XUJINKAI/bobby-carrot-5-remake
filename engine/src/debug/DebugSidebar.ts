@@ -363,7 +363,8 @@ export class DebugSidebar {
     });
     const ownedActions = snapshot.actions.filter(
       (action) =>
-        action.ownerEntityId === actor.id || action.focus?.entityId === actor.id,
+        action.ownerEntityId === actor.id ||
+        action.focus?.entityIds.includes(actor.id) === true,
     );
     this.setJson(this.actorActionsDetails, ownedActions);
     this.setJson(this.actorPresentationDetails, {

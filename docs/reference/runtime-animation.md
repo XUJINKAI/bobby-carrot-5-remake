@@ -130,7 +130,7 @@ RuntimeAction：
 - 可以并存多个 Action，但不是 Promise 并发；
 - 只通过 CommandQueue 修改 World；
 - 可以声明 `blocksInput`；
-- 可以声明 `cameraTarget`；
+- 可以声明一个或多个 Camera focus target；
 - gameplay state 可进入 World snapshot。
 
 原版 Fireball 存活时每拍刷新共享 aT=16，所以普通方向输入路径被挡住；但 Speed continuation、Ice forced continuation、airborne flight 在 aT 检查之前，世界子系统也继续推进。现代 blocking Action 必须表达“挡普通输入”而不是误写成 World pause。

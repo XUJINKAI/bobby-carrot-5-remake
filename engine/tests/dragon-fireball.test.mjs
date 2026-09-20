@@ -104,7 +104,7 @@ test("Dragon Fireball moves through World cells, melts Ice, and reflects", () =>
     ],
   });
   assert.equal(world.isInputBlockedFor(actor.id), true);
-  assert.equal(world.cameraTarget, null);
+  assert.deepEqual(world.cameraTargets, []);
   const almostSpawned = update(world, 1, DEFAULT_DRAGON_WINDUP_MS);
   assert.equal(
     almostSpawned.events.some(
@@ -121,7 +121,7 @@ test("Dragon Fireball moves through World cells, melts Ice, and reflects", () =>
   assert.equal(world.isInputBlockedFor(actor.id), true);
   const fireball = world.query.entitiesMatching({ kind: "type", value: RuntimeEntityTypeId.FIREBALL })[0];
   assert.deepEqual(fireball.anchor, { x: 3, y: 0 });
-  assert.equal(world.cameraTarget, fireball.id);
+  assert.deepEqual(world.cameraTargets, [fireball.id]);
 
   const melted = update(world, 3, FIREBALL_MOVEMENT.cellMs);
   assert.deepEqual(world.entity(fireball.id).anchor, { x: 2, y: 0 });
@@ -190,7 +190,7 @@ test("Dragon locks the triggering Bobby from Tail entry through Fireball removal
   update(world, 1, DEFAULT_DRAGON_WINDUP_MS);
   update(world, 2, FIREBALL_MOVEMENT.cellMs / 2);
   assert.equal(world.isInputBlockedFor(actor.id), true);
-  assert.notEqual(world.cameraTarget, null);
+  assert.ok(world.cameraTargets.length > 0);
 
   let tick = 3;
   while (world.query.entitiesMatching({
@@ -205,7 +205,7 @@ test("Dragon locks the triggering Bobby from Tail entry through Fireball removal
     value: RuntimeEntityTypeId.FIREBALL,
   }).length, 0);
   assert.equal(world.isInputBlockedFor(actor.id), false);
-  assert.equal(world.cameraTarget, null);
+  assert.deepEqual(world.cameraTargets, []);
 });
 
 test("more than five Ice Blocks melt independently and survive snapshot restore", () => {
@@ -275,7 +275,7 @@ test("Fireball impact removes the projectile and releases camera focus", () => {
   update(world, 1, 1);
   const terminating = update(world, 2, FIREBALL_MOVEMENT.cellMs);
   assert.equal(world.query.entitiesMatching({ kind: "type", value: RuntimeEntityTypeId.FIREBALL }).length, 1);
-  assert.notEqual(world.cameraTarget, null);
+  assert.ok(world.cameraTargets.length > 0);
   assert.ok(terminating.events.some(
     (event) => event.type === "fireball-termination-started" &&
       event.data?.durationMs === FIREBALL_MOVEMENT.terminalMs,
@@ -283,7 +283,7 @@ test("Fireball impact removes the projectile and releases camera focus", () => {
   const snapshot = world.snapshot();
   const impact = update(world, 3, FIREBALL_MOVEMENT.terminalMs);
   assert.equal(world.query.entitiesMatching({ kind: "type", value: RuntimeEntityTypeId.FIREBALL }).length, 0);
-  assert.equal(world.cameraTarget, null);
+  assert.deepEqual(world.cameraTargets, []);
   assert.ok(impact.events.some(
     (event) => event.type === "fireball-impact" &&
       event.x === 0.5 && event.y === 0,

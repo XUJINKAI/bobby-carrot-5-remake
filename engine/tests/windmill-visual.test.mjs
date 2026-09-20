@@ -96,6 +96,54 @@ test("关闭的 Windmill 保持静态且不绘制风场", () => {
   assert.equal(windmill.composition.layers[0].kind, "atlas");
 });
 
+test("Camera 多目标构图覆盖全部同方向 Windmill", () => {
+  const world = new World({
+    schemaVersion: 1,
+    width: 20,
+    height: 3,
+    entities: [
+      { type: MapEntityTypeId.BOBBY, x: 0, y: 0, direction: "right" },
+      { type: MapEntityTypeId.WINDMILL, x: 2, y: 1, direction: "right" },
+      { type: MapEntityTypeId.WINDMILL, x: 18, y: 1, direction: "right" },
+      {
+        type: MapEntityTypeId.WIND_SWITCH,
+        x: 0,
+        y: 1,
+        direction: "right",
+        active: true,
+      },
+    ],
+  });
+  const runtime = new VisualRuntime(createBuiltinVisualRegistry());
+  const windmills = world.query.entitiesMatching({
+    kind: "type",
+    value: MapEntityTypeId.WINDMILL,
+  });
+  runtime.camera.setViewport(240, 144);
+  const scene = runtime.scene(world, windmills.map((windmill) => windmill.id));
+
+  assert.equal(scene.worldEffect.length, 2);
+  for (const windmill of windmills) {
+    const wind = scene.worldEffect.find(
+      (item) => item.presence.entityId === windmill.id,
+    );
+    assert.equal(wind?.composition.layers.length, 3);
+  }
+
+  for (const windmill of windmills) {
+    const topLeft = runtime.camera.worldToScreen(
+      windmill.anchor.x,
+      windmill.anchor.y,
+    );
+    const bottomRight = runtime.camera.worldToScreen(
+      windmill.anchor.x + 1,
+      windmill.anchor.y + 1,
+    );
+    assert.ok(topLeft.x >= 0 && topLeft.y >= 0);
+    assert.ok(bottomRight.x <= 240 && bottomRight.y <= 144);
+  }
+});
+
 function windLayers(items, world, direction) {
   const item = items.find(
     (candidate) => world.entity(candidate.presence.entityId)?.direction === direction,
