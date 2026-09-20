@@ -102,6 +102,28 @@ function dispatchAction(action: string): void {
   }
 }
 
+function handleGlobalKeydown(event: KeyboardEvent): void {
+  if (
+    event.defaultPrevented ||
+    event.repeat ||
+    event.ctrlKey ||
+    event.metaKey ||
+    event.altKey ||
+    event.key.toLowerCase() !== "m" ||
+    isTextEditingTarget(event.target)
+  )
+    return;
+  event.preventDefault();
+  settings.toggleMusic();
+}
+
+function isTextEditingTarget(target: EventTarget | null): boolean {
+  return (
+    target instanceof Element &&
+    target.closest("input, textarea, select, [contenteditable='true']") !== null
+  );
+}
+
 function shellActions() {
   const topBar = props.shell.config.topBar;
   const bottomBar = props.shell.config.bottomBar;
@@ -158,8 +180,10 @@ defineExpose({ openSettings });
 onBeforeUnmount(() => {
   helpScope?.dispose();
   disposeMusicInteraction();
+  window.removeEventListener("keydown", handleGlobalKeydown);
 });
 onMounted(() => {
+  window.addEventListener("keydown", handleGlobalKeydown);
   if (content.value) props.onContentReady(content.value);
 });
 </script>

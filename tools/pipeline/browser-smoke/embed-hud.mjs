@@ -25,9 +25,10 @@ export const embedHudSmokeScript = `
   const keyboardSelect = document.querySelector('.keyboard-select');
   const timerToggle = document.querySelector('.hud-timer');
   const stepsToggle = document.querySelector('.hud-steps');
+  const globalMusic = document.querySelector('#music');
   if (
     !home || !open || !restart || !sound || !joystick || !joystickLayer ||
-    !infoInput || !keyboardSelect || !timerToggle || !stepsToggle
+    !infoInput || !keyboardSelect || !timerToggle || !stepsToggle || !globalMusic
   )
     throw new Error('missing Embed frame controls');
   const timer = shadow.querySelector('.engine-gameplay-hud-timer');
@@ -40,6 +41,13 @@ export const embedHudSmokeScript = `
   joystick.click();
   await delay(30);
   const toggledJoystick = joystick.getAttribute('aria-pressed') === 'true';
+  const initialGlobalMusic = globalMusic.getAttribute('aria-pressed');
+  window.dispatchEvent(new KeyboardEvent('keydown', { key: 'm' }));
+  await delay(30);
+  const toggledGlobalMusic = globalMusic.getAttribute('aria-pressed');
+  window.dispatchEvent(new KeyboardEvent('keydown', { key: 'm' }));
+  await delay(30);
+  const restoredGlobalMusic = globalMusic.getAttribute('aria-pressed');
   restart.click();
   await document.fonts.ready;
   const hudStyle = getComputedStyle(hud);
@@ -71,6 +79,9 @@ export const embedHudSmokeScript = `
     initialJoystick,
     toggledJoystick,
     joystickVisible: !joystickLayer.hidden,
+    initialGlobalMusic,
+    toggledGlobalMusic,
+    restoredGlobalMusic,
   };
   timerToggle.click();
   stepsToggle.click();
@@ -96,11 +107,25 @@ export const embedHudSmokeScript = `
   const code = document.querySelector('.code-block');
   const editableCode = code instanceof HTMLTextAreaElement;
   const generatedTimerCode = editableCode && code.value.includes('"timer": true');
+  let focusedGlobalMusic = null;
+  let focusedEditDeferred = null;
   if (editableCode) {
+    code.focus();
+    code.dispatchEvent(new KeyboardEvent('keydown', { key: 'm', bubbles: true }));
+    await delay(30);
+    focusedGlobalMusic = globalMusic.getAttribute('aria-pressed');
     code.value = code.value
       .replace('"timer": true', '"timer": false')
       .replace('height:520px', 'height:360px');
     code.dispatchEvent(new Event('input', { bubbles: true }));
+    await delay(350);
+    const focusedShadow = host?.shadowRoot;
+    const focusedTimer = focusedShadow?.querySelector('.engine-gameplay-hud-timer');
+    focusedEditDeferred =
+      focusedTimer &&
+      getComputedStyle(focusedTimer).display !== 'none' &&
+      getComputedStyle(host).height === '520px';
+    code.blur();
   }
   let editedTimer = null;
   let editedHeight = null;
@@ -128,6 +153,8 @@ export const embedHudSmokeScript = `
     enabledHud: { timer: enabledTimer, steps: enabledSteps },
     editableCode,
     generatedTimerCode,
+    focusedGlobalMusic,
+    focusedEditDeferred,
     editedTimer,
     editedHeight,
   });
@@ -164,7 +191,11 @@ export function assertEmbedHudSmoke(payload) {
     payload.editedHeight !== '360px' ||
     !payload.gameplayAssetsLoaded ||
     payload.initialJoystick === payload.toggledJoystick ||
-    payload.joystickVisible !== payload.toggledJoystick
+    payload.joystickVisible !== payload.toggledJoystick ||
+    payload.initialGlobalMusic === payload.toggledGlobalMusic ||
+    payload.restoredGlobalMusic !== payload.initialGlobalMusic ||
+    payload.focusedGlobalMusic !== payload.initialGlobalMusic ||
+    payload.focusedEditDeferred !== true
   )
     throw new Error(`Embed HUD 字体样式异常：${JSON.stringify(payload)}`);
 }

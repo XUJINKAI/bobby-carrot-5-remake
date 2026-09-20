@@ -49,6 +49,7 @@ const preview = ref<HTMLElement | null>(null);
 const previewError = ref<WebDisplayText | null>(null);
 const copyError = ref<WebDisplayText | null>(null);
 const embedCode = ref("");
+const codeFocused = ref(false);
 const previewStyle = ref<string>();
 const previewReady = ref(false);
 const apiReady = ref(false);
@@ -99,7 +100,7 @@ watch(
   embedCode,
   () => {
     copyError.value = null;
-    schedulePreviewRefresh();
+    if (!codeFocused.value) schedulePreviewRefresh();
   },
 );
 
@@ -151,6 +152,15 @@ function schedulePreviewRefresh(): void {
     previewTimer = null;
     void refreshPreview();
   }, PREVIEW_DEBOUNCE_MS);
+}
+
+function focusCodeEditor(): void {
+  codeFocused.value = true;
+}
+
+function blurCodeEditor(): void {
+  codeFocused.value = false;
+  schedulePreviewRefresh();
 }
 
 async function resolveEmbedMount(): Promise<EmbedMount> {
@@ -319,6 +329,8 @@ onBeforeUnmount(() => {
           spellcheck="false"
           wrap="soft"
           :aria-label="webT('embed.code')"
+          @focus="focusCodeEditor"
+          @blur="blurCodeEditor"
         ></textarea>
         <p v-if="copyError" class="error" aria-live="polite">{{ resolveWebText(copyError) }}</p>
       </section>

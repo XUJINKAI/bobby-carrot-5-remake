@@ -49,8 +49,11 @@ test("Embed 设置先生成可编辑代码，再由代码刷新预览", async ()
   assert.match(page, /const embedCode = ref\(""\)/);
   assert.match(page, /watch\(\s*generatedConfig,[\s\S]*embedCode\.value = generateEmbedCode/);
   assert.match(page, /watch\(\s*embedCode,[\s\S]*schedulePreviewRefresh\(\)/);
+  assert.match(page, /if \(!codeFocused\.value\) schedulePreviewRefresh\(\)/);
   assert.match(page, /parsed = parseEmbedCode\(embedCode\.value\)/);
   assert.match(page, /v-model="embedCode"[\s\S]*class="code-block"/);
+  assert.match(page, /@focus="focusCodeEditor"/);
+  assert.match(page, /@blur="blurCodeEditor"/);
   assert.doesNotMatch(page, /<pre class="code-block">/);
   assert.match(appRoot, /\.app-content:has\(\.embed-page\)[\s\S]*padding: 20px 0 56px/);
   assert.doesNotMatch(page, /<main[\s\S]*class="embed-page"/);
