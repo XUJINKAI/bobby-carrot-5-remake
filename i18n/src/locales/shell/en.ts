@@ -30,6 +30,7 @@ const catalog = {
   "common.import": "Import",
   "common.importFile": "Import file",
   "common.compress": "Compress",
+  "common.compressToLink": "Compress to link",
   "common.copy": "Copy",
   "common.download": "Download",
   "common.exportFile": "Export file",

@@ -261,7 +261,11 @@ function formatBytes(bytes: number): string {
 function label(control: DataExchangeControlConfig): string {
   if (control.type === "importText") return control.label ?? webT("common.import");
   if (control.type === "importFile") return control.label ?? webT("common.importFile");
-  if (control.type === "compress") return control.label ?? webT("common.compress");
+  if (control.type === "compress") {
+    return control.label ?? webT(
+      props.publicBaseUrl ? "common.compressToLink" : "common.compress",
+    );
+  }
   if (control.type === "copy") return control.label ?? webT("common.copy");
   if (control.type === "download") return control.label ?? webT("common.exportFile");
   return "";
@@ -287,7 +291,9 @@ onBeforeUnmount(() => {
         <span v-if="statusControl" class="data-exchange-status">{{ payloadSize }}</span>
       </label>
       <span v-else-if="statusControl" class="data-exchange-status">{{ payloadSize }}</span>
-      <slot name="metaAction" />
+      <span v-if="$slots.metaAction" class="data-exchange-meta-action">
+        <slot name="metaAction" />
+      </span>
     </div>
     <textarea
       v-model="draft"
@@ -374,6 +380,12 @@ onBeforeUnmount(() => {
 .data-exchange-meta {
   color: var(--muted);
   font-size: 0.75rem;
+}
+
+.data-exchange-meta-action {
+  display: inline-flex;
+  align-items: center;
+  margin-left: auto;
 }
 
 .data-exchange-actions-right {

@@ -28,6 +28,7 @@ const catalog = {
   "common.import": "导入",
   "common.importFile": "导入文件",
   "common.compress": "压缩",
+  "common.compressToLink": "压缩到链接",
   "common.copy": "复制",
   "common.download": "下载",
   "common.exportFile": "导出文件",

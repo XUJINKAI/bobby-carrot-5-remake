@@ -10,6 +10,10 @@ const editorDialog = await readFile(
   new URL("../src/pages/editor/EditorFileDialog.vue", import.meta.url),
   "utf8",
 );
+const settingsPage = await readFile(
+  new URL("../src/pages/settings/SettingsPage.vue", import.meta.url),
+  "utf8",
+);
 const editorStyle = await readFile(
   new URL("../../editor/style.css", import.meta.url),
   "utf8",
@@ -34,6 +38,10 @@ test("数据交换面板使用紧凑信息行和固定操作分组", () => {
   assert.match(panel, /webT\("common\.exportFile"\)/);
   assert.match(
     panel,
+    /props\.publicBaseUrl \? "common\.compressToLink" : "common\.compress"/,
+  );
+  assert.match(
+    panel,
     /data-exchange-compression[\s\S]*payloadSize[\s\S]*<\/label>/,
   );
   assert.match(
@@ -50,13 +58,25 @@ test("数据交换面板使用紧凑信息行和固定操作分组", () => {
   );
 });
 
+test("现有压缩入口生成完整链接", () => {
+  assert.match(editorDialog, /:public-base-url="publicBaseUrl\(\)"/);
+  assert.match(settingsPage, /:public-base-url="publicBaseUrl\(\)"/);
+});
+
 test("Editor 分享面板单独覆盖数据文本区背景", () => {
   assert.match(editorDialog, /class="editor-data-exchange"/);
   assert.match(editorDialog, /#metaAction/);
   assert.match(editorDialog, /class="editor-data-exchange-embed-link"/);
   assert.match(panel, /--data-exchange-text-bg/);
   assert.match(panel, /--data-exchange-action-bg/);
-  assert.match(panel, /<slot name="metaAction" \/>/);
+  assert.match(
+    panel,
+    /class="data-exchange-meta-action"[\s\S]*<slot name="metaAction" \/>/,
+  );
+  assert.match(
+    panel,
+    /\.data-exchange-meta-action\s*\{[^}]*margin-left: auto;/,
+  );
   assert.match(
     editorStyle,
     /\.editor-data-exchange\s*\{[\s\S]*--data-exchange-text-bg: #0b130e;[\s\S]*--data-exchange-action-bg: #0b130e;/,
