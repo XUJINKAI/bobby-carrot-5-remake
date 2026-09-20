@@ -2,9 +2,9 @@ import {
   MapEntityTypeId,
   type Direction,
   type EntityType,
-  type JsonValue,
 } from "@bobby/model";
 import type { Behavior } from "../../world/behavior/Behavior.js";
+import { rotateCarouselVariant } from "./carousel.js";
 
 export const colorSwitchBehavior: Behavior = {
   id: "color-switch-global-toggle",
@@ -113,13 +113,4 @@ function oppositeDirection(direction: Direction): Direction {
     left: "right",
     right: "left",
   }[direction] as Direction;
-}
-
-function rotateCarouselVariant(value: JsonValue | undefined): JsonValue {
-  if (value === "vertical") return "horizontal";
-  if (value === "horizontal") return "vertical";
-  if (value === 4) return 3;
-  if (value === 3) return 2;
-  if (value === 2) return 1;
-  return 4;
 }

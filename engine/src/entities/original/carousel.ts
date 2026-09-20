@@ -42,7 +42,7 @@ const carouselPassage: Behavior = {
       return;
     commands.setState(self.entity.id, {
       ...self.entity.state,
-      variant: rotateCarousel(carouselVariant(self.entity.state?.variant)),
+      variant: rotateCarouselVariant(self.entity.state?.variant),
     });
   },
 };
@@ -112,7 +112,11 @@ function passageResult(
   };
 }
 
-function rotateCarousel(variant: CarouselVariant): CarouselVariant {
+/** Bobby 离开和 Carousel Switch 共用同一组原版顺时针轮转。 */
+export function rotateCarouselVariant(
+  value: JsonValue | undefined,
+): CarouselVariant {
+  const variant = carouselVariant(value);
   if (variant === "vertical") return "horizontal";
   if (variant === "horizontal") return "vertical";
   return {
