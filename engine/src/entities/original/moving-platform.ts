@@ -58,20 +58,25 @@ export const movingPlatformBehavior: Behavior = createMovingPlatformSupportBehav
 
     // 潮流只禁止逆流启动；首格保留 Bobby 的进入方向，后续再尝试随流。
     const actionActive = self.entity.state?.movingActionActive === true;
+    const movementCadence = leafMovementFor(query, self.entity);
+    const launchDeadlineMs = primeDeadlineForHandoff(
+      movementCadence.cellMs,
+      movement?.motion,
+    );
     commands.setState(self.entity.id, {
       ...self.entity.state,
       moving: true,
       runtimeStarted: true,
       movingActionActive: true,
       launchDirection: direction,
+      ...(actionActive ? { launchDeadlineMs } : {}),
     });
     commands.setDirection(self.entity.id, direction);
     if (actionActive) return;
-    const movementCadence = leafMovementFor(query, self.entity);
     commands.startAction(
       createMovingEntityAction(
         self.entity.id,
-        primeDeadlineForHandoff(movementCadence.cellMs, movement?.motion),
+        launchDeadlineMs,
       ),
     );
   },
@@ -103,6 +108,18 @@ export const movingEntityAction: RuntimeActionDefinition = {
     if (entityId === undefined) return "complete";
     const entity = query.entity(entityId);
     if (!entity) return "complete";
+    const launchDeadlineMs = finiteStateNumber(
+      entity.state?.launchDeadlineMs,
+    );
+    if (launchDeadlineMs !== null) {
+      // 堵塞的 Tide 会保留 Action；Bobby 抵达时必须以交接点重置
+      // deadline，不能把之前等待障碍的时间带入新方向。
+      action.state.elapsedMs = launchDeadlineMs;
+      commands.setState(
+        entityId,
+        withoutLaunchDeadline(entity.state),
+      );
+    }
     accrueActionDeadline(action, time);
     if (
       query.motionForEntity(entityId)?.status === "running" ||
@@ -134,7 +151,7 @@ export const movingEntityAction: RuntimeActionDefinition = {
     const windFocusHandoff = "windFocusHandoff" in route &&
       route.windFocusHandoff;
     commands.setState(entityId, {
-      ...withoutLaunchDirection(entity.state),
+      ...withoutLaunchHandoff(entity.state),
       moving: true,
       movingActionActive: true,
       ...(windFocusHandoff ? { windFocusHandoff: route.direction } : {}),
@@ -232,19 +249,27 @@ function stopMovingEntity(
   )
     commands.setState(entity.id, {
       ...(keepAction
-        ? entity.state
-        : withoutLaunchDirection(entity.state)),
+        ? withoutLaunchDeadline(entity.state)
+        : withoutLaunchHandoff(entity.state)),
       moving: false,
       movingActionActive: keepAction,
     });
   return keepAction ? "running" as const : "complete" as const;
 }
 
-function withoutLaunchDirection(
+function withoutLaunchHandoff(
+  state: Readonly<EntityState> | undefined,
+): EntityState {
+  const next = withoutLaunchDeadline(state);
+  delete next.launchDirection;
+  return next;
+}
+
+function withoutLaunchDeadline(
   state: Readonly<EntityState> | undefined,
 ): EntityState {
   const next = { ...(state ?? {}) };
-  delete next.launchDirection;
+  delete next.launchDeadlineMs;
   return next;
 }
 
@@ -257,6 +282,12 @@ function directionState(value: unknown): Direction | null {
       value === "down" ||
       value === "left" ||
       value === "right"
+    ? value
+    : null;
+}
+
+function finiteStateNumber(value: unknown): number | null {
+  return typeof value === "number" && Number.isFinite(value)
     ? value
     : null;
 }

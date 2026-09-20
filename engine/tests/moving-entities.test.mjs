@@ -259,6 +259,62 @@ test("Leaf can launch perpendicular to Tide and follows Tide after the first cel
   assert.equal(sawRedirectedCell, true);
 });
 
+test("Leaf 被 Tide 堵塞的等待时间不影响 Bobby 抵达时的交接", () => {
+  const world = new World(
+    {
+      schemaVersion: 1,
+      width: 3,
+      height: 3,
+      entities: [
+        { type: "grass", variant: "ts-10-1", x: 0, y: 1 },
+        { type: MapEntityTypeId.WATER, x: 1, y: 1 },
+        { type: MapEntityTypeId.WATER, x: 2, y: 1 },
+        { type: MapEntityTypeId.WATER, x: 1, y: 2 },
+        { type: MapEntityTypeId.TIDE, x: 1, y: 1, direction: "down" },
+        { type: MapEntityTypeId.PLANK, x: 1, y: 2 },
+        { type: MapEntityTypeId.LEAF, x: 1, y: 1 },
+        { type: MapEntityTypeId.BOBBY, x: 0, y: 1, direction: "right" },
+      ],
+    },
+    { motionDurationMs: 100 },
+  );
+  const actor = world.query.entitiesWithFact("player")[0];
+  const leaf = world.query.entitiesMatching({
+    kind: "type",
+    value: MapEntityTypeId.LEAF,
+  })[0];
+
+  world.update({ tick: 0, stepMs: 1 });
+  for (let tick = 1; tick <= 5; tick += 1)
+    world.update({ tick, stepMs: CLOUD_MOVEMENT.cellMs });
+  assert.ok(
+    world.actions.active[0].state.elapsedMs > CLOUD_MOVEMENT.cellMs,
+    "应先覆盖 Tide 受阻时保留 Action 并累计 deadline 的场景",
+  );
+
+  assert.equal(move(world, actor.id, "right").moves[0].moved, true);
+  const beforeArrival = world.update({ tick: 6, stepMs: 99 });
+  assert.equal(
+    beforeArrival.motions.some((motion) => motion.entityId === leaf.id),
+    false,
+  );
+  assert.deepEqual(world.entity(leaf.id).anchor, { x: 1, y: 1 });
+
+  const handoff = world.update({ tick: 7, stepMs: 1 });
+  assert.equal(
+    handoff.motions.some(
+      (motion) =>
+        motion.entityId === leaf.id && motion.cause.mechanism === "leaf",
+    ),
+    true,
+  );
+  assert.deepEqual(world.entity(leaf.id).anchor, { x: 2, y: 1 });
+  assert.ok(
+    world.actions.active[0].state.elapsedMs <= 1,
+    "抵达 marker 应按 handoff deadline 重置，不保留堵塞期间的累积时间",
+  );
+});
+
 test("Bobby 逆流登叶不启动该方向，潮流仍保留自动续行", () => {
   const world = new World(
     {
