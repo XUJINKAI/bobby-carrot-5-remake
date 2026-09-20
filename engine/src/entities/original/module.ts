@@ -17,6 +17,10 @@ import type {
   VisualResolveContext,
 } from "../../visual/VisualDefinition.js";
 import {
+  ORIGINAL_AMBIENT_FRAME_MS,
+  originalAmbientPhase,
+} from "../../visual/OriginalTileAnimationTiming.js";
+import {
   defineEntityModule,
   type EntityBehaviorBinding,
   type EntityModule,
@@ -28,7 +32,6 @@ export interface AtlasCell {
   row: number;
 }
 
-const ORIGINAL_AMBIENT_FRAME_MS = 124;
 const ORIGINAL_TILE_SIZE = 48;
 
 const cell = (column: number, row: number): AtlasCell => ({ column, row });
@@ -214,9 +217,7 @@ export function originalAmbientAnimationLayer(
     throw new Error(`原版 ambient 动画必须使用 ta.png：${selector.type}/${selector.id}`);
   }
   const cycleLength = frames.length + 1;
-  const phase =
-    Math.floor(Math.max(0, nowMs) / ORIGINAL_AMBIENT_FRAME_MS) %
-    cycleLength;
+  const phase = originalAmbientPhase(nowMs, cycleLength);
   if (phase === 0) return null;
   const source = frames[phase - 1]!;
   return {
@@ -238,8 +239,6 @@ function originalAmbientSelector(
   let selector: Parameters<typeof originalTileAnimation>[0] | null = null;
   if (type === MapEntityTypeId.WHIRLWIND) {
     selector = { type, id: "ambient" };
-  } else if (type === MapEntityTypeId.WINDMILL) {
-    selector = windmillAnimation(direction ?? "right");
   } else if (type === MapEntityTypeId.WATER && variant === "ripple") {
     selector = { type, id: "ambient", fields: { variant: "ripple" } };
   } else if (type === MapEntityTypeId.WATERFALL) {
@@ -264,15 +263,5 @@ function originalAnimationFrame(
     frameIndex:
       (source.row - 1) * ORIGINAL_TILE_ATLASES.ta.columns + source.column - 1,
     anchor: "fill",
-  };
-}
-
-function windmillAnimation(
-  direction: Direction,
-): Parameters<typeof originalTileAnimation>[0] {
-  return {
-    type: MapEntityTypeId.WINDMILL,
-    id: "ambient",
-    fields: { direction },
   };
 }

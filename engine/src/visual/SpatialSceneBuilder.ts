@@ -22,6 +22,7 @@ import type {
   AmbientVisualState,
   EntityVisualRuntimeState,
   VisualComposition,
+  VisualLayer,
   VisualQuery,
   VisualRenderPass,
   VisualResolveContext,
@@ -67,6 +68,7 @@ export function buildSpatialScene(
   const runtime = options.runtime ?? new Map();
   const passes: Record<VisualRenderPass, RenderItem[]> = {
     world: [],
+    "world-effect": [],
     standing: [],
     effect: [],
   };
@@ -89,14 +91,24 @@ export function buildSpatialScene(
           ? options.resolveVisual(definition, resolveContext)
           : visuals.resolve(definition, resolveContext);
         if (!composition) continue;
-        passes[visuals.renderPassFor(definition)].push({
-          presence,
-          composition,
-          visualX: x + (visualRuntime?.offsetX ?? 0),
-          visualY: y + (visualRuntime?.offsetY ?? 0),
-          depthX: entity.anchor.x + (visualRuntime?.offsetX ?? 0),
-          depthY: entity.anchor.y + (visualRuntime?.offsetY ?? 0),
-        });
+        const layersByPass: Partial<Record<VisualRenderPass, VisualLayer[]>> = {};
+        const defaultPass = visuals.renderPassFor(definition);
+        for (const layer of composition.layers) {
+          const pass = layer.renderPass ?? defaultPass;
+          (layersByPass[pass] ??= []).push(layer);
+        }
+        for (const pass of VISUAL_RENDER_PASSES) {
+          const layers = layersByPass[pass];
+          if (!layers || layers.length === 0) continue;
+          passes[pass].push({
+            presence,
+            composition: { layers },
+            visualX: x + (visualRuntime?.offsetX ?? 0),
+            visualY: y + (visualRuntime?.offsetY ?? 0),
+            depthX: entity.anchor.x + (visualRuntime?.offsetX ?? 0),
+            depthY: entity.anchor.y + (visualRuntime?.offsetY ?? 0),
+          });
+        }
       }
     }
   }
@@ -105,6 +117,7 @@ export function buildSpatialScene(
     worldWidth: source.width,
     worldHeight: source.height,
     world: sortRenderItems(passes.world),
+    worldEffect: sortRenderItems(passes["world-effect"]),
     standing: sortStandingRenderItems(passes.standing),
     effect: sortRenderItems(passes.effect),
     ambientBackground: [],
@@ -112,6 +125,13 @@ export function buildSpatialScene(
     ambientForeground: [],
   };
 }
+
+const VISUAL_RENDER_PASSES: readonly VisualRenderPass[] = [
+  "world",
+  "world-effect",
+  "standing",
+  "effect",
+];
 
 /** EntityStore + SpatialIndex 的 Runtime/Authoring 共用 source adapter。 */
 export function createIndexedSpatialSceneSource(

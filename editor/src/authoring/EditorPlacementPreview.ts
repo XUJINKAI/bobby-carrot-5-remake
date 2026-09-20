@@ -22,6 +22,13 @@ export function createPlacementPreview(base: EditorPreview, plan: EntityPlacemen
     entity: (id) => id === entity.id
       ? entity
       : removed.has(id) ? undefined : base.entities.get(id),
+    entitiesOfType(type) {
+      const entities = base.spatial.entityIdsMatching({ kind: "type", value: type })
+        .filter((id) => !removed.has(id))
+        .map((id) => base.entities.require(id));
+      if (entity.type === type) entities.push(entity);
+      return entities;
+    },
     presencesAt(cell) {
       const presences = base.spatial.presencesAt(cell)
         .filter((presence) => !removed.has(presence.entityId));

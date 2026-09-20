@@ -86,6 +86,8 @@ export class EditorEntityPreviewRenderer {
           entity: (id) => id === visualEntity.id
             ? visualEntity
             : spatialQuery.entity(id),
+          entitiesOfType: (type) => spatialQuery.entitiesOfType(type)
+            .map((entity) => entity.id === visualEntity.id ? visualEntity : entity),
           entitiesWithFact: (fact) => spatialQuery.entitiesWithFact(fact)
             .map((entity) => entity.id === visualEntity.id ? visualEntity : entity),
         }

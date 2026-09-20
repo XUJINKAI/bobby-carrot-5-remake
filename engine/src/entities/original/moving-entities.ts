@@ -142,7 +142,15 @@ const movingEntityAction: RuntimeActionDefinition = {
     if (launchDirection !== null) delete action.state.launchDirection;
     if (entity.direction !== route.direction)
       commands.setDirection(entityId, route.direction);
-    commands.setState(entityId, { ...entity.state, moving: true });
+    commands.setState(entityId, {
+      ...entity.state,
+      moving: true,
+      ...(route.windFocusHandoff
+        ? { windFocusHandoff: route.direction }
+        : {}),
+    });
+    if (route.windFocusHandoff)
+      consumeWindFocusPending(query, commands, route.direction);
     return {
       status: "running",
       intents: [
@@ -281,15 +289,22 @@ function nextRoute(
   query: WorldQueryApi,
   entity: Readonly<EntityInstance>,
   launchDirection: Direction | null = null,
-): { direction: Direction; movement: ActionMovementCadence } | null {
+): {
+  direction: Direction;
+  movement: ActionMovementCadence;
+  windFocusHandoff: boolean;
+} | null {
   const initial = directionState(entity.direction) ?? "right";
+  const windDirections = isCloud(entity.type)
+    ? activeWindDirectionsAt(
+        query,
+        entity.anchor,
+        entity.state?.moving === true ? initial : null,
+      )
+    : [];
   const candidates = isCloud(entity.type)
     ? [
-        ...activeWindDirectionsAt(
-          query,
-          entity.anchor,
-          entity.state?.moving === true ? initial : null,
-        ),
+        ...windDirections,
         ...(entity.state?.moving === true ? [initial] : []),
       ]
     : leafRouteCandidates(query, entity, launchDirection, initial);
@@ -300,7 +315,35 @@ function nextRoute(
   return {
     direction,
     movement: movementFor(query, entity),
+    windFocusHandoff:
+      windDirections.includes(direction) && windFocusPending(query, direction),
   };
+}
+
+function windFocusPending(query: WorldQueryApi, direction: Direction): boolean {
+  return query.entitiesMatching({ kind: "type", value: MapEntityTypeId.WIND_SWITCH }).some(
+    (entity) =>
+      entity.direction === direction &&
+      entity.state?.active === true &&
+      entity.state.windFocusPending === true,
+  );
+}
+
+function consumeWindFocusPending(
+  query: WorldQueryApi,
+  commands: WorldCommandApi,
+  direction: Direction,
+): void {
+  for (const entity of query.entitiesMatching({
+    kind: "type",
+    value: MapEntityTypeId.WIND_SWITCH,
+  })) {
+    if (entity.direction !== direction || entity.state?.windFocusPending !== true) continue;
+    commands.setState(entity.id, {
+      ...entity.state,
+      windFocusPending: false,
+    });
+  }
 }
 
 function leafRouteCandidates(
@@ -424,7 +467,7 @@ function activeWindDirectionsAt(
 ): Direction[] {
   const directions: readonly Direction[] = ["up", "down", "left", "right"];
   return directions.filter((direction) =>
-    direction !== currentDirection && windAppliesAt(query, cell, direction)
+    direction !== currentDirection && windAppliesAt(query, cell, direction, true)
   );
 }
 
@@ -432,18 +475,24 @@ function windAppliesAt(
   query: WorldQueryApi,
   cell: { x: number; y: number },
   direction: Direction,
+  requireReady = false,
 ): boolean {
-  if (!windEnabled(query, direction)) return false;
+  if (!windEnabled(query, direction, requireReady)) return false;
   const windmill = windmillFor(query, direction);
   return windmill !== undefined && insideWindRange(cell, windmill.anchor, direction);
 }
 
-function windEnabled(query: WorldQueryApi, direction: Direction): boolean {
+function windEnabled(
+  query: WorldQueryApi,
+  direction: Direction,
+  requireReady: boolean,
+): boolean {
   return query.entitiesMatching({ kind: "type", value: MapEntityTypeId.WIND_SWITCH }).some(
     (entity) =>
       entity.type === MapEntityTypeId.WIND_SWITCH &&
       entity.direction === direction &&
-      entity.state?.active === true,
+      entity.state?.active === true &&
+      (!requireReady || entity.state.windPending !== true),
   );
 }
 

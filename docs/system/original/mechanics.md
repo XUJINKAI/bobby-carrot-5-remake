@@ -143,21 +143,22 @@ Middle 可以重复多次。三种形态分别使用对应 `variant` 的 `waterf
 - 云可以被风车吹动，直到遇到 Cloud Parking，或撞到不是星空的障碍物
 - 风车有四个方向，由四种开关控制
 - bobby 走到风车开关上，可以切换开关状态
-- bobby 触发 Wind Switch 后，原版用共享的 Camera Focus/Input Lock 把镜头目标切到对应 Windmill，固定 focus countdown 为 64 个 gameplay step（稳态约 1.98 秒），再加上镜头飞行时间。
+- bobby 触发 Wind Switch 后，原版用共享的 Camera Focus/Input Lock 把镜头目标切到对应 Windmill，固定 focus countdown 为 64 个 gameplay step；按 Engine 的原版移动实测墙钟校准约为 1.66 秒，再加上镜头飞行时间。
 - 如果第一朵 Cloud 真正被刚开启的风改向，镜头可继续 handoff 到该 Cloud，并跟随约 64 个 gameplay step，最后再回 Bobby。因此肉眼看到的完整抢镜头过程可能接近 3 秒或更久，但原版没有一个简单的“固定 3 秒”计时器。
 
 Cloud 与 Cloud Parking 视觉由 `color` 选择；Wind Switch 视觉由 `direction + active`
-选择。四个方向分别使用对应 `direction` 的 `windmill/ambient` 动画。
+选择。关闭方向的 Windmill 保持 `ts.png` 静态图，开启后才使用对应 `direction` 的
+`windmill/ambient` 动画。
 
 风车吹出的纵向和横向风场素材分别登记为 `windmill/gust-vertical` 与
 `windmill/gust-horizontal`。
 
-风车吹出的风，起点在风车一半处，并在风车方向上延申3格。
+风车吹出的风，起点在风车一半处，并在风车方向上延伸 3 格。
 
 例如向右的风车（以下使用带小数的坐标，且只标明横轴）：
 风车在第一格（visual坐标0到1），
-则从坐标 0.5 到 3.5，起始依次显示横向风场的三张图，
-然后三张图各自向前循环，形成动画。
+则从坐标 0.5 到 3.5 显示三段横向风场。三段使用同一个共享相位，按
+`gust-horizontal` 的三张图每约 124ms 同步循环。
 
 ### Kite 风筝 / Whirlwind 旋风/龙卷风
 

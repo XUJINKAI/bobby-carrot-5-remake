@@ -168,6 +168,24 @@ Undo 恢复后 VisualRuntime 丢弃当前 transition，并直接从恢复后的 
 
 Web Runtime 的 Original Visual resolver 应按最终确认的原版毫秒节拍计算 phase，而不是把 `time.tick % 4` 当作原版事实。Renderer 的 image layer 支持 `frameWidth + frameHeight + frameIndex`，这项能力仍属于纯表现层。
 
+Windmill 还受同方向 Wind Switch 的状态门控：关闭时始终显示静态 `ts.png`，开启时才按
+`bF` 播放叶片。原版 gameplay paint 在 moving entity 之后、Bobby 之前绘制三段风场；
+三段都读取同一个 `52 + bF`（纵向）或 `55 + bF`（横向）帧。首段从 Windmill 中心
+开始，另外两段沿风向各错开一格，因此整条风场从半格处延伸三格。
+
+Wind Switch 从 Off 切到 On 时设置 `aT=64` 并把 Camera target 指向对应 Windmill；
+Camera 的 `Y()` 使用全局逐步加减速：每个 step 增加 1 source px/step，focus
+期间最高 24 source px/step。只有 Camera 的实际位置 `bI/bJ` 到达目标 `bO/bP` 后，
+`aT` 才开始递减，Cloud 也才允许接受新开启风向的强制接管。这 64 个 gameplay step
+继续锁住普通输入；Engine 与已实测的慢速移动共用 `26ms/step` 墙钟校准，约为
+`64 × 26ms = 1.664s`。第一朵真正被该方向改向的 Cloud
+会接过 Camera target，并把 `aT` 重置为 64；On 切到 Off 只关闭该方向并替换 Switch
+图块，不设置 Camera focus。
+
+原版 `Y()` 分别计算横纵轴速度；Engine 使用全局 Camera 曲线参数，并由较长轴决定
+总行程时间。当前每个逻辑步的加减速幅度为 2 source px；较长轴的进度按目标位移比例
+同时应用到两轴，使斜向镜头转移保持直线路径。
+
 Bonus Coin 的随机门控也已完整恢复：`bE==0` 的四步窗口每步更新 `bH`，窗口结束时 gate 为 true 的稳态概率为 `1/8`；随后 `bE=1/2/3` 三帧各保持 4 step，一次可见闪耀固定约 372ms。
 
 ## 7. Bobby 四方向人物图

@@ -35,6 +35,7 @@ import { tideSwitch } from "./tide-switch.js";
 import { trap } from "./trap.js";
 import { originalVariantModules } from "./variants.js";
 import { windSwitch } from "./wind-switch.js";
+import { windmill } from "./windmill.js";
 
 export const originalEntityModules: readonly EntityModule[] = [
   ...staticSurfaceModules,
@@ -58,6 +59,7 @@ export const originalEntityModules: readonly EntityModule[] = [
   iceBlock,
   carrot,
   egg,
+  windmill,
   ...staticContentModules,
   cloud,
   cloudParking,

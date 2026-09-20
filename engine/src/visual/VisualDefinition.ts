@@ -1,4 +1,4 @@
-import type { Direction } from "@bobby/model";
+import type { Direction, EntityType } from "@bobby/model";
 import type { PresentationFrame } from "../time/PresentationClock.js";
 import type { GlobalState } from "../world/GlobalState.js";
 import type { VisualId } from "../world/entity/EntityDefinition.js";
@@ -12,10 +12,16 @@ import type { WorldOutcomeState } from "../world/outcome/WorldOutcome.js";
 import type { EntityPresence } from "../world/spatial/EntityPresence.js";
 
 export type QuarterTurn = 0 | 1 | 2 | 3;
-export type VisualRenderPass = "world" | "standing" | "effect";
+export type VisualRenderPass =
+  | "world"
+  | "world-effect"
+  | "standing"
+  | "effect";
 
 export interface AtlasVisualLayer {
   kind: "atlas";
+  /** 省略时继承 Entity Visual 的默认 pass。 */
+  renderPass?: VisualRenderPass;
   column: number;
   row: number;
   /** 连续 atlas 源矩形的横向 tile 数；默认 1。 */
@@ -36,6 +42,8 @@ export interface AtlasVisualLayer {
 /** 独立图片、横向 sprite strip 或规则网格 sprite sheet。asset 是语义资源 ID，不是 URL。 */
 export interface ImageVisualLayer {
   kind: "image";
+  /** 省略时继承 Entity Visual 的默认 pass。 */
+  renderPass?: VisualRenderPass;
   asset: string;
   /** sprite 单帧源宽度；省略时可由 frameColumns 推导。 */
   frameWidth?: number;
@@ -62,6 +70,8 @@ export interface ImageVisualLayer {
 /** 少量程序化视觉使用的通用 Canvas layer。 */
 export interface CanvasVisualLayer {
   kind: "canvas";
+  /** 省略时继承 Entity Visual 的默认 pass。 */
+  renderPass?: VisualRenderPass;
   draw(
     context: CanvasRenderingContext2D,
     x: number,
@@ -99,6 +109,7 @@ export interface VisualQuery {
   inBounds(cell: CellPosition): boolean;
   presencesAt(cell: CellPosition): readonly EntityPresence[];
   entity(id: EntityId): Readonly<EntityInstance> | undefined;
+  entitiesOfType(type: EntityType): readonly Readonly<EntityInstance>[];
   entitiesWithFact(fact: string): readonly Readonly<EntityInstance>[];
 }
 

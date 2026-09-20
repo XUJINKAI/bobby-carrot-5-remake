@@ -160,7 +160,7 @@ public final class CloudWind {
 
     /**
      * P() 在被跟踪 Cloud 每次移动后都会更新 Camera target，并在 `aT > 1` 时减一。
-     * 64 gameplay step 约 1.98s；实际观感还要加镜头飞到 Windmill、转移到 Cloud、
+     * Engine 按原版移动实测墙钟把 64 gameplay step 校准为约 1.66s；实际观感还要加镜头飞到 Windmill、转移到 Cloud、
      * 最后回 Bobby 的平滑移动时间，所以不能把“约 3 秒”当成固定 timer 常量。
      */
     void followTrackedCloudStep(int movingEntityIndex, int pixelX, int pixelY) {

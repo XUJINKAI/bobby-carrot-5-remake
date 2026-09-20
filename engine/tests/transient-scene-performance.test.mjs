@@ -29,6 +29,7 @@ test("瞬态特效只复制受影响的绘制层，结束与倒帧保持场景�
     worldWidth: 1,
     worldHeight: 1,
     world: Object.freeze([]),
+    worldEffect: Object.freeze([]),
     standing: Object.freeze([]),
     effect: Object.freeze([]),
   };
@@ -51,6 +52,7 @@ test("瞬态特效只复制受影响的绘制层，结束与倒帧保持场景�
   emit("world", 0);
   const first = append();
   assert.notEqual(first.world, scene.world);
+  assert.equal(first.worldEffect, scene.worldEffect);
   assert.equal(first.standing, scene.standing);
   assert.equal(first.effect, scene.effect);
   emit("world", 0);

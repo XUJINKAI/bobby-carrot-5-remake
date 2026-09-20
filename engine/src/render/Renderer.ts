@@ -75,6 +75,13 @@ export class Renderer {
         deviceScale,
         bounds,
       );
+    this.drawPass(
+      context,
+      scene.worldEffect ?? [],
+      camera,
+      deviceScale,
+      bounds,
+    );
     this.drawPass(context, scene.standing, camera, deviceScale, bounds);
     this.drawPass(context, scene.effect, camera, deviceScale, bounds);
     for (const callout of scene.callouts ?? [])

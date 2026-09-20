@@ -51,6 +51,7 @@ test("40×40 地图只提交视口内图块，平移和插值位置使用同一�
     worldWidth: 40,
     worldHeight: 40,
     world,
+    worldEffect: [],
     standing: [],
     effect: [],
     callouts: [],
@@ -74,6 +75,40 @@ test("40×40 地图只提交视口内图块，平移和插值位置使用同一�
   draws.length = 0;
   renderer.render(scene, camera, viewport);
   assert.equal(draws.length, 1);
+});
+
+test("world-effect 固定绘制在静态世界之后和站立 Entity 之前", () => {
+  const { context, images } = fixture();
+  const renderer = new Renderer({ getContext: () => context }, images);
+  const camera = new Camera();
+  camera.setViewport(96, 96);
+  const order = [];
+  const item = (name) => ({
+    presence: { entityId: 1, cell: { x: 0, y: 0 }, facts: [], stackOrder: 0 },
+    composition: {
+      layers: [{
+        kind: "canvas",
+        draw: () => order.push(name),
+      }],
+    },
+    visualX: 0,
+    visualY: 0,
+    depthX: 0,
+    depthY: 0,
+  });
+  renderer.render({
+    worldWidth: 1,
+    worldHeight: 1,
+    world: [item("world")],
+    worldEffect: [item("world-effect")],
+    standing: [item("standing")],
+    effect: [item("effect")],
+    ambientBackground: [],
+    callouts: [],
+    ambientForeground: [],
+  }, camera, viewport);
+
+  assert.deepEqual(order, ["world", "world-effect", "standing", "effect"]);
 });
 
 test("大图、偏移和帧尺寸按实际像素范围裁剪，Canvas 回调保留执行", () => {
@@ -151,6 +186,7 @@ test("屏幕环境层可以裁剪在地图可见矩形内", () => {
     worldWidth: 1,
     worldHeight: 1,
     world: [],
+    worldEffect: [],
     standing: [],
     effect: [],
     ambientBackground: [],

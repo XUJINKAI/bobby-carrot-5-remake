@@ -1,3 +1,4 @@
+import type { EntityType } from "@bobby/model";
 import type { EntityStore } from "../world/entity/EntityStore.js";
 import type {
   CellPosition,
@@ -25,6 +26,11 @@ export class SpatialVisualQuery implements VisualQuery {
 
   entity(id: EntityId): Readonly<EntityInstance> | undefined {
     return this.entities.get(id);
+  }
+
+  entitiesOfType(type: EntityType): readonly Readonly<EntityInstance>[] {
+    return this.spatial.entityIdsMatching({ kind: "type", value: type })
+      .map((id) => this.entities.require(id));
   }
 
   entitiesWithFact(fact: string): readonly Readonly<EntityInstance>[] {

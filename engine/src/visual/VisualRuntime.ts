@@ -611,7 +611,10 @@ export class VisualRuntime {
       if (!composition) continue;
       const pass = transient.definition.renderPass ?? "effect";
       // 基础场景已排序；只有实际追加特效的 pass 才需要复制和重排。
-      const items = passes[pass] ?? (passes[pass] = [...scene[pass]]);
+      const sceneItems = pass === "world-effect"
+        ? scene.worldEffect
+        : scene[pass];
+      const items = passes[pass] ?? (passes[pass] = [...sceneItems]);
       items.push({
         presence: {
           entityId: -transient.id,
@@ -626,11 +629,20 @@ export class VisualRuntime {
         depthY: transient.y,
       });
     }
-    if (!passes.world && !passes.standing && !passes.effect) return scene;
+    if (
+      !passes.world &&
+      !passes["world-effect"] &&
+      !passes.standing &&
+      !passes.effect
+    )
+      return scene;
     return {
       worldWidth: scene.worldWidth,
       worldHeight: scene.worldHeight,
       world: passes.world ? sortRenderItems(passes.world) : scene.world,
+      worldEffect: passes["world-effect"]
+        ? sortRenderItems(passes["world-effect"])
+        : scene.worldEffect,
       standing: passes.standing
         ? sortStandingRenderItems(passes.standing)
         : scene.standing,
