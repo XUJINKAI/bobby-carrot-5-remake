@@ -416,7 +416,11 @@ function canEnterMovingDomain(
 ): boolean {
   if (!query.inBounds(target)) return false;
   const domainFact = entity.type === MapEntityTypeId.LEAF ? "water" : "sky";
-  if (!query.hasFactAt(target, domainFact)) return false;
+  // 原版分别读取 terrain 与 object；Beanstalk 等 contact-cover 不应隐藏底层移动域。
+  if (!query.allPresencesAt(target).some((presence) =>
+    presence.facts.includes(domainFact)
+  ))
+    return false;
   if (movingSupportOccupiedAt(query, entity, target, direction)) return false;
 
   if (entity.type === MapEntityTypeId.LEAF) {

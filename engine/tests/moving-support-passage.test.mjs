@@ -43,6 +43,32 @@ test("Leaf stops before an occupied water cell", () => {
   assert.equal(world.actions.active.length, 0);
 });
 
+test("Leaf 可经过覆盖水面的 Beanstalk", () => {
+  const world = new World({
+    schemaVersion: 1,
+    width: 3,
+    height: 1,
+    entities: [
+      { type: MapEntityTypeId.WATER, x: 0, y: 0 },
+      { type: MapEntityTypeId.WATER, x: 1, y: 0 },
+      { type: MapEntityTypeId.WATER, x: 2, y: 0 },
+      { type: MapEntityTypeId.TIDE, x: 0, y: 0, direction: "right" },
+      { type: MapEntityTypeId.LEAF, x: 0, y: 0, stackOrder: 1 },
+      { type: MapEntityTypeId.BEANSTALK, x: 1, y: 0, stackOrder: 1 },
+    ],
+  });
+  const leaf = world.query.entitiesMatching({
+    kind: "type",
+    value: MapEntityTypeId.LEAF,
+  })[0];
+
+  world.update({ tick: 1, stepMs: 1 });
+  world.update({ tick: 2, stepMs: CLOUD_MOVEMENT.cellMs });
+
+  assert.deepEqual(world.entity(leaf.id).anchor, { x: 1, y: 0 });
+  assert.equal(world.entity(leaf.id).state?.moving, true);
+});
+
 test("Cloud stops before Plank but may enter Cloud Grid infrastructure", () => {
   const world = new World({
     schemaVersion: 1,
