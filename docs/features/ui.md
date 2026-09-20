@@ -515,9 +515,13 @@ EDIT MODE                                  PLAY TEST
                                            TopBar: ■ Stop  ↻ Restart
 ```
 
-编辑态 TopBar 上下文区域提供地图名称、Undo / Redo、Play Test 和文件入口；BottomBar 展示 Palette、Surface、Inspector 与关卡信息入口。Play Test 保留 Editor TopBar，BottomBar 切换为 Replay 录制与屏幕摇杆。
+编辑态 TopBar 上下文区域提供地图名称、Undo / Redo、Play Test 和文件入口；BottomBar 展示 Palette、Surface、Inspector 与关卡信息入口。Play Test 保留 Editor TopBar，BottomBar 切换为 Replay 录制、草稿地图状态与屏幕摇杆。
 
-Editor Play Test 在当前工作区中切换为正式 GameStage。Stop 销毁临时 Game 和 InputController，并回到相同 Draft。运行时状态不反写 Draft。
+Editor Play Test 在当前工作区中切换为与 Explore / Import 共用的正式 GameStage，
+并使用同一自由 Camera、Gameplay HUD、Engine Input 和地图音乐。Stop 销毁临时
+Game 和 InputController，并回到相同 Draft。运行时状态不反写 Draft。
+Play Test 使用 `/edit/test` 子路由和 Editor autosave 副本；直接打开、刷新以及浏览器
+前进/后退都通过同一路由恢复对应页面。
 
 移动端 Editor 使用 Drawer：
 

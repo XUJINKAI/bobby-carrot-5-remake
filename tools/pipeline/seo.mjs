@@ -51,6 +51,7 @@ function buildPublicRoutes() {
     requireStaticRoute("/adventure/chapters"),
     requireStaticRoute("/adventure/night-train"),
     requireStaticRoute("/edit"),
+    requireStaticRoute("/edit/test"),
     requireStaticRoute("/embed"),
     requireStaticRoute("/settings"),
     requireStaticRoute("/import/v1"),

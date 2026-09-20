@@ -17,5 +17,12 @@ const catalog = {
   "editor.redoPlay": "Redo Play Test",
   "editor.issueCount": "{count} issues",
   "editor.copySuffix": "Copy",
+  "editor.untitled": "Untitled map",
+  "editor.playCompleted": "Completed",
+  "editor.playFailed": "Failed",
+  "editor.playCompletedDetail": "The test level is complete. Restart it or return to editing.",
+  "editor.playFailedDetail": "The test level failed. Restart it or return to editing.",
+  "editor.retryPlay": "Restart",
+  "editor.returnToEdit": "Return to editing",
 } satisfies Record<EditorTranslationKey, string>;
 export default catalog;

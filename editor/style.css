@@ -210,7 +210,6 @@
     crosshair;
 }
 .editor-map-shell.playing canvas {
-  width: 100% !important;
   height: 100% !important;
   box-shadow: none;
   cursor: default;
@@ -218,9 +217,8 @@
 .editor-body.playing {
   grid-template-columns: minmax(0, 1fr);
 }
-.editor-map-shell.playing .editor-game-canvas-layer > canvas {
+.editor-map-shell.playing .editor-game-stage canvas {
   display: block;
-  width: 100%;
   height: 100%;
   touch-action: none;
 }

@@ -16,6 +16,13 @@ const catalog = {
   "editor.redoPlay": "Redo Play Test",
   "editor.issueCount": "共 {count} 个问题",
   "editor.copySuffix": "副本",
+  "editor.untitled": "未命名地图",
+  "editor.playCompleted": "已完成",
+  "editor.playFailed": "失败",
+  "editor.playCompletedDetail": "测试关卡已完成，可以重新开始或返回编辑。",
+  "editor.playFailedDetail": "测试关卡未通过，可以重新开始或返回编辑。",
+  "editor.retryPlay": "重新开始",
+  "editor.returnToEdit": "返回编辑",
 } as const;
 export type EditorTranslationKey = keyof typeof catalog;
 export default catalog;

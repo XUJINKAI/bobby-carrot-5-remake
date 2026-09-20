@@ -14,6 +14,7 @@ import {
 } from "./buttonFocusPolicy.js";
 import {
   NOOP_CONTROLLER,
+  type NavigateOptions,
   type PageContext,
   type PageController,
 } from "./pageContracts.js";
@@ -116,9 +117,14 @@ export class BobbyApp {
     this.controller.localeChanged?.();
   };
 
-  private readonly navigate = (path: string): void => {
+  private readonly navigate = (
+    path: string,
+    options: NavigateOptions = {},
+  ): void => {
     const target = new URL(path.replace(/^\/+/, ""), document.baseURI);
-    history.pushState(null, "", `${target.pathname}${target.search}${target.hash}`);
+    const url = `${target.pathname}${target.search}${target.hash}`;
+    if (options.replace) history.replaceState(options.state ?? null, "", url);
+    else history.pushState(options.state ?? null, "", url);
     void this.renderRoute();
   };
 
@@ -209,11 +215,13 @@ export class BobbyApp {
       this.controller = renderSettingsPage(context);
       return;
     }
-    if (path === "/edit") {
-      const { renderEditorPage } = await loadEditorPage();
+    if (path === "/edit" || path === "/edit/test") {
+      const { renderEditorPage, renderEditorTestPage } = await loadEditorPage();
       if (!this.canCommitRoute(generation)) return;
       if (!(await this.activateI18nRoute(generation, loadEditorPage))) return;
-      this.controller = await renderEditorPage(this.pageContext());
+      this.controller = path === "/edit/test"
+        ? await renderEditorTestPage(this.pageContext())
+        : await renderEditorPage(this.pageContext());
       return;
     }
     if (!path.startsWith("/adventure")) {

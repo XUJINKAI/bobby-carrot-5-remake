@@ -29,12 +29,13 @@ import type {
   MapMusic,
 } from "@bobby/model";
 import type { EditorLeftPanel, EditorMetadataField } from "./useEditorPage.js";
+import { webT } from "../../i18n/webI18n.js";
 import EditorCanvas from "./EditorCanvas.vue";
 import EditorInspector from "./EditorInspector.vue";
 import EditorLevelInfo from "./EditorLevelInfo.vue";
 import EditorPalette from "./EditorPalette.vue";
 import EditorSurface from "./EditorSurface.vue";
-import ReplayPanel from "../game/ReplayPanel.vue";
+import GameStage from "../game/GameStage.vue";
 
 defineProps<{
   level: Readonly<EditorMap>;
@@ -62,7 +63,7 @@ defineProps<{
   leftOpen: boolean;
   rightPanel: "inspector" | "level" | null;
   playing: boolean;
-  playComplete: boolean;
+  playResult: "complete" | "death" | null;
   images: ImageManager;
   environment: EngineEnvironment;
   catalog: EntityCatalog;
@@ -146,7 +147,6 @@ const emit = defineEmits<{
     <section
       class="editor-map-shell"
       :class="{ playing }"
-      data-game-stage
     >
       <EditorCanvas
         v-show="!playing"
@@ -167,22 +167,46 @@ const emit = defineEmits<{
         @secondary-select="emit('secondarySelect', $event)"
         @resize="emit('resize', $event)"
       />
-      <div v-show="playing" class="editor-game-canvas-layer">
-        <canvas data-editor-game-canvas />
-        <div data-editor-game-dialog-root />
-        <div v-if="playComplete" class="result-overlay editor-play-result">
-          <div class="result-card">
-            <div class="result-kicker">PLAY TEST</div>
-            <h2>通关</h2>
-            <p>测试关卡已经完成。可以立即重玩，或返回编辑器继续调整地图。</p>
-            <div class="result-actions">
-              <button class="primary-btn" type="button" @click="emit('playRestart')">重玩</button>
-              <button class="ghost-btn" type="button" @click="emit('playStop')">返回编辑</button>
+      <GameStage
+        v-show="playing"
+        class="editor-game-stage"
+        canvas-id="editor-game"
+        :show-replay-panel="playing"
+        :show-builtin-replay="false"
+      >
+        <template #result>
+          <div v-if="playResult" class="result-overlay editor-play-result">
+            <div class="result-card">
+              <div
+                class="result-kicker"
+                :class="{ danger: playResult === 'death' }"
+              >PLAY TEST</div>
+              <h2>
+                {{ playResult === "complete"
+                  ? webT("editor.playCompleted")
+                  : webT("editor.playFailed") }}
+              </h2>
+              <p>
+                {{ playResult === "complete"
+                  ? webT("editor.playCompletedDetail")
+                  : webT("editor.playFailedDetail") }}
+              </p>
+              <div class="result-actions">
+                <button
+                  class="primary-btn"
+                  type="button"
+                  @click="emit('playRestart')"
+                >{{ webT("editor.retryPlay") }}</button>
+                <button
+                  class="ghost-btn"
+                  type="button"
+                  @click="emit('playStop')"
+                >{{ webT("editor.returnToEdit") }}</button>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
-      <ReplayPanel v-if="playing" :show-builtin="false" />
+        </template>
+      </GameStage>
     </section>
     <EditorInspector
       v-show="!playing && rightPanel === 'inspector'"
@@ -240,18 +264,10 @@ const emit = defineEmits<{
 .editor-body.playing {
   grid-template-columns: minmax(0, 1fr);
 }
-.editor-game-canvas-layer {
+.editor-game-stage {
   position: absolute;
   inset: 0;
   min-width: 0;
-}
-.editor-game-canvas-layer > canvas[data-editor-game-canvas] {
-  width: calc(100% - var(--engine-gameplay-right-inset, 0px)) !important;
-}
-@media (min-width: 621px) {
-  .editor-map-shell.replay-panel-open .editor-game-canvas-layer {
-    left: 330px;
-  }
 }
 @media (max-width: 1100px) and (min-width: 821px) {
   .editor-body.palette-hidden {

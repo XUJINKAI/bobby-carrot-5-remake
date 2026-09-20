@@ -76,7 +76,10 @@ import {
   prepareAdventureGameplayLevel,
 } from "./adventurePurchase.js";
 import { resolveGameplayHudConfig } from "./gameplayHudConfig.js";
-import { mapStatusIndicator } from "./mapStatusIndicator.js";
+import {
+  gameMapVerificationStatus,
+  mapStatusIndicator,
+} from "./mapStatusIndicator.js";
 import { webT } from "../../i18n/webI18n.js";
 import { gameplayCameraOptions } from "./gameplayCameraOptions.js";
 
@@ -680,7 +683,12 @@ function gameShellConfig(
           ]
         : [],
       leadingIndicators: [
-        mapStatusIndicator(mode, verified, mapId, mapName, mapMeta),
+        mapStatusIndicator(
+          gameMapVerificationStatus(mode, verified),
+          mapId,
+          mapName,
+          mapMeta,
+        ),
       ],
       trailing: [
         {

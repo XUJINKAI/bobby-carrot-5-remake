@@ -14,7 +14,7 @@ beforeAll(async () => {
 
 test("地图状态在没有作者和注记时使用 Minus Circle", () => {
   assert.deepEqual(
-    mapStatusIndicator("explore", true, "original/1-1", "第一关"),
+    mapStatusIndicator("verified", "original/1-1", "第一关"),
     {
       id: "map-status",
       icon: "map-status",
@@ -35,8 +35,7 @@ test("地图状态在没有作者和注记时使用 Minus Circle", () => {
 
 test("地图状态用 Caret Circle Up 承载作者与长注记", () => {
   const indicator = mapStatusIndicator(
-    "explore",
-    false,
+    "unverified",
     "imported/custom-level",
     "测试地图",
     {
@@ -68,13 +67,12 @@ test("地图状态用 Caret Circle Up 承载作者与长注记", () => {
 
 test("Adventure 状态明确通关验证来自自由探索模式", () => {
   assert.equal(
-    mapVerificationText("adventure", true),
+    mapVerificationText("verified-explore"),
     "已在自由探索中验证",
   );
   assert.equal(
     mapStatusIndicator(
-      "adventure",
-      false,
+      "unverified",
       "original/1-1",
       "空白元信息",
       {
@@ -87,6 +85,17 @@ test("Adventure 状态明确通关验证来自自由探索模式", () => {
   );
 });
 
+test("编辑器草稿使用独立地图状态", () => {
+  assert.equal(mapVerificationText("editor-draft"), "编辑器草稿");
+  assert.equal(
+    mapStatusIndicator(
+      "editor-draft",
+      "editor/draft",
+      "Untitled Bobby Level",
+    ).tone,
+    "muted",
+  );
+});
 
 test("地图状态 Tooltip 区分鼠标 hover 与点击固定状态", () => {
   const source = readFileSync(

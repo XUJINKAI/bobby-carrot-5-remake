@@ -198,8 +198,21 @@ EditorMap
 ```
 
 Runtime 不反写 Draft。Stop 销毁临时 Game/Input 后恢复 Editor viewport。
-Play Test 保留 Editor TopBar，BottomBar 切换为 Replay 录制与屏幕摇杆。Replay 面板复用
-Explore 的正式录制、播放和导出控制，但不提供与当前 Draft 无关的内置过法入口。
+Editor 在进入 Play Test 前把当前 Draft 写入 autosave，再导航到 `/edit/test`。该路由
+每次从 autosave 读取一份独立副本，因此可以直接打开、刷新，也可以通过浏览器
+前进/后退在 Editor 与 Play Test 之间切换。
+Play Test 保留 Editor TopBar，复用 Explore / Import 的正式 GameStage、自由
+Camera、Gameplay HUD、Engine Input 与地图音乐选曲。BottomBar 切换为 Replay
+录制、草稿地图状态与屏幕摇杆。Replay 面板复用 Explore 的正式录制、播放和
+导出控制，但不提供与当前 Draft 无关的内置过法入口。离开 Play Test 时 Editor
+停止当前地图音乐，恢复编辑态。
+
+正式 Editor 路由：
+
+```text
+/edit
+/edit/test
+```
 
 ## 编辑交互
 

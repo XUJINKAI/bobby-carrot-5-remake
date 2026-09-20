@@ -14,6 +14,10 @@ import {
   runStandaloneEmbedSmoke,
   startStandaloneEmbedHost,
 } from "./browser-smoke/embed-standalone.mjs";
+import {
+  runEditorPlaySmoke,
+  runEditorSourceSmoke,
+} from "./browser-smoke/editor.mjs";
 import { root } from "../lib/fs.mjs";
 import { serveDistRequest } from "../lib/static-server.mjs";
 const browserEnvironment = { ...process.env };
@@ -241,10 +245,23 @@ try {
     'id="editor-share"',
     'data-palette-type="egg"',
   ]);
-  await interactiveEditorSourceSmoke(
+  await runEditorSourceSmoke(
+    runBrowserEval,
+    lastJsonLine,
     `${origin}/edit#map=engine-lab/00-intro`,
     { type: "all", conditions: [{ type: "exit" }] },
   );
+  await runEditorPlaySmoke(
+    runBrowserEval,
+    lastJsonLine,
+    `${origin}/edit#map=engine-lab/00-intro`,
+  );
+  await smoke(`${origin}/edit/test`, [
+    "data-game-stage",
+    'id="editor-game"',
+    'id="map-status"',
+    "editor/draft",
+  ]);
   const { createAdventureSave, serializeAdventureSave } = await import(
     "../../adventure/dist/index.js"
   );
@@ -501,45 +518,6 @@ async function interactiveDataExchangeSmoke(url) {
     throw new Error(`Unexpected home import smoke result: ${JSON.stringify(payload)}`);
 }
 
-async function interactiveEditorSourceSmoke(url, expectedWin) {
-  const script = `
-(async () => {
-  const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-  for (let i = 0; i < 120 && !document.querySelector('#editor-share'); i += 1)
-    await delay(50);
-  const shareButton = document.querySelector('#editor-share');
-  if (!shareButton) throw new Error('missing editor share button');
-  shareButton.click();
-  let value = '';
-  for (let i = 0; i < 120 && !value; i += 1) {
-    await delay(50);
-    value = document.querySelector('.editor-dialog .data-exchange-text')?.value ?? '';
-  }
-  const compressed = /\\/import\\/v1#[A-Za-z0-9_-]+$/.test(value);
-  const checkbox = document.querySelector('.data-exchange-check input[type="checkbox"]');
-  if (checkbox?.checked) checkbox.click();
-  for (let i = 0; i < 120 && !value.trimStart().startsWith('{'); i += 1) {
-    await delay(50);
-    value = document.querySelector('.editor-dialog .data-exchange-text')?.value ?? '';
-  }
-  return JSON.stringify({
-    hash: location.hash,
-    compressed,
-    win: JSON.parse(value).rules?.win,
-  });
-})()
-`;
-  const result = await runBrowserEval(url, script);
-  if (result.status !== 0)
-    throw new Error(`Interactive editor source smoke failed: ${result.stderr || result.stdout}`);
-  const payload = lastJsonLine(result.stdout);
-  if (
-    payload.hash ||
-    !payload.compressed ||
-    JSON.stringify(payload.win) !== JSON.stringify(expectedWin)
-  )
-    throw new Error(`Unexpected editor source result: ${JSON.stringify(payload)}`);
-}
 async function runBrowserEval(url, script) {
   const profile = createBrowserProfile();
   const child = spawn(

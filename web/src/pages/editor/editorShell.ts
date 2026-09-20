@@ -11,6 +11,7 @@ import {
   configureShell,
   type ShellAction,
   type ShellConfig,
+  type ShellIndicator,
 } from "../../shell/shellBridge.js";
 import { webT } from "../../i18n/webI18n.js";
 
@@ -20,6 +21,7 @@ export interface EditorPlayShellState {
   replayReady: boolean;
   replayOpen: boolean;
   screenControlEnabled: boolean;
+  mapIndicator: ShellIndicator | null;
 }
 
 const EMPTY_PLAY_STATE: EditorPlayShellState = {
@@ -28,6 +30,7 @@ const EMPTY_PLAY_STATE: EditorPlayShellState = {
   replayReady: false,
   replayOpen: false,
   screenControlEnabled: false,
+  mapIndicator: null,
 };
 
 export function configureEditorShell(
@@ -188,6 +191,8 @@ export function editorShellConfig(
             },
           ],
       info: shellIssueInfo(issues),
+      leadingIndicators:
+        playing && playState.mapIndicator ? [playState.mapIndicator] : [],
       trailing: playing
         ? [
             {
