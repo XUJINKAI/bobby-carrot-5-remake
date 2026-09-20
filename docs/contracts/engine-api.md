@@ -60,6 +60,9 @@ const { game, input, dialog } = runtime;
 ```
 
 宿主销毁 session 时只需要 `runtime.destroy()`。也可以直接创建 `Game`，但公开能力仍与同一 façade 保持一致。
+runtime 内部创建的 `AudioRuntime` 会随 session 一起销毁；通过 `audio` 注入的
+`AudioBackend` 由宿主持有，销毁 session 不会停止或销毁该实例。跨页面宿主可以保留当前
+音乐，并在进入下一产品场景时重新选曲。
 
 ## 混合时钟
 

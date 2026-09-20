@@ -634,7 +634,8 @@ export class Game {
     this.gameplayHud?.destroy();
     this.presentation.destroy();
     this.debugControls.destroy();
-    this.music.stop();
+    // AudioBackend 可能由宿主跨页面共享；Game 只在存活期间负责地图内选曲。
+    // 外部音频的后续播放状态由持有它的宿主决定。
   }
 
   private consumeWorldDeltas(deltas: readonly WorldDelta[]): void {

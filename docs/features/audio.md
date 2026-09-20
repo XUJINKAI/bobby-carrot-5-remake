@@ -29,7 +29,7 @@ assets/audio/original/
 - 短 crossfade，并在浏览器空闲期预加载当前曲目的另一风格；
 - 音乐和音效 gain，允许超过 `1.0`（100%）。
 
-`createGameplayRuntime()` 未显式传入 audio 时会自行创建并销毁 `AudioRuntime`，因此 Engine 仍满足“给一张 LevelMap 和少量配置即可独立运行”的原则。宿主如果需要跨页面共享音乐状态，也可以注入实现 `AudioBackend` 的 Engine audio 实例；runtime 不拥有外部注入实例的生命周期。
+`createGameplayRuntime()` 未显式传入 audio 时会自行创建并销毁 `AudioRuntime`，因此 Engine 仍满足“给一张 LevelMap 和少量配置即可独立运行”的原则。宿主如果需要跨页面共享音乐状态，也可以注入实现 `AudioBackend` 的 Engine audio 实例；runtime 不拥有外部注入实例的生命周期，销毁 session 时也不会停止该实例当前播放的音乐。宿主在进入其它产品场景后按需选择下一首曲目。
 
 `LevelMusicController` 负责一局地图的基础曲目、机关覆盖与终局曲目。`won / dead` 分别选择
 一次性 `cleared / death`；Restart、Undo 与 Replay 恢复游玩状态时重新选择当前地图音乐。
