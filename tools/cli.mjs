@@ -17,7 +17,7 @@ if (group === "original") {
     run(process.execPath, ["tools/original/adapt.mjs"]);
     run(process.execPath, ["tools/original/adventure-catalog.mjs"]);
   } else if (action === "prepare") {
-    run(tscCommand(), ["-b", "model", "--force"]);
+    run(tscCommand(), ["-b", "model"]);
     run(process.execPath, [fileURLToPath(import.meta.url), "original", "extract"]);
     run(process.execPath, [fileURLToPath(import.meta.url), "original", "decode"]);
     run(process.execPath, [fileURLToPath(import.meta.url), "original", "adapt"]);
@@ -33,7 +33,7 @@ if (group === "original") {
   } else throw new Error("用法：node tools/cli.mjs schema examples [entity-type]");
 } else if (group === "assets") {
   // 资产模块在加载时就导入 Model；冷启动必须先生成其包入口。
-  run(tscCommand(), ["-b", "model", "--force"]);
+  run(tscCommand(), ["-b", "model"]);
   const { rebuildAssets, prepareAssets } = await import("./pipeline/assets.mjs");
   const options = {
     includeDevCollections: process.argv.includes("--dev"),
@@ -44,9 +44,10 @@ if (group === "original") {
 } else if (group === "dev") run(process.execPath, ["tools/pipeline/dev.mjs"]);
 else if (group === "build") run(process.execPath, ["tools/pipeline/build.mjs"]);
 else if (group === "preview") run(process.execPath, ["tools/pipeline/dev.mjs", "web", "--static", "--no-build"]);
-else if (group === "test") run(process.execPath, ["tools/pipeline/test.mjs"]);
+else if (group === "test")
+  run(process.execPath, ["tests/run.mjs", ...process.argv.slice(3)]);
 else if (group === "verify" && action === "browser")
-  run(process.execPath, ["tools/pipeline/browser-smoke.mjs"]);
+  run(process.execPath, ["--test", "tests/smoke/browser/browser.test.mjs"]);
 else if (group === "verify") run(process.execPath, ["tools/pipeline/verify.mjs"]);
 else if (group === "clean") run(process.execPath, ["tools/pipeline/clean.mjs"]);
 else throw new Error("用法：node tools/cli.mjs dev|assets|build|preview|schema|test|verify|clean");

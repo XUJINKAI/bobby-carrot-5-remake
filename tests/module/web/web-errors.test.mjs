@@ -1,0 +1,236 @@
+import assert from "node:assert/strict";
+import {
+  EXCHANGE_ERROR_CODES,
+  ExchangeError,
+  parseExchangeMap,
+  decodeBase64Url,
+} from "@bobby/exchange";
+import { beforeAll, test } from "vitest";
+import {
+  getWebLocale,
+  initializeWebI18n,
+  resolveWebText,
+  setWebI18nRouteScopes,
+  setWebLocale,
+} from "../../../web/src/i18n/webI18n.ts";
+import {
+  WEB_ERROR_CODES,
+  WebError,
+} from "../../../web/src/errors/errorCodes.ts";
+import {
+  errorDisplayText,
+  localizedErrorText,
+} from "../../../web/src/errors/errorPresentation.ts";
+import { requireImportedJson } from "../../../web/src/services/import/importPipeline.ts";
+import { parseAdventureProfileExchange } from "../../../web/src/storage/adventureSaveStorage.ts";
+import {
+  parseExploreCollectionExchange,
+} from "../../../web/src/storage/exploreProgressStorage.ts";
+import {
+  loadReplayAsset,
+  parseReplayText,
+  saveReplayAsset,
+} from "../../../web/src/pages/game/replayAssets.ts";
+
+beforeAll(async () => {
+  await initializeWebI18n("zh-CN");
+  await setWebI18nRouteScopes(["game"]);
+});
+
+test("所有预期 Web 错误码集中登记且都有本地化映射", () => {
+  const webCodes = Object.values(WEB_ERROR_CODES).flatMap((group) =>
+    Object.values(group),
+  );
+  const exchangeCodes = Object.values(EXCHANGE_ERROR_CODES);
+  const codes = [...webCodes, ...exchangeCodes];
+  assert.equal(new Set(codes).size, codes.length);
+  assert.ok(codes.length >= 15);
+  for (const code of webCodes)
+    assert.ok(localizedErrorText(new WebError(code)), `missing error mapping: ${code}`);
+  for (const code of exchangeCodes)
+    assert.ok(
+      localizedErrorText(new ExchangeError(code)),
+      `missing error mapping: ${code}`,
+    );
+});
+
+test("Data Exchange 错误保存语义码并随 locale 重新本地化", async () => {
+  let error;
+  try {
+    decodeBase64Url("%");
+  } catch (caught) {
+    error = caught;
+  }
+  assert.ok(error instanceof ExchangeError);
+  assert.equal(error.code, EXCHANGE_ERROR_CODES.invalidPayload);
+  assert.equal(error.message, EXCHANGE_ERROR_CODES.invalidPayload);
+  assert.equal(resolveWebText(errorDisplayText(error)), "数据 Payload 的 Base64 编码无效");
+
+  await setWebLocale("en");
+  assert.equal(getWebLocale(), "en");
+  assert.equal(
+    resolveWebText(errorDisplayText(error)),
+    "Invalid Base64 data payload",
+  );
+
+  await setWebLocale("zh-CN");
+  assert.equal(resolveWebText(errorDisplayText(error)), "数据 Payload 的 Base64 编码无效");
+});
+
+test("地图交换错误使用集中错误码并随 locale 重新本地化", async () => {
+  let saveError;
+  try {
+    parseExchangeMap({
+      game: "https://github.com/XUJINKAI/bobby-carrot-5-remake",
+      schemaVersion: 1,
+      scope: "explore/original",
+    });
+  } catch (caught) {
+    saveError = caught;
+  }
+  assert.ok(saveError instanceof ExchangeError);
+  assert.equal(saveError.code, EXCHANGE_ERROR_CODES.saveNotMap);
+  assert.equal(
+    resolveWebText(errorDisplayText(saveError)),
+    "这是 explore/original 存档，不是地图。",
+  );
+
+  let mapError;
+  try {
+    parseExchangeMap({ schemaVersion: 2 });
+  } catch (caught) {
+    mapError = caught;
+  }
+  assert.ok(mapError instanceof ExchangeError);
+  assert.equal(mapError.code, EXCHANGE_ERROR_CODES.invalidMap);
+  assert.equal(resolveWebText(errorDisplayText(mapError)), "这段数据不是有效地图。");
+
+  await setWebLocale("en");
+  assert.equal(
+    resolveWebText(errorDisplayText(saveError)),
+    "This is a explore/original save, not a map.",
+  );
+  assert.equal(
+    resolveWebText(errorDisplayText(mapError)),
+    "This data is not a valid map.",
+  );
+  await setWebLocale("zh-CN");
+});
+
+test("Import 无法分类的数据使用集中错误码", () => {
+  assert.throws(
+    () => requireImportedJson({ nope: true }),
+    (error) =>
+      error instanceof WebError &&
+      error.code === WEB_ERROR_CODES.import.unrecognizedData &&
+      resolveWebText(errorDisplayText(error)) ===
+        "无法识别这段 Bobby Carrot 5 Remake 数据。",
+  );
+});
+
+test("存档交换错误在 Web 边界转换为可重新本地化的语义错误", async () => {
+  const cases = [
+    {
+      parse: () => parseAdventureProfileExchange({}),
+      code: WEB_ERROR_CODES.saveExchange.invalidAdventureProfile,
+      zh: "这段数据不是有效的冒险存档。",
+      en: "This is not a valid Adventure save.",
+    },
+    {
+      parse: () => parseExploreCollectionExchange({}),
+      code: WEB_ERROR_CODES.saveExchange.invalidExploreSave,
+      zh: "这段数据不是有效的自由探索存档。",
+      en: "This is not a valid Explore save.",
+    },
+  ];
+
+  for (const entry of cases) {
+    let error;
+    try {
+      entry.parse();
+    } catch (caught) {
+      error = caught;
+    }
+    assert.ok(error instanceof WebError);
+    assert.equal(error.code, entry.code);
+    assert.equal(resolveWebText(errorDisplayText(error)), entry.zh);
+
+    await setWebLocale("en");
+    assert.equal(resolveWebText(errorDisplayText(error)), entry.en);
+    await setWebLocale("zh-CN");
+  }
+});
+
+test("共享 Clipboard 与 Embed 加载错误使用集中语义码", async () => {
+  const clipboard = new WebError(WEB_ERROR_CODES.common.clipboardUnavailable);
+  assert.equal(resolveWebText(errorDisplayText(clipboard)), "无法访问剪贴板");
+
+  await setWebI18nRouteScopes(["game", "embed"]);
+  const invalidCode = new WebError(WEB_ERROR_CODES.embed.invalidCode);
+  const embedError = new WebError(WEB_ERROR_CODES.embed.runtimeLoadFailed, {
+    params: { url: "https://example.test/bc5r.js" },
+  });
+  assert.equal(
+    resolveWebText(errorDisplayText(invalidCode)),
+    "无法从代码中读取 BC5R.queue.push({...}) 配置。",
+  );
+  assert.equal(
+    resolveWebText(errorDisplayText(embedError)),
+    "无法加载内嵌运行时：https://example.test/bc5r.js",
+  );
+
+  await setWebLocale("en");
+  assert.equal(
+    resolveWebText(errorDisplayText(clipboard)),
+    "Clipboard access unavailable",
+  );
+  assert.equal(
+    resolveWebText(errorDisplayText(invalidCode)),
+    "Could not read a BC5R.queue.push({...}) configuration from the code.",
+  );
+  assert.equal(
+    resolveWebText(errorDisplayText(embedError)),
+    "Failed to load the embed runtime: https://example.test/bc5r.js",
+  );
+  await setWebLocale("zh-CN");
+  await setWebI18nRouteScopes(["game"]);
+});
+
+test("Replay 资产和 JSON 解析使用集中错误码", async () => {
+  await assert.rejects(
+    loadReplayAsset("/missing.json", async () => new Response("", { status: 404 })),
+    (error) =>
+      error instanceof WebError &&
+      error.code === WEB_ERROR_CODES.replay.builtinMissing,
+  );
+  await assert.rejects(
+    loadReplayAsset("/broken.json", async () => new Response("", { status: 503 })),
+    (error) =>
+      error instanceof WebError &&
+      error.code === WEB_ERROR_CODES.replay.builtinLoadFailed &&
+      error.params?.status === 503,
+  );
+  await assert.rejects(
+    saveReplayAsset(
+      "/save.json",
+      "{}",
+      async () => new Response("", { status: 500 }),
+    ),
+    (error) =>
+      error instanceof WebError &&
+      error.code === WEB_ERROR_CODES.replay.builtinSaveFailed &&
+      error.params?.status === 500,
+  );
+  assert.throws(
+    () => parseReplayText("{"),
+    (error) =>
+      error instanceof WebError &&
+      error.code === WEB_ERROR_CODES.replay.invalidJson,
+  );
+  assert.throws(
+    () => parseReplayText("[]"),
+    (error) =>
+      error instanceof WebError &&
+      error.code === WEB_ERROR_CODES.replay.invalidDocument,
+  );
+});

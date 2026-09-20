@@ -52,6 +52,14 @@
 
    PR message 根据当前分支相对任务基线的实际提交和差异生成，至少包含 PR 标题、变更摘要、验证结果和必要的兼容性/迁移说明。完成任务时将该 PR message 一并输出给用户。
 
+## 测试体系
+
+1. 所有自动测试统一位于根 `tests/`，按验证性质放入 `unit/`、`module/`、`entity/`、`integration/` 或 `smoke/`；辅助实现与输入数据分别放入 `support/` 和 `fixtures/`。
+2. `npm test` 自动发现并执行全部非 smoke 测试。每个测试文件必须直接导入且只导入 `node:test` 或 `vitest` 之一，runner 按该测试 API 声明分发，测试目录不决定运行时。新增测试不得维护文件清单或 package 专属 test script。
+3. `npm test` 的执行顺序为 Model bootstrap、Original/自定义内容前处理、TypeScript project build、测试发现与分发。过滤运行使用目录位置参数，例如 `npm test -- module engine`。
+4. `npm run verify` 是完整仓库验收，依次包含源码质量、`npm test`、production build、build smoke、browser smoke、SEO、性能与产物检查。
+5. 测试基础设施重构应保持具体测试项的条件、输入、动作、断言与业务预期；迁移失败优先修正路径、编译顺序、运行环境和 runner 分发。
+
 ## Engine 总原则
 
 **给 Engine 一个纯语义 `LevelMap`（JSON 地图）和少量运行配置，就应当能够独立把这张地图完整地玩起来。**

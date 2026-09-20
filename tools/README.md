@@ -12,8 +12,8 @@
 | `npm run build` | 构建正式站点到 `dist/`。 |
 | `npm run preview` | 不重新构建，静态预览现有 `dist/`。 |
 | `npm run patch -- <options>` | 把语义地图 patch 到普通版 JAR；传入 `--hd` 时改用高清版，输出仅写入 `tmp/`。 |
-| `npm test` | 运行 Node 与 Web 测试。 |
-| `npm run verify` | 运行提交前的完整质量门禁。 |
+| `npm test` | 完成内容前处理与增量编译，并自动运行全部非 smoke 测试。 |
+| `npm run verify` | 运行测试、production build 和 smoke 在内的完整质量门禁。 |
 | `npm run clean` | 清理仓库定义的生成物。 |
 
 ## Original
@@ -43,7 +43,7 @@
 | `node tools/cli.mjs dev [web\|editor] [--no-build]` | 启动 Web 或 Editor 开发模式；`--no-build` 跳过资源准备。 |
 | `node tools/cli.mjs build` | 构建 `dist/`。 |
 | `node tools/cli.mjs preview` | 静态预览已有构建。 |
-| `node tools/cli.mjs test` | 运行测试。 |
+| `node tools/cli.mjs test [分类] [子目录]` | 按 `tests/` 目录过滤并运行非 smoke 测试。 |
 | `node tools/cli.mjs verify` | 运行完整门禁。 |
 | `node tools/cli.mjs verify browser` | 单独运行浏览器 smoke test。 |
 | `node tools/cli.mjs clean` | 清理生成物。 |
@@ -51,3 +51,6 @@
 生成目录包括 `assets/extracted/`、`assets/generated/`、`original/decoded/`、
 `original/adapted/`、`dist/` 与 `tmp/`。这些内容由对应命令重建，不手工修改；
 `original/official/` 与 `original/official-hd/` 中的原版 JAR 始终只读。
+
+测试实现、辅助代码与夹具统一位于根 `tests/`，目录职责与过滤示例见
+[`tests/README.md`](../tests/README.md)。

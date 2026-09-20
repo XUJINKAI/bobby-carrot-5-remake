@@ -1,0 +1,747 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { MapEntityTypeId } from "@bobby/model";
+import { RuntimeEntityTypeId } from "../../../engine/dist/entities/runtime-types.js";
+import { CommandQueue } from "../../../engine/dist/world/behavior/CommandQueue.js";
+import { EntityStore } from "../../../engine/dist/world/entity/EntityStore.js";
+import { SpatialIndex } from "../../../engine/dist/world/spatial/SpatialIndex.js";
+import { SpatialVisualQuery } from "../../../engine/dist/visual/SpatialVisualQuery.js";
+import { VisualRuntime } from "../../../engine/dist/visual/VisualRuntime.js";
+import { World } from "../../support/engine/World.mjs";
+import {
+  builtinEntityModules,
+  createBuiltinEntityRegistry,
+  createBuiltinVisualRegistry,
+} from "../../../engine/dist/entities/registry.js";
+import { builtinEngineEnvironment } from "../../../engine/dist/public.js";
+import { FIREBALL_MOVEMENT } from "../../../engine/dist/entities/movement/MovementCadence.js";
+
+const factRegistry = builtinEngineEnvironment.facts;
+
+function bobbyVisual(options = {}) {
+  const entities = createBuiltinEntityRegistry();
+  const visuals = createBuiltinVisualRegistry();
+  const mountType = options.mountType;
+  const state = mountType
+    ? { ...(options.state ?? {}), mountId: 2 }
+    : options.state;
+  const store = new EntityStore([
+    {
+      type: options.surfaceType ?? "grass",
+      x: 0,
+      y: 0,
+      ...(!options.surfaceType || options.surfaceType === "grass"
+        ? { variant: "ts-10-1" }
+        : {}),
+    },
+    ...(mountType ? [{ type: mountType, x: 0, y: 0 }] : []),
+    {
+      type: MapEntityTypeId.BOBBY,
+      x: 0,
+      y: 0,
+
+    },
+  ]);
+  const spatial = new SpatialIndex(store, entities, 1, 1, factRegistry);
+  const bobby = store.all().find((entity) => entity.type === MapEntityTypeId.BOBBY);
+  assert.ok(bobby);
+  bobby.direction = options.direction ?? "right";
+  if (state) bobby.state = structuredClone(state);
+  const presence = spatial.presencesForEntity(bobby.id)[0];
+  assert.ok(presence);
+  return visuals.resolve(entities.require(MapEntityTypeId.BOBBY), {
+    entity: bobby,
+    presence,
+    query: new SpatialVisualQuery(store, spatial),
+    ...(options.runtime ? { runtime: options.runtime } : {}),
+    ...(options.outcome ? { outcome: options.outcome } : {}),
+    ...(options.time ? { time: options.time } : {}),
+  });
+}
+
+test("world entities stay below standing Bobby regardless of cover stackOrder", () => {
+  const entities = createBuiltinEntityRegistry();
+  const visuals = createBuiltinVisualRegistry();
+  assert.equal(
+    visuals.renderPassFor(entities.require(MapEntityTypeId.ICE_BLOCK)),
+    "world",
+  );
+  assert.equal(
+    visuals.renderPassFor(entities.require(MapEntityTypeId.HIGH_GRASS)),
+    "world",
+  );
+  assert.equal(
+    visuals.renderPassFor(entities.require(MapEntityTypeId.SNOW)),
+    "world",
+  );
+  assert.equal(
+    visuals.renderPassFor(entities.require(MapEntityTypeId.BOBBY)),
+    "standing",
+  );
+});
+
+test("直立角色与 Bobby 共用 standing pass", () => {
+  const entities = createBuiltinEntityRegistry();
+  const visuals = createBuiltinVisualRegistry();
+  for (const type of [
+    MapEntityTypeId.DREAM_MACHINE,
+    MapEntityTypeId.SANDMAN,
+    MapEntityTypeId.BEAVER,
+  ]) {
+    assert.equal(
+      visuals.renderPassFor(entities.require(type)),
+      "standing",
+      type,
+    );
+  }
+});
+
+test("High Grass 根据同格 Carrot 或 Egg 选用隐藏目标图块", () => {
+  const entities = createBuiltinEntityRegistry();
+  const visuals = createBuiltinVisualRegistry();
+  const visualFor = (contentType) => {
+    const store = new EntityStore([
+      { type: "grass", variant: "ts-10-1", x: 0, y: 0 },
+      ...(contentType ? [{ type: contentType, x: 0, y: 0 }] : []),
+      { type: MapEntityTypeId.HIGH_GRASS, x: 0, y: 0 },
+    ]);
+    const spatial = new SpatialIndex(store, entities, 1, 1, factRegistry);
+    const grass = store.all().find((entity) =>
+      entity.type === MapEntityTypeId.HIGH_GRASS);
+    assert.ok(grass);
+    const presence = spatial.presencesForEntity(grass.id)[0];
+    assert.ok(presence);
+    return visuals.resolve(entities.require(MapEntityTypeId.HIGH_GRASS), {
+      entity: grass,
+      presence,
+      query: new SpatialVisualQuery(store, spatial),
+    })?.layers[0];
+  };
+
+  assert.deepEqual(visualFor(MapEntityTypeId.CARROT), {
+    kind: "atlas", column: 8, row: 12,
+  });
+  assert.deepEqual(visualFor(MapEntityTypeId.EGG), {
+    kind: "atlas", column: 8, row: 12,
+  });
+  assert.deepEqual(visualFor(MapEntityTypeId.BONUS_COIN), {
+    kind: "atlas", column: 7, row: 12,
+  });
+  assert.deepEqual(visualFor(null), {
+    kind: "atlas", column: 7, row: 12,
+  });
+});
+
+test("Bobby walking loops from movement frame four back to frame four", () => {
+  const start = bobbyVisual({
+    runtime: { offsetX: -1, moving: true, progress: 0 },
+  });
+  const middle = bobbyVisual({
+    runtime: { offsetX: -0.5, moving: true, progress: 0.5 },
+  });
+  const end = bobbyVisual({
+    runtime: { offsetX: 0, moving: true, progress: 1 },
+  });
+  assert.equal(start.layers[0].frameIndex, 3);
+  assert.deepEqual(middle.layers[0], {
+    kind: "image",
+    asset: "bobby-right",
+    frameColumns: 8,
+    frameRows: 1,
+    frameIndex: 7,
+    anchor: "bottom",
+    offsetY: -12,
+  });
+  assert.equal(end.layers[0].frameIndex, 3);
+});
+
+test("Bobby Ice slide stays on movement frame seven", () => {
+  const composition = bobbyVisual({
+    direction: "left",
+    runtime: {
+      offsetX: 0.5,
+      moving: true,
+      progress: 0.5,
+      animation: "ice",
+      direction: "left",
+    },
+  });
+  assert.deepEqual(composition.layers[0], {
+    kind: "image",
+    asset: "bobby-left",
+    frameColumns: 8,
+    frameRows: 1,
+    frameIndex: 6,
+    anchor: "bottom",
+    offsetY: -12,
+  });
+});
+
+test("Bobby uses the normal standing frame while stationary on Ice", () => {
+  const composition = bobbyVisual({
+    surfaceType: MapEntityTypeId.ICE,
+    direction: "right",
+    runtime: {
+      offsetX: 0,
+      moving: false,
+      progress: 1,
+      direction: "right",
+      stationarySinceMs: 1000,
+    },
+  });
+  assert.equal(composition.layers[0].asset, "bobby-right");
+  assert.equal(composition.layers[0].frameIndex, 3);
+});
+
+test("Bobby uses the Up strip while standing or moving on Beanstalk", () => {
+  const standing = bobbyVisual({
+    surfaceType: MapEntityTypeId.BEANSTALK,
+    direction: "left",
+    runtime: { moving: false, progress: 1 },
+  });
+  const moving = bobbyVisual({
+    surfaceType: MapEntityTypeId.BEANSTALK,
+    direction: "right",
+    runtime: { moving: true, progress: 0.5 },
+  });
+
+  assert.equal(standing.layers[0].asset, "bobby-up");
+  assert.equal(standing.layers[0].frameIndex, 3);
+  assert.equal(moving.layers[0].asset, "bobby-up");
+  assert.equal(moving.layers[0].frameIndex, 7);
+});
+
+test("Bobby idle starts after five seconds and advances every 50ms", () => {
+  const runtime = { moving: false, progress: 1, stationarySinceMs: 1000 };
+  const before = bobbyVisual({
+    runtime,
+    time: { frame: 299, nowMs: 5999, deltaMs: 16.6667 },
+  });
+  assert.equal(before.layers[0].asset, "bobby-right");
+  assert.equal(before.layers[0].frameIndex, 3);
+
+  for (const [nowMs, expectedFrame] of [
+    [6000, 0],
+    [6050, 1],
+    [6100, 2],
+    [6150, 1],
+    [6200, 0],
+    [6250, 1],
+  ]) {
+    const idle = bobbyVisual({
+      runtime,
+      time: { frame: 300, nowMs, deltaMs: 50 },
+    });
+    assert.equal(idle.layers[0].asset, "bobby-idle");
+    assert.equal(idle.layers[0].frameColumns, 3);
+    assert.equal(idle.layers[0].frameIndex, expectedFrame);
+  }
+});
+
+test("Bobby death uses the eight-frame b5 strip and keeps its final frame", () => {
+  const death = bobbyVisual({
+    runtime: { moving: false, progress: 1, animation: "death" },
+    outcome: { phase: "lost", changedAtMs: 0 },
+  });
+  assert.equal(death.layers[0].asset, "bobby-death");
+  assert.equal(death.layers[0].frameColumns, 8);
+  assert.equal(death.layers[0].frameIndex, 7);
+  assert.equal(death.layers[0].frameProgress, undefined);
+});
+
+test("Bobby 进入关卡时倒放 b6，通关后正放并隐藏", () => {
+  const enteringHidden = bobbyVisual({
+    runtime: { moving: false, progress: 0, animation: "level-enter" },
+  });
+  const enteringStart = bobbyVisual({
+    runtime: { moving: false, progress: 0.2, animation: "level-enter" },
+  });
+  const enteringEnd = bobbyVisual({
+    runtime: { moving: false, progress: 0.999, animation: "level-enter" },
+  });
+  const exitingStart = bobbyVisual({
+    runtime: { moving: false, progress: 0, animation: "level-exit" },
+    outcome: { phase: "won", changedAtMs: 0 },
+  });
+  const exitingLastFrame = bobbyVisual({
+    runtime: { moving: false, progress: 0.7, animation: "level-exit" },
+    outcome: { phase: "won", changedAtMs: 0 },
+  });
+  const exitingHidden = bobbyVisual({
+    runtime: { moving: false, progress: 0.8, animation: "level-exit" },
+    outcome: { phase: "won", changedAtMs: 0 },
+  });
+  const hidden = bobbyVisual({
+    runtime: { moving: false, progress: 1, animation: "level-exit" },
+    outcome: { phase: "won", changedAtMs: 0 },
+  });
+
+  assert.equal(enteringHidden, null);
+  assert.equal(enteringStart.layers[0].asset, "bobby-transition");
+  assert.equal(enteringStart.layers[0].frameColumns, 8);
+  assert.equal(enteringStart.layers[0].frameIndex, 7);
+  assert.equal(enteringEnd.layers[0].frameIndex, 0);
+  assert.equal(exitingStart.layers[0].frameIndex, 0);
+  assert.equal(exitingLastFrame.layers[0].frameIndex, 7);
+  assert.equal(exitingHidden, null);
+  assert.equal(hidden, null);
+});
+
+test("VisualRuntime 为关卡进入和胜利启动 Bobby transition", () => {
+  const runtime = new VisualRuntime(createBuiltinVisualRegistry());
+  const actor = {
+    id: 7,
+    direction: "down",
+    anchor: { x: 0, y: 0 },
+  };
+  const world = {
+    query: {
+      entitiesWithFact: (fact) => (fact === "player" ? [actor] : []),
+    },
+    entity: (id) => id === actor.id ? actor : undefined,
+    definition: () => ({ type: MapEntityTypeId.BOBBY }),
+  };
+  const frame = { frame: 0, nowMs: 1000, deltaMs: 0 };
+
+  runtime.beginLevelEntrance(world, 100, frame);
+  assert.equal(
+    runtime.inspectEntity(world, actor.id).runtime.animation,
+    "level-enter",
+  );
+  assert.equal(runtime.blocksGameplay, true);
+  runtime.update({ frame: 1, nowMs: 1100, deltaMs: 100 }, "linear");
+  assert.equal(
+    runtime.inspectEntity(world, actor.id).runtime.animation,
+    undefined,
+  );
+  assert.equal(runtime.blocksGameplay, false);
+
+  runtime.consumeWorldDeltas(
+    world,
+    [{
+      sequence: 1,
+      worldTick: 1,
+      worldTimeMs: 100,
+      type: "world-outcome-changed",
+      outcome: { phase: "won", changedAtMs: 100 },
+    }],
+    { frame: 1, nowMs: 1100, deltaMs: 0 },
+    {
+      motionDuration: () => 100,
+      stationaryDeathDurationMs: 100,
+      levelExitDurationMs: 100,
+    },
+  );
+  assert.equal(
+    runtime.inspectEntity(world, actor.id).runtime.animation,
+    "level-exit",
+  );
+  runtime.update({ frame: 2, nowMs: 1200, deltaMs: 100 }, "linear");
+  assert.equal(
+    runtime.inspectEntity(world, actor.id).runtime.animation,
+    "level-exit",
+  );
+  assert.equal(runtime.isAnimating, false);
+});
+
+test("Bobby Mower 使用各方向独立的 b7.png 源矩形", () => {
+  for (const [direction, sourceX, frameWidth, offsetX] of [
+    ["left", 0, 60, -6],
+    ["right", 60, 60, -6],
+    ["up", 120, 48, 0],
+    ["down", 168, 48, 0],
+  ]) {
+    const mower = bobbyVisual({
+      direction,
+      mountType: MapEntityTypeId.MOWER,
+      runtime: { animationStartedAtMs: 100 },
+      time: { frame: 1, nowMs: 162, deltaMs: 62 },
+    });
+    assert.equal(mower.layers[0].asset, "bobby-mower");
+    assert.equal(mower.layers[0].sourceX, sourceX);
+    assert.equal(mower.layers[0].sourceY, 83);
+    assert.equal(mower.layers[0].frameWidth, frameWidth);
+    assert.equal(mower.layers[0].frameHeight, 83);
+    assert.equal(mower.layers[0].offsetX, offsetX);
+  }
+});
+
+test("mow.png trail stays one cell behind and only covers the first 1.5 off-belt cells", () => {
+  const full = bobbyVisual({
+    direction: "right",
+    state: { speedBoost: { direction: "right", phase: "full" } },
+    runtime: {
+      offsetX: -0.5,
+      moving: true,
+      progress: 0.5,
+      animation: "speed",
+      direction: "right",
+    },
+    time: { frame: 14, nowMs: 240, deltaMs: 16 },
+  });
+  assert.deepEqual(full.layers[0], {
+    kind: "image",
+    asset: "bobby-speed-trail",
+    frameColumns: 5,
+    frameRows: 2,
+    frameIndex: 7,
+    anchor: "bottom",
+    offsetX: -48,
+    offsetY: -12,
+  });
+  assert.equal(full.layers[1].asset, "bobby-right");
+
+  const normalFirstHalf = bobbyVisual({
+    direction: "up",
+    state: { speedBoost: { direction: "up", phase: "normal" } },
+    runtime: {
+      offsetY: 0.51,
+      moving: true,
+      progress: 0.75,
+      animation: "speed",
+      direction: "up",
+    },
+    time: { frame: 14, nowMs: 240, deltaMs: 16 },
+  });
+  assert.equal(normalFirstHalf.layers[0].asset, "bobby-speed-trail");
+  assert.equal(normalFirstHalf.layers[0].offsetX, 0);
+  assert.equal(normalFirstHalf.layers[0].offsetY, 36);
+
+  const normalSecondHalf = bobbyVisual({
+    state: { speedBoost: { direction: "right", phase: "normal" } },
+    runtime: {
+      offsetX: -0.5,
+      moving: true,
+      progress: 0.25,
+      animation: "speed",
+      direction: "right",
+    },
+    time: { frame: 14, nowMs: 240, deltaMs: 16 },
+  });
+  assert.equal(normalSecondHalf.layers.length, 1);
+  assert.equal(normalSecondHalf.layers[0].asset, "bobby-right");
+
+  const slow = bobbyVisual({
+    state: { speedBoost: { direction: "right", phase: "slow" } },
+    runtime: {
+      offsetX: -0.9,
+      moving: true,
+      progress: 0.1,
+      animation: "speed",
+      direction: "right",
+    },
+    time: { frame: 14, nowMs: 240, deltaMs: 16 },
+  });
+  assert.equal(slow.layers.length, 1);
+});
+
+test("accelerated mower uses the same one-cell-behind trail", () => {
+  const mower = bobbyVisual({
+    direction: "left",
+    mountType: MapEntityTypeId.MOWER,
+    state: {
+      speedBoost: { direction: "left", phase: "full" },
+    },
+    runtime: {
+      offsetX: 0.75,
+      moving: true,
+      progress: 0.25,
+      animation: "speed",
+      direction: "left",
+    },
+    time: { frame: 14, nowMs: 240, deltaMs: 16 },
+  });
+  assert.equal(mower.layers[0].asset, "bobby-speed-trail");
+  assert.equal(mower.layers[0].offsetX, 48);
+  assert.equal(mower.layers[0].offsetY, -12);
+  assert.equal(mower.layers[1].asset, "bobby-mower");
+});
+
+test("Speed Mower 每 31ms 切换人物帧", () => {
+  const mower = bobbyVisual({
+    direction: "right",
+    mountType: MapEntityTypeId.MOWER,
+    state: { speedBoost: { direction: "right", phase: "full" } },
+    runtime: { animationStartedAtMs: 100 },
+    time: { frame: 1, nowMs: 131, deltaMs: 31 },
+  });
+  assert.equal(mower.layers.at(-1).sourceY, 83);
+});
+
+test("Bobby snowplow 按原版 186ms 节拍循环三行", () => {
+  const frameAt = (nowMs) => bobbyVisual({
+    runtime: {
+      moving: false,
+      progress: nowMs / 992,
+      animationStartedAtMs: 0,
+      animation: "shovel",
+      direction: "down",
+    },
+    time: { frame: nowMs, nowMs, deltaMs: 0 },
+  }).layers[0];
+  assert.equal(frameAt(0).asset, "bobby-snowplow");
+  assert.equal(frameAt(0).frameColumns, 4);
+  assert.equal(frameAt(0).frameRows, 3);
+  assert.deepEqual(
+    [0, 185, 186, 371, 372, 557, 558, 930].map((time) =>
+      frameAt(time).frameIndex
+    ),
+    [3, 3, 7, 7, 11, 11, 3, 11],
+  );
+});
+
+test("Snow 开始事件让 Bobby 播放铲雪动作", () => {
+  const world = new World({
+    schemaVersion: 1,
+    width: 2,
+    height: 1,
+    entities: [
+      { type: "grass", variant: "ts-10-1", x: 0, y: 0 },
+      { type: "grass", variant: "ts-10-1", x: 1, y: 0 },
+      { type: MapEntityTypeId.BOBBY, x: 0, y: 0 },
+      { type: MapEntityTypeId.SNOW, x: 1, y: 0 },
+    ],
+  });
+  const actor = world.query.entitiesWithFact("player")[0];
+  const commands = new CommandQueue();
+  commands.setState(actor.id, { ...actor.state, shovel: true });
+  world.committer.commit(commands, { worldTick: null, worldTimeMs: 0 });
+  const result = world.step({
+    intents: [{
+      type: "move",
+      actorId: actor.id,
+      direction: "right",
+      cause: { type: "player-input" },
+    }],
+  });
+  const visual = new VisualRuntime(createBuiltinVisualRegistry());
+  visual.consumeWorldDeltas(world, result.deltas,
+    { frame: 1, nowMs: 0, deltaMs: 0 },
+    { motionDuration: (motion) => motion.durationMs, stationaryDeathDurationMs: 350 });
+  assert.equal(visual.runtimeStates.get(actor.id)?.animation, "shovel");
+  assert.equal(visual.runtimeStates.get(actor.id)?.direction, "right");
+  visual.update({ frame: 2, nowMs: 496, deltaMs: 496 }, "linear");
+  assert.equal(visual.runtimeStates.get(actor.id)?.progress, 0.5);
+
+  for (let tick = 1; tick <= 32; tick += 1)
+    world.update({ tick, stepMs: 31 });
+  const moved = world.update({ tick: 33, stepMs: 31 });
+  visual.consumeWorldDeltas(world, moved.deltas,
+    { frame: 3, nowMs: 1023, deltaMs: 527 },
+    { motionDuration: (motion) => motion.durationMs, stationaryDeathDurationMs: 350 });
+  assert.equal(visual.runtimeStates.get(actor.id)?.moving, true);
+  assert.equal(visual.runtimeStates.get(actor.id)?.animation, undefined);
+});
+
+test("VisualRuntime motion interpolation follows PresentationFrame milliseconds", () => {
+  const runtime = new VisualRuntime(createBuiltinVisualRegistry());
+  runtime.beginMove(
+    7,
+    { x: 1, y: 2 },
+    { x: 2, y: 2 },
+    100,
+    { frame: 10, nowMs: 1000, deltaMs: 16 },
+  );
+  assert.equal(runtime.isAnimating, true);
+  runtime.update({ frame: 11, nowMs: 1050, deltaMs: 50 }, "linear");
+  assert.equal(runtime.isAnimating, true);
+  runtime.update({ frame: 12, nowMs: 1100, deltaMs: 50 }, "linear");
+  assert.equal(runtime.isAnimating, false);
+});
+
+test("mechanism-tagged spatial motion remains moving for Speed walking animation", () => {
+  const runtime = new VisualRuntime(createBuiltinVisualRegistry());
+  runtime.beginMove(
+    7,
+    { x: 0, y: 0 },
+    { x: 1, y: 0 },
+    175,
+    { frame: 0, nowMs: 1000, deltaMs: 0 },
+    { animation: "speed", direction: "right" },
+  );
+  runtime.update({ frame: 1, nowMs: 1080, deltaMs: 80 }, "linear");
+  const state = runtime.inspectEntity(
+    { definition: () => ({ type: MapEntityTypeId.BOBBY }) },
+    7,
+  ).runtime;
+  assert.equal(state.moving, true);
+  assert.equal(state.animation, "speed");
+  assert.ok(state.progress > 0 && state.progress < 1);
+});
+
+test("completed motion stamps stationarySinceMs only once", () => {
+  const runtime = new VisualRuntime(createBuiltinVisualRegistry());
+  const world = { definition: () => ({ type: MapEntityTypeId.BOBBY }) };
+  runtime.beginMove(
+    7,
+    { x: 0, y: 0 },
+    { x: 1, y: 0 },
+    100,
+    { frame: 0, nowMs: 1000, deltaMs: 0 },
+  );
+  runtime.update({ frame: 1, nowMs: 1100, deltaMs: 100 }, "linear");
+  assert.equal(runtime.inspectEntity(world, 7).runtime.stationarySinceMs, 1100);
+
+  runtime.update({ frame: 2, nowMs: 2100, deltaMs: 1000 }, "linear");
+  runtime.update({ frame: 3, nowMs: 6100, deltaMs: 4000 }, "linear");
+  assert.equal(runtime.inspectEntity(world, 7).runtime.stationarySinceMs, 1100);
+});
+
+test("completed presentation motion can be rewound and replayed without changing World", () => {
+  const runtime = new VisualRuntime(createBuiltinVisualRegistry());
+  runtime.beginMove(
+    7,
+    { x: 0, y: 0 },
+    { x: 1, y: 0 },
+    100,
+    { frame: 0, nowMs: 1000, deltaMs: 0 },
+  );
+  runtime.update({ frame: 6, nowMs: 1100, deltaMs: 100 }, "linear");
+  assert.equal(runtime.isAnimating, false);
+  runtime.update({ frame: 3, nowMs: 1050, deltaMs: -50 }, "linear");
+  assert.equal(runtime.isAnimating, true);
+  runtime.update({ frame: 6, nowMs: 1100, deltaMs: 50 }, "linear");
+  assert.equal(runtime.isAnimating, false);
+});
+
+test("hazard death presentation stops forty percent into the target cell", () => {
+  const runtime = new VisualRuntime(createBuiltinVisualRegistry());
+  runtime.beginDeath(
+    7,
+    { x: 1, y: 0 },
+    { x: 2, y: 0 },
+    100,
+    { frame: 0, nowMs: 1000, deltaMs: 0 },
+    0.4,
+  );
+  runtime.update({ frame: 6, nowMs: 1100, deltaMs: 100 }, "linear");
+  const state = runtime.inspectEntity(
+    {
+      definition: () => ({ type: MapEntityTypeId.BOBBY }),
+    },
+    7,
+  ).runtime;
+  assert.equal(state.offsetX, -0.6);
+  assert.equal(state.progress, 1);
+  assert.equal(runtime.isAnimating, false);
+});
+
+test("WorldDelta interruption drives death presentation at authoritative progress", () => {
+  const runtime = new VisualRuntime(createBuiltinVisualRegistry());
+  const world = {
+    entity: () => ({ id: 7, anchor: { x: 1, y: 0 } }),
+    definition: () => ({ type: MapEntityTypeId.BOBBY }),
+  };
+  const motion = {
+    id: 1,
+    kind: "move",
+    entityId: 7,
+    from: { x: 0, y: 0 },
+    to: { x: 1, y: 0 },
+    direction: "right",
+    cause: { type: "player-input", source: "test" },
+    durationMs: 100,
+    elapsedMs: 50,
+    progress: 0.5,
+    status: "interrupted",
+    interruption: { reason: "trap" },
+  };
+  runtime.consumeWorldDeltas(
+    world,
+    [
+      {
+        sequence: 1,
+        worldTick: 1,
+        worldTimeMs: 50,
+        type: "actor-lifecycle-changed",
+        actor: {
+          entityId: 7,
+          phase: "downed",
+          reason: "trap",
+          changedAtMs: 50,
+        },
+      },
+      {
+        sequence: 2,
+        worldTick: 1,
+        worldTimeMs: 50,
+        type: "motion-interrupted",
+        motion,
+      },
+    ],
+    { frame: 0, nowMs: 1000, deltaMs: 0 },
+    { motionDuration: () => 100, stationaryDeathDurationMs: 100 },
+  );
+  runtime.update({ frame: 1, nowMs: 1100, deltaMs: 100 }, "linear");
+  const state = runtime.inspectEntity(world, 7).runtime;
+  assert.equal(state.animation, "death");
+  assert.equal(state.offsetX, -0.5);
+});
+
+test("explicit presentation motion duration is independent from WorldClock rate", () => {
+  const runtime = new VisualRuntime(createBuiltinVisualRegistry());
+  runtime.beginMove(
+    7,
+    { x: 0, y: 0 },
+    { x: 1, y: 0 },
+    132,
+    { frame: 0, nowMs: 2000, deltaMs: 0 },
+  );
+  runtime.update({ frame: 1, nowMs: 2125, deltaMs: 125 }, "linear");
+  assert.equal(runtime.isAnimating, true);
+  runtime.update({ frame: 2, nowMs: 2132, deltaMs: 7 }, "linear");
+  assert.equal(runtime.isAnimating, false);
+});
+
+test("Fireball terminal event presents a half-cell move before destruction", () => {
+  const runtime = new VisualRuntime(createBuiltinVisualRegistry());
+  const world = {
+    entity: () => ({ id: 7, anchor: { x: 2, y: 1 } }),
+    definition: () => ({ type: RuntimeEntityTypeId.FIREBALL }),
+  };
+  runtime.consumeWorldDeltas(
+    world,
+    [{
+      sequence: 1,
+      worldTick: 1,
+      worldTimeMs: 0,
+      type: "world-event",
+      event: {
+        type: "fireball-termination-started",
+        entityId: 7,
+        x: 2,
+        y: 1,
+        direction: "right",
+        data: { durationMs: FIREBALL_MOVEMENT.terminalMs },
+      },
+    }],
+    { frame: 0, nowMs: 1000, deltaMs: 0 },
+    { motionDuration: () => 100, stationaryDeathDurationMs: 100 },
+  );
+  runtime.update({
+    frame: 1,
+    nowMs: 1000 + FIREBALL_MOVEMENT.terminalMs / 2,
+    deltaMs: FIREBALL_MOVEMENT.terminalMs / 2,
+  }, "linear");
+  const halfway = runtime.inspectEntity(world, 7).runtime;
+  assert.equal(halfway.animation, "fireball-termination");
+  assert.equal(halfway.offsetX, 0.25);
+  assert.equal(halfway.offsetY, 0);
+
+  runtime.update({
+    frame: 2,
+    nowMs: 1000 + FIREBALL_MOVEMENT.terminalMs,
+    deltaMs: FIREBALL_MOVEMENT.terminalMs / 2,
+  }, "linear");
+  assert.equal(runtime.inspectEntity(world, 7).runtime.offsetX, 0.5);
+});
+
+test("builtin Entity modules own their visual definitions beside gameplay definitions", () => {
+  assert.ok(builtinEntityModules.length > 0);
+  for (const module of builtinEntityModules) {
+    assert.equal(
+      module.visual?.id,
+      module.presentation.visual ?? module.definition.type,
+    );
+  }
+});

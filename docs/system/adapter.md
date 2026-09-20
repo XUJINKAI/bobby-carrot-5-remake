@@ -55,7 +55,7 @@ objects 表。Engine 专属字段与其它扩展地图语义不属于原版 DAT 
 
 ## 验证
 
-- `tools/original/dat-tests/entity-adapter.test.mjs` 为两个 Adapter 的特例提供可执行示例。
+- `tests/integration/original/entity-adapter.test.mjs` 为两个 Adapter 的特例提供可执行示例。
 - `npm run verify` 对全部 530 条官方 source record 执行 DAT 解码，并验证
   `Adapter → Reverse Adapter → Adapter` 后 canonical `LevelMap` 语义一致；同时检查
   atlas 标签与实际 JAR Patch 写入结果。

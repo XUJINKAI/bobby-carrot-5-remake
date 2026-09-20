@@ -35,7 +35,10 @@ export function rebuildAssets(options = {}) {
 }
 
 export function prepareAssets({ includeDevCollections = false } = {}) {
-  run(process.execPath, ["tools/cli.mjs", "original", "prepare"]);
+  run(process.execPath, ["tools/original/extract.mjs"]);
+  run(process.execPath, ["tools/original/decode.mjs"]);
+  run(process.execPath, ["tools/original/adapt.mjs"]);
+  run(process.execPath, ["tools/original/adventure-catalog.mjs"]);
   fs.mkdirSync(assets, { recursive: true });
   run(process.execPath, ["tools/custom/loma-pushbox.mjs"]);
   run(process.execPath, ["tools/custom/novoban-pushbox.mjs"]);

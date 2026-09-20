@@ -31,13 +31,13 @@
 
 | 场景 | 当前断言 | 回归测试 |
 | --- | --- | --- |
-| 场景目标求值 | 每次构建读取 `winState` 一次；收集与恢复后出口视觉正确 | `engine/tests/visual-scene-builder.test.mjs` |
-| 历史配置与操作续接 | 快照次数符合历史策略与操作边界 | `engine/tests/game-history-snapshot.test.mjs` |
-| 40×40 静态地图 | 每步 `EntityStore.all()` 调用为 0；tick 机关的生成、销毁、恢复与绑定仍正确 | `engine/tests/entity-selector-index.test.mjs`、`engine/tests/tick-index.test.mjs` |
-| 40×40 地图显示 2×2 格 | atlas 绘制调用为 4，完整地图包含 1600 格；大图边缘、帧尺寸与插值仍可见 | `engine/tests/viewport-rendering.test.mjs` |
-| 特效活跃、结束与倒帧 | 未受影响列表保持引用复用；结束后返回原场景；倒帧恢复相同特效和层序 | `engine/tests/transient-scene-performance.test.mjs`、`engine/tests/plank-runtime.test.mjs` |
-| 目标与奖励计数 | 联合 selector 去重正确；求值走专用计数接口；空间生命周期后与全量查询等价 | `engine/tests/selector-count.test.mjs`、`engine/tests/entity-selector-index.test.mjs` |
-| Editor 大地图交互 | 选区、擦除与放置预览保持底图绘制次数；ghost 只实例化一个实体 | `editor/tests/canvas-performance.test.mjs` |
+| 场景目标求值 | 每次构建读取 `winState` 一次；收集与恢复后出口视觉正确 | `tests/module/engine/visual-scene-builder.test.mjs` |
+| 历史配置与操作续接 | 快照次数符合历史策略与操作边界 | `tests/module/engine/game-history-snapshot.test.mjs` |
+| 40×40 静态地图 | 每步 `EntityStore.all()` 调用为 0；tick 机关的生成、销毁、恢复与绑定仍正确 | `tests/module/engine/entity-selector-index.test.mjs`、`tests/module/engine/tick-index.test.mjs` |
+| 40×40 地图显示 2×2 格 | atlas 绘制调用为 4，完整地图包含 1600 格；大图边缘、帧尺寸与插值仍可见 | `tests/module/engine/viewport-rendering.test.mjs` |
+| 特效活跃、结束与倒帧 | 未受影响列表保持引用复用；结束后返回原场景；倒帧恢复相同特效和层序 | `tests/module/engine/transient-scene-performance.test.mjs`、`tests/entity/plank-runtime.test.mjs` |
+| 目标与奖励计数 | 联合 selector 去重正确；求值走专用计数接口；空间生命周期后与全量查询等价 | `tests/module/engine/selector-count.test.mjs`、`tests/module/engine/entity-selector-index.test.mjs` |
+| Editor 大地图交互 | 选区、擦除与放置预览保持底图绘制次数；ghost 只实例化一个实体 | `tests/module/editor/canvas-performance.test.mjs` |
 | 浏览器真实指针交互 | 中键平移更新 transform，hover 更新交互层，地图底图新增绘制调用为 0 | `tools/custom/editor-performance-browser.mjs`，由 Web 浏览器回归调用 |
 
 统一门禁为 `npm run verify`，包含上述 Node 回归、Web 测试、浏览器回归、构建与浏览器 smoke。计时采样应单独记录地图、操作、浏览器、设备、DPR、视口和缩放比例。
