@@ -277,6 +277,27 @@ test("Level 与分享 metadata 直接绑定地图字段并使用统一输入防�
   assert.match(dataExchange, /await flushLiveValue\(\)/);
 });
 
+test("分享面板的可见文案全部使用 i18n catalog", () => {
+  for (const key of [
+    "editor.mapFile",
+    "editor.mapName",
+    "editor.mapAuthor",
+    "editor.mapNote",
+    "editor.optional",
+    "editor.shareDescription",
+    "editor.openEmbed",
+    "editor.applyMapText",
+  ]) {
+    assert.match(fileDialog, new RegExp(`webT\\(["']${key}["']\\)`));
+  }
+  assert.match(fileDialog, /const toolbar = computed/);
+  assert.match(fileDialog, /webT\(["']common\.close["']\)/);
+  assert.doesNotMatch(
+    fileDialog,
+    />地图文件<|>名称<|>作者<|>注记<|placeholder="可选"|>内嵌到其他网页</,
+  );
+});
+
 test("Inspector 使用与 Surface Palette 相同的 visual variant 网格", () => {
   assert.match(entityFields, /surfaceTerrainForEntity/);
   assert.match(entityFields, /surfaceVisualVariant/);
