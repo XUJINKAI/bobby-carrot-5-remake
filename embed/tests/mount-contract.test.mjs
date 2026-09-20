@@ -65,6 +65,27 @@ test("Embed 框架使用固定首页、地图打开动作与操作提示", async
   assert.match(mountSource, /embedRuntimeText\(locale, "embedRuntime\.movementHint"\)/);
 });
 
+test("Embed 终局卡片使用框架配色，并把官网主页操作放在重新开始左侧", async () => {
+  const [mountSource, zhCNSource, enSource] = await Promise.all([
+    readFile(new URL("../src/mount.ts", import.meta.url), "utf8"),
+    readFile(
+      new URL("../../i18n/src/locales/embed-runtime/zh-CN.ts", import.meta.url),
+      "utf8",
+    ),
+    readFile(
+      new URL("../../i18n/src/locales/embed-runtime/en.ts", import.meta.url),
+      "utf8",
+    ),
+  ]);
+
+  assert.match(mountSource, /official\.href = homePageUrl/);
+  assert.doesNotMatch(mountSource, /terminal\.official\.href = playUrl/);
+  assert.match(mountSource, /actions\.append\(official, restart\)/);
+  assert.match(mountSource, /background: #0d2b46; color: #eef5ff/);
+  assert.match(zhCNSource, /"embedRuntime\.won": "已完成"/);
+  assert.match(enSource, /"embedRuntime\.won": "Completed"/);
+});
+
 test("Embed 服从 LevelMap 的地图音乐选择", async () => {
   const mountSource = await readFile(
     new URL("../src/mount.ts", import.meta.url),

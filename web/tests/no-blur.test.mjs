@@ -9,6 +9,7 @@ const roots = [
   new URL("../game-ui.css", import.meta.url),
   new URL("../../editor/src/", import.meta.url),
   new URL("../../editor/style.css", import.meta.url),
+  new URL("../../embed/src/", import.meta.url),
 ];
 const SOURCE_EXTENSIONS = new Set([".css", ".vue", ".ts", ".js"]);
 const BLUR_PATTERN = /backdrop-filter|blur\s*\(/i;
