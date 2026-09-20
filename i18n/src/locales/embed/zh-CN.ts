@@ -1,6 +1,6 @@
 const catalog = {
   "embed.title": "内嵌到其他网页",
-  "embed.description": "粘贴 Editor 分享数据或填写你自己托管的地图链接，调整参数后复制代码。",
+  "embed.description": "粘贴地图数据，调整参数或直接编辑代码，实时预览后复制使用。",
   "embed.mapData": "地图数据",
   "embed.mapUrl": "地图链接",
   "embed.general": "通用",
@@ -29,6 +29,7 @@ const catalog = {
   "embed.copy": "复制",
   "embed.infoPlaceholder": "WASD / 方向键移动",
   "embed.mapDataPlaceholder": "JSON、Payload 或 /import/v1#... URL",
+  "embed.error.invalidCode": "无法从代码中读取 BC5R.queue.push({...}) 配置。",
   "embed.error.runtimeLoadFailed": "无法加载内嵌运行时：{url}",
   "embed.error.runtimeUnavailable": "内嵌运行时未提供 BC5R.mount()",
 } as const;

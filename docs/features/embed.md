@@ -34,6 +34,8 @@ await handle.ready;
 
 `hud.timer` 与 `hud.steps` 分别控制计时器和计步器，二者默认关闭。Embed 仍由 Engine 渲染 Gameplay HUD；这里的参数只选择需要展示的项目。
 
+站内 `/embed` 生成页以代码框作为预览配置的单一来源。表单设置先重新生成完整嵌入代码，随后代码变化触发预览刷新；用户也可以直接编辑代码中的 `BC5R.queue.push({...})` JSON 并实时查看结果。预览解析器只读取该 JSON，不执行代码框中的脚本，并始终把 `target` 覆盖为站内预览容器。代码暂时无法解析时保留上一份有效预览并显示错误，恢复为合法配置后继续刷新。
+
 第三方来源使用 `mapUrl` 时，该地图服务器需要允许 Embed 宿主页跨源读取。宿主页若配置 Content Security Policy，也需要放行 `bc5r.js` 的 `script-src`，以及站点资源根的 `font-src`、`img-src` 和 `connect-src`。
 
 当前仍发布一个 `bc5r.js`。`async` 消除 parser 的下载等待；只有确认 JavaScript evaluate 本身形成明显长任务时，才考虑拆分 loader 与 runtime。

@@ -4,6 +4,7 @@ import type {
   BC5RGlobal,
   BC5RHandle,
   BC5RMount,
+  BC5RMountOptions,
   EmbedKeyboardMode,
   EmbedJoystickMode,
   EmbedMusicStyle,
@@ -17,6 +18,10 @@ import {
 } from "../../i18n/webI18n.js";
 import { WEB_ERROR_CODES, WebError } from "../../errors/errorCodes.js";
 import { errorDisplayText } from "../../errors/errorPresentation.js";
+import {
+  generateEmbedCode,
+  parseEmbedCode,
+} from "./embedCode.js";
 
 const props = defineProps<{ publicBaseUrl: string }>();
 
@@ -43,13 +48,17 @@ const info = ref("");
 const preview = ref<HTMLElement | null>(null);
 const previewError = ref<WebDisplayText | null>(null);
 const copyError = ref<WebDisplayText | null>(null);
+const embedCode = ref("");
 const previewReady = ref(false);
 const apiReady = ref(false);
 let embedMount: EmbedMount | null = null;
 let handle: BC5RHandle | null = null;
 let renderSerial = 0;
+let previewTimer: ReturnType<typeof setTimeout> | null = null;
+const PREVIEW_DEBOUNCE_MS = 200;
 
-const options = computed(() => ({
+const generatedConfig = computed<BC5RMountOptions>(() => ({
+  target: "#bc5r",
   ...(mapMode.value === "map" ? { map: map.value.trim() } : { mapUrl: mapUrl.value.trim() }),
   lang: lang.value,
   audio: audioEnabled.value ? audioVolumePercent.value / 100 : false,
@@ -78,44 +87,19 @@ const infoPlaceholder = computed(() => {
   return EMBED_RUNTIME_CATALOGS[locale]["embedRuntime.movementHint"];
 });
 
-const embedCode = computed(() => {
-  const config = {
-    target: "#bc5r",
-    lang: lang.value,
-    audio: audioEnabled.value ? audioVolumePercent.value / 100 : false,
-    musicStyle: musicStyle.value,
-    input: {
-      keyboard: keyboard.value,
-      joystick: joystick.value,
-      pointer: pointer.value,
-    },
-    camera: {
-      zoom: zoom.value,
-      minZoom: minZoom.value,
-      maxZoom: maxZoom.value,
-      pinchZoom: pinchZoom.value,
-      wheelZoom: wheelZoom.value,
-    },
-    hud: {
-      timer: hudTimer.value,
-      steps: hudSteps.value,
-    },
-    ...(info.value.trim() ? { info: info.value.trim() } : {}),
-    ...(mapMode.value === "map"
-      ? { map: map.value.trim() }
-      : { mapUrl: mapUrl.value.trim() }),
-  };
-  const serialized = JSON.stringify(config, null, 2).replaceAll("<", "\\u003c");
-  return `<div id="bc5r" style="width:100%;height:520px;display:grid;place-items:center;\n  border:1px solid #254868;background:#071522;color:#c9e6f7">Loading Bobby Carrot 5 Remake…</div>\n\n<script>\nwindow.BC5R = window.BC5R || { queue: [] };\nBC5R.queue.push(${serialized});\n<\/script>\n\n<script async src="${standaloneUrl()}"><\/script>`;
-});
-
 watch(
-  options,
+  generatedConfig,
+  (config) => {
+    embedCode.value = generateEmbedCode(config, standaloneUrl());
+  },
+  { deep: true, immediate: true },
+);
+watch(
+  embedCode,
   () => {
     copyError.value = null;
-    void refreshPreview();
+    schedulePreviewRefresh();
   },
-  { deep: true },
 );
 
 onMounted(async () => {
@@ -129,15 +113,24 @@ onMounted(async () => {
 });
 
 async function refreshPreview(): Promise<void> {
+  const target = preview.value;
+  if (!target || !embedMount) return;
+  let options: ReturnType<typeof parseEmbedCode>;
+  try {
+    options = parseEmbedCode(embedCode.value);
+  } catch (cause) {
+    previewError.value = errorDisplayText(
+      new WebError(WEB_ERROR_CODES.embed.invalidCode, { cause }),
+    );
+    return;
+  }
   const serial = ++renderSerial;
   handle?.destroy();
   handle = null;
   previewError.value = null;
   previewReady.value = false;
-  const target = preview.value;
-  if (!target || !embedMount) return;
   try {
-    const next = embedMount({ target, ...options.value });
+    const next = embedMount({ ...options, target });
     handle = next;
     await next.ready;
     if (serial !== renderSerial) {
@@ -148,6 +141,14 @@ async function refreshPreview(): Promise<void> {
   } catch {
     // Embed runtime 在预览框内显示地图加载错误。
   }
+}
+
+function schedulePreviewRefresh(): void {
+  if (previewTimer !== null) clearTimeout(previewTimer);
+  previewTimer = setTimeout(() => {
+    previewTimer = null;
+    void refreshPreview();
+  }, PREVIEW_DEBOUNCE_MS);
 }
 
 async function resolveEmbedMount(): Promise<EmbedMount> {
@@ -196,7 +197,11 @@ async function copyCode(): Promise<void> {
   }
 }
 
-onBeforeUnmount(() => handle?.destroy());
+onBeforeUnmount(() => {
+  if (previewTimer !== null) clearTimeout(previewTimer);
+  renderSerial++;
+  handle?.destroy();
+});
 </script>
 
 <template>
@@ -314,7 +319,13 @@ onBeforeUnmount(() => handle?.destroy());
           <h2>{{ webT("embed.code") }}</h2>
           <button @click="copyCode">{{ webT("embed.copy") }}</button>
         </div>
-        <pre class="code-block"><code>{{ embedCode }}</code></pre>
+        <textarea
+          v-model="embedCode"
+          class="code-block"
+          spellcheck="false"
+          wrap="soft"
+          :aria-label="webT('embed.code')"
+        ></textarea>
         <p v-if="copyError" class="error" aria-live="polite">{{ resolveWebText(copyError) }}</p>
       </section>
     </div>
@@ -354,7 +365,6 @@ input[type="range"] { padding: 0; accent-color: var(--bc-active); }
 .preview { width: 100%; height: 520px; overflow: hidden; border: 1px solid var(--line); border-radius: 10px; background: #061632; box-shadow: 0 8px 24px rgba(0,0,0,.16); }
 .error { color: #ffb4ab; }
 .code-heading { display: flex; align-items: center; justify-content: space-between; margin-top: 24px; }
-.code-block { overflow-x: hidden; overflow-y: auto; padding: 16px; border: 1px solid var(--line); border-radius: 10px; background: #061632; color: var(--bc-text); font: 12px/1.55 ui-monospace, monospace; white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-all; cursor: text; }
-.code-block code { white-space: inherit; overflow-wrap: inherit; word-break: inherit; }
+.code-block { min-height: 360px; overflow-x: hidden; overflow-y: auto; padding: 16px; border: 1px solid var(--line); border-radius: 10px; background: #061632; color: var(--bc-text); font: 12px/1.55 ui-monospace, monospace; white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-all; cursor: text; }
 @media (max-width: 900px) { .embed-layout { grid-template-columns: 1fr; } .settings-grid { grid-template-columns: 1fr; } }
 </style>

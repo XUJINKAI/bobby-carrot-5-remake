@@ -10,6 +10,7 @@ export const WEB_ERROR_CODES = {
     unrecognizedData: "import.unrecognized-data",
   },
   embed: {
+    invalidCode: "embed.invalid-code",
     runtimeLoadFailed: "embed.runtime-load-failed",
     runtimeUnavailable: "embed.runtime-unavailable",
   },

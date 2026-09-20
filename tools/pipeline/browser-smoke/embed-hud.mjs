@@ -91,10 +91,37 @@ export const embedHudSmokeScript = `
     }
     await delay(50);
   }
+  const code = document.querySelector('.code-block');
+  const editableCode = code instanceof HTMLTextAreaElement;
+  const generatedTimerCode = editableCode && code.value.includes('"timer": true');
+  if (editableCode) {
+    code.value = code.value.replace('"timer": true', '"timer": false');
+    code.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+  let editedTimer = null;
+  for (let i = 0; i < 120; i += 1) {
+    const nextShadow = host?.shadowRoot;
+    const nextTimer = nextShadow?.querySelector('.engine-gameplay-hud-timer');
+    const nextSteps = nextShadow?.querySelector('.engine-gameplay-hud-steps');
+    if (
+      document.querySelector('[data-preview-state="ready"]') &&
+      nextTimer &&
+      nextSteps &&
+      getComputedStyle(nextTimer).display === 'none' &&
+      getComputedStyle(nextSteps).display !== 'none'
+    ) {
+      editedTimer = false;
+      break;
+    }
+    await delay(50);
+  }
   return JSON.stringify({
     ...initialState,
     defaultHud,
     enabledHud: { timer: enabledTimer, steps: enabledSteps },
+    editableCode,
+    generatedTimerCode,
+    editedTimer,
   });
 })()
 `;
@@ -121,6 +148,9 @@ export function assertEmbedHudSmoke(payload) {
     payload.defaultHud?.steps !== false ||
     payload.enabledHud?.timer !== true ||
     payload.enabledHud?.steps !== true ||
+    !payload.editableCode ||
+    !payload.generatedTimerCode ||
+    payload.editedTimer !== false ||
     !payload.gameplayAssetsLoaded ||
     payload.initialJoystick === payload.toggledJoystick ||
     payload.joystickVisible !== payload.toggledJoystick

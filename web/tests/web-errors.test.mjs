@@ -166,9 +166,14 @@ test("共享 Clipboard 与 Embed 加载错误使用集中语义码", async () =>
   assert.equal(resolveWebText(errorDisplayText(clipboard)), "无法访问剪贴板");
 
   await setWebI18nRouteScopes(["game", "embed"]);
+  const invalidCode = new WebError(WEB_ERROR_CODES.embed.invalidCode);
   const embedError = new WebError(WEB_ERROR_CODES.embed.runtimeLoadFailed, {
     params: { url: "https://example.test/bc5r.js" },
   });
+  assert.equal(
+    resolveWebText(errorDisplayText(invalidCode)),
+    "无法从代码中读取 BC5R.queue.push({...}) 配置。",
+  );
   assert.equal(
     resolveWebText(errorDisplayText(embedError)),
     "无法加载内嵌运行时：https://example.test/bc5r.js",
@@ -178,6 +183,10 @@ test("共享 Clipboard 与 Embed 加载错误使用集中语义码", async () =>
   assert.equal(
     resolveWebText(errorDisplayText(clipboard)),
     "Clipboard access unavailable",
+  );
+  assert.equal(
+    resolveWebText(errorDisplayText(invalidCode)),
+    "Could not read a BC5R.queue.push({...}) configuration from the code.",
   );
   assert.equal(
     resolveWebText(errorDisplayText(embedError)),
