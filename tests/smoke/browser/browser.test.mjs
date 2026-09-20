@@ -331,7 +331,14 @@ try {
   await expectStatus(`${origin}/engine/missing.js`, 404, "text/plain");
   await expectStatus(`${origin}/model/missing`, 404, "text/plain");
   await expectStatus(`${origin}/adventure/missing.js`, 404, "text/plain");
-  await runSourceBrowserRegression(browserRuntime.cdp);
+  // Source regression 原本就在同一浏览器环境内连续验证状态流转，因此整组共用
+  // 一个隔离 context；production smoke 的每次 runBrowserEval 则各自创建 context。
+  const sourceContext = await createBrowserContext(browserRuntime.cdp);
+  try {
+    await runSourceBrowserRegression(sourceContext.cdp);
+  } finally {
+    await sourceContext.dispose();
+  }
   console.log(
     `browser smoke: OK — ${path.basename(browser)} loaded generated SPA route shells while unknown routes and missing static resources returned 404`,
   );
@@ -533,14 +540,15 @@ async function interactiveDataExchangeSmoke(url) {
 async function runBrowserEval(url, script) {
   if (!browserRuntime)
     return { status: 1, stdout: "", stderr: "Chromium runtime 未启动" };
-  const { cdp } = browserRuntime;
-  let targetId = null;
+  let context = null;
   try {
     return await withTimeout(
       (async () => {
-        ({ targetId } = await cdp.send("Target.createTarget", {
+        context = await createBrowserContext(browserRuntime.cdp);
+        const { cdp } = context;
+        const { targetId } = await cdp.send("Target.createTarget", {
           url: "about:blank",
-        }));
+        });
         const { sessionId } = await cdp.send("Target.attachToTarget", {
           targetId,
           flatten: true,
@@ -605,10 +613,29 @@ addEventListener("unhandledrejection", (event) => {
       stderr: `${browserRuntime.stderr()}\n${error instanceof Error ? error.stack : String(error)}`,
     };
   } finally {
-    if (targetId) {
-      await cdp.send("Target.closeTarget", { targetId }).catch(() => {});
-    }
+    await context?.dispose().catch(() => {});
   }
+}
+
+async function createBrowserContext(cdp) {
+  const { browserContextId } = await cdp.send("Target.createBrowserContext");
+  const contextCdp = {
+    send(method, params = {}, sessionId) {
+      const contextParams = method === "Target.createTarget"
+        ? { ...params, browserContextId }
+        : params;
+      return cdp.send(method, contextParams, sessionId);
+    },
+    evaluate(sessionId, expression) {
+      return cdp.evaluate(sessionId, expression);
+    },
+  };
+  return {
+    cdp: contextCdp,
+    dispose() {
+      return cdp.send("Target.disposeBrowserContext", { browserContextId });
+    },
+  };
 }
 
 function startBrowserRuntime(browserPath) {
