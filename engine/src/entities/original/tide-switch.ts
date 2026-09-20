@@ -1,5 +1,4 @@
 import { MapEntityTypeId } from "@bobby/model";
-import { tideSwitchBehavior } from "./switch-runtime.js";
 import type {
   EntityModule,
   EntityModuleDefinition,
@@ -10,6 +9,7 @@ import {
   originalModule,
   pressedState,
 } from "./module.js";
+import { directionalSwitchBehavior } from "./directional-switch.js";
 
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.TIDE_SWITCH,
@@ -17,6 +17,12 @@ const definition: EntityModuleDefinition = {
   state: pressedState,
   presentation: { name: "Tide Switch" },
 };
+
+const tideSwitchBehavior = directionalSwitchBehavior(
+  "tide-switch-global-reverse",
+  MapEntityTypeId.TIDE_SWITCH,
+  MapEntityTypeId.TIDE,
+);
 
 export const tideSwitch: EntityModule = originalModule(
   definition,
