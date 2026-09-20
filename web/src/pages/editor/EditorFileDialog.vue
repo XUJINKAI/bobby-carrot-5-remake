@@ -35,14 +35,14 @@ const exchangeLevel = computed<EditorMap>(() => ({
 const embedUrl = computed(() => new URL("embed", publicBaseUrl()).href);
 const toolbar = computed(() => ({
   left: [
-    { type: "importText" as const, label: webT("editor.applyMapText") },
+    { type: "importText" as const },
     { type: "importFile" as const },
   ],
   right: [
     { type: "status" as const },
     { type: "compress" as const },
-    { type: "copy" as const },
     { type: "download" as const },
+    { type: "copy" as const },
   ],
 }));
 
@@ -104,6 +104,7 @@ function textValue(event: Event): string {
       <p class="editor-muted">{{ webT("editor.shareDescription") }}</p>
       <p class="editor-muted"><a :href="embedUrl" @click.prevent="openEmbed">{{ webT("editor.openEmbed") }}</a></p>
       <DataExchangePanel
+        class="editor-data-exchange"
         :value="exchangeLevel"
         :serialize="serializeMap"
         :parse="parseMap"

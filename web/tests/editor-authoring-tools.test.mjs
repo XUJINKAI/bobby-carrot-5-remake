@@ -286,7 +286,6 @@ test("分享面板的可见文案全部使用 i18n catalog", () => {
     "editor.optional",
     "editor.shareDescription",
     "editor.openEmbed",
-    "editor.applyMapText",
   ]) {
     assert.match(fileDialog, new RegExp(`webT\\(["']${key}["']\\)`));
   }

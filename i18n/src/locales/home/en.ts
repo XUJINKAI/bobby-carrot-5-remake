@@ -13,7 +13,6 @@ const catalog = {
   "home.importDescription": "Import a custom map or save",
   "home.embed": "Embed your custom map on another website",
   "home.importDialog": "Import data",
-  "home.importOpen": "Open",
   "home.importPlaceholder": "Paste JSON, a payload, or a shared link…",
   "home.demoMove": "Move with WASD / arrow keys",
   "home.demoRemaining": "{count} targets remaining",

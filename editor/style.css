@@ -454,6 +454,11 @@
   display: block;
   position: static;
 }
+.editor-data-exchange {
+  --data-exchange-text-bg: #0b130e;
+  --data-exchange-action-bg: #0b130e;
+  --data-exchange-action-hover-bg: #17231a;
+}
 .editor-dialog::backdrop {
   background: rgb(2 6 4 / 76%);
 }

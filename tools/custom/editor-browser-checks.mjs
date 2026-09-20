@@ -164,7 +164,7 @@ async function verifyMetadataSync(cdp, sessionId) {
       textarea.value = JSON.stringify(documentValue, null, 2);
       textarea.dispatchEvent(new Event('input', { bubbles: true }));
       const apply = document.querySelector(
-        '.editor-dialog .data-exchange-toolbar-group:first-child button',
+        '.editor-dialog [data-exchange-action="importText"]',
       );
       apply?.click();
       return Boolean(apply);

@@ -498,7 +498,7 @@ async function interactiveDataExchangeSmoke(url) {
   textarea.value = JSON.stringify(source);
   textarea.dispatchEvent(new Event('input', { bubbles: true }));
   const open = document.querySelector(
-    '.home-import-dialog .data-exchange-toolbar-right button:first-of-type',
+    '.home-import-dialog [data-exchange-action="importText"]',
   );
   if (!open) throw new Error('missing import-text button');
   open.click();

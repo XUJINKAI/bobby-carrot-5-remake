@@ -57,14 +57,14 @@ const activeTab = computed(
 
 const toolbar = computed(() => ({
   left: [
-    { type: "importText" as const, label: webT("common.import") },
-    { type: "importFile" as const, label: webT("common.importFile") },
+    { type: "importText" as const },
+    { type: "importFile" as const },
   ],
   right: [
     { type: "status" as const },
-    { type: "compress" as const, label: webT("common.compress") },
-    { type: "copy" as const, label: webT("common.copy") },
-    { type: "download" as const, label: webT("common.download") },
+    { type: "compress" as const },
+    { type: "download" as const },
+    { type: "copy" as const },
   ],
 }));
 

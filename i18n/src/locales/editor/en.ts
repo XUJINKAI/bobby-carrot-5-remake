@@ -14,7 +14,6 @@ const catalog = {
   "editor.shareDescription":
     "Map content uses semantic JSON and can be exchanged as text, a share link, or a `.json` or `.bc5r` file.",
   "editor.openEmbed": "Embed in another website",
-  "editor.applyMapText": "Apply",
   "editor.palette": "Palette",
   "editor.surface": "Surface",
   "editor.inspector": "Inspector",

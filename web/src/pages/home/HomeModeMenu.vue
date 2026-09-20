@@ -18,11 +18,11 @@ const importOpen = ref(false);
 const pendingSave = ref<ImportedSaveData | null>(null);
 let importScope: WebI18nScope | null = null;
 const toolbar = computed(() => ({
-  left: [],
-  right: [
-    { type: "importText" as const, label: webT("home.importOpen") },
-    { type: "importFile" as const, label: webT("common.importFile"), accept: "*/*" },
+  left: [
+    { type: "importText" as const },
+    { type: "importFile" as const, accept: "*/*" },
   ],
+  right: [],
 }));
 
 async function parseImport(value: unknown): Promise<ImportedData> {
