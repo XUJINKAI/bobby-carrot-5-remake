@@ -9,7 +9,7 @@ import {
   originalModule,
   pressedState,
 } from "./module.js";
-import { directionalSwitchBehavior } from "./directional-switch.js";
+import { createDirectionalSwitchBehavior } from "../behaviors/directional-switch.js";
 
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.TIDE_SWITCH,
@@ -18,7 +18,7 @@ const definition: EntityModuleDefinition = {
   presentation: { name: "Tide Switch" },
 };
 
-const tideSwitchBehavior = directionalSwitchBehavior(
+const tideSwitchBehavior = createDirectionalSwitchBehavior(
   "tide-switch-global-reverse",
   MapEntityTypeId.TIDE_SWITCH,
   MapEntityTypeId.TIDE,

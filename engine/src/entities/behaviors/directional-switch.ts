@@ -4,8 +4,8 @@ import {
 } from "@bobby/model";
 import type { Behavior } from "../../world/behavior/Behavior.js";
 
-/** Speed Switch 与 Tide Switch 的整图同步规则相同，共用工厂避免两套行为漂移。 */
-export function directionalSwitchBehavior(
+/** 创建同类 Switch 同步状态并反转目标方向的行为。 */
+export function createDirectionalSwitchBehavior(
   id: string,
   switchType: EntityType,
   targetType: EntityType,

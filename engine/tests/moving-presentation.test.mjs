@@ -8,7 +8,7 @@ import {
 import { builtinEngineEnvironment } from "../dist/public.js";
 import {
   MOVING_PLATFORM_SUPPORT_HEIGHT_PX,
-} from "../dist/entities/original/moving-entities.js";
+} from "../dist/entities/original/moving-platform.js";
 import { EntityStore } from "../dist/world/entity/EntityStore.js";
 import { SpatialIndex } from "../dist/world/spatial/SpatialIndex.js";
 import { SpatialVisualQuery } from "../dist/visual/SpatialVisualQuery.js";

@@ -9,7 +9,7 @@ import {
   originalModule,
   pressedState,
 } from "./module.js";
-import { directionalSwitchBehavior } from "./directional-switch.js";
+import { createDirectionalSwitchBehavior } from "../behaviors/directional-switch.js";
 
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.SPEED_SWITCH,
@@ -18,7 +18,7 @@ const definition: EntityModuleDefinition = {
   presentation: { name: "Speed Switch" },
 };
 
-const speedSwitchBehavior = directionalSwitchBehavior(
+const speedSwitchBehavior = createDirectionalSwitchBehavior(
   "speed-switch-global-reverse",
   MapEntityTypeId.SPEED_SWITCH,
   MapEntityTypeId.SPEED,
