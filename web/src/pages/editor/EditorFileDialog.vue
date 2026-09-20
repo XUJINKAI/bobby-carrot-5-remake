@@ -101,8 +101,6 @@ function textValue(event: Event): string {
       <label class="editor-field"><span>{{ webT("editor.mapName") }}</span><input :value="nameValue" data-editor-share-metadata="name" maxlength="120" @input="emit('metadataField', 'name', textValue($event))"></label>
       <label class="editor-field"><span>{{ webT("editor.mapAuthor") }}</span><input :value="authorValue" data-editor-share-metadata="author" maxlength="80" :placeholder="webT('editor.optional')" @input="emit('metadataField', 'author', textValue($event))"></label>
       <label class="editor-field"><span>{{ webT("editor.mapNote") }}</span><textarea :value="noteValue" data-editor-share-metadata="note" maxlength="500" rows="4" :placeholder="webT('editor.optional')" @input="emit('metadataField', 'note', textValue($event))"></textarea></label>
-      <p class="editor-muted">{{ webT("editor.shareDescription") }}</p>
-      <p class="editor-muted"><a :href="embedUrl" @click.prevent="openEmbed">{{ webT("editor.openEmbed") }}</a></p>
       <DataExchangePanel
         class="editor-data-exchange"
         :value="exchangeLevel"
@@ -116,7 +114,15 @@ function textValue(event: Event): string {
         :reset-key="open ? 'open' : 'closed'"
         @import="imported($event as EditorMap)"
         @downloaded="downloaded"
-      />
+      >
+        <template #metaAction>
+          <a
+            class="editor-data-exchange-embed-link"
+            :href="embedUrl"
+            @click.prevent="openEmbed"
+          >{{ webT("editor.openEmbed") }}</a>
+        </template>
+      </DataExchangePanel>
     </section>
   </div>
 </template>

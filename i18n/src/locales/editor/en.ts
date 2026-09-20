@@ -11,8 +11,6 @@ const catalog = {
   "editor.mapAuthor": "Author",
   "editor.mapNote": "Note",
   "editor.optional": "Optional",
-  "editor.shareDescription":
-    "Map content uses semantic JSON and can be exchanged as text, a share link, or a `.json` or `.bc5r` file.",
   "editor.openEmbed": "Embed in another website",
   "editor.palette": "Palette",
   "editor.surface": "Surface",

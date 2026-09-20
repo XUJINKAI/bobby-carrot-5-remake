@@ -275,7 +275,7 @@ onBeforeUnmount(() => {
 
 <template>
   <section class="data-exchange-panel">
-    <div v-if="compressControl || statusControl" class="data-exchange-meta">
+    <div v-if="compressControl || statusControl || $slots.metaAction" class="data-exchange-meta">
       <label
         v-if="compressControl"
         class="data-exchange-check data-exchange-compress-toggle"
@@ -287,6 +287,7 @@ onBeforeUnmount(() => {
         <span v-if="statusControl" class="data-exchange-status">{{ payloadSize }}</span>
       </label>
       <span v-else-if="statusControl" class="data-exchange-status">{{ payloadSize }}</span>
+      <slot name="metaAction" />
     </div>
     <textarea
       v-model="draft"

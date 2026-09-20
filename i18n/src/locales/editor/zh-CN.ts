@@ -10,8 +10,6 @@ const catalog = {
   "editor.mapAuthor": "作者",
   "editor.mapNote": "注记",
   "editor.optional": "可选",
-  "editor.shareDescription":
-    "地图内容使用语义 JSON，可通过文本、分享链接、`.json` 或 `.bc5r` 文件交换。",
   "editor.openEmbed": "内嵌到其他网页",
   "editor.palette": "Palette",
   "editor.surface": "Surface",

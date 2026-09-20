@@ -459,6 +459,9 @@
   --data-exchange-action-bg: #0b130e;
   --data-exchange-action-hover-bg: #17231a;
 }
+.editor-data-exchange-embed-link {
+  font-size: 1rem;
+}
 .editor-dialog::backdrop {
   background: rgb(2 6 4 / 76%);
 }

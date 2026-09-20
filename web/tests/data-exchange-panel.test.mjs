@@ -52,10 +52,17 @@ test("数据交换面板使用紧凑信息行和固定操作分组", () => {
 
 test("Editor 分享面板单独覆盖数据文本区背景", () => {
   assert.match(editorDialog, /class="editor-data-exchange"/);
+  assert.match(editorDialog, /#metaAction/);
+  assert.match(editorDialog, /class="editor-data-exchange-embed-link"/);
   assert.match(panel, /--data-exchange-text-bg/);
   assert.match(panel, /--data-exchange-action-bg/);
+  assert.match(panel, /<slot name="metaAction" \/>/);
   assert.match(
     editorStyle,
     /\.editor-data-exchange\s*\{[\s\S]*--data-exchange-text-bg: #0b130e;[\s\S]*--data-exchange-action-bg: #0b130e;/,
+  );
+  assert.match(
+    editorStyle,
+    /\.editor-data-exchange-embed-link\s*\{\s*font-size: 1rem;/,
   );
 });

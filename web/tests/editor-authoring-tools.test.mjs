@@ -284,12 +284,12 @@ test("分享面板的可见文案全部使用 i18n catalog", () => {
     "editor.mapAuthor",
     "editor.mapNote",
     "editor.optional",
-    "editor.shareDescription",
     "editor.openEmbed",
   ]) {
     assert.match(fileDialog, new RegExp(`webT\\(["']${key}["']\\)`));
   }
   assert.match(fileDialog, /const toolbar = computed/);
+  assert.match(fileDialog, /#metaAction/);
   assert.match(fileDialog, /webT\(["']common\.close["']\)/);
   assert.doesNotMatch(
     fileDialog,
