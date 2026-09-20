@@ -1,0 +1,101 @@
+{
+  "formatVersion": 1,
+  "meta": {
+    "id": "original/1-6",
+    "url": "https://bc5r.xujinkai.net/explore/play/original/1-6",
+    "note": ""
+  },
+  "runtime": {
+    "worldHz": 60,
+    "bobbyLocomotion": {
+      "moveMs": 350
+    }
+  },
+  "finalState": {
+    "status": "won",
+    "moves": 57,
+    "position": [
+      {
+        "x": 5,
+        "y": 16
+      }
+    ],
+    "elapsedMs": 35983,
+    "counters": {
+      "collect-bonus-coin": 3,
+      "collect-carrot": 9,
+      "collect-shovel-pickup": 1
+    },
+    "completedConditions": [
+      {
+        "type": "carrot"
+      },
+      {
+        "type": "exit"
+      }
+    ]
+  },
+  "endTick": 2159,
+  "frames": [
+    {"tick":4,"groups":[{"intents":[{"type":"move","direction":"down"}]}]},
+    {"tick":33,"groups":[{"intents":[{"type":"move","direction":"left"}]}]},
+    {"tick":57,"groups":[{"intents":[{"type":"move","direction":"down"}]}]},
+    {"tick":78,"groups":[{"intents":[{"type":"move","direction":"down"}]}]},
+    {"tick":103,"groups":[{"intents":[{"type":"move","direction":"right"}]}]},
+    {"tick":272,"groups":[{"intents":[{"type":"move","direction":"down"}]}]},
+    {"tick":477,"groups":[{"intents":[{"type":"move","direction":"right"}]}]},
+    {"tick":524,"groups":[{"intents":[{"type":"move","direction":"right"}]}]},
+    {"tick":549,"groups":[{"intents":[{"type":"move","direction":"right"}]}]},
+    {"tick":576,"groups":[{"intents":[{"type":"move","direction":"right"}]}]},
+    {"tick":597,"groups":[{"intents":[{"type":"move","direction":"up"}]}]},
+    {"tick":618,"groups":[{"intents":[{"type":"move","direction":"left"}]}]},
+    {"tick":639,"groups":[{"intents":[{"type":"move","direction":"up"}]}]},
+    {"tick":664,"groups":[{"intents":[{"type":"move","direction":"up"}]}]},
+    {"tick":696,"groups":[{"intents":[{"type":"move","direction":"left"}]}]},
+    {"tick":717,"groups":[{"intents":[{"type":"move","direction":"up"}]}]},
+    {"tick":739,"groups":[{"intents":[{"type":"move","direction":"right"}]}]},
+    {"tick":762,"groups":[{"intents":[{"type":"move","direction":"right"}]}]},
+    {"tick":783,"groups":[{"intents":[{"type":"move","direction":"up"}]}]},
+    {"tick":807,"groups":[{"intents":[{"type":"move","direction":"up"}]}]},
+    {"tick":830,"groups":[{"intents":[{"type":"move","direction":"right"}]}]},
+    {"tick":851,"groups":[{"intents":[{"type":"move","direction":"right"}]}]},
+    {"tick":872,"groups":[{"intents":[{"type":"move","direction":"right"}]}]},
+    {"tick":902,"groups":[{"intents":[{"type":"move","direction":"down"}]}]},
+    {"tick":927,"groups":[{"intents":[{"type":"move","direction":"down"}]}]},
+    {"tick":959,"groups":[{"intents":[{"type":"move","direction":"down"}]}]},
+    {"tick":994,"groups":[{"intents":[{"type":"move","direction":"down"}]}]},
+    {"tick":1025,"groups":[{"intents":[{"type":"move","direction":"right"}]}]},
+    {"tick":1046,"groups":[{"intents":[{"type":"move","direction":"down"}]}]},
+    {"tick":1071,"groups":[{"intents":[{"type":"move","direction":"down"}]}]},
+    {"tick":1095,"groups":[{"intents":[{"type":"move","direction":"left"}]}]},
+    {"tick":1117,"groups":[{"intents":[{"type":"move","direction":"down"}]}]},
+    {"tick":1138,"groups":[{"intents":[{"type":"move","direction":"down"}]}]},
+    {"tick":1168,"groups":[{"intents":[{"type":"move","direction":"down"}]}]},
+    {"tick":1218,"groups":[{"intents":[{"type":"move","direction":"left"}]}]},
+    {"tick":1239,"groups":[{"intents":[{"type":"move","direction":"down"}]}]},
+    {"tick":1260,"groups":[{"intents":[{"type":"move","direction":"left"}]}]},
+    {"tick":1281,"groups":[{"intents":[{"type":"move","direction":"down"}]}]},
+    {"tick":1311,"groups":[{"intents":[{"type":"move","direction":"down"}]}]},
+    {"tick":1335,"groups":[{"intents":[{"type":"move","direction":"up"}]}]},
+    {"tick":1365,"groups":[{"intents":[{"type":"move","direction":"down"}]}]},
+    {"tick":1409,"groups":[{"intents":[{"type":"move","direction":"right"}]}]},
+    {"tick":1431,"groups":[{"intents":[{"type":"move","direction":"down"}]}]},
+    {"tick":1463,"groups":[{"intents":[{"type":"move","direction":"right"}]}]},
+    {"tick":1489,"groups":[{"intents":[{"type":"move","direction":"up"}]}]},
+    {"tick":1519,"groups":[{"intents":[{"type":"move","direction":"up"}]}]},
+    {"tick":1586,"groups":[{"intents":[{"type":"move","direction":"right"}]}]},
+    {"tick":1607,"groups":[{"intents":[{"type":"move","direction":"up"}]}]},
+    {"tick":1633,"groups":[{"intents":[{"type":"move","direction":"left"}]}]},
+    {"tick":1654,"groups":[{"intents":[{"type":"move","direction":"left"}]}]},
+    {"tick":1675,"groups":[{"intents":[{"type":"move","direction":"left"}]}]},
+    {"tick":1696,"groups":[{"intents":[{"type":"move","direction":"down"}]}]},
+    {"tick":1724,"groups":[{"intents":[{"type":"move","direction":"left"}]}]},
+    {"tick":1812,"groups":[{"intents":[{"type":"move","direction":"left"}]}]},
+    {"tick":1914,"groups":[{"intents":[{"type":"move","direction":"left"}]}]},
+    {"tick":2002,"groups":[{"intents":[{"type":"move","direction":"left"}]}]},
+    {"tick":2039,"groups":[{"intents":[{"type":"move","direction":"down"}]}]},
+    {"tick":2069,"groups":[{"intents":[{"type":"move","direction":"left"}]}]},
+    {"tick":2098,"groups":[{"intents":[{"type":"move","direction":"down"}]}]},
+    {"tick":2137,"groups":[{"intents":[{"type":"move","direction":"right"}]}]}
+  ]
+}
