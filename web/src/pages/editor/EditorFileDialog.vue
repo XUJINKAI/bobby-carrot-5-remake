@@ -5,6 +5,8 @@ import { publicBaseUrl } from "../../services/assets/gameAssets.js";
 import DataExchangePanel from "../../shared/data-exchange/DataExchangePanel.vue";
 import { encodeExchangePayload } from "@bobby/exchange";
 import AppIcon from "../../shared/icons/AppIcon.vue";
+import { webT } from "../../i18n/webI18n.js";
+import { createBackdropDismissHandlers } from "../../shared/dialog/backdropDismiss.js";
 import type { EditorMetadataField } from "./useEditorPage.js";
 
 const props = defineProps<{
@@ -31,18 +33,18 @@ const exchangeLevel = computed<EditorMap>(() => ({
   },
 }));
 const embedUrl = computed(() => new URL("embed", publicBaseUrl()).href);
-const toolbar = {
+const toolbar = computed(() => ({
   left: [
-    { type: "importText" as const, label: "应用" },
-    { type: "importFile" as const, label: "导入文件" },
+    { type: "importText" as const },
+    { type: "importFile" as const },
   ],
   right: [
     { type: "status" as const },
-    { type: "compress" as const, label: "压缩" },
-    { type: "copy" as const, label: "复制" },
-    { type: "download" as const, label: "下载" },
+    { type: "compress" as const },
+    { type: "download" as const },
+    { type: "copy" as const },
   ],
-};
+}));
 
 function parseMap(value: unknown): EditorMap {
   return parseEditorLevel(JSON.stringify(value));
@@ -64,6 +66,8 @@ function close(): void {
   emit("close");
 }
 
+const backdropDismiss = createBackdropDismissHandlers(close);
+
 function downloaded(): void {
   emit("metadataFlush");
   emit("saved");
@@ -79,20 +83,26 @@ function textValue(event: Event): string {
 </script>
 
 <template>
-  <div v-if="open" class="editor-dialog-layer" role="presentation" @click.self="close">
-    <section class="editor-dialog" role="dialog" aria-modal="true" aria-label="地图文件">
+  <div
+    v-if="open"
+    class="editor-dialog-layer"
+    role="presentation"
+    @pointerdown="backdropDismiss.pointerDown"
+    @pointerup="backdropDismiss.pointerUp"
+    @pointercancel="backdropDismiss.pointerCancel"
+  >
+    <section class="editor-dialog" role="dialog" aria-modal="true" :aria-label="webT('editor.mapFile')">
       <header>
-        <strong>地图文件</strong>
-        <button class="editor-mini-btn" type="button" aria-label="关闭" @click="close">
+        <strong>{{ webT("editor.mapFile") }}</strong>
+        <button class="editor-mini-btn" data-editor-dialog-close type="button" :aria-label="webT('common.close')" @click="close">
           <AppIcon name="close" />
         </button>
       </header>
-      <label class="editor-field"><span>名称</span><input :value="nameValue" data-editor-share-metadata="name" maxlength="120" @input="emit('metadataField', 'name', textValue($event))"></label>
-      <label class="editor-field"><span>作者</span><input :value="authorValue" data-editor-share-metadata="author" maxlength="80" placeholder="可选" @input="emit('metadataField', 'author', textValue($event))"></label>
-      <label class="editor-field"><span>注记</span><textarea :value="noteValue" data-editor-share-metadata="note" maxlength="500" rows="4" placeholder="可选" @input="emit('metadataField', 'note', textValue($event))"></textarea></label>
-      <p class="editor-muted">地图内容使用语义 JSON，可通过文本、分享链接、`.json` 或 `.bc5r` 文件交换。</p>
-      <p class="editor-muted"><a :href="embedUrl" @click.prevent="openEmbed">内嵌到其他网页</a></p>
+      <label class="editor-field"><span>{{ webT("editor.mapName") }}</span><input :value="nameValue" data-editor-share-metadata="name" maxlength="120" @input="emit('metadataField', 'name', textValue($event))"></label>
+      <label class="editor-field"><span>{{ webT("editor.mapAuthor") }}</span><input :value="authorValue" data-editor-share-metadata="author" maxlength="80" :placeholder="webT('editor.optional')" @input="emit('metadataField', 'author', textValue($event))"></label>
+      <label class="editor-field"><span>{{ webT("editor.mapNote") }}</span><textarea :value="noteValue" data-editor-share-metadata="note" maxlength="500" rows="4" :placeholder="webT('editor.optional')" @input="emit('metadataField', 'note', textValue($event))"></textarea></label>
       <DataExchangePanel
+        class="editor-data-exchange"
         :value="exchangeLevel"
         :serialize="serializeMap"
         :parse="parseMap"
@@ -104,7 +114,15 @@ function textValue(event: Event): string {
         :reset-key="open ? 'open' : 'closed'"
         @import="imported($event as EditorMap)"
         @downloaded="downloaded"
-      />
+      >
+        <template #metaAction>
+          <a
+            class="editor-data-exchange-embed-link"
+            :href="embedUrl"
+            @click.prevent="openEmbed"
+          >{{ webT("editor.openEmbed") }}</a>
+        </template>
+      </DataExchangePanel>
     </section>
   </div>
 </template>

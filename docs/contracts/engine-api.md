@@ -15,9 +15,6 @@ Engine 加载地图时为未知 Entity type 和字段合同不匹配的已知 En
 
 核心目标始终是：**给 Engine 一份纯语义 `LevelMap` 和少量运行配置，就能够独立运行这张地图。** Campaign、路由、collection、DAT provenance、存档与产品导航都属于 Engine 外层。
 
-> `LevelMap.music` 的选曲归属存在尚待解决的合同冲突，参见
-> [背景音乐选曲职责 ADR](../decisions/background-music-selection-ownership.md)。本合同的现有表述暂予保留。
-
 ## Gameplay runtime
 
 推荐由高层 factory 创建 session：
@@ -63,6 +60,9 @@ const { game, input, dialog } = runtime;
 ```
 
 宿主销毁 session 时只需要 `runtime.destroy()`。也可以直接创建 `Game`，但公开能力仍与同一 façade 保持一致。
+runtime 内部创建的 `AudioRuntime` 会随 session 一起销毁；通过 `audio` 注入的
+`AudioBackend` 由宿主持有，销毁 session 不会停止或销毁该实例。跨页面宿主可以保留当前
+音乐，并在进入下一产品场景时重新选曲。
 
 ## 混合时钟
 
@@ -470,9 +470,9 @@ runtime: {
 地图只声明普通 `carrot`。收集后同一 Carrot Entity 保留原 ID，
 `state.consumed = true` 驱动目标计数和 `ts-13-10` 视觉；该 state 随 World Snapshot 恢复。
 
-终局选曲属于宿主产品流程。宿主在 Game 状态进入 `won / dead` 时分别调用
-`audio.playMusic("cleared")` 或 `audio.playMusic("death")`；角色动画和 Result Overlay
-的先后关系不进入音频 API。
+Engine 在 Game 状态进入 `won / dead` 时分别播放一次 `cleared / death`，Restart、Undo
+或 Replay 返回游玩状态时恢复地图基础音乐与当前机关覆盖。Result Overlay 的内容、出现时机
+和后续产品动作仍由宿主持有。
 
 浏览器可能在首次用户交互前暂停 `AudioContext`。`AudioRuntime.isMusicInteractionRequired()` 提供当前阻塞状态，`onMusicInteractionRequiredChange()` 提供状态订阅；宿主据此呈现交互提示，并在用户输入时调用 `resume()`。该状态只描述浏览器音频能力，不进入 Game gameplay state。
 

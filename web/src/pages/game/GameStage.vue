@@ -1,22 +1,32 @@
 <script setup lang="ts">
 import ReplayPanel from "./ReplayPanel.vue";
 
-defineProps<{
+withDefaults(defineProps<{
   showReplayPanel: boolean;
-}>();
+  canvasId?: string;
+  showBuiltinReplay?: boolean;
+}>(), {
+  canvasId: "game",
+  showBuiltinReplay: true,
+});
 </script>
 
 <template>
   <section class="game-stage" data-game-stage>
     <div class="game-canvas-layer">
-      <canvas id="game" />
-      <div class="result-overlay" data-result-overlay hidden>
-        <div class="result-card" data-result-card>
-          <div data-result-card-content />
+      <canvas :id="canvasId" />
+      <slot name="result">
+        <div class="result-overlay" data-result-overlay hidden>
+          <div class="result-card" data-result-card>
+            <div data-result-card-content />
+          </div>
         </div>
-      </div>
+      </slot>
     </div>
-    <ReplayPanel v-if="showReplayPanel" />
+    <ReplayPanel
+      v-if="showReplayPanel"
+      :show-builtin="showBuiltinReplay"
+    />
   </section>
 </template>
 

@@ -60,5 +60,6 @@ const catalog = {
   "game.map.verified": "Verified completable",
   "game.map.unverified": "Not verified",
   "game.map.verifiedExplore": "Verified in Explore",
+  "game.map.editorDraft": "Editor draft",
 } satisfies Record<GameTranslationKey, string>;
 export default catalog;

@@ -12,7 +12,6 @@ const catalog = {
   "home.importDescription": "导入自定义地图或存档",
   "home.embed": "将自制地图内嵌到其他网页",
   "home.importDialog": "导入数据",
-  "home.importOpen": "打开",
   "home.importPlaceholder": "粘贴 JSON、Payload 或分享链接……",
   "home.demoMove": "WASD / 方向键移动",
   "home.demoRemaining": "剩余目标 {count}",

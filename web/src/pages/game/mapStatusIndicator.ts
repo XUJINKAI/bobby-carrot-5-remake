@@ -6,9 +6,14 @@ import type {
 import type { GamePageMode } from "./gamePageCapabilities.js";
 import { webT } from "../../i18n/webI18n.js";
 
+export type MapVerificationStatus =
+  | "verified"
+  | "verified-explore"
+  | "unverified"
+  | "editor-draft";
+
 export function mapStatusIndicator(
-  mode: GamePageMode,
-  verified: boolean,
+  verification: MapVerificationStatus,
   mapId: string,
   mapName: string,
   meta?: MapMeta,
@@ -19,7 +24,7 @@ export function mapStatusIndicator(
     {
       id: "verification",
       label: webT("game.map.verification"),
-      text: mapVerificationText(mode, verified),
+      text: mapVerificationText(verification),
     },
     {
       id: "map-id",
@@ -41,7 +46,9 @@ export function mapStatusIndicator(
   return {
     id: "map-status",
     icon: author || note ? "map-details" : "map-status",
-    tone: verified ? "success" : "muted",
+    tone: verification === "verified" || verification === "verified-explore"
+      ? "success"
+      : "muted",
     label: webT("game.map.status", {
       details: details.map((detail) => `${detail.label} ${detail.text}`).join(" · "),
     }),
@@ -50,15 +57,21 @@ export function mapStatusIndicator(
 }
 
 export function mapVerificationText(
+  verification: MapVerificationStatus,
+): string {
+  if (verification === "verified") return webT("game.map.verified");
+  if (verification === "verified-explore")
+    return webT("game.map.verifiedExplore");
+  if (verification === "editor-draft") return webT("game.map.editorDraft");
+  return webT("game.map.unverified");
+}
+
+export function gameMapVerificationStatus(
   mode: GamePageMode,
   verified: boolean,
-): string {
-  if (mode === "explore") {
-    return verified ? webT("game.map.verified") : webT("game.map.unverified");
-  }
-  return verified
-    ? webT("game.map.verifiedExplore")
-    : webT("game.map.unverified");
+): MapVerificationStatus {
+  if (!verified) return "unverified";
+  return mode === "explore" ? "verified" : "verified-explore";
 }
 
 function normalizedMetadataText(value: string | undefined): string | null {

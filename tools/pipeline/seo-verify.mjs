@@ -37,6 +37,10 @@ export function verifySeoArtifacts() {
     robots: "index,follow",
     canonical: `${siteOrigin}/edit`,
   });
+  assertShell("edit/test/index.html", {
+    robots: "noindex,follow",
+    canonical: `${siteOrigin}/edit/test`,
+  });
   assertShell("settings/index.html", {
     robots: "noindex,follow",
     canonical: `${siteOrigin}/settings`,
@@ -78,6 +82,7 @@ export function verifySeoArtifacts() {
     "/settings",
     "/import/v1",
     "/adventure/play/1-1",
+    "/edit/test",
   ])
     if (sitemap.includes(`<loc>${siteOrigin}${excluded}</loc>`))
       throw new Error(`sitemap must not include noindex/alias URL: ${excluded}`);

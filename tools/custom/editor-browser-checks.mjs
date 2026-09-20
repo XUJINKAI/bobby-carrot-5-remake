@@ -58,6 +58,7 @@ async function verifyMetadataSync(cdp, sessionId) {
       ),
     ),
   );
+  await verifyDialogDragDoesNotDismiss(cdp, sessionId);
   await cdp.evaluate(
     sessionId,
     `(() => {
@@ -102,7 +103,7 @@ async function verifyMetadataSync(cdp, sessionId) {
   });
   await cdp.evaluate(
     sessionId,
-    "document.querySelector('.editor-dialog [aria-label=\"关闭\"]')?.click(); true",
+    "document.querySelector('[data-editor-dialog-close]')?.click(); true",
   );
   await waitForBrowserState(async () =>
     !await cdp.evaluate(
@@ -162,8 +163,9 @@ async function verifyMetadataSync(cdp, sessionId) {
       documentValue.meta = metadata;
       textarea.value = JSON.stringify(documentValue, null, 2);
       textarea.dispatchEvent(new Event('input', { bubbles: true }));
-      const apply = [...document.querySelectorAll('.editor-dialog .data-exchange-toolbar button')]
-        .find((button) => button.textContent?.trim() === '应用');
+      const apply = document.querySelector(
+        '.editor-dialog [data-exchange-action="importText"]',
+      );
       apply?.click();
       return Boolean(apply);
     })(${JSON.stringify(importedMetadata)})`,
@@ -180,6 +182,73 @@ async function verifyMetadataSync(cdp, sessionId) {
     return JSON.stringify(current) === JSON.stringify(importedMetadata);
   });
   await clickWhenPresent(cdp, sessionId, "#editor-inspector");
+}
+
+async function verifyDialogDragDoesNotDismiss(cdp, sessionId) {
+  const points = await cdp.evaluate(
+    sessionId,
+    `(() => {
+      const layer = document.querySelector('.editor-dialog-layer');
+      const dialog = document.querySelector('.editor-dialog');
+      if (!layer || !dialog) return null;
+      const layerRect = layer.getBoundingClientRect();
+      const dialogRect = dialog.getBoundingClientRect();
+      return {
+        inside: {
+          x: dialogRect.left + dialogRect.width / 2,
+          y: dialogRect.top + 24,
+        },
+        backdrop: {
+          x: layerRect.left + 4,
+          y: layerRect.top + 4,
+        },
+      };
+    })()`,
+  );
+  if (!points) throw new Error("Editor Share Dialog 无法测量");
+
+  await cdp.send(
+    "Input.dispatchMouseEvent",
+    {
+      type: "mousePressed",
+      x: points.inside.x,
+      y: points.inside.y,
+      button: "left",
+      buttons: 1,
+      clickCount: 1,
+    },
+    sessionId,
+  );
+  await cdp.send(
+    "Input.dispatchMouseEvent",
+    {
+      type: "mouseMoved",
+      x: points.backdrop.x,
+      y: points.backdrop.y,
+      button: "left",
+      buttons: 1,
+    },
+    sessionId,
+  );
+  await cdp.send(
+    "Input.dispatchMouseEvent",
+    {
+      type: "mouseReleased",
+      x: points.backdrop.x,
+      y: points.backdrop.y,
+      button: "left",
+      buttons: 0,
+      clickCount: 1,
+    },
+    sessionId,
+  );
+  await new Promise((resolve) => setTimeout(resolve, 100));
+  const remainsOpen = await cdp.evaluate(
+    sessionId,
+    "Boolean(document.querySelector('.editor-dialog'))",
+  );
+  if (!remainsOpen)
+    throw new Error("Editor Share Dialog 被从面板内部开始的拖拽关闭");
 }
 
 async function editorLevelMetadata(cdp, sessionId) {

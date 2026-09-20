@@ -163,6 +163,25 @@ test("Replay 跳转终点仍按顺序发布沿途 WorldEvent", () => {
   assert.deepEqual(events, [collected]);
 });
 
+test("Game 在发布终局事件时同步 Engine 音乐状态", () => {
+  const game = eventGame(false);
+  const outcomes = [];
+  const events = [];
+  game.session = {
+    hasLevel: true,
+    world: { dead: false, completed: true },
+  };
+  game.music = { setOutcome: (outcome) => outcomes.push(outcome) };
+  game.listeners = new Map([
+    ["level-complete", new Set([() => events.push("level-complete")])],
+  ]);
+
+  game.emitTerminalEvents();
+
+  assert.deepEqual(outcomes, ["won"]);
+  assert.deepEqual(events, ["level-complete"]);
+});
+
 test("Speed、Flight Landing 与 Mower 冲撞共用原版分段震动", () => {
   const game = eventGame(false);
   const shakes = [];

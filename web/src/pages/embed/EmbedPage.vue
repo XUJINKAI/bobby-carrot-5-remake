@@ -4,6 +4,7 @@ import type {
   BC5RGlobal,
   BC5RHandle,
   BC5RMount,
+  BC5RMountOptions,
   EmbedKeyboardMode,
   EmbedJoystickMode,
   EmbedMusicStyle,
@@ -17,6 +18,10 @@ import {
 } from "../../i18n/webI18n.js";
 import { WEB_ERROR_CODES, WebError } from "../../errors/errorCodes.js";
 import { errorDisplayText } from "../../errors/errorPresentation.js";
+import {
+  generateEmbedCode,
+  parseEmbedCode,
+} from "./embedCode.js";
 
 const props = defineProps<{ publicBaseUrl: string }>();
 
@@ -37,17 +42,25 @@ const minZoom = ref(0.5);
 const maxZoom = ref(3);
 const pinchZoom = ref(true);
 const wheelZoom = ref(false);
+const hudTimer = ref(false);
+const hudSteps = ref(false);
 const info = ref("");
 const preview = ref<HTMLElement | null>(null);
 const previewError = ref<WebDisplayText | null>(null);
 const copyError = ref<WebDisplayText | null>(null);
+const embedCode = ref("");
+const codeFocused = ref(false);
+const previewStyle = ref<string>();
 const previewReady = ref(false);
 const apiReady = ref(false);
 let embedMount: EmbedMount | null = null;
 let handle: BC5RHandle | null = null;
 let renderSerial = 0;
+let previewTimer: ReturnType<typeof setTimeout> | null = null;
+const PREVIEW_DEBOUNCE_MS = 200;
 
-const options = computed(() => ({
+const generatedConfig = computed<BC5RMountOptions>(() => ({
+  target: "#bc5r",
   ...(mapMode.value === "map" ? { map: map.value.trim() } : { mapUrl: mapUrl.value.trim() }),
   lang: lang.value,
   audio: audioEnabled.value ? audioVolumePercent.value / 100 : false,
@@ -64,6 +77,10 @@ const options = computed(() => ({
     pinchZoom: pinchZoom.value,
     wheelZoom: wheelZoom.value,
   },
+  hud: {
+    timer: hudTimer.value,
+    steps: hudSteps.value,
+  },
   ...(info.value.trim() ? { info: info.value.trim() } : {}),
 }));
 
@@ -72,40 +89,19 @@ const infoPlaceholder = computed(() => {
   return EMBED_RUNTIME_CATALOGS[locale]["embedRuntime.movementHint"];
 });
 
-const embedCode = computed(() => {
-  const config = {
-    target: "#bc5r",
-    lang: lang.value,
-    audio: audioEnabled.value ? audioVolumePercent.value / 100 : false,
-    musicStyle: musicStyle.value,
-    input: {
-      keyboard: keyboard.value,
-      joystick: joystick.value,
-      pointer: pointer.value,
-    },
-    camera: {
-      zoom: zoom.value,
-      minZoom: minZoom.value,
-      maxZoom: maxZoom.value,
-      pinchZoom: pinchZoom.value,
-      wheelZoom: wheelZoom.value,
-    },
-    ...(info.value.trim() ? { info: info.value.trim() } : {}),
-    ...(mapMode.value === "map"
-      ? { map: map.value.trim() }
-      : { mapUrl: mapUrl.value.trim() }),
-  };
-  const serialized = JSON.stringify(config, null, 2).replaceAll("<", "\\u003c");
-  return `<div id="bc5r" style="width:100%;height:520px;display:grid;place-items:center;\n  border:1px solid #254868;background:#071522;color:#c9e6f7">Loading Bobby Carrot 5 Remake…</div>\n\n<script>\nwindow.BC5R = window.BC5R || { queue: [] };\nBC5R.queue.push(${serialized});\n<\/script>\n\n<script async src="${standaloneUrl()}"><\/script>`;
-});
-
 watch(
-  options,
+  generatedConfig,
+  (config) => {
+    embedCode.value = generateEmbedCode(config, standaloneUrl());
+  },
+  { deep: true, immediate: true },
+);
+watch(
+  embedCode,
   () => {
     copyError.value = null;
-    void refreshPreview();
+    if (!codeFocused.value) schedulePreviewRefresh();
   },
-  { deep: true },
 );
 
 onMounted(async () => {
@@ -119,15 +115,25 @@ onMounted(async () => {
 });
 
 async function refreshPreview(): Promise<void> {
+  const target = preview.value;
+  if (!target || !embedMount) return;
+  let parsed: ReturnType<typeof parseEmbedCode>;
+  try {
+    parsed = parseEmbedCode(embedCode.value);
+  } catch (cause) {
+    previewError.value = errorDisplayText(
+      new WebError(WEB_ERROR_CODES.embed.invalidCode, { cause }),
+    );
+    return;
+  }
+  previewStyle.value = parsed.containerStyle;
   const serial = ++renderSerial;
   handle?.destroy();
   handle = null;
   previewError.value = null;
   previewReady.value = false;
-  const target = preview.value;
-  if (!target || !embedMount) return;
   try {
-    const next = embedMount({ target, ...options.value });
+    const next = embedMount({ ...parsed.options, target });
     handle = next;
     await next.ready;
     if (serial !== renderSerial) {
@@ -138,6 +144,23 @@ async function refreshPreview(): Promise<void> {
   } catch {
     // Embed runtime 在预览框内显示地图加载错误。
   }
+}
+
+function schedulePreviewRefresh(): void {
+  if (previewTimer !== null) clearTimeout(previewTimer);
+  previewTimer = setTimeout(() => {
+    previewTimer = null;
+    void refreshPreview();
+  }, PREVIEW_DEBOUNCE_MS);
+}
+
+function focusCodeEditor(): void {
+  codeFocused.value = true;
+}
+
+function blurCodeEditor(): void {
+  codeFocused.value = false;
+  schedulePreviewRefresh();
 }
 
 async function resolveEmbedMount(): Promise<EmbedMount> {
@@ -186,23 +209,19 @@ async function copyCode(): Promise<void> {
   }
 }
 
-onBeforeUnmount(() => handle?.destroy());
+onBeforeUnmount(() => {
+  if (previewTimer !== null) clearTimeout(previewTimer);
+  renderSerial++;
+  handle?.destroy();
+});
 </script>
 
 <template>
-  <main
+  <div
     class="embed-page"
     :data-embed-api="apiReady ? 'ready' : 'loading'"
     :data-preview-state="previewReady ? 'ready' : 'idle'"
   >
-    <header class="embed-heading">
-      <div>
-        <p class="eyebrow">BC5R Embed v1</p>
-        <h1>{{ webT("embed.title") }}</h1>
-        <p>{{ webT("embed.description") }}</p>
-      </div>
-    </header>
-
     <div class="embed-layout">
       <section class="embed-config">
         <div class="field-group">
@@ -274,6 +293,14 @@ onBeforeUnmount(() => handle?.destroy());
         </fieldset>
 
         <fieldset class="config-group">
+          <legend>{{ webT("embed.hud") }}</legend>
+          <div class="checks">
+            <label><input v-model="hudTimer" class="hud-timer" type="checkbox" /> {{ webT("embed.timer") }}</label>
+            <label><input v-model="hudSteps" class="hud-steps" type="checkbox" /> {{ webT("embed.steps") }}</label>
+          </div>
+        </fieldset>
+
+        <fieldset class="config-group">
           <legend>{{ webT("embed.camera") }}</legend>
           <div class="settings-grid">
             <label>{{ webT("embed.initialZoom") }}<input v-model.number="zoom" type="number" min="0.1" step="0.1" /></label>
@@ -289,26 +316,31 @@ onBeforeUnmount(() => handle?.destroy());
 
       <section class="embed-output">
         <h2>{{ webT("embed.preview") }}</h2>
-        <div ref="preview" class="preview"></div>
+        <div ref="preview" class="preview" :style="previewStyle"></div>
         <p v-if="previewError" class="error">{{ resolveWebText(previewError) }}</p>
 
         <div class="code-heading">
           <h2>{{ webT("embed.code") }}</h2>
           <button @click="copyCode">{{ webT("embed.copy") }}</button>
         </div>
-        <pre class="code-block"><code>{{ embedCode }}</code></pre>
+        <textarea
+          v-model="embedCode"
+          class="code-block"
+          spellcheck="false"
+          wrap="soft"
+          :aria-label="webT('embed.code')"
+          @focus="focusCodeEditor"
+          @blur="blurCodeEditor"
+        ></textarea>
         <p v-if="copyError" class="error" aria-live="polite">{{ resolveWebText(copyError) }}</p>
       </section>
     </div>
-  </main>
+  </div>
 </template>
 
 <style scoped>
-.embed-page { max-width: 1320px; margin: 0 auto; padding: 32px 24px 56px; color: var(--bc-text); }
-.embed-heading h1 { margin: 4px 0 8px; font-size: clamp(28px, 4vw, 44px); }
-.embed-heading p { margin: 0; color: var(--muted); }
-.eyebrow { font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--bc-highlight); }
-.embed-layout { display: grid; grid-template-columns: minmax(300px, 420px) minmax(0, 1fr); gap: 28px; margin-top: 28px; }
+.embed-page { color: var(--bc-text); }
+.embed-layout { display: grid; grid-template-columns: minmax(300px, 420px) minmax(0, 1fr); gap: 28px; }
 .embed-config, .embed-output { min-width: 0; padding: 20px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); }
 .field-group { display: grid; gap: 8px; margin: 0 0 18px; }
 .config-group { display: grid; gap: 14px; margin: 0 0 18px; padding: 16px; border: 1px solid var(--line); border-radius: 9px; }
@@ -336,7 +368,6 @@ input[type="range"] { padding: 0; accent-color: var(--bc-active); }
 .preview { width: 100%; height: 520px; overflow: hidden; border: 1px solid var(--line); border-radius: 10px; background: #061632; box-shadow: 0 8px 24px rgba(0,0,0,.16); }
 .error { color: #ffb4ab; }
 .code-heading { display: flex; align-items: center; justify-content: space-between; margin-top: 24px; }
-.code-block { overflow-x: hidden; overflow-y: auto; padding: 16px; border: 1px solid var(--line); border-radius: 10px; background: #061632; color: var(--bc-text); font: 12px/1.55 ui-monospace, monospace; white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-all; cursor: text; }
-.code-block code { white-space: inherit; overflow-wrap: inherit; word-break: inherit; }
+.code-block { min-height: 360px; overflow-x: hidden; overflow-y: auto; padding: 16px; border: 1px solid var(--line); border-radius: 10px; background: #061632; color: var(--bc-text); font: 12px/1.55 ui-monospace, monospace; white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-all; cursor: text; }
 @media (max-width: 900px) { .embed-layout { grid-template-columns: 1fr; } .settings-grid { grid-template-columns: 1fr; } }
 </style>

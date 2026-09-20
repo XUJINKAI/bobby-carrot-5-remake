@@ -36,6 +36,8 @@ const ERROR_TRANSLATION_KEYS = {
     "common.error.save.invalidExploreSave",
   [WEB_ERROR_CODES.import.unrecognizedData]:
     "common.error.import.unrecognizedData",
+  [WEB_ERROR_CODES.embed.invalidCode]:
+    "embed.error.invalidCode",
   [WEB_ERROR_CODES.embed.runtimeLoadFailed]:
     "embed.error.runtimeLoadFailed",
   [WEB_ERROR_CODES.embed.runtimeUnavailable]:

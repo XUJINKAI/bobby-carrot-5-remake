@@ -50,8 +50,8 @@ Adventure Bonus 只负责把原版 Campaign 事实增强为普通 `LevelMap` 属
 
 Result 的下一关、重新开始与返回等产品动作仍由 Web 持有。GamePage 的通关结果使用
 `GameplayState.elapsedMs` 显示游戏内用时，并显示步数、本关 Bonus Coin 收集数和
-Adventure 全局 Bonus Coin；失败结果保持简洁。终局音乐继续由 Web 作为当前唯一选曲者
-切换为 `cleared` 或 `death`。
+Adventure 全局 Bonus Coin；失败结果保持简洁。Engine 根据地图终局状态播放一次
+`cleared` 或 `death`，所有 gameplay 宿主使用同一规则。
 
 Adventure Gameplay HUD 在左上角显示 `MM:SS`。普通关卡从公开
 `GameplayState.elapsedMs` 正向显示本关用时；配置了 `deathCountdownSeconds` 的

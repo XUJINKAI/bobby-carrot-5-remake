@@ -44,7 +44,8 @@ universe
 | Beaver Shop | `shop` | 循环 |
 | Cloud 9 | `sandman` | 循环 |
 | Dream Machine | `shop` | 循环 |
-| Dreamland Reward / Welcome | `sandman` | 循环 |
+| Dreamland Reward | `sandman` | 循环 |
+| Campaign Intro / Welcome | `sandman` | 循环 |
 | Night Train | `train` | 循环 |
 | Magic Code | `universe` | 循环 |
 | Flight reward | `fly` | 循环 |

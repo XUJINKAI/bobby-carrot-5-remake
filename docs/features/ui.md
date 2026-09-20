@@ -356,7 +356,7 @@ Bonus Coin 收集数；Adventure 还显示结算后的全局 Bonus Coin。操作
 主要动作“下一关”，没有下一关时保留禁用状态。失败卡片只显示“失败”，操作区只提供
 “返回”和主要动作“重新开始”。Welcome Demo 与 Editor Play Test 使用各自宿主的结果流程。
 
-Result Overlay 在 Bobby 的终局表现播放完成后原地覆盖 GameStage。通关使用 `b6.png` 以约 279ms 正向过渡并隐藏 Bobby，失败保留 `b5.png` 末帧；Web 分别播放一次 `cleared` 和 `death`。关卡载入或重开时以约 310ms 倒向播放同一套 `b6.png`，随后恢复普通站立表现。
+Result Overlay 在 Bobby 的终局表现播放完成后原地覆盖 GameStage。通关使用 `b6.png` 以约 279ms 正向过渡并隐藏 Bobby，失败保留 `b5.png` 末帧；Engine 分别播放一次 `cleared` 和 `death`。关卡载入或重开时以约 310ms 倒向播放同一套 `b6.png`，随后恢复普通站立表现与地图音乐。
 
 ## 页面规范
 
@@ -515,9 +515,13 @@ EDIT MODE                                  PLAY TEST
                                            TopBar: ■ Stop  ↻ Restart
 ```
 
-编辑态 TopBar 上下文区域提供地图名称、Undo / Redo、Play Test 和文件入口；BottomBar 展示 Palette、Surface、Inspector 与关卡信息入口。Play Test 保留 Editor TopBar，BottomBar 切换为 Replay 录制与屏幕摇杆。
+编辑态 TopBar 上下文区域提供地图名称、Undo / Redo、Play Test 和文件入口；BottomBar 展示 Palette、Surface、Inspector 与关卡信息入口。Play Test 保留 Editor TopBar，BottomBar 切换为 Replay 录制、草稿地图状态与屏幕摇杆。
 
-Editor Play Test 在当前工作区中切换为正式 GameStage。Stop 销毁临时 Game 和 InputController，并回到相同 Draft。运行时状态不反写 Draft。
+Editor Play Test 在当前工作区中切换为与 Explore / Import 共用的正式 GameStage，
+并使用同一自由 Camera、Gameplay HUD、Engine Input 和地图音乐。Stop 销毁临时
+Game 和 InputController，并回到相同 Draft。运行时状态不反写 Draft。
+Play Test 使用 `/edit/test` 子路由和 Editor autosave 副本；直接打开、刷新以及浏览器
+前进/后退都通过同一路由恢复对应页面。
 
 移动端 Editor 使用 Drawer：
 
@@ -650,6 +654,8 @@ Help 是用户界面中完整操作说明的唯一来源；首页 Demo 的 `home
 - ResultOverlay：地图完成或死亡。
 
 Restart、Undo、Play Test 和普通关卡切换使用直接操作。破坏性存档操作、Editor 未保存离开和其它不可轻易恢复的动作使用统一确认 Dialog。
+
+可通过背景关闭的 Dialog 只有在同一指针于遮罩空白处按下并释放时才关闭。由面板内部开始、跨出面板结束的拖拽手势保持 Dialog 打开。
 
 Editor Draft 发生修改后，离开 Editor 或切换模式时显示未保存保护；继续编辑和确认离开是两个明确动作。
 

@@ -479,6 +479,7 @@ export class Game {
   ): void {
     this.replayRecorder = null;
     this.replayPlayback.start(replay, options);
+    this.music.syncWorld(this.world);
     this.resetSessionView();
     this.render();
     this.emit("change");
@@ -633,7 +634,8 @@ export class Game {
     this.gameplayHud?.destroy();
     this.presentation.destroy();
     this.debugControls.destroy();
-    this.music.stop();
+    // AudioBackend 可能由宿主跨页面共享；Game 只在存活期间负责地图内选曲。
+    // 外部音频的后续播放状态由持有它的宿主决定。
   }
 
   private consumeWorldDeltas(deltas: readonly WorldDelta[]): void {
@@ -908,6 +910,9 @@ export class Game {
 
   private emitTerminalEvents(): void {
     if (!this.worldValue) return;
+    this.music.setOutcome(
+      this.world.dead ? "dead" : this.world.completed ? "won" : "playing",
+    );
     if (this.world.dead) this.emit("death");
     if (this.world.completed) this.emit("level-complete");
   }

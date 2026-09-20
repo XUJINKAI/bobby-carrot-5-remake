@@ -7,6 +7,7 @@ import GlobalDialogLayer from "./dialogs/GlobalDialogLayer.vue";
 import QuickSettingsPanel from "./dialogs/QuickSettingsPanel.vue";
 import AppBottomBar from "../shell/AppBottomBar.vue";
 import AppTopBar from "../shell/AppTopBar.vue";
+import { createBackdropDismissHandlers } from "../shared/dialog/backdropDismiss.js";
 import type { Navigate } from "./pageContracts.js";
 import type { ShellViewState } from "../shell/shellBridge.js";
 import { openWebI18nScope, type WebI18nScope, webT } from "../i18n/webI18n.js";
@@ -42,6 +43,8 @@ function closeSettings(): void {
   quickSettingsOpen.value = false;
   notifySurfaceClose();
 }
+
+const settingsBackdropDismiss = createBackdropDismissHandlers(closeSettings);
 
 async function openHelp(): Promise<void> {
   const scope = openWebI18nScope(["help"]);
@@ -97,6 +100,28 @@ function dispatchAction(action: string): void {
       new CustomEvent("game-shell-action", { detail: { action } }),
     );
   }
+}
+
+function handleGlobalKeydown(event: KeyboardEvent): void {
+  if (
+    event.defaultPrevented ||
+    event.repeat ||
+    event.ctrlKey ||
+    event.metaKey ||
+    event.altKey ||
+    event.key.toLowerCase() !== "m" ||
+    isTextEditingTarget(event.target)
+  )
+    return;
+  event.preventDefault();
+  settings.toggleMusic();
+}
+
+function isTextEditingTarget(target: EventTarget | null): boolean {
+  return (
+    target instanceof Element &&
+    target.closest("input, textarea, select, [contenteditable='true']") !== null
+  );
 }
 
 function shellActions() {
@@ -155,8 +180,10 @@ defineExpose({ openSettings });
 onBeforeUnmount(() => {
   helpScope?.dispose();
   disposeMusicInteraction();
+  window.removeEventListener("keydown", handleGlobalKeydown);
 });
 onMounted(() => {
+  window.addEventListener("keydown", handleGlobalKeydown);
   if (content.value) props.onContentReady(content.value);
 });
 </script>
@@ -199,7 +226,9 @@ onMounted(() => {
       v-if="quickSettingsOpen"
       class="quick-settings-layer"
       data-quick-settings-layer
-      @pointerdown.self="closeSettings"
+      @pointerdown="settingsBackdropDismiss.pointerDown"
+      @pointerup="settingsBackdropDismiss.pointerUp"
+      @pointercancel="settingsBackdropDismiss.pointerCancel"
     >
       <QuickSettingsPanel
         :state="settings.state"
@@ -256,10 +285,16 @@ onMounted(() => {
   flex: 1 0 auto;
 }
 
-.app-content:not(:has(.game-page)):not(:has(.adventure-viewport)):not(:has(.bobby-editor)):not(:has(.home-page)) {
+.app-content:not(:has(.game-page)):not(:has(.adventure-viewport)):not(:has(.bobby-editor)):not(:has(.home-page)):not(:has(.embed-page)) {
   width: min(1180px, calc(100% - 32px));
   margin: 0 auto;
   padding: 34px 0 60px;
+}
+
+.app-content:has(.embed-page) {
+  width: min(1320px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 20px 0 56px;
 }
 
 .app-content:has(.bobby-editor) {

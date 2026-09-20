@@ -70,9 +70,6 @@ DAT package <-> metadata + level records
 
 `engine/` 是唯一地图内游戏规则实现。核心目标是：**给 Engine 一个纯语义 `LevelMap` 和少量运行配置，就应当能够独立把这张地图完整地玩起来。**
 
-> 背景音乐选曲是否包含在“完整地玩起来”中尚待统一，参见
-> [背景音乐选曲职责 ADR](decisions/background-music-selection-ownership.md)。本节现有边界表述暂予保留。
-
 Engine 负责：
 
 - `Game` / `World`；
@@ -81,7 +78,7 @@ Engine 负责：
 - Camera / Renderer；
 - 基础 Gameplay HUD 的状态与渲染；
 - 可配置 Screen Joystick 的渲染与拖动输入；
-- Audio 抽象；
+- Audio 抽象，以及地图基础、机关覆盖与终局音乐协调；
 - semantic Definition 与 Object Layout；
 - 通用 `InputController`。
 
@@ -505,7 +502,6 @@ Adventure 在桌面也限制为原版式 portrait viewport，并设置 Camera �
 
 ```text
 /explore
-/explore/original
 /explore/novoban-pushbox
 /explore/loma-pushbox
 /explore/engine-lab
@@ -518,12 +514,13 @@ Adventure 在桌面也限制为原版式 portrait viewport，并设置 Camera �
 /adventure/play/1-1
 /settings
 /edit
-/edit/original/1-1
-/edit/novoban-pushbox/01
-/edit/engine-lab/portal
+/edit/test
 ```
 
-`/explore` 直接显示 Original Tab。Explore gameplay 使用 `/explore/play/<collection>/<map-id>`，Editor clone 使用 `/edit/<collection>/<map-id>`；路径由 Web 的集中 route builder 生成。
+`/explore` 直接显示 Original Tab。Explore gameplay 使用
+`/explore/play/<collection>/<map-id>`。Editor clone 通过 `/edit#map=<collection>/<map-id>`
+读取来源后立即消费 fragment；Play Test 使用 `/edit/test` 读取 autosave 副本。
+路径由 Web 的集中 route builder 生成。
 
 服务器负责 app-route fallback；静态资源路径按真实文件提供。
 

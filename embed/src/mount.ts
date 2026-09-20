@@ -136,7 +136,6 @@ export function mount(options: BC5RMountOptions): BC5RHandle {
       frameControls.open.href = playUrl;
       frameControls.open.removeAttribute("aria-disabled");
       frameControls.open.tabIndex = 0;
-      terminal.official.href = playUrl;
       const imageManager = createEmbedImageManager();
       images = imageManager;
       try {
@@ -151,7 +150,10 @@ export function mount(options: BC5RMountOptions): BC5RHandle {
           },
           runtime: {
             camera,
-            hud: true,
+            hud: {
+              timer: options.hud?.timer ?? false,
+              steps: options.hud?.steps ?? false,
+            },
             input: {
               keyboard: true,
               pointer,
@@ -462,13 +464,12 @@ function createTerminalOverlay(locale: Locale): TerminalOverlay {
   const restart = document.createElement("button");
   restart.type = "button";
   restart.textContent = copy.restart;
-  actions.append(restart);
   const official = document.createElement("a");
-  official.href = embedPublicBaseUrl.href;
+  official.href = homePageUrl;
   official.target = "_blank";
   official.rel = "noopener noreferrer";
   official.textContent = copy.official;
-  actions.append(official);
+  actions.append(official, restart);
   card.append(title, actions);
   root.append(card);
   return { root, title, restart, official };
@@ -587,13 +588,14 @@ function styleElement(): HTMLStyleElement {
     .bc5r-status[data-state="error"] strong { color: #ffb4ab; }
     .bc5r-info { flex: 0 0 auto; min-width: 0; min-height: 32px; padding: 3px 6px 3px 10px; display: flex; align-items: center; justify-content: space-between; gap: 8px; color: #c9e6f7; background: #0d2b46; border-top: 1px solid #254868; font-size: 12px; }
     .bc5r-info-copy { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .bc5r-terminal { position: absolute; inset: 0; z-index: 10; display: grid; place-items: center; background: rgba(0,0,0,.36); }
+    .bc5r-terminal { position: absolute; inset: 0; z-index: 10; display: grid; place-items: center; background: rgba(7,21,34,.82); }
     .bc5r-terminal[hidden] { display: none; }
-    .bc5r-terminal-card { min-width: 150px; padding: 18px; display: grid; gap: 12px; text-align: center; border-radius: 12px; background: rgba(255,255,255,.95); color: #222; box-shadow: 0 8px 30px rgba(0,0,0,.28); }
-    .bc5r-terminal-card strong { font-size: 20px; }
+    .bc5r-terminal-card { min-width: 190px; padding: 18px; display: grid; gap: 12px; text-align: center; border: 1px solid #254868; border-radius: 12px; background: #0d2b46; color: #eef5ff; box-shadow: 0 8px 30px rgba(0,0,0,.35); }
+    .bc5r-terminal-card strong { color: #eef5ff; font-size: 20px; }
     .bc5r-terminal-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
-    .bc5r-terminal-actions button, .bc5r-terminal-actions a { border: 0; border-radius: 8px; padding: 8px 12px; cursor: pointer; font: inherit; text-decoration: none; background: #222; color: #fff; }
-    .bc5r-terminal-actions a { background: #fff; color: #222; box-shadow: inset 0 0 0 1px rgba(0,0,0,.2); }
+    .bc5r-terminal-actions button, .bc5r-terminal-actions a { border: 1px solid #3c6382; border-radius: 8px; padding: 8px 12px; cursor: pointer; font: inherit; text-decoration: none; background: #173c59; color: #eef5ff; }
+    .bc5r-terminal-actions button:hover, .bc5r-terminal-actions a:hover { background: #254868; }
+    .bc5r-terminal-actions a { border-color: #254868; background: transparent; color: #c9e6f7; }
     .engine-gameplay-hud { --engine-gameplay-hud-value-font-size: 36px; font-family: "BC5R Jersey 10", "Jersey 10", fantasy; font-weight: 400; -webkit-text-stroke: 1px #000; text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000; }
     .engine-gameplay-hud-value { font-weight: 400; }
   `;

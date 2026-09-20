@@ -1,7 +1,7 @@
 import type { EmbedRuntimeTranslationKey } from "./zh-CN.js";
 
 const catalog = {
-  "embedRuntime.won": "Level complete",
+  "embedRuntime.won": "Completed",
   "embedRuntime.dead": "Game over",
   "embedRuntime.restart": "Restart",
   "embedRuntime.official": "Visit BC5R",

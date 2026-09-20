@@ -6,6 +6,7 @@ import type {
 } from "../../services/import/importPipeline.js";
 import DataExchangePanel from "../../shared/data-exchange/DataExchangePanel.vue";
 import AppIcon from "../../shared/icons/AppIcon.vue";
+import { createBackdropDismissHandlers } from "../../shared/dialog/backdropDismiss.js";
 import ImportSaveConfirmation from "../import/ImportSaveConfirmation.vue";
 import { openWebI18nScope, type WebI18nScope, webT } from "../../i18n/webI18n.js";
 
@@ -17,11 +18,11 @@ const importOpen = ref(false);
 const pendingSave = ref<ImportedSaveData | null>(null);
 let importScope: WebI18nScope | null = null;
 const toolbar = computed(() => ({
-  left: [],
-  right: [
-    { type: "importText" as const, label: webT("home.importOpen") },
-    { type: "importFile" as const, label: webT("common.importFile"), accept: "*/*" },
+  left: [
+    { type: "importText" as const },
+    { type: "importFile" as const, accept: "*/*" },
   ],
+  right: [],
 }));
 
 async function parseImport(value: unknown): Promise<ImportedData> {
@@ -72,6 +73,8 @@ function closeImport(): void {
   cancelPendingSave();
   importOpen.value = false;
 }
+
+const backdropDismiss = createBackdropDismissHandlers(closeImport);
 
 onBeforeUnmount(() => {
   importScope?.dispose();
@@ -135,7 +138,9 @@ onBeforeUnmount(() => {
       v-if="importOpen"
       class="home-import-dialog-layer"
       role="presentation"
-      @click.self="closeImport"
+      @pointerdown="backdropDismiss.pointerDown"
+      @pointerup="backdropDismiss.pointerUp"
+      @pointercancel="backdropDismiss.pointerCancel"
     >
       <section class="home-import-dialog" role="dialog" aria-modal="true" :aria-label="webT('home.importDialog')">
         <header>

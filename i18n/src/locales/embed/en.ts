@@ -1,7 +1,7 @@
 import type { EmbedTranslationKey } from "./zh-CN.js";
 const catalog = {
   "embed.title": "Embed on another website",
-  "embed.description": "Paste shared Editor data or a map URL you host, adjust the options, then copy the embed code.",
+  "embed.description": "Paste map data, adjust options or edit the code directly, then copy it after previewing live.",
   "embed.mapData": "Map data",
   "embed.mapUrl": "Map URL",
   "embed.general": "General",
@@ -22,11 +22,15 @@ const catalog = {
   "embed.maxZoom": "Maximum Zoom",
   "embed.pinchZoom": "Pinch zoom",
   "embed.wheelZoom": "Wheel zoom",
+  "embed.hud": "HUD",
+  "embed.timer": "Timer",
+  "embed.steps": "Step counter",
   "embed.preview": "Preview",
   "embed.code": "Code",
   "embed.copy": "Copy",
   "embed.infoPlaceholder": "Move with WASD / arrow keys",
   "embed.mapDataPlaceholder": "JSON, payload, or an /import/v1#... URL",
+  "embed.error.invalidCode": "Could not read a BC5R.queue.push({...}) configuration from the code.",
   "embed.error.runtimeLoadFailed": "Failed to load the embed runtime: {url}",
   "embed.error.runtimeUnavailable": "The embed runtime did not expose BC5R.mount()",
 } satisfies Record<EmbedTranslationKey, string>;

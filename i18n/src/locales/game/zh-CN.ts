@@ -59,6 +59,7 @@ const catalog = {
   "game.map.verified": "已验证可通关",
   "game.map.unverified": "未验证",
   "game.map.verifiedExplore": "已在自由探索中验证",
+  "game.map.editorDraft": "编辑器草稿",
 } as const;
 export type GameTranslationKey = keyof typeof catalog;
 export default catalog;

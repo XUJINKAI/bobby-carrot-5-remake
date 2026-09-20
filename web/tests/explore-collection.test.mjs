@@ -16,7 +16,7 @@ test("Explore 标题直接显示 collection 地图总数", () => {
   assert.match(exploreHeader, /webT\("explore\.levelCount", \{ count: mapCount \}\)/);
 });
 
-test("Explore chapter 原样显示可选名称并统一混合布局间距", () => {
+test("Explore chapter 只显示 collection 提供的展示名称", () => {
   const chapterCard = fs.readFileSync(
     new URL("../src/pages/explore/ExploreChapterCard.vue", import.meta.url),
     "utf8",
@@ -26,8 +26,10 @@ test("Explore chapter 原样显示可选名称并统一混合布局间距", () =
     "utf8",
   );
 
-  assert.match(chapterCard, /v-if="chapter\.name !== undefined"/);
   assert.match(chapterCard, /\{\{ chapter\.name \}\}/);
+  assert.doesNotMatch(chapterCard, /\{\{ chapter\.id \}\}/);
+  assert.doesNotMatch(chapterCard, /class="chapter-id"/);
+  assert.doesNotMatch(chapterCard, /class="chapter-separator"/);
   assert.doesNotMatch(chapterCard, /text-transform:\s*uppercase/);
   assert.match(
     explorePage,

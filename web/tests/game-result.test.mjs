@@ -51,17 +51,15 @@ test("失败卡片只显示失败以及返回与主要重新开始动作", () =>
   assert.match(html, /class="primary-btn" data-result="retry"/);
 });
 
-test("Replay 录制状态不参与结果卡片分支，终局切换对应音乐", async () => {
+test("Replay 录制状态与宿主选曲不参与结果卡片分支", async () => {
   const source = await readFile(
     new URL("../src/pages/game/mountGamePage.ts", import.meta.url),
     "utf8",
   );
 
   assert.doesNotMatch(source, /game\.replayRecording/);
-  assert.match(
-    source,
-    /audio\.playMusic\(kind === "complete" \? "cleared" : "death"\)/,
-  );
+  assert.doesNotMatch(source, /audio\.playMusic\([\s\S]*cleared/);
+  assert.doesNotMatch(source, /game\.resumeMusicState\(\)/);
   assert.match(
     source,
     /onTimelineRestart\(\)[\s\S]*completionRecorded = false/,

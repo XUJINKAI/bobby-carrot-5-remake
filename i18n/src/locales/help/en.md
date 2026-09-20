@@ -7,6 +7,7 @@
 
 ## General
 
+- **M**: Toggle music
 - **Ctrl+Z**: Undo
 - **Ctrl+Y**: Redo
 - **Wheel / +/- / pinch**: Zoom and pan the map

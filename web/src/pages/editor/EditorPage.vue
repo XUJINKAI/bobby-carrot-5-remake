@@ -7,12 +7,15 @@ import {
 import type { AudioBackend, ImageManager } from "@bobby/engine";
 import type { GameSession } from "../../runtime/game/createGameSession.js";
 import { createGameSession } from "../../runtime/game/createGameSession.js";
+import { bindGameplayShell } from "../../runtime/game/bindGameplayShell.js";
 import {
   bindReplayPanel,
   type ReplayPanelController,
 } from "../game/bindReplayPanel.js";
 import { getWebSettings } from "../../storage/settingsStorage.js";
-import { getWebLocale } from "../../i18n/webI18n.js";
+import { storeEditorAutosave } from "../../storage/editorDraftStorage.js";
+import { getWebLocale, webT } from "../../i18n/webI18n.js";
+import type { Navigate } from "../../app/pageContracts.js";
 import {
   computed,
   nextTick,
@@ -25,27 +28,30 @@ import EditorFileDialog from "./EditorFileDialog.vue";
 import EditorWorkspace from "./EditorWorkspace.vue";
 import { configureEditorShell } from "./editorShell.js";
 import { useEditorPage } from "./useEditorPage.js";
+import { FREE_GAMEPLAY_CAMERA_OPTIONS } from "../game/gameplayCameraOptions.js";
+import { mapStatusIndicator } from "../game/mapStatusIndicator.js";
 
 const props = defineProps<{
   initialLevel: EditorMap;
   audio: AudioBackend;
   images: ImageManager;
-  navigate: (path: string) => void;
+  navigate: Navigate;
+  playRoute?: boolean;
 }>();
 const page = useEditorPage(props.initialLevel);
 page.surfaceTool.value = "rect";
 let session: GameSession | null = null;
 let replayPanel: ReplayPanelController | null = null;
 let disposePlayChange = (): void => {};
-let playCompleteLease: ReturnType<GameSession["gates"]["acquire"]> | null = null;
-let shellDialogLease: ReturnType<GameSession["gates"]["acquire"]> | null = null;
+let disposeGameplayShell = (): void => {};
+let playResultLease: ReturnType<GameSession["gates"]["acquire"]> | null = null;
 const startsMobile = window.matchMedia("(max-width: 620px)").matches;
 const editorRoot = ref<HTMLElement | null>(null);
 const leftOpen = ref(true);
 const rightPanel = ref<"inspector" | "level" | null>(
   startsMobile ? null : "inspector",
 );
-const playComplete = ref(false);
+const playResult = ref<"complete" | "death" | null>(null);
 const replayOpen = ref(false);
 const screenControlEnabled = ref(
   getWebSettings().controls.screenControlEnabled,
@@ -73,10 +79,24 @@ function syncShell(): void {
       replayReady: replayPanel !== null,
       replayOpen: replayOpen.value,
       screenControlEnabled: screenControlEnabled.value,
+      mapIndicator: page.playing.value
+        ? editorMapStatusIndicator()
+        : null,
     },
     page.leftPanel.value,
     page.surfaceTool.value,
   );
+}
+
+function editorMapStatusIndicator() {
+  const level = page.snapshot.value.level as EditorMap;
+  const name = page.nameValue.value.trim() || webT("editor.untitled");
+  return mapStatusIndicator("editor-draft", "editor/draft", name, {
+    ...level.meta,
+    name,
+    author: page.authorValue.value,
+    note: page.noteValue.value,
+  });
 }
 watch(
   () => [
@@ -94,19 +114,21 @@ watch(
 );
 
 async function togglePlay(): Promise<void> {
+  if (!props.playRoute) {
+    openPlayRoute();
+    return;
+  }
   if (page.playing.value) {
-    stopPlay();
+    exitPlayRoute();
     return;
   }
   runtimeIssue.value = null;
-  playComplete.value = false;
+  playResult.value = null;
   page.playing.value = true;
   syncShell();
   await nextTick();
   try {
-    const canvas = document.querySelector<HTMLCanvasElement>(
-      "[data-editor-game-canvas]",
-    );
+    const canvas = document.querySelector<HTMLCanvasElement>("#editor-game");
     if (!canvas) throw new Error("Editor Play Test 舞台挂载失败");
     session = await createGameSession({
       canvas,
@@ -118,13 +140,22 @@ async function togglePlay(): Promise<void> {
         debug: false,
       },
       runtime: {
-        levelMusicOverride: null,
+        camera: FREE_GAMEPLAY_CAMERA_OPTIONS,
         hud: true,
         input: {
+          undo: true,
+          debug: true,
           screenJoystick: {
             enabled: screenControlEnabled.value,
           },
         },
+      },
+    });
+    disposeGameplayShell = bindGameplayShell(session, {
+      initialScreenControlEnabled: screenControlEnabled.value,
+      onScreenControlChange(enabled) {
+        screenControlEnabled.value = enabled;
+        syncShell();
       },
     });
     const root = editorRoot.value;
@@ -143,19 +174,41 @@ async function togglePlay(): Promise<void> {
         syncShell();
       },
       onTimelineRestart() {
-        playComplete.value = false;
-        playCompleteLease?.release();
-        playCompleteLease = null;
+        playResult.value = null;
+        playResultLease?.release();
+        playResultLease = null;
       },
     });
     bindPlaySession();
   } catch (error) {
+    disposeGameplayShell();
+    disposeGameplayShell = (): void => {};
+    session?.destroy();
+    session = null;
+    props.audio.stopMusic();
+    page.playing.value = false;
     runtimeIssue.value = {
       level: "error",
       message: `Play Test：${error instanceof Error ? error.message : String(error)}`,
     };
     syncShell();
   }
+}
+
+function openPlayRoute(): void {
+  page.flushMetadata();
+  storeEditorAutosave(page.snapshot.value.level as EditorMap);
+  props.navigate("/edit/test", {
+    state: { editorTestSource: true },
+  });
+}
+
+function exitPlayRoute(): void {
+  if (history.state?.editorTestSource === true) {
+    history.back();
+    return;
+  }
+  props.navigate("/edit", { replace: true });
 }
 
 function bindPlaySession(): void {
@@ -165,14 +218,22 @@ function bindPlaySession(): void {
 }
 function syncPlayState(): void {
   if (!session) return;
-  const won = session.game.state.status === "won";
-  const wasComplete = playComplete.value;
-  playComplete.value = won;
-  if (won && !playCompleteLease)
-    playCompleteLease = session.gates.acquire("play-complete");
-  else if (!won && wasComplete) {
-    playCompleteLease?.release();
-    playCompleteLease = null;
+  const status = session.game.state.status;
+  const terminalResult = status === "won"
+    ? "complete"
+    : status === "dead"
+      ? "death"
+      : null;
+  const nextResult = terminalResult && !session.game.isAnimating
+    ? terminalResult
+    : null;
+  const previousResult = playResult.value;
+  playResult.value = nextResult;
+  if (nextResult && !playResultLease)
+    playResultLease = session.gates.acquire("play-result");
+  else if (!nextResult && previousResult) {
+    playResultLease?.release();
+    playResultLease = null;
   }
   replayPanel?.update();
   syncShell();
@@ -183,21 +244,22 @@ function stopPlay(): void {
   replayPanel?.destroy();
   replayPanel = null;
   replayOpen.value = false;
-  playComplete.value = false;
-  playCompleteLease?.release();
-  playCompleteLease = null;
-  shellDialogLease?.release();
-  shellDialogLease = null;
+  playResult.value = null;
+  playResultLease?.release();
+  playResultLease = null;
+  disposeGameplayShell();
+  disposeGameplayShell = (): void => {};
   session?.destroy();
   session = null;
+  props.audio.stopMusic();
   page.playing.value = false;
   syncShell();
 }
 function restartPlay(): void {
   if (!session) return;
-  playComplete.value = false;
-  playCompleteLease?.release();
-  playCompleteLease = null;
+  playResult.value = null;
+  playResultLease?.release();
+  playResultLease = null;
   session.game.restart();
   replayPanel?.update();
   syncShell();
@@ -325,22 +387,6 @@ function toggleRightPanel(panel: "inspector" | "level"): void {
   rightPanel.value = opening ? panel : null;
 }
 
-function onShellDialogOpen(): void {
-  if (session && !shellDialogLease)
-    shellDialogLease = session.gates.acquire("shell-dialog");
-}
-function onShellDialogClose(): void {
-  shellDialogLease?.release();
-  shellDialogLease = null;
-}
-function onScreenControlChange(event: Event): void {
-  const enabled = Boolean(
-    (event as CustomEvent<{ enabled: boolean }>).detail.enabled,
-  );
-  screenControlEnabled.value = enabled;
-  session?.input.setScreenJoystickEnabled(enabled);
-  syncShell();
-}
 function onBeforeUnload(event: BeforeUnloadEvent): void {
   if (page.snapshot.value.dirty) event.preventDefault();
 }
@@ -349,18 +395,13 @@ onMounted(() => {
   syncShell();
   window.addEventListener("keydown", handleKeydown);
   window.addEventListener("game-shell-action", onShellAction);
-  window.addEventListener("shell-dialog-open", onShellDialogOpen);
-  window.addEventListener("shell-dialog-close", onShellDialogClose);
-  window.addEventListener("screen-control-change", onScreenControlChange);
   window.addEventListener("beforeunload", onBeforeUnload);
+  if (props.playRoute) void togglePlay();
 });
 onBeforeUnmount(() => {
   stopPlay();
   window.removeEventListener("keydown", handleKeydown);
   window.removeEventListener("game-shell-action", onShellAction);
-  window.removeEventListener("shell-dialog-open", onShellDialogOpen);
-  window.removeEventListener("shell-dialog-close", onShellDialogClose);
-  window.removeEventListener("screen-control-change", onScreenControlChange);
   window.removeEventListener("beforeunload", onBeforeUnload);
 });
 
@@ -411,7 +452,7 @@ function isMobileEditor(): boolean {
       :left-open="leftOpen"
       :right-panel="rightPanel"
       :playing="page.playing.value"
-      :play-complete="playComplete"
+      :play-result="playResult"
       :images="props.images"
       :environment="page.environment"
       :catalog="page.catalog"
@@ -448,7 +489,7 @@ function isMobileEditor(): boolean {
       @metadata-field="page.setMetadataValue"
       @music="page.setMusic"
       @play-restart="restartPlay"
-      @play-stop="stopPlay"
+      @play-stop="exitPlayRoute"
     />
     <EditorFileDialog
       :open="page.fileDialogOpen.value"

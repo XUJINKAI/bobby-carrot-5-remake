@@ -3,7 +3,7 @@ import type { Game, InputController } from "@bobby/engine";
 export type GameplayGateReason =
   | "blocking-interaction"
   | "shell-dialog"
-  | "play-complete";
+  | "play-result";
 
 export interface GameplayGateLease {
   release(): void;

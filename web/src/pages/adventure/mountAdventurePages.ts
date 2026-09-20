@@ -132,7 +132,7 @@ export function renderAdventureNightTrain(context: PageContext): PageController 
       ? [{ id: "map-2", label: "MAP II", note: "AUTHOR EXTRA" }]
       : []),
   ];
-  audio.playMusic("title");
+  audio.playMusic("train");
   return mountAdventure(
     app,
     AdventureNightTrainPage,

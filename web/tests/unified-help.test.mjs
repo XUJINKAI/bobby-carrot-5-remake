@@ -10,7 +10,9 @@ test("Help 文案集中在 i18n 并提供中英文", async () => {
   ]);
   assert.match(zh["help.html"], /<h2>游戏<\/h2>/);
   assert.match(zh["help.html"], /<h2>Editor<\/h2>/);
+  assert.match(zh["help.html"], /<h2>通用<\/h2>\s*<ul>\s*<li><strong>M<\/strong>：音乐开关<\/li>/);
   assert.match(en["help.html"], /<h2>Game<\/h2>/);
+  assert.match(en["help.html"], /<h2>General<\/h2>\s*<ul>\s*<li><strong>M<\/strong>: Toggle music<\/li>/);
   assert.match(en["help.html"], /<strong>Ctrl\+Z<\/strong>/);
 });
 
@@ -21,6 +23,10 @@ test("Help 只在打开时加载对应 scope", async () => {
   );
   assert.match(source, /openWebI18nScope\(\["help"\]\)/);
   assert.match(source, /webT\("help\.html"\)/);
+  assert.match(source, /event\.key\.toLowerCase\(\) !== "m"/);
+  assert.match(source, /settings\.toggleMusic\(\)/);
+  assert.match(source, /window\.addEventListener\("keydown", handleGlobalKeydown\)/);
+  assert.match(source, /window\.removeEventListener\("keydown", handleGlobalKeydown\)/);
 });
 
 test("页面配置不维护完整快捷键清单", async () => {

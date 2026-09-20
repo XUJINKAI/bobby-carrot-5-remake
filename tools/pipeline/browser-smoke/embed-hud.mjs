@@ -23,15 +23,31 @@ export const embedHudSmokeScript = `
   const joystickLayer = shadow.querySelector('.engine-screen-joystick-layer');
   const infoInput = document.querySelector('.info-input');
   const keyboardSelect = document.querySelector('.keyboard-select');
+  const timerToggle = document.querySelector('.hud-timer');
+  const stepsToggle = document.querySelector('.hud-steps');
+  const globalMusic = document.querySelector('#music');
   if (
     !home || !open || !restart || !sound || !joystick || !joystickLayer ||
-    !infoInput || !keyboardSelect
+    !infoInput || !keyboardSelect || !timerToggle || !stepsToggle || !globalMusic
   )
     throw new Error('missing Embed frame controls');
+  const timer = shadow.querySelector('.engine-gameplay-hud-timer');
+  const steps = shadow.querySelector('.engine-gameplay-hud-steps');
+  const defaultHud = {
+    timer: timer ? getComputedStyle(timer).display !== 'none' : null,
+    steps: steps ? getComputedStyle(steps).display !== 'none' : null,
+  };
   const initialJoystick = joystick.getAttribute('aria-pressed') === 'true';
   joystick.click();
   await delay(30);
   const toggledJoystick = joystick.getAttribute('aria-pressed') === 'true';
+  const initialGlobalMusic = globalMusic.getAttribute('aria-pressed');
+  window.dispatchEvent(new KeyboardEvent('keydown', { key: 'm' }));
+  await delay(30);
+  const toggledGlobalMusic = globalMusic.getAttribute('aria-pressed');
+  window.dispatchEvent(new KeyboardEvent('keydown', { key: 'm' }));
+  await delay(30);
+  const restoredGlobalMusic = globalMusic.getAttribute('aria-pressed');
   restart.click();
   await document.fonts.ready;
   const hudStyle = getComputedStyle(hud);
@@ -39,7 +55,9 @@ export const embedHudSmokeScript = `
   const jerseyFaces = [...document.fonts]
     .filter((face) => face.family.replaceAll('"', '') === 'BC5R Jersey 10')
     .map((face) => ({ family: face.family, status: face.status }));
-  return JSON.stringify({
+  const initialState = {
+    pagePaddingTop: getComputedStyle(document.querySelector('.app-content')).paddingTop,
+    pageRootTag: document.querySelector('.embed-page')?.tagName,
     fontFamily: hudStyle.fontFamily,
     fontReady: document.fonts.check('36px "BC5R Jersey 10"'),
     jerseyFaces,
@@ -61,12 +79,92 @@ export const embedHudSmokeScript = `
     initialJoystick,
     toggledJoystick,
     joystickVisible: !joystickLayer.hidden,
+    initialGlobalMusic,
+    toggledGlobalMusic,
+    restoredGlobalMusic,
+  };
+  timerToggle.click();
+  stepsToggle.click();
+  let enabledTimer = null;
+  let enabledSteps = null;
+  for (let i = 0; i < 120; i += 1) {
+    const nextShadow = host?.shadowRoot;
+    const nextTimer = nextShadow?.querySelector('.engine-gameplay-hud-timer');
+    const nextSteps = nextShadow?.querySelector('.engine-gameplay-hud-steps');
+    if (
+      document.querySelector('[data-preview-state="ready"]') &&
+      nextTimer &&
+      nextSteps &&
+      getComputedStyle(nextTimer).display !== 'none' &&
+      getComputedStyle(nextSteps).display !== 'none'
+    ) {
+      enabledTimer = true;
+      enabledSteps = true;
+      break;
+    }
+    await delay(50);
+  }
+  const code = document.querySelector('.code-block');
+  const editableCode = code instanceof HTMLTextAreaElement;
+  const generatedTimerCode = editableCode && code.value.includes('"timer": true');
+  let focusedGlobalMusic = null;
+  let focusedEditDeferred = null;
+  if (editableCode) {
+    code.focus();
+    code.dispatchEvent(new KeyboardEvent('keydown', { key: 'm', bubbles: true }));
+    await delay(30);
+    focusedGlobalMusic = globalMusic.getAttribute('aria-pressed');
+    code.value = code.value
+      .replace('"timer": true', '"timer": false')
+      .replace('height:520px', 'height:360px');
+    code.dispatchEvent(new Event('input', { bubbles: true }));
+    await delay(350);
+    const focusedShadow = host?.shadowRoot;
+    const focusedTimer = focusedShadow?.querySelector('.engine-gameplay-hud-timer');
+    focusedEditDeferred =
+      focusedTimer &&
+      getComputedStyle(focusedTimer).display !== 'none' &&
+      getComputedStyle(host).height === '520px';
+    code.blur();
+  }
+  let editedTimer = null;
+  let editedHeight = null;
+  for (let i = 0; i < 120; i += 1) {
+    const nextShadow = host?.shadowRoot;
+    const nextTimer = nextShadow?.querySelector('.engine-gameplay-hud-timer');
+    const nextSteps = nextShadow?.querySelector('.engine-gameplay-hud-steps');
+    if (
+      document.querySelector('[data-preview-state="ready"]') &&
+      nextTimer &&
+      nextSteps &&
+      getComputedStyle(nextTimer).display === 'none' &&
+      getComputedStyle(nextSteps).display !== 'none' &&
+      getComputedStyle(host).height === '360px'
+    ) {
+      editedTimer = false;
+      editedHeight = getComputedStyle(host).height;
+      break;
+    }
+    await delay(50);
+  }
+  return JSON.stringify({
+    ...initialState,
+    defaultHud,
+    enabledHud: { timer: enabledTimer, steps: enabledSteps },
+    editableCode,
+    generatedTimerCode,
+    focusedGlobalMusic,
+    focusedEditDeferred,
+    editedTimer,
+    editedHeight,
   });
 })()
 `;
 
 export function assertEmbedHudSmoke(payload) {
   if (
+    payload.pagePaddingTop !== "20px" ||
+    payload.pageRootTag !== "DIV" ||
     !payload.fontFamily.includes("BC5R Jersey 10") ||
     !payload.fontReady ||
     !payload.jerseyFaces.some((face) => face.status === "loaded") ||
@@ -83,9 +181,21 @@ export function assertEmbedHudSmoke(payload) {
     payload.info.length === 0 ||
     payload.infoPlaceholder !== payload.info ||
     JSON.stringify(payload.keyboardOptions) !== JSON.stringify(["focus", "global"]) ||
+    payload.defaultHud?.timer !== false ||
+    payload.defaultHud?.steps !== false ||
+    payload.enabledHud?.timer !== true ||
+    payload.enabledHud?.steps !== true ||
+    !payload.editableCode ||
+    !payload.generatedTimerCode ||
+    payload.editedTimer !== false ||
+    payload.editedHeight !== '360px' ||
     !payload.gameplayAssetsLoaded ||
     payload.initialJoystick === payload.toggledJoystick ||
-    payload.joystickVisible !== payload.toggledJoystick
+    payload.joystickVisible !== payload.toggledJoystick ||
+    payload.initialGlobalMusic === payload.toggledGlobalMusic ||
+    payload.restoredGlobalMusic !== payload.initialGlobalMusic ||
+    payload.focusedGlobalMusic !== payload.initialGlobalMusic ||
+    payload.focusedEditDeferred !== true
   )
     throw new Error(`Embed HUD 字体样式异常：${JSON.stringify(payload)}`);
 }

@@ -1,12 +1,20 @@
 <script setup lang="ts">
 import HelpDialog from "./HelpDialog.vue";
+import { createBackdropDismissHandlers } from "../../shared/dialog/backdropDismiss.js";
 
 defineProps<{ helpHtml: string }>();
 const emit = defineEmits<{ close: [] }>();
+const backdropDismiss = createBackdropDismissHandlers(() => emit("close"));
 </script>
 
 <template>
-  <div class="global-dialog-layer" data-dialog-layer @click.self="emit('close')">
+  <div
+    class="global-dialog-layer"
+    data-dialog-layer
+    @pointerdown="backdropDismiss.pointerDown"
+    @pointerup="backdropDismiss.pointerUp"
+    @pointercancel="backdropDismiss.pointerCancel"
+  >
     <HelpDialog :html="helpHtml" @close="emit('close')" />
   </div>
 </template>

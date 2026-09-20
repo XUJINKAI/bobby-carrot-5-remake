@@ -66,3 +66,27 @@ export async function renderEditorPage(
     },
   };
 }
+
+export async function renderEditorTestPage(
+  context: PageContext,
+): Promise<PageController> {
+  const { app, audio, images, navigate } = context;
+  audio.stopMusic();
+  const level = loadEditorAutosave() ?? createBlankLevel(16, 16);
+
+  configureEditorShell(true);
+  app.replaceChildren();
+  const editorPage = createApp(EditorPage, {
+    initialLevel: level,
+    audio,
+    images,
+    navigate,
+    playRoute: true,
+  });
+  editorPage.mount(app);
+  return {
+    destroy(): void {
+      editorPage.unmount();
+    },
+  };
+}

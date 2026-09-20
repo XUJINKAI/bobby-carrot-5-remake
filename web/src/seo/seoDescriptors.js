@@ -14,6 +14,7 @@ const STATIC_ROUTES = {
     true,
   ],
   "/edit": ["seo.editor.title", "seo.editor.description", true],
+  "/edit/test": ["seo.editor.title", "seo.editor.description", false],
   "/embed": ["seo.embed.title", "seo.embed.description", true],
   "/settings": ["seo.settings.title", "seo.settings.description", false],
   "/import/v1": ["seo.import.title", "seo.import.description", false],

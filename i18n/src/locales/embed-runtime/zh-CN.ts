@@ -1,5 +1,5 @@
 const catalog = {
-  "embedRuntime.won": "通关",
+  "embedRuntime.won": "已完成",
   "embedRuntime.dead": "失败",
   "embedRuntime.restart": "重新开始",
   "embedRuntime.official": "前往官网",

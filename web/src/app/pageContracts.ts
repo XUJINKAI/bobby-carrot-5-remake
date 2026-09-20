@@ -5,7 +5,12 @@ import type {
 } from "../services/catalog/catalog.js";
 import type { ResolvedMapCollection } from "../services/catalog/catalogRuntime.js";
 
-export type Navigate = (path: string) => void;
+export interface NavigateOptions {
+  replace?: boolean;
+  state?: unknown;
+}
+
+export type Navigate = (path: string, options?: NavigateOptions) => void;
 
 export interface PageController {
   destroy(): void;

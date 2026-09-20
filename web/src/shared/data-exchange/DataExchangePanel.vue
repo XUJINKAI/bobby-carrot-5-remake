@@ -59,19 +59,37 @@ let liveValueTimer: ReturnType<typeof setTimeout> | null = null;
 let refreshVersion = 0;
 const format = computed(() => detectExchangeFormat(draft.value));
 const compressed = computed(() => format.value === "payload");
+const controls = computed(() => [
+  ...props.toolbar.left,
+  ...props.toolbar.right,
+]);
+const importTextControl = computed(() =>
+  controls.value.find((control) => control.type === "importText"),
+);
+const importFileControl = computed(() =>
+  controls.value.find((control) => control.type === "importFile"),
+);
+const statusControl = computed(() =>
+  controls.value.find((control) => control.type === "status"),
+);
+const compressControl = computed(() =>
+  controls.value.find((control) => control.type === "compress"),
+);
+const downloadControl = computed(() =>
+  controls.value.find((control) => control.type === "download"),
+);
+const copyControl = computed(() =>
+  controls.value.find((control) => control.type === "copy"),
+);
 const feedbackText = computed(() =>
   feedback.value === null ? "" : resolveWebText(feedback.value),
 );
 const acceptedFiles = computed(() =>
-  [...props.toolbar.left, ...props.toolbar.right]
-    .filter((control) => control.type === "importFile")
-    .map((control) => control.type === "importFile" ? control.accept ?? DEFAULT_EXCHANGE_ACCEPT : "")
-    .join(",") || DEFAULT_EXCHANGE_ACCEPT,
+  importFileControl.value?.type === "importFile"
+    ? importFileControl.value.accept ?? DEFAULT_EXCHANGE_ACCEPT
+    : DEFAULT_EXCHANGE_ACCEPT,
 );
-const status = computed(() => {
-  const label = format.value === "json" ? "JSON" : format.value === "payload" ? "Payload" : webT("common.unknownFormat");
-  return `${label} · ${formatBytes(new Blob([draft.value]).size)}`;
-});
+const payloadSize = computed(() => formatBytes(new Blob([draft.value]).size));
 const encodeOptions = (): { publicBaseUrl?: string } =>
   props.publicBaseUrl ? { publicBaseUrl: props.publicBaseUrl } : {};
 
@@ -237,15 +255,19 @@ function prettyJson(text: string): string {
 }
 
 function formatBytes(bytes: number): string {
-  return bytes < 1024 ? `${bytes} B` : `${(bytes / 1024).toFixed(1)} KB`;
+  return bytes < 1024 ? `${bytes}B` : `${(bytes / 1024).toFixed(1)}KB`;
 }
 
 function label(control: DataExchangeControlConfig): string {
-  if (control.type === "importText") return control.label ?? webT("common.importText");
+  if (control.type === "importText") return control.label ?? webT("common.import");
   if (control.type === "importFile") return control.label ?? webT("common.importFile");
-  if (control.type === "compress") return control.label ?? webT("common.compress");
+  if (control.type === "compress") {
+    return control.label ?? webT(
+      props.publicBaseUrl ? "common.compressToLink" : "common.compress",
+    );
+  }
   if (control.type === "copy") return control.label ?? webT("common.copy");
-  if (control.type === "download") return control.label ?? webT("common.download");
+  if (control.type === "download") return control.label ?? webT("common.exportFile");
   return "";
 }
 
@@ -257,6 +279,22 @@ onBeforeUnmount(() => {
 
 <template>
   <section class="data-exchange-panel">
+    <div v-if="compressControl || statusControl || $slots.metaAction" class="data-exchange-meta">
+      <label
+        v-if="compressControl"
+        class="data-exchange-check data-exchange-compress-toggle"
+        data-exchange-compression
+      >
+        <input type="checkbox" :checked="compressed" :disabled="busy" @change="toggleCompression">
+        <span>{{ label(compressControl) }}</span>
+        <span v-if="statusControl" aria-hidden="true">·</span>
+        <span v-if="statusControl" class="data-exchange-status">{{ payloadSize }}</span>
+      </label>
+      <span v-else-if="statusControl" class="data-exchange-status">{{ payloadSize }}</span>
+      <span v-if="$slots.metaAction" class="data-exchange-meta-action">
+        <slot name="metaAction" />
+      </span>
+    </div>
     <textarea
       v-model="draft"
       class="data-exchange-text"
@@ -266,26 +304,38 @@ onBeforeUnmount(() => {
       @focus="selectDraft"
       @input="onDraftInput"
     />
-    <div class="data-exchange-toolbar">
-      <div class="data-exchange-toolbar-group">
-        <template v-for="(control, index) in toolbar.left" :key="`${control.type}-${index}`">
-          <button v-if="control.type === 'importText'" type="button" :disabled="busy" @click="importDraft">{{ label(control) }}</button>
-          <button v-else-if="control.type === 'importFile'" type="button" :disabled="busy" @click="fileInput?.click()">{{ label(control) }}</button>
-          <span v-else-if="control.type === 'status'" class="data-exchange-status">{{ status }}</span>
-          <label v-else-if="control.type === 'compress'" class="data-exchange-check"><input type="checkbox" :checked="compressed" :disabled="busy" @change="toggleCompression">{{ label(control) }}</label>
-          <button v-else-if="control.type === 'copy'" type="button" @click="copyDraft">{{ label(control) }}</button>
-          <button v-else-if="control.type === 'download'" type="button" @click="downloadDraft">{{ label(control) }}</button>
-        </template>
+    <div class="data-exchange-actions">
+      <div class="data-exchange-action-group">
+        <button
+          v-if="importTextControl"
+          class="data-exchange-primary"
+          data-exchange-action="importText"
+          type="button"
+          :disabled="busy"
+          @click="importDraft"
+        >{{ label(importTextControl) }}</button>
+        <button
+          v-if="importFileControl"
+          data-exchange-action="importFile"
+          type="button"
+          :disabled="busy"
+          @click="fileInput?.click()"
+        >{{ label(importFileControl) }}</button>
       </div>
-      <div class="data-exchange-toolbar-group data-exchange-toolbar-right">
-        <template v-for="(control, index) in toolbar.right" :key="`${control.type}-${index}`">
-          <button v-if="control.type === 'importText'" type="button" :disabled="busy" @click="importDraft">{{ label(control) }}</button>
-          <button v-else-if="control.type === 'importFile'" type="button" :disabled="busy" @click="fileInput?.click()">{{ label(control) }}</button>
-          <span v-else-if="control.type === 'status'" class="data-exchange-status">{{ status }}</span>
-          <label v-else-if="control.type === 'compress'" class="data-exchange-check"><input type="checkbox" :checked="compressed" :disabled="busy" @change="toggleCompression">{{ label(control) }}</label>
-          <button v-else-if="control.type === 'copy'" type="button" @click="copyDraft">{{ label(control) }}</button>
-          <button v-else-if="control.type === 'download'" type="button" @click="downloadDraft">{{ label(control) }}</button>
-        </template>
+      <div class="data-exchange-action-group data-exchange-actions-right">
+        <button
+          v-if="downloadControl"
+          data-exchange-action="download"
+          type="button"
+          @click="downloadDraft"
+        >{{ label(downloadControl) }}</button>
+        <button
+          v-if="copyControl"
+          class="data-exchange-primary"
+          data-exchange-action="copy"
+          type="button"
+          @click="copyDraft"
+        >{{ label(copyControl) }}</button>
       </div>
     </div>
     <input ref="fileInput" type="file" hidden :accept="acceptedFiles" @change="selectFile">
@@ -307,7 +357,10 @@ onBeforeUnmount(() => {
   padding: 10px;
   border: 1px solid var(--line);
   border-radius: var(--bc-control-radius);
-  background: color-mix(in srgb, var(--bc-bg) 82%, #000 18%);
+  background: var(
+    --data-exchange-text-bg,
+    color-mix(in srgb, var(--bc-bg) 82%, #000 18%)
+  );
   color: var(--bc-text);
   font: 0.78rem/1.45 ui-monospace, monospace;
   white-space: pre-wrap;
@@ -315,32 +368,52 @@ onBeforeUnmount(() => {
   word-break: break-all;
 }
 
-.data-exchange-toolbar,
-.data-exchange-toolbar-group {
+.data-exchange-meta,
+.data-exchange-actions,
+.data-exchange-action-group {
   display: flex;
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
 }
 
-.data-exchange-toolbar-right {
+.data-exchange-meta {
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.data-exchange-meta-action {
+  display: inline-flex;
+  align-items: center;
   margin-left: auto;
 }
 
-.data-exchange-toolbar button {
+.data-exchange-actions-right {
+  margin-left: auto;
+}
+
+.data-exchange-actions button {
   min-height: 32px;
   padding: 5px 10px;
   border: 1px solid var(--line);
   border-radius: var(--bc-control-radius);
-  background: var(--bc-control);
+  background: var(--data-exchange-action-bg, var(--bc-control));
   color: var(--bc-text);
 }
 
-.data-exchange-toolbar button:hover {
-  background: var(--bc-control-hover);
+.data-exchange-actions button:hover {
+  background: var(--data-exchange-action-hover-bg, var(--bc-control-hover));
 }
 
-.data-exchange-status,
+.data-exchange-actions button.data-exchange-primary {
+  background: var(--bc-active);
+  color: var(--bc-text);
+}
+
+.data-exchange-actions button.data-exchange-primary:hover {
+  background: color-mix(in srgb, var(--bc-active) 84%, #fff 16%);
+}
+
 .data-exchange-feedback {
   color: var(--muted);
   font-size: 0.75rem;
@@ -350,6 +423,19 @@ onBeforeUnmount(() => {
   display: inline-flex;
   align-items: center;
   gap: 5px;
+}
+
+.data-exchange-check input {
+  margin: 0;
+  accent-color: var(--bc-active);
+}
+
+.data-exchange-compress-toggle {
+  cursor: pointer;
+}
+
+.data-exchange-compress-toggle:has(input:disabled) {
+  cursor: default;
 }
 
 .data-exchange-feedback {

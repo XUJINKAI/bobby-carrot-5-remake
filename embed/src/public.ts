@@ -5,6 +5,7 @@ export type {
   BC5RMount,
   BC5RMountOptions,
   BC5RQueue,
+  EmbedHudOptions,
   EmbedJoystickMode,
   EmbedKeyboardMode,
   EmbedMusicStyle,

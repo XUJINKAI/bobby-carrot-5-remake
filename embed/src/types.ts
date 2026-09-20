@@ -2,6 +2,11 @@ export type EmbedKeyboardMode = "focus" | "global";
 export type EmbedJoystickMode = boolean | "auto";
 export type EmbedMusicStyle = "modern" | "8bit";
 
+export interface EmbedHudOptions {
+  timer?: boolean;
+  steps?: boolean;
+}
+
 export interface BC5RMountOptions {
   target: string | HTMLElement;
   map?: string;
@@ -21,6 +26,7 @@ export interface BC5RMountOptions {
     pinchZoom?: boolean;
     wheelZoom?: boolean;
   };
+  hud?: EmbedHudOptions;
   info?: string;
 }
 

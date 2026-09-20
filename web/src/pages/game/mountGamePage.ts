@@ -7,9 +7,7 @@ import {
   type AdventureSave,
 } from "@bobby/adventure";
 import {
-  DEFAULT_CAMERA_OPTIONS,
   type AudioRuntime,
-  type CameraOptions,
   type ImageManager,
 } from "@bobby/engine";
 import { MapEntityTypeId, type LevelMap } from "@bobby/model";
@@ -34,10 +32,8 @@ import {
   rememberExploreMap,
   markExploreMapCompleted,
 } from "../../storage/exploreProgressStorage.js";
-import {
-  createGameSession,
-  type GameSession,
-} from "../../runtime/game/createGameSession.js";
+import { createGameSession } from "../../runtime/game/createGameSession.js";
+import { bindGameplayShell } from "../../runtime/game/bindGameplayShell.js";
 import {
   completedResultHtml,
   failedResultHtml,
@@ -80,26 +76,14 @@ import {
   prepareAdventureGameplayLevel,
 } from "./adventurePurchase.js";
 import { resolveGameplayHudConfig } from "./gameplayHudConfig.js";
-import { mapStatusIndicator } from "./mapStatusIndicator.js";
+import {
+  gameMapVerificationStatus,
+  mapStatusIndicator,
+} from "./mapStatusIndicator.js";
 import { webT } from "../../i18n/webI18n.js";
+import { gameplayCameraOptions } from "./gameplayCameraOptions.js";
 
 export type { GamePageMode } from "./gamePageCapabilities.js";
-
-// TODO 需要根据屏幕宽度设置更好
-const GAME_CAMERA_OPTIONS: Record<GamePageMode, CameraOptions> = {
-  explore: {
-    zoom: 1.1,
-    minZoom: .25,
-    maxZoom: 4,
-    panBounds: "map-edge",
-  },
-  adventure: {
-    zoom: 1.05,
-    minZoom: 0.8,
-    maxZoom: 1.15,
-    panBounds: "viewport",
-  },
-};
 
 export interface GameIdentity {
   collection: string;
@@ -310,8 +294,7 @@ export async function renderGamePage(
       ...(plan
         ? { bobbyLocomotion: { moveMs: plan.bobbyMoveMs } }
         : {}),
-      camera: GAME_CAMERA_OPTIONS[mode],
-      ...(adventureScene ? { levelMusicOverride: "title" } : {}),
+      camera: gameplayCameraOptions(mode),
       hud: resolveGameplayHudConfig(
         mode,
         adventureScene?.id,
@@ -326,10 +309,10 @@ export async function renderGamePage(
       },
     },
   });
-  const { game, input, gates } = session;
+  const { game } = session;
 
   let visibleResult: "death" | "complete" | null = null;
-  let audibleResult: "death" | "complete" | null = null;
+  let capturedResult: "death" | "complete" | null = null;
   let resultElapsedMs = 0;
   let completionRecorded = false;
   let completionNextId: string | undefined;
@@ -382,12 +365,11 @@ export async function renderGamePage(
           adventureRewards.discard();
           resultElapsedMs = 0;
           visibleResult = null;
-          audibleResult = null;
+          capturedResult = null;
           completionRecorded = false;
           completionNextId = undefined;
           completionNavigationStarted = false;
           gameResult.hidden = true;
-          game.resumeMusicState();
         },
       })
     : NOOP_REPLAY_PANEL_CONTROLLER;
@@ -423,18 +405,16 @@ export async function renderGamePage(
     if (kind === "death") adventureRewards.discard();
     if (kind === "complete") recordLevelCompletion();
     if (!kind) {
-      if (audibleResult !== null) game.resumeMusicState();
-      audibleResult = null;
       resultElapsedMs = 0;
+      capturedResult = null;
       completionRecorded = false;
       completionNextId = undefined;
       closeResult();
       return;
     }
-    if (audibleResult !== kind) {
-      audibleResult = kind;
+    if (capturedResult !== kind) {
+      capturedResult = kind;
       resultElapsedMs = state.elapsedMs;
-      audio.playMusic(kind === "complete" ? "cleared" : "death");
     }
     if (game.isAnimating) return;
     if (
@@ -551,11 +531,9 @@ export async function renderGamePage(
     else if (action === "replay-record") replayPanel.toggle();
   };
   window.addEventListener("game-shell-action", onGameShellAction);
-  const disposeGameShell = bindGameShell(
-    input,
-    gates,
-    screenControlEnabled,
-  );
+  const disposeGameShell = bindGameplayShell(session, {
+    initialScreenControlEnabled: screenControlEnabled,
+  });
   const unsubscribeWorldEvents = game.onWorldEvent((event) => {
     if (
       event.type === "actor-inventory-item-added" &&
@@ -705,7 +683,12 @@ function gameShellConfig(
           ]
         : [],
       leadingIndicators: [
-        mapStatusIndicator(mode, verified, mapId, mapName, mapMeta),
+        mapStatusIndicator(
+          gameMapVerificationStatus(mode, verified),
+          mapId,
+          mapName,
+          mapMeta,
+        ),
       ],
       trailing: [
         {
@@ -736,43 +719,6 @@ function backPath(
     : identity.collection === "imported"
       ? "/"
       : exploreCollectionPath(identity.collection);
-}
-
-function bindGameShell(
-  input: {
-    setScreenJoystickEnabled(value: boolean): void;
-  },
-  gates: GameSession["gates"],
-  initialScreenControlEnabled: boolean,
-): () => void {
-  let screenControlEnabled = initialScreenControlEnabled;
-  const updateScreenControl = (): void => {
-    input.setScreenJoystickEnabled(screenControlEnabled);
-  };
-  updateScreenControl();
-  const onScreenControlChange = (event: Event): void => {
-    screenControlEnabled = Boolean(
-      (event as CustomEvent<{ enabled: boolean }>).detail.enabled,
-    );
-    updateScreenControl();
-  };
-  let shellDialogLease: ReturnType<GameSession["gates"]["acquire"]> | null = null;
-  const onDialogOpen = (): void => {
-    shellDialogLease ??= gates.acquire("shell-dialog");
-  };
-  const onDialogClose = (): void => {
-    shellDialogLease?.release();
-    shellDialogLease = null;
-  };
-  window.addEventListener("screen-control-change", onScreenControlChange);
-  window.addEventListener("shell-dialog-open", onDialogOpen);
-  window.addEventListener("shell-dialog-close", onDialogClose);
-  return () => {
-    shellDialogLease?.release();
-    window.removeEventListener("screen-control-change", onScreenControlChange);
-    window.removeEventListener("shell-dialog-open", onDialogOpen);
-    window.removeEventListener("shell-dialog-close", onDialogClose);
-  };
 }
 
 function required<T extends Element>(root: ParentNode, selector: string): T {

@@ -62,14 +62,18 @@ assets/
 
 `cardSize` 控制该 collection 的地图卡片密度，可取 `small / medium / big`。它属于 collection 的展示数据，因此 chapter 只负责分组，不决定地图卡片尺寸。
 
-`maps` 是 collection 的完整有序地图列表；`chapter` 是 map 的可选分组属性。collection 同时包含根目录地图与 chapter 目录时，根目录地图排在最前并按无章节网格展示，随后按 chapter 与 map ID 顺序展示章节地图。`maps[].name` 直接来自对应 MapDocument 的 `meta.name`，Explore 原样显示该名称。chapter 的 `name` 与 `description` 也只在源 manifest 定义时生成并按原值展示；目录只提供 `id`。数组顺序就是 Explore 顺序，不另存重复的 `order` 字段。
+`maps` 是 collection 的完整有序地图列表；`chapter` 是 map 的可选分组属性。collection 同时包含根目录地图与 chapter 目录时，根目录地图排在最前并按无章节网格展示，随后按 chapter 与 map ID 顺序展示章节地图。`maps[].name` 直接来自对应 MapDocument 的 `meta.name`，Explore 原样显示该名称。chapter 的 `name` 也是必需的展示文案，Explore 只显示该字段；自定义 collection 未提供章节名称时，生成器使用目录 `id` 作为 `name`。数组顺序就是 Explore 顺序，不另存重复的 `order` 字段。
 
 Original collection 在 40 个正式章节后追加 ID 为 `special-scenes` 的普通 chapter
 分组，5 张地图通过 `chapter: "special-scenes"` 进入该分组。该分组只表达 Explore
-的尾部布局，不进入 Adventure 的 Campaign chapter 编号。
+的尾部布局，不进入 Adventure 的 Campaign chapter 编号。前 40 章在 Original Explore
+index 中把编号与原版标题组合为展示名称，例如 `1 · FAIRY MAGIC`；Adventure index
+继续保存独立的 `id: "1"` 与 `name: "FAIRY MAGIC"`。
 
-Original Bonus 地图显式保存 `music: "bonus"`；普通关卡省略 `music`，由播放页面
-在 `ingame0..2` 中随机选择。
+Original Bonus 地图显式保存 `music: "shop"`，Lock 打开后的 `bonus` 覆盖由 Engine
+根据地图状态选择；普通关卡省略 `music`，由播放页面在 `ingame0..2` 中随机选择。
+5 个 Special Scene 按原版固定保存地图音乐：Beaver Shop 与 Dream Machine 使用
+`shop`，Cloud 9、Dreamland Reward 与 Campaign Intro 使用 `sandman`。
 
 filter option 的 Gameplay 图标使用统一 Entity preview descriptor，不区分 Original/Custom，也不区分 Terrain/Object。每个 option 通过 `icons` 数组按顺序提供一个或多个图标：
 
