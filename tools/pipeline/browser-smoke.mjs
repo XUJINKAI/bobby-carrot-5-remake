@@ -103,6 +103,7 @@ try {
       'data-filter-trigger="target-count"',
       'data-filter-trigger="mechanics"',
       'data-card-size="small"',
+      "1 · FAIRY MAGIC",
       "Special Scenes",
       "Dreamland Reward",
       'href="/explore/play/original/campaign-intro"',
@@ -123,11 +124,12 @@ try {
     [
       'class="explore-tabs"',
       'class="chapter-card"',
+      'class="chapter-name"',
       'data-card-size="small"',
       "LOMA",
       'href="/explore/play/loma-pushbox/01-01"',
     ],
-    ['class="chapter-name"', 'class="chapter-separator"'],
+    ['class="chapter-id"', 'class="chapter-separator"'],
   );
   await smoke(
     `${origin}/explore/engine-lab`,

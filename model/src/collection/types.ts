@@ -31,7 +31,7 @@ export interface MapCollectionFilter {
 
 export interface MapCollectionChapter {
   id: string;
-  name?: string;
+  name: string;
   description?: string;
   difficulty?: number;
 }
@@ -75,7 +75,7 @@ export interface CollectionManifestChapter {
 
 /**
  * 人工维护的 collection metadata；成员关系及 chapter/map ID 由文件路径定义。
- * chapters 只补充一级 chapter 目录的展示信息；省略的字段不进入 runtime asset。
+ * chapters 只补充一级 chapter 目录的展示信息；省略 name 时生成器使用目录 ID。
  */
 export interface CollectionManifestEntry {
   id: string;

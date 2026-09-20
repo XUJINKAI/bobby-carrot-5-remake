@@ -95,7 +95,7 @@ function buildOriginalCollection() {
       filters: originalExploreFilters(),
       chapters: catalog.chapters.map((chapter) => ({
         id: chapter.id,
-        name: chapter.name,
+        name: `${chapter.id} · ${chapter.name}`,
         description: chapter.description,
         difficulty: chapter.difficulty,
       })).concat({

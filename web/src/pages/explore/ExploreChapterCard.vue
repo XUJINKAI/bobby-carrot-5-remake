@@ -22,11 +22,7 @@ const emit = defineEmits<{ navigate: [path: string] }>();
   <section class="chapter-card">
     <header class="chapter-head">
       <div class="chapter-title-line">
-        <span class="chapter-id">{{ chapter.id }}</span>
-        <template v-if="chapter.name !== undefined">
-          <span class="chapter-separator">·</span>
-          <span class="chapter-name">{{ chapter.name }}</span>
-        </template>
+        <span class="chapter-name">{{ chapter.name }}</span>
       </div>
       <div class="chapter-meta">
         <span
@@ -81,8 +77,6 @@ const emit = defineEmits<{ navigate: [path: string] }>();
   letter-spacing: 0.08em;
 }
 
-.chapter-id,
-.chapter-separator,
 .chapter-stars {
   flex: 0 0 auto;
 }
