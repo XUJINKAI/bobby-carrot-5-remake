@@ -86,7 +86,14 @@ try {
     ),
   );
   const embedUrl = `${origin}/embed#${mapPayload}`;
-  await smoke(embedUrl, ['class="embed-page"', "BC5R Embed v1", "English", "Modern", 'class="keyboard-select"']);
+  await smoke(embedUrl, [
+    'class="embed-page"',
+    'data-embed-api="ready"',
+    'class="code-block"',
+    "English",
+    "Modern",
+    'class="keyboard-select"',
+  ]);
   await runEmbedHudSmoke(runBrowserEval, embedUrl, lastJsonLine);
   await expectStatus(`${origin}/embed/v1/bc5r.js`, 200, "text/javascript");
   standaloneHost = await startStandaloneEmbedHost(

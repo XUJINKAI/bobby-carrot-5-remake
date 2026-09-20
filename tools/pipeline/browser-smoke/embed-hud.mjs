@@ -48,6 +48,8 @@ export const embedHudSmokeScript = `
     .filter((face) => face.family.replaceAll('"', '') === 'BC5R Jersey 10')
     .map((face) => ({ family: face.family, status: face.status }));
   const initialState = {
+    pagePaddingTop: getComputedStyle(document.querySelector('.app-content')).paddingTop,
+    pageRootTag: document.querySelector('.embed-page')?.tagName,
     fontFamily: hudStyle.fontFamily,
     fontReady: document.fonts.check('36px "BC5R Jersey 10"'),
     jerseyFaces,
@@ -95,10 +97,13 @@ export const embedHudSmokeScript = `
   const editableCode = code instanceof HTMLTextAreaElement;
   const generatedTimerCode = editableCode && code.value.includes('"timer": true');
   if (editableCode) {
-    code.value = code.value.replace('"timer": true', '"timer": false');
+    code.value = code.value
+      .replace('"timer": true', '"timer": false')
+      .replace('height:520px', 'height:360px');
     code.dispatchEvent(new Event('input', { bubbles: true }));
   }
   let editedTimer = null;
+  let editedHeight = null;
   for (let i = 0; i < 120; i += 1) {
     const nextShadow = host?.shadowRoot;
     const nextTimer = nextShadow?.querySelector('.engine-gameplay-hud-timer');
@@ -108,9 +113,11 @@ export const embedHudSmokeScript = `
       nextTimer &&
       nextSteps &&
       getComputedStyle(nextTimer).display === 'none' &&
-      getComputedStyle(nextSteps).display !== 'none'
+      getComputedStyle(nextSteps).display !== 'none' &&
+      getComputedStyle(host).height === '360px'
     ) {
       editedTimer = false;
+      editedHeight = getComputedStyle(host).height;
       break;
     }
     await delay(50);
@@ -122,12 +129,15 @@ export const embedHudSmokeScript = `
     editableCode,
     generatedTimerCode,
     editedTimer,
+    editedHeight,
   });
 })()
 `;
 
 export function assertEmbedHudSmoke(payload) {
   if (
+    payload.pagePaddingTop !== "20px" ||
+    payload.pageRootTag !== "DIV" ||
     !payload.fontFamily.includes("BC5R Jersey 10") ||
     !payload.fontReady ||
     !payload.jerseyFaces.some((face) => face.status === "loaded") ||
@@ -151,6 +161,7 @@ export function assertEmbedHudSmoke(payload) {
     !payload.editableCode ||
     !payload.generatedTimerCode ||
     payload.editedTimer !== false ||
+    payload.editedHeight !== '360px' ||
     !payload.gameplayAssetsLoaded ||
     payload.initialJoystick === payload.toggledJoystick ||
     payload.joystickVisible !== payload.toggledJoystick

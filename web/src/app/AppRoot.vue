@@ -261,10 +261,16 @@ onMounted(() => {
   flex: 1 0 auto;
 }
 
-.app-content:not(:has(.game-page)):not(:has(.adventure-viewport)):not(:has(.bobby-editor)):not(:has(.home-page)) {
+.app-content:not(:has(.game-page)):not(:has(.adventure-viewport)):not(:has(.bobby-editor)):not(:has(.home-page)):not(:has(.embed-page)) {
   width: min(1180px, calc(100% - 32px));
   margin: 0 auto;
   padding: 34px 0 60px;
+}
+
+.app-content:has(.embed-page) {
+  width: min(1320px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 20px 0 56px;
 }
 
 .app-content:has(.bobby-editor) {

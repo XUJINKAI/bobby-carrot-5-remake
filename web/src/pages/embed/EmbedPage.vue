@@ -49,6 +49,7 @@ const preview = ref<HTMLElement | null>(null);
 const previewError = ref<WebDisplayText | null>(null);
 const copyError = ref<WebDisplayText | null>(null);
 const embedCode = ref("");
+const previewStyle = ref<string>();
 const previewReady = ref(false);
 const apiReady = ref(false);
 let embedMount: EmbedMount | null = null;
@@ -115,22 +116,23 @@ onMounted(async () => {
 async function refreshPreview(): Promise<void> {
   const target = preview.value;
   if (!target || !embedMount) return;
-  let options: ReturnType<typeof parseEmbedCode>;
+  let parsed: ReturnType<typeof parseEmbedCode>;
   try {
-    options = parseEmbedCode(embedCode.value);
+    parsed = parseEmbedCode(embedCode.value);
   } catch (cause) {
     previewError.value = errorDisplayText(
       new WebError(WEB_ERROR_CODES.embed.invalidCode, { cause }),
     );
     return;
   }
+  previewStyle.value = parsed.containerStyle;
   const serial = ++renderSerial;
   handle?.destroy();
   handle = null;
   previewError.value = null;
   previewReady.value = false;
   try {
-    const next = embedMount({ ...options, target });
+    const next = embedMount({ ...parsed.options, target });
     handle = next;
     await next.ready;
     if (serial !== renderSerial) {
@@ -205,19 +207,11 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <main
+  <div
     class="embed-page"
     :data-embed-api="apiReady ? 'ready' : 'loading'"
     :data-preview-state="previewReady ? 'ready' : 'idle'"
   >
-    <header class="embed-heading">
-      <div>
-        <p class="eyebrow">BC5R Embed v1</p>
-        <h1>{{ webT("embed.title") }}</h1>
-        <p>{{ webT("embed.description") }}</p>
-      </div>
-    </header>
-
     <div class="embed-layout">
       <section class="embed-config">
         <div class="field-group">
@@ -312,7 +306,7 @@ onBeforeUnmount(() => {
 
       <section class="embed-output">
         <h2>{{ webT("embed.preview") }}</h2>
-        <div ref="preview" class="preview"></div>
+        <div ref="preview" class="preview" :style="previewStyle"></div>
         <p v-if="previewError" class="error">{{ resolveWebText(previewError) }}</p>
 
         <div class="code-heading">
@@ -329,15 +323,12 @@ onBeforeUnmount(() => {
         <p v-if="copyError" class="error" aria-live="polite">{{ resolveWebText(copyError) }}</p>
       </section>
     </div>
-  </main>
+  </div>
 </template>
 
 <style scoped>
-.embed-page { max-width: 1320px; margin: 0 auto; padding: 32px 24px 56px; color: var(--bc-text); }
-.embed-heading h1 { margin: 4px 0 8px; font-size: clamp(28px, 4vw, 44px); }
-.embed-heading p { margin: 0; color: var(--muted); }
-.eyebrow { font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--bc-highlight); }
-.embed-layout { display: grid; grid-template-columns: minmax(300px, 420px) minmax(0, 1fr); gap: 28px; margin-top: 28px; }
+.embed-page { color: var(--bc-text); }
+.embed-layout { display: grid; grid-template-columns: minmax(300px, 420px) minmax(0, 1fr); gap: 28px; }
 .embed-config, .embed-output { min-width: 0; padding: 20px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); }
 .field-group { display: grid; gap: 8px; margin: 0 0 18px; }
 .config-group { display: grid; gap: 14px; margin: 0 0 18px; padding: 16px; border: 1px solid var(--line); border-radius: 9px; }
