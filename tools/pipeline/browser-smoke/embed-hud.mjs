@@ -23,11 +23,19 @@ export const embedHudSmokeScript = `
   const joystickLayer = shadow.querySelector('.engine-screen-joystick-layer');
   const infoInput = document.querySelector('.info-input');
   const keyboardSelect = document.querySelector('.keyboard-select');
+  const timerToggle = document.querySelector('.hud-timer');
+  const stepsToggle = document.querySelector('.hud-steps');
   if (
     !home || !open || !restart || !sound || !joystick || !joystickLayer ||
-    !infoInput || !keyboardSelect
+    !infoInput || !keyboardSelect || !timerToggle || !stepsToggle
   )
     throw new Error('missing Embed frame controls');
+  const timer = shadow.querySelector('.engine-gameplay-hud-timer');
+  const steps = shadow.querySelector('.engine-gameplay-hud-steps');
+  const defaultHud = {
+    timer: timer ? getComputedStyle(timer).display !== 'none' : null,
+    steps: steps ? getComputedStyle(steps).display !== 'none' : null,
+  };
   const initialJoystick = joystick.getAttribute('aria-pressed') === 'true';
   joystick.click();
   await delay(30);
@@ -39,7 +47,7 @@ export const embedHudSmokeScript = `
   const jerseyFaces = [...document.fonts]
     .filter((face) => face.family.replaceAll('"', '') === 'BC5R Jersey 10')
     .map((face) => ({ family: face.family, status: face.status }));
-  return JSON.stringify({
+  const initialState = {
     fontFamily: hudStyle.fontFamily,
     fontReady: document.fonts.check('36px "BC5R Jersey 10"'),
     jerseyFaces,
@@ -61,6 +69,32 @@ export const embedHudSmokeScript = `
     initialJoystick,
     toggledJoystick,
     joystickVisible: !joystickLayer.hidden,
+  };
+  timerToggle.click();
+  stepsToggle.click();
+  let enabledTimer = null;
+  let enabledSteps = null;
+  for (let i = 0; i < 120; i += 1) {
+    const nextShadow = host?.shadowRoot;
+    const nextTimer = nextShadow?.querySelector('.engine-gameplay-hud-timer');
+    const nextSteps = nextShadow?.querySelector('.engine-gameplay-hud-steps');
+    if (
+      document.querySelector('[data-preview-state="ready"]') &&
+      nextTimer &&
+      nextSteps &&
+      getComputedStyle(nextTimer).display !== 'none' &&
+      getComputedStyle(nextSteps).display !== 'none'
+    ) {
+      enabledTimer = true;
+      enabledSteps = true;
+      break;
+    }
+    await delay(50);
+  }
+  return JSON.stringify({
+    ...initialState,
+    defaultHud,
+    enabledHud: { timer: enabledTimer, steps: enabledSteps },
   });
 })()
 `;
@@ -83,6 +117,10 @@ export function assertEmbedHudSmoke(payload) {
     payload.info.length === 0 ||
     payload.infoPlaceholder !== payload.info ||
     JSON.stringify(payload.keyboardOptions) !== JSON.stringify(["focus", "global"]) ||
+    payload.defaultHud?.timer !== false ||
+    payload.defaultHud?.steps !== false ||
+    payload.enabledHud?.timer !== true ||
+    payload.enabledHud?.steps !== true ||
     !payload.gameplayAssetsLoaded ||
     payload.initialJoystick === payload.toggledJoystick ||
     payload.joystickVisible !== payload.toggledJoystick

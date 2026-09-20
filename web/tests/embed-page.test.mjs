@@ -24,4 +24,10 @@ test("Embed 生成代码与首页示例统一使用 queue + async", async () => 
   assert.doesNotMatch(page, /selectAllCode|@click="selectAllCode"|ref="codeBlock"/);
   assert.doesNotMatch(page, /if \(!source\)/);
   assert.doesNotMatch(page, /script\.crossOrigin/);
+  assert.match(page, /const hudTimer = ref\(false\)/);
+  assert.match(page, /const hudSteps = ref\(false\)/);
+  assert.match(page, /timer: hudTimer\.value/);
+  assert.match(page, /steps: hudSteps\.value/);
+  assert.match(page, /class="hud-timer"/);
+  assert.match(page, /class="hud-steps"/);
 });

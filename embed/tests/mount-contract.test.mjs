@@ -30,6 +30,22 @@ test("Embed 把 Pointer 与键盘缩放能力交给 Engine Input", async () => {
   assert.match(mountSource, /zoom: true/);
 });
 
+test("Embed HUD 只公开计时器与计步器，且默认关闭", async () => {
+  const [typesSource, mountSource] = await Promise.all([
+    readFile(new URL("../src/types.ts", import.meta.url), "utf8"),
+    readFile(new URL("../src/mount.ts", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(typesSource, /interface EmbedHudOptions/);
+  assert.match(typesSource, /timer\?: boolean/);
+  assert.match(typesSource, /steps\?: boolean/);
+  assert.match(typesSource, /hud\?: EmbedHudOptions/);
+  assert.doesNotMatch(typesSource, /objective\?: boolean/);
+  assert.doesNotMatch(typesSource, /items\?: boolean/);
+  assert.match(mountSource, /timer: options\.hud\?\.timer \?\? false/);
+  assert.match(mountSource, /steps: options\.hud\?\.steps \?\? false/);
+});
+
 test("Embed 框架使用固定首页、地图打开动作与操作提示", async () => {
   const mountSource = await readFile(
     new URL("../src/mount.ts", import.meta.url),

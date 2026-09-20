@@ -10,7 +10,11 @@
 window.BC5R = window.BC5R || { queue: [] };
 BC5R.queue.push({
   target: "#bc5r",
-  mapUrl: "/demo.bc5r.json"
+  mapUrl: "/demo.bc5r.json",
+  hud: {
+    timer: true,
+    steps: true
+  }
 });
 </script>
 
@@ -27,6 +31,8 @@ await handle.ready;
 ```
 
 `map` 与 `mapUrl` 互斥且必须提供一个。`mapUrl` 只负责下载文本，两者随后都交给 `@bobby/exchange`，接受 Plain LevelMap / MapDocument JSON、裸 payload 和完整 `/import/v1#<payload>` URL。Payload 可以是 Base64 / Base64URL(JSON)，也可以是 Base64 / Base64URL(gzip(JSON))。Adventure / Explore 存档会明确报告为存档而非地图。
+
+`hud.timer` 与 `hud.steps` 分别控制计时器和计步器，二者默认关闭。Embed 仍由 Engine 渲染 Gameplay HUD；这里的参数只选择需要展示的项目。
 
 第三方来源使用 `mapUrl` 时，该地图服务器需要允许 Embed 宿主页跨源读取。宿主页若配置 Content Security Policy，也需要放行 `bc5r.js` 的 `script-src`，以及站点资源根的 `font-src`、`img-src` 和 `connect-src`。
 

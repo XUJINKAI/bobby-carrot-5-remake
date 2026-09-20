@@ -37,6 +37,8 @@ const minZoom = ref(0.5);
 const maxZoom = ref(3);
 const pinchZoom = ref(true);
 const wheelZoom = ref(false);
+const hudTimer = ref(false);
+const hudSteps = ref(false);
 const info = ref("");
 const preview = ref<HTMLElement | null>(null);
 const previewError = ref<WebDisplayText | null>(null);
@@ -64,6 +66,10 @@ const options = computed(() => ({
     pinchZoom: pinchZoom.value,
     wheelZoom: wheelZoom.value,
   },
+  hud: {
+    timer: hudTimer.value,
+    steps: hudSteps.value,
+  },
   ...(info.value.trim() ? { info: info.value.trim() } : {}),
 }));
 
@@ -89,6 +95,10 @@ const embedCode = computed(() => {
       maxZoom: maxZoom.value,
       pinchZoom: pinchZoom.value,
       wheelZoom: wheelZoom.value,
+    },
+    hud: {
+      timer: hudTimer.value,
+      steps: hudSteps.value,
     },
     ...(info.value.trim() ? { info: info.value.trim() } : {}),
     ...(mapMode.value === "map"
@@ -271,6 +281,14 @@ onBeforeUnmount(() => handle?.destroy());
             </label>
           </div>
           <label class="check-line"><input v-model="pointer" type="checkbox" /> {{ webT("embed.pointer") }}</label>
+        </fieldset>
+
+        <fieldset class="config-group">
+          <legend>{{ webT("embed.hud") }}</legend>
+          <div class="checks">
+            <label><input v-model="hudTimer" class="hud-timer" type="checkbox" /> {{ webT("embed.timer") }}</label>
+            <label><input v-model="hudSteps" class="hud-steps" type="checkbox" /> {{ webT("embed.steps") }}</label>
+          </div>
         </fieldset>
 
         <fieldset class="config-group">

@@ -151,7 +151,10 @@ export function mount(options: BC5RMountOptions): BC5RHandle {
           },
           runtime: {
             camera,
-            hud: true,
+            hud: {
+              timer: options.hud?.timer ?? false,
+              steps: options.hud?.steps ?? false,
+            },
             input: {
               keyboard: true,
               pointer,
