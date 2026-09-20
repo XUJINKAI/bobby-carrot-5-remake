@@ -34,7 +34,7 @@ import {
 } from "./module.js";
 
 const MOVING_ENTITY_ACTION = "moving-entity";
-export const LEAF_SUPPORT_HEIGHT_PX = 12;
+export const MOVING_PLATFORM_SUPPORT_HEIGHT_PX = 12;
 
 /** Leaf / Cloud 携带同格玩家，但步行进入不建立驾驶关系。 */
 const movingPlatformBehavior: Behavior = {
@@ -215,11 +215,14 @@ const cloudDefinition: EntityModuleDefinition = {
 
 export const cloud: EntityModule = originalModule(
   cloudDefinition,
-  atlasVisual(cloudDefinition, (context) =>
-    tileCell(MapEntityTypeId.CLOUD, {
-      fields: { color: cloudColor(context.entity.state?.color) },
-    }),
-  ),
+  {
+    ...atlasVisual(cloudDefinition, (context) =>
+      tileCell(MapEntityTypeId.CLOUD, {
+        fields: { color: cloudColor(context.entity.state?.color) },
+      }),
+    ),
+    supportHeightPx: MOVING_PLATFORM_SUPPORT_HEIGHT_PX,
+  },
   [{ behavior: movingPlatformBehavior }],
 );
 
@@ -258,7 +261,7 @@ function movingEntityModule(
   const visual = {
     ...atlasVisual(definition, tileCell(type)),
     ...(type === MapEntityTypeId.LEAF
-      ? { supportHeightPx: LEAF_SUPPORT_HEIGHT_PX }
+      ? { supportHeightPx: MOVING_PLATFORM_SUPPORT_HEIGHT_PX }
       : {}),
   };
   const module = originalModule(
