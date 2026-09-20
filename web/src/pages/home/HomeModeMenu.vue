@@ -6,6 +6,7 @@ import type {
 } from "../../services/import/importPipeline.js";
 import DataExchangePanel from "../../shared/data-exchange/DataExchangePanel.vue";
 import AppIcon from "../../shared/icons/AppIcon.vue";
+import { createBackdropDismissHandlers } from "../../shared/dialog/backdropDismiss.js";
 import ImportSaveConfirmation from "../import/ImportSaveConfirmation.vue";
 import { openWebI18nScope, type WebI18nScope, webT } from "../../i18n/webI18n.js";
 
@@ -73,6 +74,8 @@ function closeImport(): void {
   importOpen.value = false;
 }
 
+const backdropDismiss = createBackdropDismissHandlers(closeImport);
+
 onBeforeUnmount(() => {
   importScope?.dispose();
 });
@@ -135,7 +138,9 @@ onBeforeUnmount(() => {
       v-if="importOpen"
       class="home-import-dialog-layer"
       role="presentation"
-      @click.self="closeImport"
+      @pointerdown="backdropDismiss.pointerDown"
+      @pointerup="backdropDismiss.pointerUp"
+      @pointercancel="backdropDismiss.pointerCancel"
     >
       <section class="home-import-dialog" role="dialog" aria-modal="true" :aria-label="webT('home.importDialog')">
         <header>

@@ -7,6 +7,7 @@ import GlobalDialogLayer from "./dialogs/GlobalDialogLayer.vue";
 import QuickSettingsPanel from "./dialogs/QuickSettingsPanel.vue";
 import AppBottomBar from "../shell/AppBottomBar.vue";
 import AppTopBar from "../shell/AppTopBar.vue";
+import { createBackdropDismissHandlers } from "../shared/dialog/backdropDismiss.js";
 import type { Navigate } from "./pageContracts.js";
 import type { ShellViewState } from "../shell/shellBridge.js";
 import { openWebI18nScope, type WebI18nScope, webT } from "../i18n/webI18n.js";
@@ -42,6 +43,8 @@ function closeSettings(): void {
   quickSettingsOpen.value = false;
   notifySurfaceClose();
 }
+
+const settingsBackdropDismiss = createBackdropDismissHandlers(closeSettings);
 
 async function openHelp(): Promise<void> {
   const scope = openWebI18nScope(["help"]);
@@ -199,7 +202,9 @@ onMounted(() => {
       v-if="quickSettingsOpen"
       class="quick-settings-layer"
       data-quick-settings-layer
-      @pointerdown.self="closeSettings"
+      @pointerdown="settingsBackdropDismiss.pointerDown"
+      @pointerup="settingsBackdropDismiss.pointerUp"
+      @pointercancel="settingsBackdropDismiss.pointerCancel"
     >
       <QuickSettingsPanel
         :state="settings.state"

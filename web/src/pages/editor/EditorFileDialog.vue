@@ -6,6 +6,7 @@ import DataExchangePanel from "../../shared/data-exchange/DataExchangePanel.vue"
 import { encodeExchangePayload } from "@bobby/exchange";
 import AppIcon from "../../shared/icons/AppIcon.vue";
 import { webT } from "../../i18n/webI18n.js";
+import { createBackdropDismissHandlers } from "../../shared/dialog/backdropDismiss.js";
 import type { EditorMetadataField } from "./useEditorPage.js";
 
 const props = defineProps<{
@@ -65,6 +66,8 @@ function close(): void {
   emit("close");
 }
 
+const backdropDismiss = createBackdropDismissHandlers(close);
+
 function downloaded(): void {
   emit("metadataFlush");
   emit("saved");
@@ -80,11 +83,18 @@ function textValue(event: Event): string {
 </script>
 
 <template>
-  <div v-if="open" class="editor-dialog-layer" role="presentation" @click.self="close">
+  <div
+    v-if="open"
+    class="editor-dialog-layer"
+    role="presentation"
+    @pointerdown="backdropDismiss.pointerDown"
+    @pointerup="backdropDismiss.pointerUp"
+    @pointercancel="backdropDismiss.pointerCancel"
+  >
     <section class="editor-dialog" role="dialog" aria-modal="true" :aria-label="webT('editor.mapFile')">
       <header>
         <strong>{{ webT("editor.mapFile") }}</strong>
-        <button class="editor-mini-btn" type="button" :aria-label="webT('common.close')" @click="close">
+        <button class="editor-mini-btn" data-editor-dialog-close type="button" :aria-label="webT('common.close')" @click="close">
           <AppIcon name="close" />
         </button>
       </header>
