@@ -5,6 +5,9 @@ import { root } from "../../../../tools/lib/fs.mjs";
 import { verifyButtonFocusPolicy } from "./source/button-focus-browser-checks.mjs";
 import { waitForBrowserState } from "./source/browser-regression-wait.mjs";
 import { verifyEditorExperience } from "./source/editor-browser-checks.mjs";
+import {
+  verifyNarrowExploreGameNavigation,
+} from "./source/game-navigation-browser-checks.mjs";
 import { verifyGameplayDialogKeyboard } from "./source/gameplay-dialog-browser-checks.mjs";
 import {
   verifyImportErrorFollowsLocale,
@@ -49,6 +52,10 @@ export async function runSourceBrowserRegression(cdp) {
       await verifyImportErrorFollowsLocale(
         cdp,
         await openPage(cdp, `${origin}/import/v1#%`),
+      );
+      await verifyNarrowExploreGameNavigation(
+        cdp,
+        await openPage(cdp, `${origin}/explore/play/original/1-2`),
       );
       await verifyAdventureDeveloperTools(
         cdp,
