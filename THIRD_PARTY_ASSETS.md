@@ -51,6 +51,14 @@ http://sokoban.online.fr/levels/novoban/novoban.txt
 
 Novoban 原始文本及由它生成的 `custom-maps/novoban-pushbox/`、runtime MapDocument 均属于第三方关卡内容，**不属于本项目 `LICENSE` 的授权范围**。本仓库保留原始 copyright/source 信息；任何进一步分发仍应自行确认 François Marques 对相应关卡内容的授权条件。本项目的生成工具代码本身仍按根目录 `LICENSE` 授权。
 
+## Robo 2: Saving Eny 关卡
+
+Robo 2: Saving Eny 是 HeroCraft 于 2004 年发布的 J2ME 游戏。本项目可以通过本地研究工具读取用户提供的 Robo 2 JAR，并把其中的关卡布局转换为 Bobby Carrot 5 Remake 的语义地图。
+
+Robo 2 的 JAR、程序、美术、音频、名称、角色、关卡数据，以及由关卡数据转换而来的 `custom-maps/robo2/` 与 runtime MapDocument 均属于第三方内容，**不属于本项目 `LICENSE` 的授权范围**。本项目的格式读取、语义转换与 Engine 实现代码本身仍按根目录 `LICENSE` 授权。
+
+仓库不以项目许可证授予 Robo 2 内容的使用或分发权。任何人分发相应关卡或其它派生内容时，应自行确认 HeroCraft 及相关权利人的授权条件。
+
 ## Phosphor Icons
 
 Web 界面通过 `@phosphor-icons/vue` 使用 Phosphor Icons。该图标库由 Phosphor Icons 项目提供，并按 MIT License 发布；业务组件只通过 `web/src/shared/icons/` 的项目适配层使用它。
