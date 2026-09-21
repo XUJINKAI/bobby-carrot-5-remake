@@ -14,7 +14,7 @@
 | `npm run patch -- <options>` | 把语义地图 patch 到普通版 JAR；传入 `--hd` 时改用高清版，输出仅写入 `tmp/`。 |
 | `npm test` | 完成内容前处理与增量编译，并自动运行全部非 smoke 测试。 |
 | `npm run verify` | 运行测试、production build 和 smoke 在内的完整质量门禁。 |
-| `npm run clean` | 清理仓库定义的生成物。 |
+| `npm run clean` | 清理仓库生成物、全部 package `dist/` 与 TypeScript 构建状态。 |
 
 ## Original
 
