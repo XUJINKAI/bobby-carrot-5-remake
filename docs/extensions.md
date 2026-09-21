@@ -32,6 +32,8 @@ Novoban 和 LOMA 的 XSB 地图由 `tools/custom/sokoban-xsb.mjs` 转换。地�
 
 `laser-emitter` 使用必填 `direction` 字段声明固定发射方向。Engine 从发生器相邻格开始投影激光，遇到首个阻挡对象、Exit 或 Bobby Carrot 5 Mirror 时终止；Bobby 进入激光格会在移动交互点死亡。发生器是单格可推动阻挡对象，从侧面或背面推动后保持发射方向，并从新位置重新投影光束。光束格由 Engine 作为 Runtime Entity 派生，不写回 `LevelMap`。
 
+地图加载时已经覆盖 Bobby 起点的既有光路提供一次离开机会；Bobby 主动进入光路，或机关变化后光路重新投影到 Bobby 所在格，都会触发死亡。这个边界允许 Robo 2 来源地图保留原始起点，同时不削弱运行中的激光危险。
+
 `laser-mirror` 是可推动的双面反射镜，使用必填 `variant` 区分两种对角线。`slash`（`/`）按 `up ↔ right`、`down ↔ left` 反射；`backslash`（`\`）按 `up ↔ left`、`down ↔ right` 反射。光路通过镜面后继续投影，循环光路在相同格子和入射方向再次出现时终止追踪。
 
 激光命中另一个 `laser-emitter` 时摧毁目标发生器及其光束。若两个发生器互相照射，它们在同一个 World tick 中一起摧毁；其它发生器随后按更新后的阻挡布局重新投影。

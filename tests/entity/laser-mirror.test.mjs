@@ -118,32 +118,39 @@ test("激光镜使用通用推动规则", () => {
   assert.deepEqual(world.entity(mirror.id).anchor, { x: 2, y: 1 });
 });
 
-test("Bobby 站在镜面反射后的光路上会死亡", () => {
+test("镜面移动后重新投影的光路会击中静止 Bobby", () => {
   const entities = [];
-  for (let y = 0; y < 4; y += 1) {
+  for (let y = 0; y < 5; y += 1) {
     for (let x = 0; x < 4; x += 1) {
       entities.push(ground(x, y));
     }
   }
   entities.push(
     { type: MapEntityTypeId.LASER_EMITTER, direction: "right", x: 0, y: 2 },
-    { type: MapEntityTypeId.LASER_MIRROR, variant: "slash", x: 2, y: 2 },
-    { type: MapEntityTypeId.BOBBY, x: 2, y: 1 },
+    { type: MapEntityTypeId.LASER_MIRROR, variant: "slash", x: 2, y: 3 },
+    { type: MapEntityTypeId.BOBBY, x: 2, y: 4 },
+    { type: MapEntityTypeId.BOBBY, x: 2, y: 0 },
   );
   const world = new World({
     schemaVersion: 1,
     width: 4,
-    height: 4,
+    height: 5,
     entities,
   });
+  const [pusher, target] = world.query.entitiesWithFact("player");
 
+  world.step({
+    intents: [{
+      type: "move",
+      actorId: pusher.id,
+      direction: "up",
+      cause: { type: "player-input", source: "test" },
+    }],
+  });
   world.update({ tick: 0, stepMs: 16 });
 
   assert.equal(world.dead, true);
-  assert.equal(
-    world.actorLifecycle(world.query.entitiesWithFact("player")[0].id).reason,
-    "laser-beam",
-  );
+  assert.equal(world.actorLifecycle(target.id).reason, "laser-beam");
 });
 
 test("激光镜注册为阻挡、可推动对象，并复用 Mirror 视觉", () => {

@@ -39,18 +39,10 @@ const laserEmitterBehavior: Behavior = {
     if (emitterIsHitByLaser(query, self.entity.id)) {
       destroyLaserEmitter(query, commands, self.entity.id);
     } else {
-      replaceOwnedBeam(query, commands, self.entity);
-    }
-    const actorIds = new Set<number>();
-    for (const segment of ray) {
-      for (const presence of query.presencesAt(segment.cell)) {
-        if (presence.facts.includes("player")) {
-          actorIds.add(presence.entityId);
-        }
+      const changed = replaceOwnedBeam(query, commands, self.entity, ray);
+      if (changed) {
+        downActorsInRay(query, commands, ray);
       }
-    }
-    for (const actorId of [...actorIds].sort((left, right) => left - right)) {
-      commands.downActor(actorId, "laser-beam");
     }
   },
   onDestroy({ self, query, commands }) {
@@ -225,11 +217,12 @@ function replaceOwnedBeam(
   query: WorldQueryApi,
   commands: WorldCommandApi,
   emitter: Readonly<EntityInstance>,
-): void {
+  tracedRay?: readonly LaserRaySegment[],
+): boolean {
   const direction = emitter.direction ?? "right";
-  const ray = traceLaserRay(query, emitter.anchor, direction);
+  const ray = tracedRay ?? traceLaserRay(query, emitter.anchor, direction);
   const current = ownedBeamEntities(query, emitter.id);
-  if (beamMatches(current, ray)) return;
+  if (beamMatches(current, ray)) return false;
   for (const beam of current) {
     commands.destroy(beam.id);
   }
@@ -247,6 +240,23 @@ function replaceOwnedBeam(
           : {}),
       },
     });
+  }
+  return true;
+}
+
+function downActorsInRay(
+  query: WorldQueryApi,
+  commands: WorldCommandApi,
+  ray: readonly LaserRaySegment[],
+): void {
+  const actorIds = new Set<number>();
+  for (const segment of ray) {
+    for (const presence of query.presencesAt(segment.cell)) {
+      if (presence.facts.includes("player")) actorIds.add(presence.entityId);
+    }
+  }
+  for (const actorId of [...actorIds].sort((left, right) => left - right)) {
+    commands.downActor(actorId, "laser-beam");
   }
 }
 

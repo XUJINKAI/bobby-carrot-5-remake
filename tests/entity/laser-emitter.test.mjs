@@ -85,6 +85,37 @@ test("Bobby 进入激光格时在移动中点死亡", () => {
   assert.equal(world.movement.motions.forEntity(actor.id).progress, 0.5);
 });
 
+test("关卡起点位于既有光路时可先离开", () => {
+  const entities = [];
+  for (let y = 0; y < 2; y += 1) {
+    for (let x = 0; x < 4; x += 1) entities.push(ground(x, y));
+  }
+  entities.push(
+    { type: MapEntityTypeId.LASER_EMITTER, direction: "right", x: 0, y: 0 },
+    { type: MapEntityTypeId.BOBBY, x: 2, y: 0 },
+  );
+  const world = new World(
+    { schemaVersion: 1, width: 4, height: 2, entities },
+    { motionDurationMs: 100 },
+  );
+  const actor = world.query.entitiesWithFact("player")[0];
+
+  world.update({ tick: 0, stepMs: 16 });
+  assert.equal(world.actorLifecycle(actor.id).phase, "active");
+  world.step({
+    intents: [{
+      type: "move",
+      actorId: actor.id,
+      direction: "down",
+      cause: { type: "player-input", source: "test" },
+    }],
+  });
+  world.update({ tick: 1, stepMs: 100 });
+
+  assert.equal(world.actorLifecycle(actor.id).phase, "active");
+  assert.deepEqual(world.entity(actor.id).anchor, { x: 2, y: 1 });
+});
+
 test("从非发射口方向推动发生器后，光束从新位置重新投影", () => {
   const entities = [];
   for (let y = 0; y < 4; y += 1) {
