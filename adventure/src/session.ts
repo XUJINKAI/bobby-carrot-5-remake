@@ -3,6 +3,7 @@ import {
   type AdventureLevelId,
 } from "./campaign.js";
 import {
+  hasAdventureItem,
   normalizeAdventureSave,
   type AdventureSave,
 } from "./save.js";
@@ -27,6 +28,8 @@ export const DEFAULT_ADVENTURE_RUNTIME_POLICY: AdventureRuntimePolicy = {
 
 export interface AdventureSessionPlan extends AdventurePlayerPlan {
   levelId: AdventureLevelId;
+  /** 永久钥匙在 Bonus Session 中投影为一枚关卡内钥匙。 */
+  initialLockKeys: 0 | 1;
 }
 
 export function planAdventurePlayer(
@@ -51,5 +54,7 @@ export function planAdventureSession(
   return {
     levelId: parsed.id,
     ...planAdventurePlayer(save, policy),
+    initialLockKeys:
+      parsed.kind === "bonus" && hasAdventureItem(save, "golden-key") ? 1 : 0,
   };
 }

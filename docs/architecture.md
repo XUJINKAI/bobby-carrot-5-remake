@@ -332,6 +332,8 @@ base / official LevelMap
 Adventure session LevelMap
         ↓
 Engine Game.loadLevel(LevelMap)
+        ↓ Web 在首次加载与后续 level-loaded 时适配 Session plan
+AdventureSessionPlan.initialLockKeys → add-actor-inventory-item
 
 Engine object-interaction
         ↓ Web 只做边界适配
@@ -362,11 +364,14 @@ Bonus LevelMap
 Beaver.dialogue = ownsPermanentKey ? 已持有钥匙提示 : 商店引导
 Lock.requireKey = !ownsPermanentKey
 Lock.deathCountdownSeconds = 60
+AdventureSessionPlan.initialLockKeys = ownsPermanentKey ? 1 : 0
    ↓
 Engine
 ```
 
-从这一刻开始，倒计时、成功取消、超时死亡、Undo / Restart 都完全由 Engine 执行。Adventure 不持有第二套 gameplay runtime。
+Web 把 Session plan 中的一枚钥匙通过通用 Engine effect 发给 primary Bobby，并在 Adventure
+重载关卡后重复这项投影。此后 HUD、开锁、倒计时、成功取消和超时死亡都由 Engine 执行。
+Adventure 不持有第二套 gameplay runtime。
 
 ## Official content / Catalog
 
@@ -540,7 +545,8 @@ Adventure Save 只保存已经结算的全局经济。每次进入关卡都使�
 `commit-entity-replacement` intent 提交给当前 World；Adventure 在重开与下次载入地图前
 通过 `levelPatchesFunction(save)` 生成同一替换补丁。Bonus 关在加载前根据永久钥匙状态
 写入 Beaver 引导对白和 Lock 的 `requireKey`，并固定设置 60 秒死亡倒计时；Beaver 对话
-由 Engine 的地图字面对话机制处理。
+由 Engine 的地图字面对话机制处理。持有永久钥匙时，Adventure Session plan 同时声明
+一枚开局关卡钥匙，由 Web 在首次加载和后续 `level-loaded` 时通过通用 Engine effect 发放。
 
 Replay 的确定性边界是一张独立 LevelMap；Adventure Save、全局经济、永久商品和按 Save
 生成的动态补丁属于 Campaign 会话，不由单关动作回放重建。Adventure 中的 Replay 仅为

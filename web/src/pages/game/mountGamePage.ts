@@ -75,6 +75,7 @@ import {
 import {
   prepareAdventureGameplayLevel,
 } from "./adventurePurchase.js";
+import { bindAdventureSessionEffects } from "./adventureSessionEffects.js";
 import { resolveGameplayHudConfig } from "./gameplayHudConfig.js";
 import {
   gameMapVerificationStatus,
@@ -291,6 +292,10 @@ export async function renderGamePage(
     },
   });
   const { game } = session;
+  const disposeAdventureSessionEffects = bindAdventureSessionEffects(
+    game,
+    sessionPlan,
+  );
 
   let visibleResult: "death" | "complete" | null = null;
   let capturedResult: "death" | "complete" | null = null;
@@ -542,6 +547,7 @@ export async function renderGamePage(
     },
     destroy(): void {
       window.removeEventListener("game-shell-action", onGameShellAction);
+      disposeAdventureSessionEffects();
       disposeGameShell();
       unsubscribeWorldEvents();
       replayPanel.destroy();

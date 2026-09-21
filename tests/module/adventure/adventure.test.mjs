@@ -152,6 +152,7 @@ test("Adventure session projects concrete locomotion", () => {
   const plan = planAdventureSession("1-bonus-1", save);
   assert.equal(plan.bobbyMoveMs, 266);
   assert.equal(plan.levelId, "1-bonus-1");
+  assert.equal(plan.initialLockKeys, 1);
   assert.equal(Object.hasOwn(plan, "levelPatches"), false);
   assert.equal(Object.hasOwn(plan, "capabilities"), false);
   assert.equal(Object.hasOwn(plan, "economy"), false);
@@ -167,6 +168,14 @@ test("Adventure locomotion policy can override both movement speeds", () => {
     },
   });
   assert.equal(plan.bobbyMoveMs, 400);
+  assert.equal(plan.initialLockKeys, 0);
+});
+
+test("Adventure 只把永久钥匙投影到 Bonus Session", () => {
+  const save = grantAdventureItem(createAdventureSave(), "golden-key");
+
+  assert.equal(planAdventureSession("1-bonus-1", save).initialLockKeys, 1);
+  assert.equal(planAdventureSession("1-1", save).initialLockKeys, 0);
 });
 
 test("Adventure 只在关卡完成时结算本局奖励", () => {
