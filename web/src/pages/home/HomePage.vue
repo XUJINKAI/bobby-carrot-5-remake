@@ -11,7 +11,11 @@ import HomeModeMenu from "./HomeModeMenu.vue";
 import ProjectIntro from "./ProjectIntro.vue";
 import { webT } from "../../i18n/webI18n.js";
 
-defineProps<{ state: HomeViewState; images: ImageManager }>();
+defineProps<{
+  state: HomeViewState;
+  images: ImageManager;
+  repositoryUrl: string;
+}>();
 const emit = defineEmits<{
   ready: [canvas: HTMLCanvasElement];
   navigate: [path: string];
@@ -86,6 +90,7 @@ onBeforeUnmount(() => {
         <div class="home-demo-column">
           <HomeDemo
             :state="state"
+            :repository-url="repositoryUrl"
             @ready="emit('ready', $event)"
             @restart="emit('restart')"
             @screen-control="emit('screenControl')"

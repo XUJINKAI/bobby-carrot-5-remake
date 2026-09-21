@@ -22,6 +22,10 @@ test("首页 Demo 补丁只修改加载副本中的角色、传送门和箱子",
   assert.ok(patched.entities[0].dialogue.length > 0);
   assert.ok(Array.isArray(patched.entities[1].dialogue));
   assert.ok(patched.entities[1].dialogue.length > 0);
+  const dialogue = patched.entities.flatMap((entity) =>
+    Array.isArray(entity.dialogue) ? entity.dialogue : [],
+  );
+  assert.doesNotMatch(dialogue.join("\n"), /直达冒险模式/);
   assert.deepEqual(
     patched.entities.filter((entity) => entity.type === MapEntityTypeId.PORTAL)
       .map(({ x, y, channel }) => ({ x, y, channel })),

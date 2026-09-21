@@ -10,7 +10,6 @@ import type { GameSession } from "../../runtime/game/createGameSession.js";
 import { resolveMapDocument } from "../../services/catalog/exploreMaps.js";
 import type { ImportedData } from "../../services/import/importPipeline.js";
 import { configureShell } from "../../shell/shellBridge.js";
-import { loadAdventureSave } from "../../storage/adventureSaveStorage.js";
 import {
   getWebSettings,
   updateWebSettings,
@@ -60,7 +59,6 @@ export async function renderHome(
     screenControlEnabled: initialScreenControlEnabled,
   });
   let session: GameSession | null = null;
-  let navigatingToAdventure = false;
   let resolveCanvas!: (canvas: HTMLCanvasElement) => void;
   const canvasReady = new Promise<HTMLCanvasElement>((resolve) => {
     resolveCanvas = resolve;
@@ -68,6 +66,7 @@ export async function renderHome(
   const homeApp = createApp(HomePage, {
     state: view,
     images,
+    repositoryUrl: PROJECT_REPOSITORY_URL,
     onReady: (canvas: HTMLCanvasElement) => resolveCanvas(canvas),
     onNavigate: navigate,
     onRestart: () => {
@@ -130,20 +129,17 @@ export async function renderHome(
         : null;
     view.demoStatus =
       state.status === "won"
-        ? webT("home.demoEnteringAdventure")
+        ? webT("home.demoMove")
         : state.status === "dead"
           ? webT("home.demoDead")
           : `${webT("home.demoMove")}${remaining === null ? "" : ` · ${webT("home.demoRemaining", { count: remaining })}`}`;
     view.demoResult =
-      state.status === "dead" ? "death" : null;
+      state.status === "won"
+        ? "complete"
+        : state.status === "dead"
+          ? "death"
+          : null;
     view.deathReason = state.deathReason ?? webT("home.demoDeathReason");
-    if (state.status === "won" && !navigatingToAdventure) {
-      navigatingToAdventure = true;
-      queueMicrotask(() => {
-        const resumeLevelId = loadAdventureSave().campaign.resumeLevelId;
-        navigate(`/adventure/play/${resumeLevelId}`);
-      });
-    }
   };
   session.game.on("change", updateDemo);
   updateDemo();

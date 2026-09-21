@@ -11,8 +11,7 @@ const HOME_DEMO_PATCHES: readonly LevelPatch[] = [
     selector: { type: MapEntityTypeId.SANDMAN, x: 6, y: 6 },
     fields: { dialogue: [
       "欢迎你，这里是 兔子波比5重制版 项目。引擎是重新写的，支持很多新玩意儿，想必你已经看到了。",
-      "走进终点可以直达冒险模式，通过竖屏尽量还原原版冒险体验。",
-      "自由探索和编辑器可以让你任意探索/编辑/分享地图。",
+      "冒险模式通过竖屏尽量还原原版冒险体验。自由探索和编辑器可以让你任意探索/编辑/分享地图。",
       "目前还在开发中，遇到问题可以提交到 GitHub，喜欢就收藏、分享、给个 GitHub star 吧~",
     ] },
   },
