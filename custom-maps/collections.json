@@ -5,7 +5,13 @@
       "id": "engine-lab",
       "name": "Engine Lab",
       "description": "扩展地图，实验引擎的各种新机制",
-      "cardSize": "medium"
+      "cardSize": "medium",
+      "chapters": {
+        "test": {
+          "name": "Test",
+          "description": "开发过程中用于验收独立机关效果的测试地图。"
+        }
+      }
     },
     {
       "id": "novoban-pushbox",

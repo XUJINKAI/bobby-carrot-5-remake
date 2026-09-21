@@ -6,6 +6,8 @@
 
 `collections.json` 中的 `chapters` 是可选的展示信息，只能为实际存在的 chapter 目录补充 `name` 和 `description`；未补充的字段不会写入生成的 chapter。Explore 始终按原值显示 `name`。`visible` 可取 `true`、`false` 或 `"dev"`，缺省时按 `true` 处理；`"dev"` 只在 `npm run dev` 生成的 discovery index 中展示。collection、chapter 和 map ID 都由路径决定，地图 JSON 不重复保存这些身份。
 
+Engine Lab 中用于开发验收的机关地图统一放在 `custom-maps/engine-lab/test/`，作为 Test chapter 展示；根目录保留长期使用的普通 Engine Lab 地图。
+
 构建工具把 collection discovery 写入 `assets/maps/index.json`，并把地图与展示 metadata 写入 `assets/maps/<collection>/`。地图可由 Editor 导入并直接 Play Test。
 
 Engine 机制集合测试地图位于 `tools/pipeline/mechanics-smoke.json`，供同目录的浏览器冒烟脚本读取。

@@ -82,6 +82,7 @@ export const MapEntityTypeId = {
   BONUS_COIN: "bonus-coin",
   PORTAL: "portal",
   PUSH_GOAL: "push-goal",
+  LASER_EMITTER: "laser-emitter",
 } as const satisfies Record<string, EntityType>;
 
 export type NamedMapEntityType =

@@ -149,11 +149,16 @@ try {
     `${origin}/explore/engine-lab`,
     [
       'class="explore-ungrouped-maps"',
+      'class="chapter-card"',
+      'class="chapter-name"',
       'data-card-size="medium"',
+      "Test",
       'href="/explore/play/engine-lab/00-intro"',
       'href="/explore/play/engine-lab/01-control2"',
+      'href="/explore/play/engine-lab/02-pushable-stone"',
+      'href="/explore/play/engine-lab/03-laser-emitter"',
     ],
-    ['class="chapter-name"', 'class="chapter-separator"'],
+    ['class="chapter-separator"'],
   );
   await smoke(`${origin}/explore/play/loma-pushbox/01-01`, [
     'class="game-page"',

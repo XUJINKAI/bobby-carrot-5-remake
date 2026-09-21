@@ -228,6 +228,11 @@ const CORE_ENTITY_DEFINITIONS: readonly EntityMapDefinition[] = [
     ),
   ]),
   defineEntity(MapEntityTypeId.PUSH_GOAL),
+  defineEntity(
+    MapEntityTypeId.LASER_EMITTER,
+    [enumField("direction", DIRECTIONS, undefined, true, "激光发射方向。")],
+    "沿固定方向持续发射激光的单格机关。",
+  ),
 ];
 
 const definitions = [...SURFACE_ENTITY_DEFINITIONS, ...CORE_ENTITY_DEFINITIONS];

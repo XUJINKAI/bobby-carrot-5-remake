@@ -28,6 +28,10 @@ Novoban 和 LOMA 的 XSB 地图由 `tools/custom/sokoban-xsb.mjs` 转换。地�
 
 `pushable-stone` 是单格阻挡 Entity，并通过 Engine 的通用 `pushable` 语义参与推动。当前视觉复用 `crumbly-rock`；两者保持独立身份，后续爆炸等机关可以只作用于可推动石头而不改变 Bobby Carrot 原有关卡中的碎石规则。
 
+## 激光发生器
+
+`laser-emitter` 使用必填 `direction` 字段声明固定发射方向。Engine 从发生器相邻格开始投影直线激光，遇到首个阻挡对象、Exit 或 Mirror 时终止；Bobby 进入激光格会在移动交互点死亡。光束格由 Engine 作为 Runtime Entity 派生，不写回 `LevelMap`，并在阻挡布局变化后重新投影。
+
 ## 最大步数
 
 地图可在 `LevelMap.rules` 声明最大步数：
@@ -49,6 +53,7 @@ Novoban 和 LOMA 的 XSB 地图由 `tools/custom/sokoban-xsb.mjs` 转换。地�
 - `custom-maps/engine-lab/portal/portal.json`
 - `custom-maps/engine-lab/pushbox/pushable.json`
 - `custom-maps/engine-lab/max-moves.json`
-- `custom-maps/engine-lab/02-pushable-stone.json`
+- `custom-maps/engine-lab/test/02-pushable-stone.json`
+- `custom-maps/engine-lab/test/03-laser-emitter.json`
 
 `npm run verify` 校验这些地图的 Editor JSON round-trip、Definition 注册、实例属性和规则格式。
