@@ -1,4 +1,5 @@
 export { Game } from "./core/Game.js";
+export type { OutcomeMusicOptions } from "./audio/LevelMusicController.js";
 export {
   builtinEngineEnvironment,
   createEngineEnvironment,

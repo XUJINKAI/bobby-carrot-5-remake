@@ -21,12 +21,12 @@ const emit = defineEmits<{ navigate: [path: string] }>();
       <nav class="adventure-menu" :aria-label="webT('adventure.homeAria')">
         <span class="eyebrow adventure-menu-eyebrow">{{ webT("adventure.homeTitle") }}</span>
         <a
-          class="adventure-menu-card primary"
+          class="adventure-menu-card"
           :href="'/adventure/play/' + view.resumeLevelId"
           @click.prevent="emit('navigate', '/adventure/play/' + view.resumeLevelId)"
         >
           <strong>{{ webT("adventure.continue") }}</strong>
-          <span>{{ view.resumeLevelId.toUpperCase() }} · {{ view.resumeChapterTitle }}</span>
+          <span>{{ view.resumeLevelId.toUpperCase() }}</span>
           <AppIcon name="next" />
         </a>
         <a
@@ -143,11 +143,6 @@ const emit = defineEmits<{ navigate: [path: string] }>();
   background: var(--bc-control-hover);
 }
 
-.adventure-menu-card.primary {
-  border-color: var(--bc-highlight);
-  background: var(--bc-active);
-}
-
 .adventure-menu-card strong {
   font-size: 0.92rem;
 }
@@ -155,10 +150,6 @@ const emit = defineEmits<{ navigate: [path: string] }>();
 .adventure-menu-card span {
   color: var(--bc-text-muted);
   font-size: 0.68rem;
-}
-
-.adventure-menu-card.primary span {
-  color: var(--bc-text);
 }
 
 .adventure-menu-card :deep(.app-icon) {

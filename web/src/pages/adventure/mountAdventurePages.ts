@@ -41,7 +41,6 @@ export function renderAdventureHome(context: PageContext): PageController {
     {
       view: {
         resumeLevelId: resume?.level.id ?? "1-1",
-        resumeChapterTitle: resume?.chapter.name ?? "FAIRY MAGIC",
         bonusCoins: save.economy.bonusCoins,
       },
       images,

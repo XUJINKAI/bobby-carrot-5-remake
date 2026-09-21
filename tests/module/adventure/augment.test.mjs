@@ -7,6 +7,7 @@ import {
 import {
   adventureAugmentationFor,
   createAdventureSave,
+  grantAdventureItem,
 } from "../../../adventure/dist/index.js";
 
 function sandmanLevel() {
@@ -213,7 +214,6 @@ test("Beaver Shop interaction 回调直接完成 Super Key 购买", async () => 
       x: 21,
       y: 6,
       action: "touch",
-      lockKeyCount: 0,
     },
     save,
     showDialogue: (text) => {
@@ -230,7 +230,6 @@ test("Beaver Shop interaction 回调直接完成 Super Key 购买", async () => 
     commitSave: (next) => {
       committed = next;
     },
-    addActorInventoryItem: () => assert.fail("商店购买不应发放关卡钥匙"),
     replaceInteractedEntity: (type) => {
       replacement = type;
     },
@@ -263,41 +262,49 @@ test("Beaver Shop interaction 回调直接完成 Super Key 购买", async () => 
   );
 });
 
-test("Bonus 关卡通过 interaction 回调接入钥匙交互", async () => {
-  const save = createAdventureSave();
+test("Bonus 关卡根据永久钥匙准备 Beaver 对白与 Lock", () => {
   const augmentation = adventureAugmentationFor("1-bonus-1");
-  let granted = null;
-  let message = null;
-  await augmentation.interaction({
-    request: {
-      requestId: 7,
-      actorId: 1,
-      entityId: 2,
-      objectType: MapEntityTypeId.BEAVER,
-      x: 0,
-      y: 0,
-      action: "touch",
-      role: "body",
-      lockKeyCount: 0,
-    },
-    save,
-    showDialogue: (text) => {
-      message = text;
-    },
-    presentDialogue: async () => ({ type: "dismissed" }),
-    commitSave: () => assert.fail("发放关卡钥匙应等待 Engine 接受"),
-    addActorInventoryItem: (item, count, saveOnAccepted) => {
-      granted = { item, count, saveOnAccepted };
-    },
-    replaceInteractedEntity: () => assert.fail("Bonus Beaver 不替换 Entity"),
-  });
+  const level = {
+    schemaVersion: 1,
+    width: 4,
+    height: 4,
+    entities: [
+      { type: MapEntityTypeId.BEAVER, x: 0, y: 0 },
+      {
+        type: MapEntityTypeId.LOCK,
+        x: 2,
+        y: 2,
+        requireKey: false,
+        deathCountdownSeconds: 60,
+      },
+    ],
+  };
+  const withoutKey = applyLevelPatches(
+    level,
+    augmentation.levelPatchesFunction(createAdventureSave()),
+  );
+  const withKey = applyLevelPatches(
+    level,
+    augmentation.levelPatchesFunction(
+      grantAdventureItem(createAdventureSave(), "golden-key"),
+    ),
+  );
 
-  assert.equal(granted.item, MapEntityTypeId.LOCK_KEY);
-  assert.equal(granted.count, 1);
-  assert.ok(granted.saveOnAccepted.campaign.completedEvents.includes(
-    "bonus-key-trial",
-  ));
-  assert.match(message, /体验钥匙/);
+  assert.equal(augmentation.interaction, undefined);
+  assert.equal(
+    withoutKey.entities[0].dialogue,
+    "想打开锁的话，也许你应该去商店看看",
+  );
+  assert.equal(withoutKey.entities[1].requireKey, true);
+  assert.equal(withoutKey.entities[1].deathCountdownSeconds, 60);
+  assert.equal(
+    withKey.entities[0].dialogue,
+    "你已经有一把钥匙了，去接触锁就可以打开它",
+  );
+  assert.equal(withKey.entities[1].requireKey, false);
+  assert.equal(withKey.entities[1].deathCountdownSeconds, 60);
+  assert.equal(level.entities[0].dialogue, undefined);
+  assert.equal(level.entities[1].requireKey, false);
 });
 
 test("Night Train 三张 Special Scene 都把角色对白写入地图", () => {

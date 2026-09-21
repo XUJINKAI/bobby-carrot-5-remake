@@ -14,7 +14,6 @@ export interface AdventureInteractionRequest {
   y: number;
   action: "touch" | "enter";
   role?: string;
-  lockKeyCount: number;
 }
 
 export interface AdventureDialogOption {
@@ -35,12 +34,6 @@ export interface AdventureInteractionContext {
     options: readonly [AdventureDialogOption, ...AdventureDialogOption[]];
   }): Promise<AdventureDialogResult>;
   commitSave(save: AdventureSave): void;
-  /** Engine 接受背包动作后再提交关联 Save，避免 World 拒绝动作却提前写档。 */
-  addActorInventoryItem(
-    item: "lock-key",
-    count: number,
-    saveOnAccepted?: AdventureSave,
-  ): void;
   replaceInteractedEntity(type: EntityType): void;
 }
 

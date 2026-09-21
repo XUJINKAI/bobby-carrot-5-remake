@@ -1,11 +1,7 @@
 import { MapEntityTypeId, type LevelPatch } from "@bobby/model";
 import { parseAdventureLevelId } from "../campaign.js";
 import { hasAdventureItem, type AdventureSave } from "../save.js";
-import {
-  purchaseAdventureItem,
-  resolveBonusKeyVendorInteraction,
-  type BonusKeyVendorOutcome,
-} from "./interactions.js";
+import { purchaseAdventureItem } from "./interactions.js";
 import type {
   AdventureAugmentation,
   AdventureInteractionContext,
@@ -21,13 +17,11 @@ const SUPER_KEY_OUTCOME_MESSAGES = {
   "insufficient-funds": "金币不够，攒到1枚再来吧。",
 } as const;
 
-const BONUS_KEY_MESSAGES: Readonly<Record<BonusKeyVendorOutcome, string>> = {
-  "permanent-key-owned": "你的永久钥匙可以直接打开这把锁。",
-  "lock-key-held": "你已经带着一把关卡钥匙了。",
-  "trial-granted": "第一次免费送你一把体验钥匙。找到锁以后，倒计时才会开始！",
-  purchased: "成交！这把钥匙只够开一次锁。",
-  "insufficient-funds": "Bonus Coin 不足；这把关卡钥匙需要3枚。",
-};
+const BONUS_WITHOUT_KEY_DIALOGUE =
+  "想打开锁的话，也许你应该去商店看看";
+const BONUS_WITH_KEY_DIALOGUE =
+  "你已经有一把钥匙了，去接触锁就可以打开它";
+const BONUS_DEATH_COUNTDOWN_SECONDS = 60;
 
 const BEAVER_SHOP: AdventureAugmentation = {
   levelPatches: [
@@ -84,7 +78,7 @@ const BEAVER_SHOP: AdventureAugmentation = {
       },
     },
   ],
-  levelPatchesFunction: createLevelPatches,
+  levelPatchesFunction: createBeaverShopLevelPatches,
   interaction: interactWithBeaverShop,
 };
 
@@ -121,7 +115,7 @@ const SPECIAL_SCENES: Readonly<Record<string, AdventureAugmentation>> = {
 
 const BONUS_LEVEL_AUGMENTATION: AdventureAugmentation = {
   levelPatches: [],
-  interaction: interactWithBonusBeaver,
+  levelPatchesFunction: createBonusLevelPatches,
 };
 
 /** 每张 Adventure 内容的地图补丁与可选交互回调都从此目录读取。 */
@@ -146,13 +140,35 @@ function dialoguePatch(
   };
 }
 
-function createLevelPatches(save: AdventureSave): readonly LevelPatch[] {
+function createBeaverShopLevelPatches(
+  save: AdventureSave,
+): readonly LevelPatch[] {
   if (!hasAdventureItem(save, "golden-key")) return [];
   return [{
     operation: "replace-type",
     selector: { type: MapEntityTypeId.LOCK_KEY, x: 21, y: 6 },
     type: MapEntityTypeId.SHOP_EMPTY,
   }];
+}
+
+function createBonusLevelPatches(save: AdventureSave): readonly LevelPatch[] {
+  const ownsPermanentKey = hasAdventureItem(save, "golden-key");
+  return [
+    dialoguePatch(
+      MapEntityTypeId.BEAVER,
+      ownsPermanentKey
+        ? BONUS_WITH_KEY_DIALOGUE
+        : BONUS_WITHOUT_KEY_DIALOGUE,
+    ),
+    {
+      operation: "set-fields",
+      selector: { type: MapEntityTypeId.LOCK },
+      fields: {
+        requireKey: !ownsPermanentKey,
+        deathCountdownSeconds: BONUS_DEATH_COUNTDOWN_SECONDS,
+      },
+    },
+  ];
 }
 
 async function interactWithBeaverShop(
@@ -186,28 +202,4 @@ async function interactWithBeaverShop(
     context.replaceInteractedEntity(MapEntityTypeId.SHOP_EMPTY);
   }
   await context.showDialogue(SUPER_KEY_OUTCOME_MESSAGES[purchase.outcome]);
-}
-
-async function interactWithBonusBeaver(
-  context: AdventureInteractionContext,
-): Promise<void> {
-  if (
-    context.request.objectType !== MapEntityTypeId.BEAVER ||
-    context.request.action !== "touch" ||
-    (context.request.role !== undefined && context.request.role !== "body")
-  ) {
-    return;
-  }
-  const decision = resolveBonusKeyVendorInteraction(context.save, {
-    lockKeyCount: context.request.lockKeyCount,
-    priceBonusCoins: 3,
-  });
-  if (decision.grantLockKey) {
-    context.addActorInventoryItem(
-      MapEntityTypeId.LOCK_KEY,
-      1,
-      decision.save,
-    );
-  }
-  await context.showDialogue(BONUS_KEY_MESSAGES[decision.outcome]);
 }

@@ -9,6 +9,13 @@ const MUSIC_OVERRIDE_PRIORITY = ["timed-bonus", "mower"] as const;
 
 export type LevelMusicOutcome = "playing" | "won" | "dead";
 
+export interface OutcomeMusicOptions {
+  /** false 表示获胜时保持当前音乐，不播放 cleared。 */
+  won?: boolean;
+  /** false 表示死亡时保持当前音乐，不播放 death。 */
+  dead?: boolean;
+}
+
 /** 地图基础音乐、地图内覆盖与终局音乐的唯一 Engine 协调器。 */
 export class LevelMusicController {
   private baseTrack: string | null = null;
@@ -18,6 +25,7 @@ export class LevelMusicController {
   constructor(
     private readonly audio: AudioBackend,
     private readonly random: () => number = Math.random,
+    private readonly outcomeMusic: OutcomeMusicOptions = {},
   ) {}
 
   load(music: MapMusic | undefined, override?: string | null): void {
@@ -56,12 +64,13 @@ export class LevelMusicController {
     if (mowerMounted) this.overrides.set("mower", "mow");
     this.outcomeTrack = outcomeTrack(
       world.dead ? "dead" : world.completed ? "won" : "playing",
+      this.outcomeMusic,
     );
     this.resume();
   }
 
   setOutcome(outcome: LevelMusicOutcome): void {
-    const track = outcomeTrack(outcome);
+    const track = outcomeTrack(outcome, this.outcomeMusic);
     if (track === this.outcomeTrack) return;
     this.outcomeTrack = track;
     this.resume();
@@ -97,9 +106,10 @@ export class LevelMusicController {
 
 function outcomeTrack(
   outcome: LevelMusicOutcome,
+  options: OutcomeMusicOptions,
 ): "cleared" | "death" | null {
-  if (outcome === "won") return "cleared";
-  if (outcome === "dead") return "death";
+  if (outcome === "won" && options.won !== false) return "cleared";
+  if (outcome === "dead" && options.dead !== false) return "death";
   return null;
 }
 

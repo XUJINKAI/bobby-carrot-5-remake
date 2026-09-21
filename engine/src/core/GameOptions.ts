@@ -1,4 +1,5 @@
 import type { AudioBackend } from "../audio/AudioBackend.js";
+import type { OutcomeMusicOptions } from "../audio/LevelMusicController.js";
 import type { BobbyLocomotionTimingOverride } from "../entities/player/BobbyLocomotion.js";
 import type { ImageManager } from "../image/ImageManager.js";
 import type { ControlBinding } from "../input/ControlBindings.js";
@@ -17,6 +18,8 @@ export interface GameRuntimeOptions {
   ambient?: AmbientVisualOptions;
   /** 宿主页面可覆盖地图基础音乐；null 表示基础曲目静音。 */
   levelMusicOverride?: string | null;
+  /** 宿主页面可以分别关闭获胜或死亡终局音乐。 */
+  outcomeMusic?: OutcomeMusicOptions;
   hud?: boolean | GameplayHudOptions;
   /** Engine 内建与宿主显式调用共用的 gameplay dialogue controller。 */
   dialog?: boolean | GameplayDialogControllerOptions;

@@ -6,6 +6,15 @@ import {
   parseEmbedCode,
 } from "../../../web/src/pages/embed/embedCode.ts";
 
+test("Embed 页面进入时停止 Web 全局背景音乐", async () => {
+  const mount = await readFile(
+    new URL("../../../web/src/pages/embed/mountEmbedPage.ts", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(mount, /renderEmbedPage[\s\S]*context\.audio\.stopMusic\(\)/);
+});
+
 test("Embed 生成代码与首页示例统一使用 queue + async", async () => {
   const [page, code, preview] = await Promise.all([
     readFile(new URL("../../../web/src/pages/embed/EmbedPage.vue", import.meta.url), "utf8"),

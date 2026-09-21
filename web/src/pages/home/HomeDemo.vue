@@ -3,7 +3,7 @@ import type { HomeViewState } from "./types.js";
 import AppIcon from "../../shared/icons/AppIcon.vue";
 import { webT } from "../../i18n/webI18n.js";
 
-defineProps<{ state: HomeViewState }>();
+defineProps<{ state: HomeViewState; repositoryUrl: string }>();
 const emit = defineEmits<{
   ready: [canvas: HTMLCanvasElement];
   restart: [];
@@ -19,6 +19,15 @@ function reportCanvas(element: unknown): void {
   <article class="home-demo-panel">
     <div class="home-demo-toolbar">
       <span>{{ webT("home.demoWelcome") }}</span>
+      <button
+        class="home-demo-restart"
+        type="button"
+        :title="webT('shell.restart')"
+        :aria-label="webT('shell.restart')"
+        @click="emit('restart')"
+      >
+        <AppIcon name="restart" />
+      </button>
     </div>
     <div class="home-demo-stage">
       <section class="game-stage">
@@ -27,12 +36,21 @@ function reportCanvas(element: unknown): void {
         </div>
         <div v-if="state.demoResult" class="result-overlay">
           <div class="result-card">
-            <h2>{{ webT("home.demoTryAgain") }}</h2>
-            <p>{{ state.deathReason }}</p>
-            <div class="result-actions">
-              <button class="ghost-btn" @click="emit('restart')">
-                {{ webT("shell.restart") }}
-              </button>
+            <h2>
+              {{ state.demoResult === "complete"
+                ? webT("home.demoComplete")
+                : webT("home.demoTryAgain") }}
+            </h2>
+            <p v-if="state.demoResult === 'death'">{{ state.deathReason }}</p>
+            <div v-if="state.demoResult === 'complete'" class="result-actions">
+              <a
+                class="ghost-btn"
+                :href="repositoryUrl"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {{ webT("home.demoRepository") }}
+              </a>
             </div>
           </div>
         </div>
@@ -72,6 +90,7 @@ function reportCanvas(element: unknown): void {
   min-height: 46px;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 12px;
   padding: 0 14px;
   border-bottom: 1px solid var(--bc-panel-border);
@@ -79,6 +98,24 @@ function reportCanvas(element: unknown): void {
   font-size: 0.66rem;
   font-weight: 800;
   letter-spacing: 0.12em;
+}
+
+.home-demo-restart {
+  box-sizing: border-box;
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  padding: 4px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: inherit;
+  line-height: 1;
+}
+
+.home-demo-restart:hover {
+  background: rgb(255 255 255 / 14%);
 }
 
 .home-demo-stage {
@@ -138,6 +175,11 @@ function reportCanvas(element: unknown): void {
 
 .result-card {
   border-radius: var(--bc-panel-radius);
+  font-size: 0.92rem;
+}
+
+.result-card h2 {
+  font-size: 0.92rem;
 }
 
 @media (max-width: 900px) {

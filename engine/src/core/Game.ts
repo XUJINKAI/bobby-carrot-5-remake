@@ -90,7 +90,8 @@ export class Game {
   private heldDirection: Direction | null = null;
   private heldDirectionBlocked = false;
   private readonly queuedMoves: LogicalMoveInput[] = [];
-  private readonly queuedIntentGroups: WorldIntentGroup[] = [];
+  /** 已裁决的 effect 必须跨过对话门禁，只在 Session 生命周期边界清理。 */
+  private readonly queuedEffectIntentGroups: WorldIntentGroup[] = [];
   private readonly dialogueInput = new GameDialogueInput();
   private replayRecorder: ReplayRecorder | null = null;
   private readonly replayPlayback: ReplayPlayback;
@@ -106,7 +107,11 @@ export class Game {
   constructor(options: GameOptions) {
     this.environment = options.environment ?? builtinEngineEnvironment;
     this.audio = options.audio ?? new NullAudioBackend();
-    this.music = new LevelMusicController(this.audio);
+    this.music = new LevelMusicController(
+      this.audio,
+      Math.random,
+      options.runtime?.outcomeMusic,
+    );
     this.levelMusicOverride = options.runtime?.levelMusicOverride;
     this.tuning = resolveOriginalTuning(options.runtime?.tuning);
     this.timing = resolveEngineTiming(options.runtime?.timing);
@@ -170,7 +175,7 @@ export class Game {
       {
         world: () => this.worldValue,
         pendingIntents: () =>
-          this.queuedIntentGroups.flatMap((group) =>
+          this.queuedEffectIntentGroups.flatMap((group) =>
             group.intents.filter(
               (intent): intent is ActorEffectIntent =>
                 intent.type !== "move" &&
@@ -308,7 +313,7 @@ export class Game {
     this.heldDirection = null;
     this.heldDirectionBlocked = false;
     this.queuedMoves.length = 0;
-    this.queuedIntentGroups.length = 0;
+    this.queuedEffectIntentGroups.length = 0;
     this.dialogueInput.clear();
     this.presentation.resetLevelView();
     this.debugControls.resetSession();
@@ -355,7 +360,7 @@ export class Game {
     )
       return;
     this.abortReplayRecording();
-    this.queuedIntentGroups.push({
+    this.queuedEffectIntentGroups.push({
       intents: [structuredClone(intent)],
       historyBoundary: intent.type !== "commit-entity-replacement",
     });
@@ -370,7 +375,7 @@ export class Game {
     )
       return;
     this.abortReplayRecording();
-    this.queuedIntentGroups.push({
+    this.queuedEffectIntentGroups.push({
       intents: [structuredClone(intent)],
       historyBoundary: false,
     });
@@ -435,7 +440,7 @@ export class Game {
     this.heldDirection = null;
     this.heldDirectionBlocked = false;
     this.queuedMoves.length = 0;
-    this.queuedIntentGroups.length = 0;
+    this.queuedEffectIntentGroups.length = 0;
     this.dialogueInput.clear();
     if (resetCamera) this.presentation.resetLevelView();
     else this.presentation.resetMotion();
@@ -657,7 +662,7 @@ export class Game {
   private inputForTick(time: WorldTick): GameplayTickInput {
     const sampled = this.inputController?.update(time).moves ?? [];
     const queued = this.queuedMoves.splice(0);
-    const groups = this.queuedIntentGroups.splice(0);
+    const groups = this.queuedEffectIntentGroups.splice(0);
     groups.push(...this.dialogueInput.ready(this.world));
     const moves = [...queued, ...sampled];
     const debugActorId = this.debugControls.externalActorId;
@@ -789,7 +794,6 @@ export class Game {
     this.heldDirection = null;
     this.heldDirectionBlocked = false;
     this.queuedMoves.length = 0;
-    this.queuedIntentGroups.length = 0;
     if (preservePhysicalInput) this.inputController?.suspendMovement();
     else this.inputController?.resetMovement();
   }

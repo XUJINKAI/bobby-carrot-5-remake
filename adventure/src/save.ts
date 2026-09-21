@@ -16,10 +16,6 @@ export const ADVENTURE_ITEM_IDS = [
 ] as const;
 export type AdventureItemId = (typeof ADVENTURE_ITEM_IDS)[number];
 
-/** 需要持久化的一次性 Adventure 事件；只接受这里明确登记的 ID。 */
-export const ADVENTURE_EVENT_IDS = ["bonus-key-trial"] as const;
-export type AdventureEventId = (typeof ADVENTURE_EVENT_IDS)[number];
-
 export interface AdventureSave {
   /** 随存档保存的项目来源标识。 */
   game: typeof BC5R_GAME_ID;
@@ -28,7 +24,6 @@ export interface AdventureSave {
   campaign: {
     /** 每章只保存按顺序完成到的最远关卡。 */
     completedThrough: Record<string, AdventureLevelId>;
-    completedEvents: AdventureEventId[];
     resumeLevelId: AdventureLevelId;
   };
   economy: {
@@ -45,7 +40,6 @@ export function createAdventureSave(): AdventureSave {
     scope: "adventure",
     campaign: {
       completedThrough: {},
-      completedEvents: [],
       resumeLevelId: "1-1",
     },
     economy: { bonusCoins: 0, goldenCarrots: 0 },
@@ -73,7 +67,6 @@ export function normalizeAdventureSave(value: unknown): AdventureSave {
   const campaign = objectValue(raw.campaign);
   const economy = objectValue(raw.economy);
   const completedThrough = normalizeCompletedThrough(campaign.completedThrough);
-  const completedEvents = stringArray(campaign.completedEvents).filter(isAdventureEventId);
   const parsedResume = parseAdventureLevelId(String(campaign.resumeLevelId ?? ""));
   const items = stringArray(raw.items).filter(isAdventureItemId);
   return {
@@ -82,7 +75,6 @@ export function normalizeAdventureSave(value: unknown): AdventureSave {
     scope: "adventure",
     campaign: {
       completedThrough,
-      completedEvents: unique(completedEvents).sort(),
       resumeLevelId: parsedResume?.id ?? "1-1",
     },
     economy: {
@@ -169,16 +161,6 @@ export function completeAdventureLevel(
   return normalizeAdventureSave(next);
 }
 
-export function completeAdventureEvent(
-  save: AdventureSave,
-  eventId: AdventureEventId,
-): AdventureSave {
-  const next = structuredClone(normalizeAdventureSave(save));
-  if (!next.campaign.completedEvents.includes(eventId))
-    next.campaign.completedEvents.push(eventId);
-  return normalizeAdventureSave(next);
-}
-
 export function hasAdventureItem(
   save: AdventureSave,
   item: AdventureItemId,
@@ -207,10 +189,6 @@ function nextAdventureLevelId(current: AdventureLevelId): AdventureLevelId | nul
 
 function isAdventureItemId(value: string): value is AdventureItemId {
   return (ADVENTURE_ITEM_IDS as readonly string[]).includes(value);
-}
-
-function isAdventureEventId(value: string): value is AdventureEventId {
-  return (ADVENTURE_EVENT_IDS as readonly string[]).includes(value);
 }
 
 function objectValue(value: unknown): Record<string, unknown> {

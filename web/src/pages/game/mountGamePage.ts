@@ -75,7 +75,9 @@ import {
 import {
   prepareAdventureGameplayLevel,
 } from "./adventurePurchase.js";
+import { bindAdventureSessionEffects } from "./adventureSessionEffects.js";
 import { resolveGameplayHudConfig } from "./gameplayHudConfig.js";
+import { resolveGameplayOutcomeMusic } from "./gameplayMusicConfig.js";
 import {
   gameMapVerificationStatus,
   mapStatusIndicator,
@@ -182,13 +184,13 @@ export async function renderGamePage(
           level,
           adventureAugmentation,
           adventureSave,
-          sessionPlan?.levelPatches ?? [],
         )
       : level;
   const sessionLevel = prepareSessionLevel();
   const availableBonusCoins = sessionLevel.entities.filter(
     (entity) => entity.type === MapEntityTypeId.BONUS_COIN,
   ).length;
+  const outcomeMusic = resolveGameplayOutcomeMusic(adventureScene?.id);
   const screenControlEnabled = getWebSettings().controls.screenControlEnabled;
   const replayPanelInitiallyOpen =
     capabilities.replayPanel && loadReplayPanelOpen();
@@ -225,7 +227,6 @@ export async function renderGamePage(
     gameResult,
     "[data-result-card-content]",
   );
-  const pendingVendorSaves = new Map<number, AdventureSave>();
   const session = await createGameSession({
     canvas,
     level: sessionLevel,
@@ -237,10 +238,6 @@ export async function renderGamePage(
       ? {
           interaction: async ({ request, game, dialog }) => {
             if (!adventureSave) return;
-            const actor = game.state.actors.find(
-              (item) => item.id === request.actorId,
-            );
-            if (!actor) return;
             await adventureAugmentation.interaction?.({
               request: {
                 requestId: request.requestId,
@@ -251,7 +248,6 @@ export async function renderGamePage(
                 y: request.y,
                 action: request.action,
                 ...(request.role ? { role: request.role } : {}),
-                lockKeyCount: actor.inventory.lockKeys,
               },
               save: adventureSave,
               showDialogue: (text) =>
@@ -262,18 +258,6 @@ export async function renderGamePage(
                   Promise.resolve({ type: "dismissed" as const }),
               commitSave: (save) => {
                 adventureSave = saveAdventureSave(save);
-              },
-              addActorInventoryItem: (item, count, saveOnAccepted) => {
-                if (saveOnAccepted) {
-                  pendingVendorSaves.set(request.requestId, saveOnAccepted);
-                }
-                game.dispatchInteractionEffect({
-                  type: "add-actor-inventory-item",
-                  actorId: request.actorId,
-                  item,
-                  count,
-                  requestId: request.requestId,
-                });
               },
               replaceInteractedEntity: (replacementType) => {
                 game.dispatchInteractionEffect({
@@ -295,6 +279,7 @@ export async function renderGamePage(
         ? { bobbyLocomotion: { moveMs: plan.bobbyMoveMs } }
         : {}),
       camera: gameplayCameraOptions(mode),
+      ...(outcomeMusic ? { outcomeMusic } : {}),
       hud: resolveGameplayHudConfig(
         mode,
         adventureScene?.id,
@@ -310,6 +295,10 @@ export async function renderGamePage(
     },
   });
   const { game } = session;
+  const disposeAdventureSessionEffects = bindAdventureSessionEffects(
+    game,
+    sessionPlan,
+  );
 
   let visibleResult: "death" | "complete" | null = null;
   let capturedResult: "death" | "complete" | null = null;
@@ -535,17 +524,6 @@ export async function renderGamePage(
     initialScreenControlEnabled: screenControlEnabled,
   });
   const unsubscribeWorldEvents = game.onWorldEvent((event) => {
-    if (
-      event.type === "actor-inventory-item-added" &&
-      event.data?.item === MapEntityTypeId.LOCK_KEY &&
-      event.requestId !== undefined
-    ) {
-      const pending = pendingVendorSaves.get(event.requestId);
-      if (pending) {
-        adventureSave = saveAdventureSave(pending);
-        pendingVendorSaves.delete(event.requestId);
-      }
-    }
     if (adventureSave && adventureLevel) adventureRewards.record(event);
   });
 
@@ -572,6 +550,7 @@ export async function renderGamePage(
     },
     destroy(): void {
       window.removeEventListener("game-shell-action", onGameShellAction);
+      disposeAdventureSessionEffects();
       disposeGameShell();
       unsubscribeWorldEvents();
       replayPanel.destroy();

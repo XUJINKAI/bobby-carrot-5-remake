@@ -19,7 +19,6 @@ import {
   parseAdventureSave,
   planAdventureSession,
   purchaseAdventureItem,
-  resolveBonusKeyVendorInteraction,
   serializeAdventureSave,
   setAdventureResumeLevel,
   settleAdventureLevelCompletion,
@@ -71,7 +70,6 @@ test("Adventure Save 只接受每章一个完成位置", () => {
         ...createAdventureSave(),
         campaign: {
           completedLevels: ["1-1"],
-          completedEvents: [],
           resumeLevelId: "1-2",
         },
       })),
@@ -88,6 +86,10 @@ test("Adventure Save 只保存已结算经济和永久进度", () => {
     "campaign",
     "economy",
     "items",
+  ]);
+  assert.deepEqual(Object.keys(save.campaign), [
+    "completedThrough",
+    "resumeLevelId",
   ]);
   assert.deepEqual(JSON.parse(serializeAdventureSave(save)), save);
   assert.throws(
@@ -141,7 +143,7 @@ test("map-native currency remains present on every new Adventure level instance"
   }
 });
 
-test("Adventure session projects concrete locomotion and Lock fields", () => {
+test("Adventure session projects concrete locomotion", () => {
   let save = createAdventureSave();
   save.economy.bonusCoins = 7;
   save.economy.goldenCarrots = 2;
@@ -149,42 +151,31 @@ test("Adventure session projects concrete locomotion and Lock fields", () => {
   save = grantAdventureItem(save, "speed-shoes");
   const plan = planAdventureSession("1-bonus-1", save);
   assert.equal(plan.bobbyMoveMs, 266);
-  assert.equal(plan.levelPatches[0].fields.requireKey, false);
+  assert.equal(plan.levelId, "1-bonus-1");
+  assert.equal(plan.initialLockKeys, 1);
+  assert.equal(Object.hasOwn(plan, "levelPatches"), false);
   assert.equal(Object.hasOwn(plan, "capabilities"), false);
   assert.equal(Object.hasOwn(plan, "economy"), false);
   assert.equal(Object.hasOwn(plan, "viewportPolicy"), false);
 });
 
-test("Bonus runtime parameters are injected by Adventure policy, not Original maps", () => {
+test("Adventure locomotion policy can override both movement speeds", () => {
   const save = createAdventureSave();
-  const level = {
-    schemaVersion: 1,
-    width: 4,
-    height: 4,
-    entities: [
-      { type: MapEntityTypeId.BEAVER, x: 0, y: 0, direction: "right" },
-      { type: MapEntityTypeId.LOCK, x: 2, y: 2 },
-    ],
-  };
-  const regularPlan = planAdventureSession("1-1", save);
-  assert.deepEqual(regularPlan.levelPatches, []);
-
-  const bonusPlan = planAdventureSession("1-bonus-1", save, {
+  const plan = planAdventureSession("1-bonus-1", save, {
     locomotion: {
       normalMoveMs: 400,
       speedShoesMoveMs: 300,
     },
-    bonus: {
-      lock: { deathCountdownSeconds: 45 },
-    },
   });
-  const prepared = applyLevelPatches(
-    level,
-    bonusPlan.levelPatches,
-  );
-  assert.equal(prepared.entities[0].dialogue, undefined);
-  assert.equal(prepared.entities[1].deathCountdownSeconds, 45);
-  assert.equal(prepared.entities[1].requireKey, true);
+  assert.equal(plan.bobbyMoveMs, 400);
+  assert.equal(plan.initialLockKeys, 0);
+});
+
+test("Adventure 只把永久钥匙投影到 Bonus Session", () => {
+  const save = grantAdventureItem(createAdventureSave(), "golden-key");
+
+  assert.equal(planAdventureSession("1-bonus-1", save).initialLockKeys, 1);
+  assert.equal(planAdventureSession("1-1", save).initialLockKeys, 0);
 });
 
 test("Adventure 只在关卡完成时结算本局奖励", () => {
@@ -208,22 +199,6 @@ test("Adventure 只在关卡完成时结算本局奖励", () => {
     replayRewards,
   );
   assert.deepEqual(replayed.economy, { bonusCoins: 2, goldenCarrots: 1 });
-});
-
-test("Bonus Beaver 的试用与购买由 Adventure Save 归约", () => {
-  let save = createAdventureSave();
-  const trial = resolveBonusKeyVendorInteraction(save, {
-    lockKeyCount: 0,
-  });
-  assert.equal(trial.outcome, "trial-granted");
-  assert.equal(trial.grantLockKey, true);
-  save = trial.save;
-  save.economy.bonusCoins = 3;
-  const purchase = resolveBonusKeyVendorInteraction(save, {
-    lockKeyCount: 0,
-  });
-  assert.equal(purchase.outcome, "purchased");
-  assert.equal(purchase.save.economy.bonusCoins, 0);
 });
 
 test("永久商品的扣款与授予由 Adventure 原子归约", () => {

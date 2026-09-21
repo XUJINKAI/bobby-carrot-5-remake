@@ -358,6 +358,10 @@ runtime: {
     objective: true,
     items: true,
   },
+  outcomeMusic: {
+    won: true,
+    dead: true,
+  },
   camera: {
     zoom: 1,
     minZoom: 0.25,
@@ -472,7 +476,8 @@ runtime: {
 
 Engine 在 Game 状态进入 `won / dead` 时分别播放一次 `cleared / death`，Restart、Undo
 或 Replay 返回游玩状态时恢复地图基础音乐与当前机关覆盖。Result Overlay 的内容、出现时机
-和后续产品动作仍由宿主持有。
+和后续产品动作仍由宿主持有。宿主可以通过 `runtime.outcomeMusic.won / dead` 分别关闭
+对应终局音乐；省略的项目默认开启，关闭只影响音乐，不改变 World outcome、终局动画或事件。
 
 浏览器可能在首次用户交互前暂停 `AudioContext`。`AudioRuntime.isMusicInteractionRequired()` 提供当前阻塞状态，`onMusicInteractionRequiredChange()` 提供状态订阅；宿主据此呈现交互提示，并在用户输入时调用 `resume()`。该状态只描述浏览器音频能力，不进入 Game gameplay state。
 
