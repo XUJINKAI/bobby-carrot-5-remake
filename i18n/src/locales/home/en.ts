@@ -8,7 +8,7 @@ const catalog = {
   "home.explore": "Explore",
   "home.exploreDescription": "Choose any level, extended levels, replay recording and debugging",
   "home.editor": "Map Editor",
-  "home.editorDescription": "Create, edit, play-test, and share maps",
+  "home.editorDescription": "Edit maps and share them via links, embeds, and more",
   "home.import": "Import",
   "home.importDescription": "Import a custom map or save",
   "home.embed": "Embed your custom map on another website",

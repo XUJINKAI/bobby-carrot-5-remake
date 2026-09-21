@@ -7,7 +7,7 @@ const catalog = {
   "home.explore": "自由探索",
   "home.exploreDescription": "任意选关，扩展关卡，录像调试",
   "home.editor": "地图编辑器",
-  "home.editorDescription": "创建或编辑已有地图，并分享给他人",
+  "home.editorDescription": "编辑地图，通过链接或内嵌等方式分享",
   "home.import": "导入地图",
   "home.importDescription": "导入自定义地图或存档",
   "home.embed": "将自制地图内嵌到其他网页",
