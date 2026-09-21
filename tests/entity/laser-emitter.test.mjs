@@ -18,6 +18,13 @@ function beamEntities(world) {
   });
 }
 
+function emitterEntities(world) {
+  return world.query.entitiesMatching({
+    kind: "type",
+    value: MapEntityTypeId.LASER_EMITTER,
+  });
+}
+
 test("激光从发生器沿固定方向延伸，并停在首个阻挡格", () => {
   const entities = [];
   for (let y = 0; y < 2; y += 1)
@@ -122,4 +129,85 @@ test("从非发射口方向推动发生器后，光束从新位置重新投影",
       { x: 5, y: 2 },
     ],
   );
+});
+
+test("激光从背面命中同向发生器时只摧毁目标", () => {
+  const entities = [];
+  for (let y = 0; y < 2; y += 1) {
+    for (let x = 0; x < 6; x += 1) {
+      entities.push(ground(x, y));
+    }
+  }
+  entities.push(
+    { type: MapEntityTypeId.LASER_EMITTER, direction: "right", x: 0, y: 0 },
+    { type: MapEntityTypeId.LASER_EMITTER, direction: "right", x: 3, y: 0 },
+    { type: MapEntityTypeId.BOBBY, x: 0, y: 1 },
+  );
+  const world = new World({
+    schemaVersion: 1,
+    width: 6,
+    height: 2,
+    entities,
+  });
+  const [source, target] = emitterEntities(world);
+
+  world.update({ tick: 0, stepMs: 16 });
+
+  assert.deepEqual(
+    emitterEntities(world).map((emitter) => emitter.id),
+    [source.id],
+  );
+  assert.equal(world.entity(target.id), undefined);
+  assert.equal(
+    beamEntities(world).some((beam) => beam.state?.sourceId === target.id),
+    false,
+  );
+
+  world.update({ tick: 1, stepMs: 16 });
+  assert.deepEqual(
+    beamEntities(world).map((beam) => beam.anchor),
+    [
+      { x: 1, y: 0 },
+      { x: 2, y: 0 },
+      { x: 3, y: 0 },
+      { x: 4, y: 0 },
+      { x: 5, y: 0 },
+    ],
+  );
+});
+
+test("把相向发生器推入同一直线后两者同时摧毁", () => {
+  const entities = [];
+  for (let y = 0; y < 4; y += 1) {
+    for (let x = 0; x < 6; x += 1) {
+      entities.push(ground(x, y));
+    }
+  }
+  entities.push(
+    { type: MapEntityTypeId.LASER_EMITTER, direction: "right", x: 0, y: 1 },
+    { type: MapEntityTypeId.LASER_EMITTER, direction: "left", x: 4, y: 2 },
+    { type: MapEntityTypeId.BOBBY, x: 4, y: 3 },
+  );
+  const world = new World({
+    schemaVersion: 1,
+    width: 6,
+    height: 4,
+    entities,
+  });
+  const actor = world.query.entitiesWithFact("player")[0];
+
+  const pushed = world.step({
+    intents: [{
+      type: "move",
+      actorId: actor.id,
+      direction: "up",
+      cause: { type: "player-input", source: "test" },
+    }],
+  });
+  assert.equal(pushed.moves[0].moved, true);
+
+  world.update({ tick: 0, stepMs: 16 });
+
+  assert.deepEqual(emitterEntities(world), []);
+  assert.deepEqual(beamEntities(world), []);
 });

@@ -102,7 +102,7 @@ if (
   engineLab.chapters.length !== 1 ||
   engineLab.chapters[0]?.id !== "test" ||
   engineLab.chapters[0]?.name !== "Test" ||
-  engineLab.maps.length !== 5
+  engineLab.maps.length !== 6
 ) {
   throw new Error("Engine Lab 必须包含两张根目录地图与 Test chapter");
 }
@@ -112,14 +112,16 @@ if (
   engineLab.maps[2]?.id !== "02-pushable-stone" ||
   engineLab.maps[3]?.id !== "03-laser-emitter" ||
   engineLab.maps[4]?.id !== "04-laser-mirror" ||
+  engineLab.maps[5]?.id !== "05-laser-collision" ||
   engineLab.maps[0]?.chapter !== undefined ||
   engineLab.maps[1]?.chapter !== undefined ||
   engineLab.maps[2]?.chapter !== "test" ||
   engineLab.maps[3]?.chapter !== "test" ||
-  engineLab.maps[4]?.chapter !== "test"
+  engineLab.maps[4]?.chapter !== "test" ||
+  engineLab.maps[5]?.chapter !== "test"
 ) {
   throw new Error(
-    "Engine Lab 地图顺序必须为 intro、control2、pushable-stone、laser-emitter、laser-mirror",
+    "Engine Lab 地图顺序必须为 intro、control2、pushable-stone、laser-emitter、laser-mirror、laser-collision",
   );
 }
 assertLomaCollection(collectionIndexes);

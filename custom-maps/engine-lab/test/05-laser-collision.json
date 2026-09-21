@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 1,
+  "meta": {
+    "name": "Laser Collision"
+  },
+  "rules": {
+    "win": {
+      "type": "all",
+      "conditions": [
+        {
+          "type": "exit"
+        }
+      ]
+    }
+  },
+  "width": 7,
+  "height": 7,
+  "entities": [
+    { "type": "grass", "variant": "ts-10-1", "x": 1, "y": 1 },
+    { "type": "grass", "variant": "ts-10-1", "x": 2, "y": 1 },
+    { "type": "grass", "variant": "ts-10-1", "x": 3, "y": 1 },
+    { "type": "grass", "variant": "ts-10-1", "x": 4, "y": 1 },
+    { "type": "grass", "variant": "ts-10-1", "x": 5, "y": 1 },
+    { "type": "grass", "variant": "ts-10-1", "x": 1, "y": 2 },
+    { "type": "grass", "variant": "ts-10-1", "x": 2, "y": 2 },
+    { "type": "grass", "variant": "ts-10-1", "x": 3, "y": 2 },
+    { "type": "grass", "variant": "ts-10-1", "x": 4, "y": 2 },
+    { "type": "grass", "variant": "ts-10-1", "x": 5, "y": 2 },
+    { "type": "grass", "variant": "ts-10-1", "x": 1, "y": 3 },
+    { "type": "grass", "variant": "ts-10-1", "x": 2, "y": 3 },
+    { "type": "grass", "variant": "ts-10-1", "x": 3, "y": 3 },
+    { "type": "grass", "variant": "ts-10-1", "x": 4, "y": 3 },
+    { "type": "grass", "variant": "ts-10-1", "x": 5, "y": 3 },
+    { "type": "grass", "variant": "ts-10-1", "x": 1, "y": 4 },
+    { "type": "grass", "variant": "ts-10-1", "x": 2, "y": 4 },
+    { "type": "grass", "variant": "ts-10-1", "x": 3, "y": 4 },
+    { "type": "grass", "variant": "ts-10-1", "x": 4, "y": 4 },
+    { "type": "grass", "variant": "ts-10-1", "x": 5, "y": 4 },
+    { "type": "grass", "variant": "ts-10-1", "x": 1, "y": 5 },
+    { "type": "grass", "variant": "ts-10-1", "x": 2, "y": 5 },
+    { "type": "grass", "variant": "ts-10-1", "x": 3, "y": 5 },
+    { "type": "grass", "variant": "ts-10-1", "x": 4, "y": 5 },
+    { "type": "grass", "variant": "ts-10-1", "x": 5, "y": 5 },
+    { "type": "laser-emitter", "direction": "right", "x": 1, "y": 2, "stackOrder": 1 },
+    { "type": "laser-emitter", "direction": "left", "x": 5, "y": 3, "stackOrder": 1 },
+    { "type": "bobby", "x": 5, "y": 4, "stackOrder": 1 },
+    { "type": "exit", "x": 1, "y": 5, "stackOrder": 1 }
+  ]
+}

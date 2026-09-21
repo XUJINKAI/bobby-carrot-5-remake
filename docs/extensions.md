@@ -34,6 +34,8 @@ Novoban 和 LOMA 的 XSB 地图由 `tools/custom/sokoban-xsb.mjs` 转换。地�
 
 `laser-mirror` 是可推动的双面反射镜，使用必填 `variant` 区分两种对角线。`slash`（`/`）按 `up ↔ right`、`down ↔ left` 反射；`backslash`（`\`）按 `up ↔ left`、`down ↔ right` 反射。光路通过镜面后继续投影，循环光路在相同格子和入射方向再次出现时终止追踪。
 
+激光命中另一个 `laser-emitter` 时摧毁目标发生器及其光束。若两个发生器互相照射，它们在同一个 World tick 中一起摧毁；其它发生器随后按更新后的阻挡布局重新投影。
+
 ## 最大步数
 
 地图可在 `LevelMap.rules` 声明最大步数：

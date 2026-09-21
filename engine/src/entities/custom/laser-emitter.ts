@@ -31,12 +31,16 @@ const laserEmitterBehavior: Behavior = {
     replaceOwnedBeam(query, commands, self.entity);
   },
   onTick({ self, query, commands }) {
-    replaceOwnedBeam(query, commands, self.entity);
     const ray = traceLaserRay(
       query,
       self.entity.anchor,
       self.entity.direction ?? "right",
     );
+    if (emitterIsHitByLaser(query, self.entity.id)) {
+      destroyLaserEmitter(query, commands, self.entity.id);
+    } else {
+      replaceOwnedBeam(query, commands, self.entity);
+    }
     const actorIds = new Set<number>();
     for (const segment of ray) {
       for (const presence of query.presencesAt(segment.cell)) {
@@ -178,6 +182,43 @@ export function traceLaserRay(
     cell = { x: cell.x + vector.x, y: cell.y + vector.y };
   }
   return segments;
+}
+
+export function destroyLaserEmitter(
+  query: WorldQueryApi,
+  commands: WorldCommandApi,
+  emitterId: EntityId,
+): void {
+  for (const beam of ownedBeamEntities(query, emitterId)) {
+    commands.destroy(beam.id);
+  }
+  commands.destroy(emitterId);
+}
+
+function emitterIsHitByLaser(
+  query: WorldQueryApi,
+  emitterId: EntityId,
+): boolean {
+  for (const source of query.entitiesMatching({
+    kind: "type",
+    value: MapEntityTypeId.LASER_EMITTER,
+  })) {
+    const ray = traceLaserRay(
+      query,
+      source.anchor,
+      source.direction ?? "right",
+    );
+    for (const segment of ray) {
+      if (
+        query.presencesAt(segment.cell).some(
+          (presence) => presence.entityId === emitterId,
+        )
+      ) {
+        return true;
+      }
+    }
+  }
+  return false;
 }
 
 function replaceOwnedBeam(

@@ -158,6 +158,7 @@ try {
       'href="/explore/play/engine-lab/02-pushable-stone"',
       'href="/explore/play/engine-lab/03-laser-emitter"',
       'href="/explore/play/engine-lab/04-laser-mirror"',
+      'href="/explore/play/engine-lab/05-laser-collision"',
     ],
     ['class="chapter-separator"'],
   );
