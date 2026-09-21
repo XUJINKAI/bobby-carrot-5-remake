@@ -142,8 +142,22 @@ function action(id: string): void {
 
 @media (max-width: 700px) {
   .app-topbar {
-    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    display: flex;
+    gap: 4px;
     min-height: 58px;
+    padding-right: 8px;
+    padding-left: 8px;
+  }
+
+  .shell-topbar-left,
+  .shell-topbar-center,
+  .shell-topbar-right {
+    flex: 0 0 auto;
+    gap: 3px;
+  }
+
+  .shell-topbar-right {
+    margin-left: auto;
   }
 
   .shell-topbar-right > .collapse-overflow,

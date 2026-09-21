@@ -56,17 +56,34 @@ test("游戏顶栏把 Restart 排在左侧导航之后", () => {
   assert.match(configSource, /back:\s*\{[\s\S]*?label: webT\("shell\.back"\)/);
 });
 
-test("Explore 前后关在移动端隐藏", () => {
-  const [gameSource, topBarSource] = [
-    "../../../web/src/pages/game/mountGamePage.ts",
-    "../../../web/src/shell/AppTopBar.vue",
-  ].map((path) => readFileSync(new URL(path, import.meta.url), "utf8"));
+test("Explore 前后关在移动端保持显示", () => {
+  const gameSource = readFileSync(
+    new URL("../../../web/src/pages/game/mountGamePage.ts", import.meta.url),
+    "utf8",
+  );
 
   assert.match(
     gameSource,
-    /id: "previous-level"[\s\S]*?collapse: "hide"[\s\S]*?id: "next-level"[\s\S]*?collapse: "hide"/,
+    /id: "previous-level"[\s\S]*?collapse: "keep"[\s\S]*?id: "next-level"[\s\S]*?collapse: "keep"/,
   );
-  assert.match(topBarSource, /\.shell-topbar-left > \.collapse-hide/);
+});
+
+test("移动端顶栏按左侧、中央、右侧顺序排列", () => {
+  const source = readFileSync(
+    new URL("../../../web/src/shell/AppTopBar.vue", import.meta.url),
+    "utf8",
+  );
+  const compactRule = source.slice(
+    source.indexOf("@media (max-width: 700px)"),
+    source.indexOf("</style>"),
+  );
+
+  assert.match(compactRule, /\.app-topbar\s*\{[\s\S]*?display: flex/);
+  assert.match(
+    compactRule,
+    /\.shell-topbar-right\s*\{[\s\S]*?margin-left: auto/,
+  );
+  assert.doesNotMatch(compactRule, /grid-template-columns/);
 });
 
 test("Adventure 隐藏产品名并统一返回文案", () => {

@@ -609,14 +609,14 @@ function gameShellConfig(
                 icon: "previous-track" as const,
                 title: webT("shell.previousLevel"),
                 disabled: !explorePreviousMapId,
-                collapse: "hide" as const,
+                collapse: "keep" as const,
               },
               {
                 id: "next-level",
                 icon: "next-track" as const,
                 title: webT("shell.nextLevel"),
                 disabled: !exploreNextMapId,
-                collapse: "hide" as const,
+                collapse: "keep" as const,
               },
             ]
           : []),

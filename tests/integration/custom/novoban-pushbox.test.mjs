@@ -3,7 +3,13 @@ import fs from "node:fs";
 import test from "node:test";
 import { root } from "../../../tools/lib/fs.mjs";
 import { parseNovoban } from "../../../tools/custom/novoban-pushbox.mjs";
-import { countPushGoals, SOKOBAN_WIN_RULE } from "../../../tools/custom/sokoban-xsb.mjs";
+import {
+  createPushboxTerrainPicker,
+} from "../../../tools/custom/pushbox-terrain.mjs";
+import {
+  countPushGoals,
+  SOKOBAN_WIN_RULE,
+} from "../../../tools/custom/sokoban-xsb.mjs";
 
 const levels = parseNovoban(
   fs.readFileSync(`${root}/tools/custom/NOVOBAN.txt`, "utf8"),
@@ -57,12 +63,21 @@ test("Novoban keeps variable box counts and uses push goals", () => {
 test("Novoban XSB plus keeps push-goal surface under Bobby", () => {
   const surrounded = levels.find((level) => level.title === "Surrounded");
   assert.ok(surrounded);
-  const bobby = surrounded.level.entities.find((entity) => entity.type === "bobby");
-  assert.deepEqual(bobby, { type: "bobby", x: 3, y: 3 });
-  assert.equal(
-    surrounded.level.entities.some(
-      (entity) => entity.type === "push-goal" && entity.x === 3 && entity.y === 3,
+  const bobby = surrounded.level.entities.find(
+    (entity) => entity.type === "bobby",
+  );
+  const terrain = createPushboxTerrainPicker(
+    `novoban-pushbox/${surrounded.id}`,
+  );
+  assert.deepEqual(bobby, { type: "bobby", x: 3, y: 3, stackOrder: 2 });
+  assert.deepEqual(
+    surrounded.level.entities.filter(
+      (entity) => entity.x === 3 && entity.y === 3,
     ),
-    true,
+    [
+      terrain("ground", 3, 3),
+      { type: "push-goal", x: 3, y: 3, stackOrder: 1 },
+      { type: "bobby", x: 3, y: 3, stackOrder: 2 },
+    ],
   );
 });

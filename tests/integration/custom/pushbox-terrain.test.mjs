@@ -42,7 +42,7 @@ test("Pushbox 每张地图固定选一个主题，各类素材随主题保持一
 test("Pushbox 将外沿归为矩形边界，其余墙归为内部阻挡", () => {
   const board = [
     "#########",
-    "#       #",
+    "# *     #",
     "#  ###  #",
     "#  #$#  #",
     "#  #.#  #",
@@ -55,16 +55,38 @@ test("Pushbox 将外沿归为矩形边界，其余墙归为内部阻挡", () => 
     mapKey: "test/classification",
   });
   const terrain = createPushboxTerrainPicker("test/classification");
-  const at = (x, y) => level.entities.find((entity) =>
+  const at = (x, y) => level.entities.filter((entity) =>
     entity.x === x && entity.y === y
   );
 
-  assert.deepEqual(at(0, 0), terrain("boundary", 0, 0));
-  assert.deepEqual(at(4, 2), terrain("obstacle", 4, 2));
-  assert.deepEqual(at(1, 1), terrain("ground", 1, 1));
-  assert.deepEqual(at(4, 3), terrain("ground", 4, 3));
-  assert.equal(level.entities.filter((entity) => entity.type === "pushable-box").length, 1);
-  assert.equal(level.entities.filter((entity) => entity.type === "push-goal").length, 1);
+  assert.deepEqual(at(0, 0), [terrain("boundary", 0, 0)]);
+  assert.deepEqual(at(4, 2), [terrain("obstacle", 4, 2)]);
+  assert.deepEqual(at(1, 1), [terrain("ground", 1, 1)]);
+  assert.deepEqual(at(4, 3), [
+    terrain("ground", 4, 3),
+    { type: "pushable-box", x: 4, y: 3, stackOrder: 2 },
+  ]);
+  assert.deepEqual(at(4, 4), [
+    terrain("ground", 4, 4),
+    { type: "push-goal", x: 4, y: 4, stackOrder: 1 },
+  ]);
+  assert.deepEqual(at(4, 5), [
+    terrain("ground", 4, 5),
+    { type: "bobby", x: 4, y: 5, stackOrder: 2 },
+  ]);
+  assert.deepEqual(at(2, 1), [
+    terrain("ground", 2, 1),
+    { type: "push-goal", x: 2, y: 1, stackOrder: 1 },
+    { type: "pushable-box", x: 2, y: 1, stackOrder: 2 },
+  ]);
+  assert.equal(
+    level.entities.filter((entity) => entity.type === "pushable-box").length,
+    2,
+  );
+  assert.equal(
+    level.entities.filter((entity) => entity.type === "push-goal").length,
+    2,
+  );
 });
 
 test("Pushbox 不规则 XSB 外轮廓生成完整矩形边框", () => {
