@@ -4,6 +4,9 @@ export const SOKOBAN_WIN_RULE = {
   type: "push-goal",
 };
 
+const PUSH_GOAL_STACK_ORDER = 1;
+const OCCUPANT_STACK_ORDER = 2;
+
 export function convertXsbBoard(board, title = "Sokoban", options = {}) {
   const rows = board.map((row) => row.replace(/\s+$/g, ""));
   const width = Math.max(...rows.map((row) => row.length));
@@ -36,19 +39,20 @@ export function convertXsbBoard(board, title = "Sokoban", options = {}) {
         continue;
       }
 
-      if (symbol === " ") entities.push(terrain("ground", x, y));
-      else if (symbol === ".") {
+      // 所有可行走 XSB 单元都保留主题 ground；目标与占用物依次叠在上方。
+      entities.push(terrain("ground", x, y));
+      if (symbol === " ") continue;
+      if (symbol === ".") {
         entities.push(goal(x, y));
         goals += 1;
       } else if (symbol === "@") {
-        entities.push(terrain("ground", x, y));
         player = assignPlayer(player, x, y, title);
       } else if (symbol === "+") {
         entities.push(goal(x, y));
         player = assignPlayer(player, x, y, title);
         goals += 1;
       } else if (symbol === "$") {
-        entities.push(terrain("ground", x, y), pushableBox(x, y));
+        entities.push(pushableBox(x, y));
         boxes += 1;
       } else if (symbol === "*") {
         entities.push(goal(x, y), pushableBox(x, y));
@@ -67,7 +71,7 @@ export function convertXsbBoard(board, title = "Sokoban", options = {}) {
   if (options.expectedBoxes !== undefined && boxes !== options.expectedBoxes)
     throw new Error(`${title}: 应有 ${options.expectedBoxes} 个箱子，实际 ${boxes}`);
 
-  entities.push({ type: "bobby", ...player });
+  entities.push({ type: "bobby", ...player, stackOrder: OCCUPANT_STACK_ORDER });
 
   return {
     width,
@@ -123,11 +127,11 @@ function findExteriorSpaces(grid, width, height) {
 }
 
 function goal(x, y) {
-  return { type: "push-goal", x, y };
+  return { type: "push-goal", x, y, stackOrder: PUSH_GOAL_STACK_ORDER };
 }
 
 function pushableBox(x, y) {
-  return { type: "pushable-box", x, y };
+  return { type: "pushable-box", x, y, stackOrder: OCCUPANT_STACK_ORDER };
 }
 
 function key(x, y) {

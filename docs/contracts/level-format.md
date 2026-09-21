@@ -38,8 +38,8 @@ interface LevelEntity {
 `LevelEntity` 只声明 `type / x / y / stackOrder` 公共字段。`direction`、`variant`、`pressed` 等类型专属字段只由对应的 `EntityMapDefinition` 声明。
 
 `stackOrder` 是实例在重叠空间中的顺序，不由 Entity type 提供默认常量。同一多格 Entity 的
-全部 Presence 共用该值。省略时，Engine 按 `entities` 的加载顺序把实例放到其 footprint
-重叠范围的顶层，空栈从 `0` 开始；Runtime spawn 使用相同规则。Editor 新建顺序从 `0`
+全部 Presence 共用该值。Level Entity 省略时表示第 `0` 层；Runtime spawn 省略时，Engine
+才按完整 footprint 放到当前重叠范围的顶层，空栈从 `0` 开始。Editor 新建顺序从 `0`
 向上递增，并在手动重排时写入连续整数。相同值表示同一接触平面。
 
 地图字段只描述开局语义。Loader 将这些字段投影为 Engine runtime state，Behavior 后续只修改 runtime Entity；motion progress、animation clock、runtime Entity id、Presence、RenderNode 与道具库存都不进入 LevelMap。
