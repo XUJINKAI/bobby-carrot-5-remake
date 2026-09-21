@@ -96,6 +96,7 @@ export const BUILTIN_PALETTE_DEFINITION: EditorPaletteDefinition = {
             type: MapEntityTypeId.LASER_MIRROR,
             fields: { variant: "slash" },
           },
+          { type: MapEntityTypeId.LASER_BOMB },
         ],
         [
           {

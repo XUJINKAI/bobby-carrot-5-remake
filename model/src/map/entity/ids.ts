@@ -84,6 +84,7 @@ export const MapEntityTypeId = {
   PUSH_GOAL: "push-goal",
   LASER_EMITTER: "laser-emitter",
   LASER_MIRROR: "laser-mirror",
+  LASER_BOMB: "laser-bomb",
 } as const satisfies Record<string, EntityType>;
 
 export type NamedMapEntityType =

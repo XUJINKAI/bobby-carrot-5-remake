@@ -116,6 +116,7 @@ const paletteOccupantTypes: readonly EntityType[] = [
   MapEntityTypeId.PUSHABLE_STONE,
   MapEntityTypeId.LASER_EMITTER,
   MapEntityTypeId.LASER_MIRROR,
+  MapEntityTypeId.LASER_BOMB,
   MapEntityTypeId.DRAGON,
   MapEntityTypeId.WINDMILL,
   MapEntityTypeId.BEAVER,

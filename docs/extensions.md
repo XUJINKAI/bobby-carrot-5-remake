@@ -36,6 +36,8 @@ Novoban 和 LOMA 的 XSB 地图由 `tools/custom/sokoban-xsb.mjs` 转换。地�
 
 激光命中另一个 `laser-emitter` 时摧毁目标发生器及其光束。若两个发生器互相照射，它们在同一个 World tick 中一起摧毁；其它发生器随后按更新后的阻挡布局重新投影。
 
+`laser-bomb` 是可推动的阻挡对象。激光命中后，炸弹摧毁自身以及上、右、下、左相邻格中的 `pushable-stone`、`laser-mirror`、`laser-emitter` 和 `laser-bomb`；相邻炸弹继续以各自位置扩展十字范围。对角格、其它 Entity 与 Surface 保持不变。
+
 ## 最大步数
 
 地图可在 `LevelMap.rules` 声明最大步数：

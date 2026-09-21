@@ -246,6 +246,11 @@ const CORE_ENTITY_DEFINITIONS: readonly EntityMapDefinition[] = [
     ],
     "沿两种对角线双面反射激光的可推动单格机关。",
   ),
+  defineEntity(
+    MapEntityTypeId.LASER_BOMB,
+    [],
+    "被激光引爆并按十字范围摧毁对象的可推动单格机关。",
+  ),
 ];
 
 const definitions = [...SURFACE_ENTITY_DEFINITIONS, ...CORE_ENTITY_DEFINITIONS];

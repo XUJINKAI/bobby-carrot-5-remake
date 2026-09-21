@@ -35,14 +35,14 @@ u4 cells[width * height]
 | `0x0` | 可通行地面 | Surface |
 | `0x1` | 墙 | 阻挡 Surface |
 | `0x2` | 终点 | `exit` |
-| `0x3` | Stone | 激光石头 Entity |
-| `0x4` | Bomb | 激光炸弹 Entity |
-| `0x5` | `mirrorL` | 激光镜 Entity variant |
-| `0x6` | `mirrorR` | 激光镜 Entity variant |
-| `0x7` | `laserDown` | 激光炮 `down` |
-| `0x8` | `laserUp` | 激光炮 `up` |
-| `0x9` | `laserLeft` | 激光炮 `left` |
-| `0xA` | `laserRight` | 激光炮 `right` |
+| `0x3` | Stone | `pushable-stone` |
+| `0x4` | Bomb | `laser-bomb` |
+| `0x5` | `mirrorL` | `laser-mirror` variant |
+| `0x6` | `mirrorR` | `laser-mirror` variant |
+| `0x7` | `laserDown` | `laser-emitter` / `down` |
+| `0x8` | `laserUp` | `laser-emitter` / `up` |
+| `0x9` | `laserLeft` | `laser-emitter` / `left` |
+| `0xA` | `laserRight` | `laser-emitter` / `right` |
 | `0xB` | Robo 起点 | `bobby` |
 
 映射依据是 `b.class` 构造器与静态素材初始化。实现位于 `tools/custom/robo2/format.mjs`；Robo 2 byte 与语义 Entity 的转换只能位于该来源工具边界。
