@@ -92,6 +92,10 @@ export const BUILTIN_PALETTE_DEFINITION: EditorPaletteDefinition = {
             type: MapEntityTypeId.LASER_EMITTER,
             fields: { direction: "right" },
           },
+          {
+            type: MapEntityTypeId.LASER_MIRROR,
+            fields: { variant: "slash" },
+          },
         ],
         [
           {

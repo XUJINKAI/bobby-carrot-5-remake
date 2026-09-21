@@ -233,6 +233,19 @@ const CORE_ENTITY_DEFINITIONS: readonly EntityMapDefinition[] = [
     [enumField("direction", DIRECTIONS, undefined, true, "激光发射方向。")],
     "沿固定方向持续发射激光的单格机关。",
   ),
+  defineEntity(
+    MapEntityTypeId.LASER_MIRROR,
+    [
+      enumField(
+        "variant",
+        ["slash", "backslash"],
+        "slash",
+        true,
+        "双面激光镜的对角线方向。",
+      ),
+    ],
+    "沿两种对角线双面反射激光的可推动单格机关。",
+  ),
 ];
 
 const definitions = [...SURFACE_ENTITY_DEFINITIONS, ...CORE_ENTITY_DEFINITIONS];
