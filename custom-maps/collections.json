@@ -14,6 +14,12 @@
       }
     },
     {
+      "id": "robo2",
+      "name": "Robo 2: Saving Eny",
+      "description": "HeroCraft 2004 年 J2ME 益智游戏的 25 张内置关卡。",
+      "cardSize": "medium"
+    },
+    {
       "id": "novoban-pushbox",
       "name": "Novoban",
       "description": "François Marques 的 50 张入门 Sokoban 关卡，难度逐渐增加。",

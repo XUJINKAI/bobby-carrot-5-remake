@@ -163,6 +163,16 @@ try {
     ],
     ['class="chapter-separator"'],
   );
+  await smoke(`${origin}/explore/robo2`, [
+    'class="explore-tabs"',
+    'class="explore-ungrouped-maps"',
+    'data-card-size="medium"',
+    "Robo 2: Saving Eny",
+    "01 · The beggining!",
+    "25 · Saving Eny!",
+    'href="/explore/play/robo2/01"',
+    'href="/explore/play/robo2/25"',
+  ]);
   await smoke(`${origin}/explore/play/loma-pushbox/01-01`, [
     'class="game-page"',
     'id="game"',
@@ -227,6 +237,11 @@ try {
     'class="game-page"',
     'id="game"',
     "01 · Be ban 10",
+  ]);
+  await smoke(`${origin}/explore/play/robo2/01`, [
+    'class="game-page"',
+    'id="game"',
+    "01 · The beggining!",
   ]);
   await smoke(`${origin}/adventure`, [
     "adventure-viewport-auto",
