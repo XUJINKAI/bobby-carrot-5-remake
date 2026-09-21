@@ -60,7 +60,7 @@ const laserBeamHazard: Behavior = {
 export const laserEmitter: EntityModule = defineEntityModule({
   definition: {
     type: MapEntityTypeId.LASER_EMITTER,
-    presenceFacts: ["blocking"],
+    presenceFacts: ["blocking", "pushable"],
     properties: [
       {
         key: "direction",

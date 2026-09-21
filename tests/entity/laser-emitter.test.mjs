@@ -77,3 +77,49 @@ test("Bobby 进入激光格时在移动中点死亡", () => {
   assert.equal(world.movement.motions.forEntity(actor.id).status, "interrupted");
   assert.equal(world.movement.motions.forEntity(actor.id).progress, 0.5);
 });
+
+test("从非发射口方向推动发生器后，光束从新位置重新投影", () => {
+  const entities = [];
+  for (let y = 0; y < 4; y += 1) {
+    for (let x = 0; x < 6; x += 1) {
+      entities.push(ground(x, y));
+    }
+  }
+  entities.push(
+    { type: MapEntityTypeId.LASER_EMITTER, direction: "right", x: 1, y: 1 },
+    { type: MapEntityTypeId.BOBBY, x: 1, y: 0 },
+  );
+  const world = new World({
+    schemaVersion: 1,
+    width: 6,
+    height: 4,
+    entities,
+  });
+  const actor = world.query.entitiesWithFact("player")[0];
+  const emitter = world.query.entitiesMatching({
+    kind: "type",
+    value: MapEntityTypeId.LASER_EMITTER,
+  })[0];
+
+  const pushed = world.step({
+    intents: [{
+      type: "move",
+      actorId: actor.id,
+      direction: "down",
+      cause: { type: "player-input", source: "test" },
+    }],
+  });
+  assert.equal(pushed.moves[0].moved, true);
+  assert.deepEqual(world.entity(emitter.id).anchor, { x: 1, y: 2 });
+
+  world.update({ tick: 0, stepMs: 16 });
+  assert.deepEqual(
+    beamEntities(world).map((beam) => beam.anchor),
+    [
+      { x: 2, y: 2 },
+      { x: 3, y: 2 },
+      { x: 4, y: 2 },
+      { x: 5, y: 2 },
+    ],
+  );
+});

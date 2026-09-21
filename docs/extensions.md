@@ -30,7 +30,7 @@ Novoban 和 LOMA 的 XSB 地图由 `tools/custom/sokoban-xsb.mjs` 转换。地�
 
 ## 激光发生器
 
-`laser-emitter` 使用必填 `direction` 字段声明固定发射方向。Engine 从发生器相邻格开始投影直线激光，遇到首个阻挡对象、Exit 或 Mirror 时终止；Bobby 进入激光格会在移动交互点死亡。光束格由 Engine 作为 Runtime Entity 派生，不写回 `LevelMap`，并在阻挡布局变化后重新投影。
+`laser-emitter` 使用必填 `direction` 字段声明固定发射方向。Engine 从发生器相邻格开始投影直线激光，遇到首个阻挡对象、Exit 或 Mirror 时终止；Bobby 进入激光格会在移动交互点死亡。发生器是单格可推动阻挡对象，从侧面或背面推动后保持发射方向，并从新位置重新投影光束。光束格由 Engine 作为 Runtime Entity 派生，不写回 `LevelMap`。
 
 ## 最大步数
 
