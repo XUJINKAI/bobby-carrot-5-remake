@@ -89,7 +89,7 @@ onBeforeUnmount(() => {
     </header>
     <div class="home-mode-grid">
       <a
-        class="home-mode-card primary"
+        class="home-mode-card"
         href="/adventure"
         @click.prevent="emit('navigate', '/adventure')"
       >
@@ -220,11 +220,6 @@ onBeforeUnmount(() => {
   background: var(--bc-control-hover);
 }
 
-.home-mode-card.primary {
-  border-color: var(--bc-highlight);
-  background: var(--bc-active);
-}
-
 .home-mode-card strong {
   font-size: 0.92rem;
 }
@@ -233,10 +228,6 @@ onBeforeUnmount(() => {
   color: var(--bc-text-muted);
   font-size: 0.71rem;
   line-height: 1.35;
-}
-
-.home-mode-card.primary span {
-  color: var(--bc-text);
 }
 
 .home-mode-card :deep(.app-icon) {
