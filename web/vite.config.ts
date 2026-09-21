@@ -32,6 +32,10 @@ export default defineConfig({
         replacement: path.join(projectRoot, "model/src/index.ts"),
       },
       {
+        find: "@bobby/exchange",
+        replacement: path.join(projectRoot, "exchange/src/index.ts"),
+      },
+      {
         find: "@bobby/adventure",
         replacement: path.join(projectRoot, "adventure/src/index.ts"),
       },

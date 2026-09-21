@@ -22,7 +22,7 @@ npm run dev
 
 默认地址：`http://localhost:5173`。
 
-开发服务器由 Vite 提供源码级热更新。`web/src`、`engine/src`、`editor/src`、`adventure/src` 和 `model/src` 的修改会直接参与下一次模块编译；Vue 组件支持 HMR，游戏运行时模块更新后可能触发整页刷新。
+开发服务器由 Vite 提供源码级热更新。`web/src`、`embed/src`、`engine/src`、`editor/src`、`adventure/src`、`exchange/src` 和 `model/src` 的修改会直接参与下一次模块编译；Vue 组件支持 HMR，游戏运行时模块更新后可能触发整页刷新。
 
 Editor 使用同一个 Web 开发入口，可直接打开：
 
