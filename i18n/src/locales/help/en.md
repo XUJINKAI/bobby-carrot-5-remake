@@ -1,6 +1,6 @@
 ## Game
 
-- **WASD / Arrow keys**: Move
+- **Swipe screen / Arrow keys / WASD**: Move
 - **Tab**: Replay panel (Explore)
 - **~**: Debug mode (Explore)
   - Double-click the map to teleport Bobby while Debug mode is enabled
