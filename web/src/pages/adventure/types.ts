@@ -1,6 +1,5 @@
 export interface AdventureHomeView {
   resumeLevelId: string;
-  resumeChapterTitle: string;
   bonusCoins: number;
 }
 

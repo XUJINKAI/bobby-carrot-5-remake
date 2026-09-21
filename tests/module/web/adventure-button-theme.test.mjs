@@ -31,18 +31,14 @@ test("Adventure 入口复用首页按钮主题色", async () => {
   }
 });
 
-test("Adventure 首页主要入口复用首页激活色", async () => {
+test("Adventure 首页入口使用同级样式并只显示继续关卡名", async () => {
   const source = await readFile(
     new URL("../../../web/src/pages/adventure/AdventureHomePage.vue", import.meta.url),
     "utf8",
   );
 
-  assert.match(
-    source,
-    /\.adventure-menu-card\.primary\s*\{[\s\S]*?border-color: var\(--bc-highlight\);[\s\S]*?background: var\(--bc-active\);/,
-  );
-  assert.match(
-    source,
-    /<span class="eyebrow adventure-menu-eyebrow">\{\{ webT\("adventure\.homeTitle"\) \}\}<\/span>\s*<a\s+class="adventure-menu-card primary"/,
-  );
+  assert.doesNotMatch(source, /adventure-menu-card primary/);
+  assert.doesNotMatch(source, /\.adventure-menu-card\.primary/);
+  assert.match(source, /<span>\{\{ view\.resumeLevelId\.toUpperCase\(\) \}\}<\/span>/);
+  assert.doesNotMatch(source, /resumeChapterTitle/);
 });
