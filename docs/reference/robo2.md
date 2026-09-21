@@ -37,15 +37,25 @@ u4 cells[width * height]
 | `0x2` | 终点 | `exit` |
 | `0x3` | Stone | `pushable-stone` |
 | `0x4` | Bomb | `laser-bomb` |
-| `0x5` | `mirrorL` | `laser-mirror` variant |
-| `0x6` | `mirrorR` | `laser-mirror` variant |
+| `0x5` | `mirrorL` | `laser-mirror` / `slash` |
+| `0x6` | `mirrorR` | `laser-mirror` / `backslash` |
 | `0x7` | `laserDown` | `laser-emitter` / `down` |
 | `0x8` | `laserUp` | `laser-emitter` / `up` |
 | `0x9` | `laserLeft` | `laser-emitter` / `left` |
 | `0xA` | `laserRight` | `laser-emitter` / `right` |
 | `0xB` | Robo 起点 | `bobby` |
 
-映射依据是 `b.class` 构造器与静态素材初始化。实现位于 `tools/custom/robo2/format.mjs`；Robo 2 byte 与语义 Entity 的转换只能位于该来源工具边界。
+映射依据是 `b.class` 构造器与静态素材初始化。`mirrorL.png` 的镜面为 `/`，`mirrorR.png` 的镜面为 `\`。记录解码位于 `tools/custom/robo2/format.mjs`，语义转换位于 `tools/custom/robo2/convert.mjs`；Robo 2 byte 与语义 Entity 的转换只能位于该来源工具边界。
+
+来源主题按 `0..3` 对应太空、冰雪、遗迹、森林。当前转换分别复用 Sand / Stone Wall、Snow Cloud / Snowy Rock、Sand / Stone Wall、Grass / Hedge；这些 Surface 只负责保持可通行地面与阻挡墙的语义，并为四组关卡提供基础视觉区分。
+
+使用已确认的 JAR 生成 25 张语义地图：
+
+```sh
+node tools/custom/robo2/generate.mjs "tmp/Robo 2 (2004)(HeroCraft)(v1.0)(a1).jar"
+```
+
+生成器校验 JAR SHA-256，输出固定为 `custom-maps/robo2/01.json`～`25.json`。输出只包含 `LevelMap` 语义、展示 metadata 与终点胜利规则，不携带 JAR 路径、record 编号或 archive hash。
 
 ## 已确认 gameplay
 
