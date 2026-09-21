@@ -2,14 +2,13 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { root } from "../lib/fs.mjs";
-import {
-  replayFixtureFiles,
-  verifyReplayFixture,
-} from "./verify-fixtures.mjs";
+import { replayFixtureFiles } from "./fixture-files.mjs";
+import { replayMapRef } from "./replay-fixture.mjs";
 
 const mapsRoot = path.join(root, "assets/maps");
 
-export function markVerifiedMaps() {
+export async function markVerifiedMaps() {
+  const { verifyReplayFixture } = await import("./verify-fixtures.mjs");
   const winningMapIds = new Set();
   const replayFiles = replayFixtureFiles();
   for (const replayFile of replayFiles) {
@@ -26,6 +25,26 @@ export function markVerifiedMaps() {
     `Replay 验真：${replayFiles.length} 条录像，${winningMapIds.size} 张地图可通关。`,
   );
   return winningMapIds;
+}
+
+export function markReplayFilesAsVerified() {
+  const replayFiles = replayFixtureFiles();
+  const replayMapIds = new Set();
+  for (const replayFile of replayFiles) {
+    const replay = readJson(replayFile);
+    const mapRef = replayMapRef(replay);
+    replayMapIds.add(`${mapRef.collection}/${mapRef.id}`);
+  }
+  const foundMapIds = writeVerifiedMaps(replayMapIds);
+  for (const mapId of replayMapIds) {
+    if (!foundMapIds.has(mapId)) {
+      throw new Error(`Replay 指向的地图不在 collection index 中：${mapId}`);
+    }
+  }
+  console.log(
+    `Replay 文件标记：${replayFiles.length} 条录像，${replayMapIds.size} 张地图。`,
+  );
+  return replayMapIds;
 }
 
 export function clearVerifiedMaps() {
@@ -51,7 +70,12 @@ function writeVerifiedMaps(winningMapIds) {
   return foundMapIds;
 }
 
+function readJson(file) {
+  return JSON.parse(fs.readFileSync(file, "utf8"));
+}
+
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   if (process.argv.includes("--clear")) clearVerifiedMaps();
-  else markVerifiedMaps();
+  else if (process.argv.includes("--presence")) markReplayFilesAsVerified();
+  else await markVerifiedMaps();
 }

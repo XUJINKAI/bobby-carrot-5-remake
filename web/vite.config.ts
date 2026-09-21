@@ -75,48 +75,28 @@ function developmentReplaySave() {
 }
 
 function replayVerificationWatcher() {
-  const engineSource = path.join(projectRoot, "engine/src");
   const replaySource = path.join(projectRoot, "assets/replays");
   const verificationScript = path.join(
     projectRoot,
     "tools/replay/mark-verified-maps.mjs",
   );
   let timer: ReturnType<typeof setTimeout> | undefined;
-  let needsEngineCompile = false;
 
   return {
-    name: "bc5r-replay-verification-watcher",
+    name: "bc5r-replay-presence-watcher",
     configureServer(server: ViteDevServer) {
       server.watcher.add(replaySource);
       const changed = (file: string): void => {
-        const engineChanged = file.startsWith(`${engineSource}${path.sep}`);
         const replayChanged = file.startsWith(`${replaySource}${path.sep}`);
-        if (!engineChanged && !replayChanged) return;
-        needsEngineCompile ||= engineChanged;
+        if (!replayChanged) return;
         if (timer) clearTimeout(timer);
         timer = setTimeout(() => {
-          if (needsEngineCompile) {
-            needsEngineCompile = false;
-            const compiler = path.join(
-              projectRoot,
-              "node_modules/.bin",
-              process.platform === "win32" ? "tsc.cmd" : "tsc",
-            );
-            const compile = spawnSync(compiler, ["-b", "engine", "--force"], {
-              cwd: projectRoot,
-              stdio: "inherit",
-            });
-            if (compile.status !== 0) {
-              clearVerification();
-              server.ws.send({ type: "full-reload" });
-              return;
-            }
-          }
-          const verify = spawnSync(process.execPath, [verificationScript], {
-            cwd: projectRoot,
-            stdio: "inherit",
-          });
-          if (verify.status !== 0) clearVerification();
+          const mark = spawnSync(
+            process.execPath,
+            [verificationScript, "--presence"],
+            { cwd: projectRoot, stdio: "inherit" },
+          );
+          if (mark.status !== 0) clearVerification();
           server.ws.send({ type: "full-reload" });
         }, 150);
       };

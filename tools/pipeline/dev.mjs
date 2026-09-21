@@ -2,7 +2,7 @@ import fs from "node:fs";
 import http from "node:http";
 import path from "node:path";
 import { createServer } from "vite";
-import { root, run, tscCommand } from "../lib/fs.mjs";
+import { root, run } from "../lib/fs.mjs";
 import { serveDistRequest } from "../lib/static-server.mjs";
 const requestedMode = process.argv[2] ?? "web",
   mode = requestedMode === "editor" ? "editor" : "web",
@@ -11,8 +11,10 @@ const requestedMode = process.argv[2] ?? "web",
 if (!noBuild) {
   run("npm", ["run", "build", "--workspace=@bobby/i18n"]);
   run(process.execPath, ["tools/cli.mjs", "assets", "prepare", "--dev"]);
-  run(tscCommand(), ["-b", "engine", "--force"]);
-  run(process.execPath, ["tools/replay/mark-verified-maps.mjs"]);
+  run(process.execPath, [
+    "tools/replay/mark-verified-maps.mjs",
+    "--presence",
+  ]);
 }
 const base = path.join(root, "dist"),
   port = Number(process.env.PORT ?? (mode === "editor" ? 5175 : 5173)),

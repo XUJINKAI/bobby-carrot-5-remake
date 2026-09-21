@@ -4,13 +4,13 @@ import path from "node:path";
 import { replayVerificationStates, runReplay } from "@bobby/engine";
 import { parseMapDocument } from "@bobby/model";
 import { root } from "../lib/fs.mjs";
+import {
+  replayFixtureFiles,
+  replayRoot,
+} from "./fixture-files.mjs";
 import { replayMapFile, replayMapRef } from "./replay-fixture.mjs";
 
-const replayRoot = path.join(root, "assets/replays");
-
-export function replayFixtureFiles() {
-  return listFiles(replayRoot);
-}
+export { replayFixtureFiles };
 
 export function verifyReplayFixture(replayFile) {
   const relative = path.relative(replayRoot, replayFile);
@@ -58,16 +58,6 @@ export function assertReplayReachedFinalState(relative, actual, expected) {
     expected,
     `${relative}: Replay 实际状态必须匹配 finalState.status`,
   );
-}
-
-function listFiles(directory) {
-  if (!fs.existsSync(directory)) return [];
-  return fs.readdirSync(directory, { withFileTypes: true })
-    .flatMap((entry) => {
-      const file = path.join(directory, entry.name);
-      return entry.isDirectory() ? listFiles(file) : [file];
-    })
-    .sort();
 }
 
 function readJson(file) {
