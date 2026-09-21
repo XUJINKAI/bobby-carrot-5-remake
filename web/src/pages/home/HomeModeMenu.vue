@@ -245,7 +245,7 @@ onBeforeUnmount(() => {
   justify-self: start;
   margin: 2px 2px 0;
   color: var(--bc-text-muted);
-  font-size: 0.76rem;
+  font-size: 0.86rem;
   text-decoration-thickness: 1px;
   text-underline-offset: 3px;
 }

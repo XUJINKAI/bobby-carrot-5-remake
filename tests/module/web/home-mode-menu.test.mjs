@@ -20,6 +20,7 @@ test("首页模式入口使用同级样式并说明各自能力", async () => {
 
   assert.doesNotMatch(menu, /home-mode-card primary/);
   assert.doesNotMatch(menu, /\.home-mode-card\.primary/);
+  assert.match(menu, /\.home-embed-link\s*\{[\s\S]*font-size: 0\.86rem/);
   assert.match(
     zhCatalog,
     /"home\.adventureDescription": "强制竖屏，禁止撤销，原版关卡体验"/,
