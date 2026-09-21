@@ -10,7 +10,7 @@ const catalog = {
   "home.editorDescription": "编辑地图，通过链接或内嵌等方式分享",
   "home.import": "导入地图",
   "home.importDescription": "导入自定义地图或存档",
-  "home.embed": "将自制地图内嵌到其他网页",
+  "home.embed": "将地图内嵌到其他网页",
   "home.importDialog": "导入数据",
   "home.importPlaceholder": "粘贴 JSON、Payload 或分享链接……",
   "home.demoMove": "WASD / 方向键移动",

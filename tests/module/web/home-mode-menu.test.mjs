@@ -33,6 +33,7 @@ test("首页模式入口使用同级样式并说明各自能力", async () => {
     zhCatalog,
     /"home\.editorDescription": "编辑地图，通过链接或内嵌等方式分享"/,
   );
+  assert.match(zhCatalog, /"home\.embed": "将地图内嵌到其他网页"/);
   assert.match(enCatalog, /"home\.adventureDescription": "Portrait only, no undo/);
   assert.match(enCatalog, /"home\.exploreDescription": "Choose any level/);
   assert.match(enCatalog, /"home\.editorDescription": "Edit maps and share them/);
