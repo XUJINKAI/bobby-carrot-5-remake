@@ -54,6 +54,41 @@
   - Engine 独立运行时仍可使用默认 browser keyboard source。
 - 迁移完成后，Web 页面不再通过直接 `window.addEventListener("keydown", ...)` 实现产品快捷键。
 
+## Testing
+
+### 测试覆盖清单与价值审计
+
+对 `tests/` 中的测试逐项建立清单，并从稳定合同、风险点和用户关键流程审阅覆盖情况。行覆盖率只作为辅助信号，不作为测试取舍的主要依据。
+
+覆盖清单按以下领域组织：
+
+- Model 格式与 parser；
+- Original DAT / Adapter；
+- Engine subsystem；
+- 具体 Entity；
+- Adventure / Save；
+- Editor；
+- Web；
+- Build / browser artifact。
+
+清单中的每个现有测试应记录其保护的合同或行为，并标记主要价值类型：
+
+- 核心合同测试；
+- 业务行为回归；
+- 跨层重复测试；
+- 仅锁定实现细节的测试；
+- 高耗时或易波动测试；
+- 已被更高层测试完整覆盖的测试。
+
+建立“合同或风险点 → 测试场景 → 现有测试或缺口”的映射。应从 `docs/contracts/`、Engine Entity registry、Adventure Save、构建合同和用户关键流程反推必要场景，避免仅根据现有实现或代码行覆盖率判断完整性。
+
+分批处理审计结果：
+
+1. 优先补齐影响稳定合同和关键用户流程的缺口。
+2. 再合并或删除经确认重复、低价值的测试。
+3. 每次删除测试时，明确记录继续保护对应合同的现有测试或新增测试。
+4. Engine、Original、Web / browser 分别形成可独立审查和回滚的提交；改动范围较大或审阅节奏不同时，分别建立 PR。
+
 ## Original fidelity
 
 原版复刻相关工作继续使用现有专用状态体系，不在这里重复维护具体条目：
