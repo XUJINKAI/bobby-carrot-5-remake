@@ -107,7 +107,11 @@ export class Game {
   constructor(options: GameOptions) {
     this.environment = options.environment ?? builtinEngineEnvironment;
     this.audio = options.audio ?? new NullAudioBackend();
-    this.music = new LevelMusicController(this.audio);
+    this.music = new LevelMusicController(
+      this.audio,
+      Math.random,
+      options.runtime?.outcomeMusic,
+    );
     this.levelMusicOverride = options.runtime?.levelMusicOverride;
     this.tuning = resolveOriginalTuning(options.runtime?.tuning);
     this.timing = resolveEngineTiming(options.runtime?.timing);

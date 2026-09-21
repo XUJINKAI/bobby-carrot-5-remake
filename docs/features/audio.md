@@ -33,6 +33,7 @@ assets/audio/original/
 
 `LevelMusicController` 负责一局地图的基础曲目、机关覆盖与终局曲目。`won / dead` 分别选择
 一次性 `cleared / death`；Restart、Undo 与 Replay 恢复游玩状态时重新选择当前地图音乐。
+`runtime.outcomeMusic` 可以按 `won / dead` 关闭终局曲目，适合完成后直接进入产品导航的场景。
 
 ## 产品层职责
 

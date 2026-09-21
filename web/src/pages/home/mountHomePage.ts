@@ -103,6 +103,7 @@ export async function renderHome(
       },
       runtime: {
         levelMusicOverride: "title",
+        outcomeMusic: { won: false },
         hud: { timer: false, steps: false },
         input: {
           undo: false,

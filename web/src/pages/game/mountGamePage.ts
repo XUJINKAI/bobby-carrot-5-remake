@@ -77,6 +77,7 @@ import {
 } from "./adventurePurchase.js";
 import { bindAdventureSessionEffects } from "./adventureSessionEffects.js";
 import { resolveGameplayHudConfig } from "./gameplayHudConfig.js";
+import { resolveGameplayOutcomeMusic } from "./gameplayMusicConfig.js";
 import {
   gameMapVerificationStatus,
   mapStatusIndicator,
@@ -189,6 +190,7 @@ export async function renderGamePage(
   const availableBonusCoins = sessionLevel.entities.filter(
     (entity) => entity.type === MapEntityTypeId.BONUS_COIN,
   ).length;
+  const outcomeMusic = resolveGameplayOutcomeMusic(adventureScene?.id);
   const screenControlEnabled = getWebSettings().controls.screenControlEnabled;
   const replayPanelInitiallyOpen =
     capabilities.replayPanel && loadReplayPanelOpen();
@@ -277,6 +279,7 @@ export async function renderGamePage(
         ? { bobbyLocomotion: { moveMs: plan.bobbyMoveMs } }
         : {}),
       camera: gameplayCameraOptions(mode),
+      ...(outcomeMusic ? { outcomeMusic } : {}),
       hud: resolveGameplayHudConfig(
         mode,
         adventureScene?.id,

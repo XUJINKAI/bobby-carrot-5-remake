@@ -15,8 +15,8 @@
 `runtime.levelMusicOverride` 允许宿主在创建 runtime 时覆盖基础曲目。字符串表示页面指定曲目，
 `null` 表示基础曲目静音，省略则完全服从地图。Home Demo 使用 `title`，Editor Play Test
 的基础曲目静音；Adventure Special Scene、普通 Game 与 Embed 直接使用地图音乐。Night
-Train 导航场景由 Web 播放 `train`。终局曲目不属于基础曲目覆盖，所有 session 仍按
-Outcome 播放。
+Train 导航场景由 Web 播放 `train`。终局曲目不属于基础曲目覆盖；宿主通过
+`runtime.outcomeMusic.won / dead` 声明是否播放对应终局曲目。
 
 ## 地图内覆盖
 
@@ -37,7 +37,8 @@ Outcome 状态重建选曲，Restart 清除机关与终局覆盖；Replay 从 ti
 页面可以为导航等地图外产品状态直接播放 `title`，也可以通过
 `runtime.levelMusicOverride` 为当前场景声明基础曲目。临时页面覆盖结束后调用
 `Game.resumeMusicState()`，恢复 Engine 当前计算出的基础、机关或终局音乐，而不是重新解析或
-复制地图规则。
+复制地图规则。首页 Demo、Beaver Shop 与 Night Train 的三张 Special Scene 在完成后直接
+返回产品导航，因此配置 `outcomeMusic.won: false`。
 
 共享 `AudioRuntime` 继续负责加载、缓存、播放、音量、风格、首次交互恢复和过期异步请求
 取消。选曲状态与浏览器音频资源生命周期因此保持分离。
