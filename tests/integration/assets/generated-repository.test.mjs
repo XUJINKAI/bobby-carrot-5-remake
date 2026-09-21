@@ -98,14 +98,15 @@ const engineLab = collectionIndexes.find(
 if (!engineLab) throw new Error("缺少 Engine Lab collection");
 if (engineLab.cardSize !== "medium")
   throw new Error("Engine Lab collection cardSize 必须为 medium");
-if (engineLab.chapters.length !== 0 || engineLab.maps.length !== 2)
-  throw new Error("Engine Lab 必须包含两张根目录地图");
+if (engineLab.chapters.length !== 0 || engineLab.maps.length !== 3)
+  throw new Error("Engine Lab 必须包含三张根目录地图");
 if (
   engineLab.maps[0]?.id !== "00-intro" ||
   engineLab.maps[1]?.id !== "01-control2" ||
+  engineLab.maps[2]?.id !== "02-pushable-stone" ||
   engineLab.maps.some((map) => map.chapter)
 ) {
-  throw new Error("Engine Lab 地图顺序必须为 intro、control2");
+  throw new Error("Engine Lab 地图顺序必须为 intro、control2、pushable-stone");
 }
 assertLomaCollection(collectionIndexes);
 assertNovobanCollection(collectionIndexes);

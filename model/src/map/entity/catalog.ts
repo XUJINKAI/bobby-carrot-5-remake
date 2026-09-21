@@ -197,6 +197,11 @@ const CORE_ENTITY_DEFINITIONS: readonly EntityMapDefinition[] = [
   defineEntity(MapEntityTypeId.LEAF),
   defineEntity(MapEntityTypeId.CRUMBLY_ROCK),
   defineEntity(
+    MapEntityTypeId.PUSHABLE_STONE,
+    [],
+    "可推动石头；推动语义由 Entity 类型定义。",
+  ),
+  defineEntity(
     MapEntityTypeId.PUSHABLE_BOX,
     [],
     "Sokoban box with pushability defined by its type rather than per-map traits.",

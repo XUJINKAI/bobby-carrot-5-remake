@@ -73,6 +73,7 @@ export const MapEntityTypeId = {
   BEAVER: "beaver",
   LEAF: "leaf",
   CRUMBLY_ROCK: "crumbly-rock",
+  PUSHABLE_STONE: "pushable-stone",
   PUSHABLE_BOX: "pushable-box",
   KITE: "kite",
   WHIRLWIND: "whirlwind",

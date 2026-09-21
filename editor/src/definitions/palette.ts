@@ -87,6 +87,9 @@ export const BUILTIN_PALETTE_DEFINITION: EditorPaletteDefinition = {
           { type: MapEntityTypeId.LOCK_KEY },
         ],
         [
+          { type: MapEntityTypeId.PUSHABLE_STONE },
+        ],
+        [
           {
             type: MapEntityTypeId.PORTAL,
             fields: { channel: "blue", color: "#54e8ff" },

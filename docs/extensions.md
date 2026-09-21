@@ -24,6 +24,10 @@ Portal 由 Engine 和 Editor 共用 Canvas 绘制入口生成三帧循环的发�
 
 Novoban 和 LOMA 的 XSB 地图由 `tools/custom/sokoban-xsb.mjs` 转换。地形素材填写在 `tools/custom/pushbox-terrain-table.mjs`：顶层键各定义一个主题，名称仅用于辨认主题，不参与随机选材；每个主题分别填写 `ground`、`boundary`、`obstacle` 素材数组。`ground` 是普通可行走格，`boundary` 填充地图最外一圈的矩形边框，`obstacle` 填充其余墙格和原本连通地图外部的空格。外部空格保持阻挡语义，箱子、目标和 Bobby 的原始坐标保持不变。单一形态的 Surface 可以填写语义名称，如 `sand`、`stump`、`rock`；`snow` 是可用于边框和阻挡的单格对象；有多个形态的 Surface 填写具体 `ts-行-列` 坐标。地图使用固定种子和 collection/map ID 选定一个主题，再按格子坐标从该主题的各类素材中选材；同一地图重新生成时结果保持一致。素材应在 Model 视觉目录登记，并保持所属类别的通行语义。
 
+## 可推动石头
+
+`pushable-stone` 是单格阻挡 Entity，并通过 Engine 的通用 `pushable` 语义参与推动。当前视觉复用 `crumbly-rock`；两者保持独立身份，后续爆炸等机关可以只作用于可推动石头而不改变 Bobby Carrot 原有关卡中的碎石规则。
+
 ## 最大步数
 
 地图可在 `LevelMap.rules` 声明最大步数：
@@ -45,5 +49,6 @@ Novoban 和 LOMA 的 XSB 地图由 `tools/custom/sokoban-xsb.mjs` 转换。地�
 - `custom-maps/engine-lab/portal/portal.json`
 - `custom-maps/engine-lab/pushbox/pushable.json`
 - `custom-maps/engine-lab/max-moves.json`
+- `custom-maps/engine-lab/02-pushable-stone.json`
 
 `npm run verify` 校验这些地图的 Editor JSON round-trip、Definition 注册、实例属性和规则格式。
