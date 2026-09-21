@@ -130,7 +130,7 @@ test("非移动 gameplay intent 会在排队前终止 Replay 录制", () => {
     hasLevel: true,
     world: { dead: false, completed: false },
   };
-  game.queuedIntentGroups = [];
+  game.queuedEffectIntentGroups = [];
   const notifications = [];
   game.on("replay-recording-aborted", () => notifications.push("aborted"));
 
@@ -142,7 +142,52 @@ test("非移动 gameplay intent 会在排队前终止 Replay 录制", () => {
 
   assert.equal(game.replayRecording, false);
   assert.deepEqual(notifications, ["aborted"]);
-  assert.equal(game.queuedIntentGroups.length, 1);
+  assert.equal(game.queuedEffectIntentGroups.length, 1);
+});
+
+test("对话门禁清除移动输入并保留已排队的 gameplay effect", () => {
+  const game = eventGame(false);
+  let movementSuspended = 0;
+  game.session = {
+    hasLevel: true,
+    world: { dead: false, completed: false },
+  };
+  game.presentation = {
+    setDialogueActive() {},
+  };
+  game.inputController = {
+    suspendMovement() {
+      movementSuspended += 1;
+    },
+  };
+  game.heldDirection = "right";
+  game.heldDirectionBlocked = true;
+  game.queuedMoves = [{ source: "keyboard", direction: "right" }];
+  game.queuedEffectIntentGroups = [];
+  game.dialogueBlockCount = 0;
+  game.dispatchInteractionEffect({
+    type: "add-actor-inventory-item",
+    actorId: 1,
+    item: "lock-key",
+    count: 1,
+    requestId: 7,
+  });
+
+  const lease = game.acquireDialogueBlock();
+
+  assert.equal(game.heldDirection, null);
+  assert.equal(game.heldDirectionBlocked, false);
+  assert.deepEqual(game.queuedMoves, []);
+  assert.equal(game.queuedEffectIntentGroups.length, 1);
+  assert.deepEqual(game.queuedEffectIntentGroups[0].intents, [{
+    type: "add-actor-inventory-item",
+    actorId: 1,
+    item: "lock-key",
+    count: 1,
+    requestId: 7,
+  }]);
+  assert.equal(movementSuspended, 1);
+  lease.release();
 });
 
 test("Replay 跳转终点仍按顺序发布沿途 WorldEvent", () => {
