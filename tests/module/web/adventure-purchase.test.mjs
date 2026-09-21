@@ -26,7 +26,7 @@ test("已购买商品在进入 Engine 前投影为空商品格", () => {
   save.items.push("golden-key");
 
   assert.deepEqual(
-    prepareAdventureGameplayLevel(level, augmentation, save, []).entities,
+    prepareAdventureGameplayLevel(level, augmentation, save).entities,
     [{ type: "shop-empty", x: 0, y: 0 }],
   );
 });

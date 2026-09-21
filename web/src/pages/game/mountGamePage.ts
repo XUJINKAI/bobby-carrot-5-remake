@@ -182,7 +182,6 @@ export async function renderGamePage(
           level,
           adventureAugmentation,
           adventureSave,
-          sessionPlan?.levelPatches ?? [],
         )
       : level;
   const sessionLevel = prepareSessionLevel();
@@ -225,7 +224,6 @@ export async function renderGamePage(
     gameResult,
     "[data-result-card-content]",
   );
-  const pendingVendorSaves = new Map<number, AdventureSave>();
   const session = await createGameSession({
     canvas,
     level: sessionLevel,
@@ -237,10 +235,6 @@ export async function renderGamePage(
       ? {
           interaction: async ({ request, game, dialog }) => {
             if (!adventureSave) return;
-            const actor = game.state.actors.find(
-              (item) => item.id === request.actorId,
-            );
-            if (!actor) return;
             await adventureAugmentation.interaction?.({
               request: {
                 requestId: request.requestId,
@@ -251,7 +245,6 @@ export async function renderGamePage(
                 y: request.y,
                 action: request.action,
                 ...(request.role ? { role: request.role } : {}),
-                lockKeyCount: actor.inventory.lockKeys,
               },
               save: adventureSave,
               showDialogue: (text) =>
@@ -262,18 +255,6 @@ export async function renderGamePage(
                   Promise.resolve({ type: "dismissed" as const }),
               commitSave: (save) => {
                 adventureSave = saveAdventureSave(save);
-              },
-              addActorInventoryItem: (item, count, saveOnAccepted) => {
-                if (saveOnAccepted) {
-                  pendingVendorSaves.set(request.requestId, saveOnAccepted);
-                }
-                game.dispatchInteractionEffect({
-                  type: "add-actor-inventory-item",
-                  actorId: request.actorId,
-                  item,
-                  count,
-                  requestId: request.requestId,
-                });
               },
               replaceInteractedEntity: (replacementType) => {
                 game.dispatchInteractionEffect({
@@ -535,17 +516,6 @@ export async function renderGamePage(
     initialScreenControlEnabled: screenControlEnabled,
   });
   const unsubscribeWorldEvents = game.onWorldEvent((event) => {
-    if (
-      event.type === "actor-inventory-item-added" &&
-      event.data?.item === MapEntityTypeId.LOCK_KEY &&
-      event.requestId !== undefined
-    ) {
-      const pending = pendingVendorSaves.get(event.requestId);
-      if (pending) {
-        adventureSave = saveAdventureSave(pending);
-        pendingVendorSaves.delete(event.requestId);
-      }
-    }
     if (adventureSave && adventureLevel) adventureRewards.record(event);
   });
 

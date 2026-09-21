@@ -459,5 +459,5 @@ type LevelPatch =
 替换成 `shop-empty`。
 `interaction(context)` 是该地图唯一的 Campaign 交互入口，接收通用请求和当前 Save，
 并可调用宿主提供的 `showDialogue / presentDialogue / commitSave /
-addActorInventoryItem / replaceInteractedEntity`。Adventure 不接收 Engine runtime object，
+replaceInteractedEntity`。Adventure 不接收 Engine runtime object，
 也不直接操作 DOM 或 localStorage；Web 只实现这些窄端口。

@@ -311,7 +311,7 @@ Entity 因缺少该定义，不进入 Editor。Editor definitions 决定 Palette
 - Adventure Save contract；
 - 全局经济、关卡完成奖励结算与永久升级；
 - Adventure session plan；
-- Bonus Beaver 关卡钥匙和永久商品购买等 Campaign 交互；
+- Bonus Lock 永久钥匙投影和永久商品购买等 Campaign 规则；
 - 在基础 `LevelMap` 进入 Engine 前按声明式规则新增、删除或增强 Entity。
 
 每张 Adventure 内容的数据集中在 `adventure/src/augment/`。`catalog.ts` 是审阅入口，
@@ -327,6 +327,7 @@ Entity 因缺少该定义，不进入 Editor。Editor definitions 决定 Palette
 ```text
 base / official LevelMap
         ↓ adventureAugmentationFor(contentId).levelPatches
+        ↓ adventureAugmentationFor(contentId).levelPatchesFunction(save)
         ↓ @bobby/model::applyLevelPatches
 Adventure session LevelMap
         ↓
@@ -342,8 +343,9 @@ GameplayDialogController / Save / public Engine effect
 通用补丁可以新增 Entity、按 selector 删除 Entity，或覆盖 Lock
 `requireKey / deathCountdownSeconds` 等已经由 semantic Definition 定义的实例字段；Engine 不知道
 这些值来自 Adventure，也不区分官方地图、Editor 地图或其它生产者。固定多页对白
-通过 `dialogue` patch 直接进入纯地图；涉及 Campaign Save 的条件与购买写在地图的
-`interaction` 回调中。Web 只为回调提供对话展示、存档提交与公开 Engine effect 端口。
+通过 `dialogue` patch 直接进入纯地图；依赖永久道具的条件对白由
+`levelPatchesFunction(save)` 在加载前写入地图。购买写在地图的 `interaction` 回调中，
+Web 只为回调提供对话展示、存档提交与公开 Engine effect 端口。
 Engine 只报告本局的
 收集事实；Web session 暂存本局 Bonus Coin 与 Golden Carrot 数量，Adventure 在关卡
 完成归约中把奖励与进度一起提交到 Save。死亡、重开或退出不会提交本局奖励。
@@ -357,6 +359,7 @@ Adventure 根据 Campaign node 判断 Bonus 关，并把原版 60 秒策略写�
 ```text
 Bonus LevelMap
    ↓
+Beaver.dialogue = ownsPermanentKey ? 已持有钥匙提示 : 商店引导
 Lock.requireKey = !ownsPermanentKey
 Lock.deathCountdownSeconds = 60
    ↓
@@ -535,10 +538,9 @@ Adventure Save 只保存已经结算的全局经济。每次进入关卡都使�
 购买请求来自 Engine 的 `object-interaction`。对应地图的 Adventure interaction 回调
 调用纯经济归约，并通过宿主端口展示选项、持久化 Save。购买成功后，回调请求通用
 `commit-entity-replacement` intent 提交给当前 World；Adventure 在重开与下次载入地图前
-通过 `levelPatchesFunction(save)` 生成同一替换补丁。Bonus Beaver 的关卡钥匙在 reducer 决策后以
-`add-actor-inventory-item` intent 提交给 Engine，并在 Engine 发出带同一 `requestId` 的
-接受事件后提交 Save。永久钥匙通过加载前补丁把 Bonus Lock 的 `requireKey` 设为
-`false`，不进入 Engine 背包。
+通过 `levelPatchesFunction(save)` 生成同一替换补丁。Bonus 关在加载前根据永久钥匙状态
+写入 Beaver 引导对白和 Lock 的 `requireKey`，并固定设置 60 秒死亡倒计时；Beaver 对话
+由 Engine 的地图字面对话机制处理。
 
 Replay 的确定性边界是一张独立 LevelMap；Adventure Save、全局经济、永久商品和按 Save
 生成的动态补丁属于 Campaign 会话，不由单关动作回放重建。Adventure 中的 Replay 仅为

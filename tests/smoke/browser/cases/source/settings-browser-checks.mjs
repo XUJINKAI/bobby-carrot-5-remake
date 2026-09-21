@@ -13,7 +13,6 @@ export async function verifySettingsPage(cdp, sessionId) {
         scope: 'adventure',
         campaign: {
           completedThrough: {},
-          completedEvents: [],
           resumeLevelId: '1-1'
         },
         economy: { bonusCoins: 0, goldenCarrots: 0 },

@@ -271,7 +271,6 @@ function adventureSaveExample() {
     scope: "adventure",
     campaign: {
       completedThrough: { "1": "1-bonus-1" },
-      completedEvents: ["bonus-key-trial"],
       resumeLevelId: "1-4",
     },
     economy: { bonusCoins: 3, goldenCarrots: 1 },
