@@ -1,6 +1,7 @@
 import { MapEntityTypeId, type Direction } from "@bobby/model";
 import { ROBO2_GAMEPLAY_IMAGE_IDS } from "../../image/Robo2GameplayImages.js";
 import type { TransientVisualDefinition } from "../../visual/VisualDefinition.js";
+import type { RuntimeActionDefinition } from "../../world/action/RuntimeAction.js";
 import type { Behavior } from "../../world/behavior/Behavior.js";
 import type { WorldCommandApi } from "../../world/behavior/CommandQueue.js";
 import type { WorldQueryApi } from "../../world/behavior/WorldQueryApi.js";
@@ -43,6 +44,8 @@ export interface LaserRayProjection {
 }
 
 const LASER_EMITTER_FLASH_PHASE_COUNT = 3;
+const LASER_BEAM_CONTACT_ACTION = "laser-beam-contact";
+export const LASER_BEAM_DAMAGE_PROGRESS = 0.8;
 export const LASER_EMITTER_FLASH_PHASE_MS = 100;
 export const LASER_EMITTER_FLASH_DURATION_MS =
   LASER_EMITTER_FLASH_PHASE_COUNT * LASER_EMITTER_FLASH_PHASE_MS;
@@ -76,13 +79,55 @@ const laserSystemBehavior: Behavior = {
 
 const laserBeamHazard: Behavior = {
   id: "laser-beam-hazard",
-  onEnter({ actor, self, query, commands }) {
-    // MovementPlan 可能在光束销毁前已经建立；中点交互必须重新确认光束仍存在。
+  onEnter({ actor, self, movement, query, commands }) {
+    // MovementPlan 可能在光束销毁前已经建立；进入目标格时先确认光束仍存在。
     if (query.entity(self.entity.id)?.type !== RuntimeEntityTypeId.LASER_BEAM) {
       return;
     }
     if (!query.entityHasFact(actor.id, "player")) return;
+    const motion = movement?.motion;
+    const delayMs = motion
+      ? Math.max(
+          0,
+          motion.durationMs * LASER_BEAM_DAMAGE_PROGRESS -
+            motion.durationMs * motion.progress,
+        )
+      : 0;
+    if (delayMs === 0) {
+      commands.downActor(actor.id, "laser-beam");
+      return;
+    }
+    commands.startAction({
+      kind: LASER_BEAM_CONTACT_ACTION,
+      ownerEntityId: self.entity.id,
+      state: {
+        actorId: actor.id,
+        delayMs,
+        elapsedMs: 0,
+      },
+    });
+  },
+};
+
+const laserBeamContactAction: RuntimeActionDefinition = {
+  kind: LASER_BEAM_CONTACT_ACTION,
+  update({ action, time, query, commands }) {
+    const beamId = action.ownerEntityId;
+    const actorId = numericState(action.state.actorId);
+    const beam = beamId === undefined ? undefined : query.entity(beamId);
+    const actor = query.entity(actorId);
+    if (
+      beam?.type !== RuntimeEntityTypeId.LASER_BEAM ||
+      !actor ||
+      !query.entityHasFact(actor.id, "player")
+    ) {
+      return "complete";
+    }
+    const elapsedMs = numericState(action.state.elapsedMs) + time.stepMs;
+    action.state.elapsedMs = elapsedMs;
+    if (elapsedMs + 1e-6 < numericState(action.state.delayMs)) return "running";
     commands.downActor(actor.id, "laser-beam");
+    return "complete";
   },
 };
 
@@ -173,6 +218,7 @@ export const laserBeam: EntityModule = defineEntityModule({
     presentation: { name: "Laser Beam", renderPass: "world-effect" },
   },
   behaviorBindings: [{ behavior: laserBeamHazard }],
+  runtimeActions: [laserBeamContactAction],
   visual: {
     id: RuntimeEntityTypeId.LASER_BEAM,
     renderPass: "world-effect",
@@ -354,18 +400,20 @@ function laserTopologySignature(query: WorldQueryApi): string {
       { kind: "type", value: MapEntityTypeId.LASER_MIRROR },
     ],
   });
-  return entities.map((entity) => [
-    entity.id,
-    entity.type,
-    entity.anchor.x,
-    entity.anchor.y,
-    entity.type === MapEntityTypeId.LASER_EMITTER
-      ? entity.direction ?? "right"
-      : "",
-    entity.type === MapEntityTypeId.LASER_MIRROR
-      ? entity.state?.variant ?? "slash"
-      : "",
-  ].join(":"))
+  return entities
+    .filter((entity) => !query.entityHasFact(entity.id, "player"))
+    .map((entity) => [
+      entity.id,
+      entity.type,
+      entity.anchor.x,
+      entity.anchor.y,
+      entity.type === MapEntityTypeId.LASER_EMITTER
+        ? entity.direction ?? "right"
+        : "",
+      entity.type === MapEntityTypeId.LASER_MIRROR
+        ? entity.state?.variant ?? "slash"
+        : "",
+    ].join(":"))
     .join("|");
 }
 
@@ -459,6 +507,8 @@ function laserStopsAt(query: LaserRayQuery, cell: CellPosition): boolean {
   return query.presencesAt(cell).some((presence) => {
     const entity = query.entity(presence.entityId);
     if (!entity || entity.type === RuntimeEntityTypeId.LASER_BEAM) return false;
+    // Bobby 的 blocking 只约束空间占用；激光穿过玩家并由 hazard 单独结算。
+    if (presence.facts.includes("player")) return false;
     if (
       entity.type === MapEntityTypeId.EXIT ||
       entity.type === MapEntityTypeId.MIRROR ||

@@ -205,7 +205,7 @@ test("Stump 在格子边界阻断激光", () => {
   assert.equal(terminal, null);
 });
 
-test("Bobby 进入激光格时在移动中点死亡", () => {
+test("Bobby 进入激光格八成时死亡", () => {
   const entities = [];
   for (let y = 0; y < 2; y += 1)
     for (let x = 0; x < 4; x += 1) entities.push(ground(x, y));
@@ -227,12 +227,16 @@ test("Bobby 进入激光格时在移动中点死亡", () => {
       cause: { type: "player-input", source: "test" },
     }],
   });
-  world.update({ tick: 0, stepMs: 60 });
+  world.update({ tick: 0, stepMs: 79 });
+
+  assert.equal(world.dead, false);
+  assert.equal(world.movement.motions.forEntity(actor.id).progress, 0.79);
+  world.update({ tick: 1, stepMs: 1 });
 
   assert.equal(world.dead, true);
   assert.equal(world.actorLifecycle(actor.id).reason, "laser-beam");
   assert.equal(world.movement.motions.forEntity(actor.id).status, "interrupted");
-  assert.equal(world.movement.motions.forEntity(actor.id).progress, 0.5);
+  assert.equal(world.movement.motions.forEntity(actor.id).progress, 0.8);
 });
 
 test("关卡起点位于既有光路时可先离开", () => {
