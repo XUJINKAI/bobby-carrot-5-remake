@@ -46,6 +46,29 @@
 - 保持推动事务、光束碰撞与 Presentation 的因果顺序一致。
 - 为推动过程中的光束生命周期增加回归测试，避免出现一帧旧光束或新旧光束同时存在。
 
+### Energy 传播规则的 Fact 化
+
+当前 Fireball、Laser 与 Editor 光路投影共用 `EnergyPropagation`，以原版 Fireball 的
+`ENERGY_TERRAIN`、对象阻挡和镜面方向规则作为兼容性基线。这套实现已经集中且有回归保护，
+在现有机关范围内继续保持当前结构。
+
+仅在出现以下维护或扩展压力时启动 Fact 化：
+
+- 新增更多 Energy 类型，需要重复消费相同的传播许可或阻挡语义；
+- 新增地形和动态对象后，`ENERGY_TERRAIN` 与 Entity Definition 容易发生漂移；
+- Laser 拓扑缓存持续增加具体 Entity Type，难以由统一语义驱动失效更新。
+
+候选方案：
+
+- 增加 Presence Fact `energy-passable`，表示当前接触平面为 Energy 提供传播许可；
+- 增加 Presence Fact `energy-blocking`，表示对象即使位于可传播地形上也会截断 Energy；
+- 保持 `contact-cover` 的接触平面语义，使 Snow 遮蔽下层许可、High Grass 自身提供许可、Fence
+  继续读取下层地形；
+- 镜面方向变换、Fireball 融冰和 Laser 的 Exit / LaserStone / LaserEmitter / LaserBomb 命中效果
+  继续由结构化领域规则处理，不压缩成布尔 Fact；
+- 迁移前先用当前允许地形、Crumbly Rock、Dragon 各部位、Color Block 状态与两类镜面矩阵建立
+  等价性测试，确保 Fact 化只改变规则声明位置，不改变原版行为或现有 Robo 2 解法。
+
 ### Game Level lifecycle
 
 统一 `loadLevel()` / `restart()` 的关卡实例生命周期，避免宿主依赖只覆盖部分路径的事件。
