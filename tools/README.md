@@ -33,7 +33,7 @@
 | 命令 | 用途 |
 | --- | --- |
 | `node tools/cli.mjs schema examples [entity-type]` | 构建 Model，并输出全部或指定 Entity 的 JSON 示例。 |
-| `node tools/cli.mjs assets prepare` | 只补齐缺失的生成资源。 |
+| `node tools/cli.mjs assets prepare` | 输入未变化且生成物完整时复用缓存，否则重新生成资源。 |
 | `node tools/cli.mjs assets rebuild` | 完整重建生成资源；等价于 `npm run assets`。 |
 
 ## 开发、构建与验证

@@ -12,6 +12,7 @@ const generatedDirectories = [
   "assets/audio/midi",
   "assets/maps",
   "assets/adventure",
+  "tmp/assets-prepare",
 ];
 
 for (const target of workspaceDistDirectories()) {
