@@ -43,7 +43,7 @@ if (group === "original") {
   else throw new Error("用法：node tools/cli.mjs assets prepare|rebuild");
 } else if (group === "dev") run(process.execPath, ["tools/pipeline/dev.mjs"]);
 else if (group === "build") run(process.execPath, ["tools/pipeline/build.mjs"]);
-else if (group === "preview") run(process.execPath, ["tools/pipeline/dev.mjs", "web", "--static", "--no-build"]);
+else if (group === "preview") run(process.execPath, ["tools/pipeline/preview.mjs"]);
 else if (group === "test")
   run(process.execPath, ["tests/run.mjs", ...process.argv.slice(3)]);
 else if (group === "verify" && action === "browser")

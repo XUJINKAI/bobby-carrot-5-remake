@@ -14,7 +14,7 @@
 | `npm run patch -- <options>` | 把语义地图 patch 到普通版 JAR；传入 `--hd` 时改用高清版，输出仅写入 `tmp/`。 |
 | `npm test` | 完成内容前处理与增量编译，并自动运行全部非 smoke 测试。 |
 | `npm run verify` | 运行测试、production build 和 smoke 在内的完整质量门禁。 |
-| `npm run clean` | 清理仓库定义的生成物。 |
+| `npm run clean` | 清理仓库生成物、全部 package `dist/` 与 TypeScript 构建状态。 |
 
 ## Original
 
@@ -33,14 +33,14 @@
 | 命令 | 用途 |
 | --- | --- |
 | `node tools/cli.mjs schema examples [entity-type]` | 构建 Model，并输出全部或指定 Entity 的 JSON 示例。 |
-| `node tools/cli.mjs assets prepare` | 只补齐缺失的生成资源。 |
+| `node tools/cli.mjs assets prepare` | 输入未变化且生成物完整时复用缓存，否则重新生成资源。 |
 | `node tools/cli.mjs assets rebuild` | 完整重建生成资源；等价于 `npm run assets`。 |
 
 ## 开发、构建与验证
 
 | 命令 | 用途 |
 | --- | --- |
-| `node tools/cli.mjs dev [web\|editor] [--no-build]` | 启动 Web 或 Editor 开发模式；`--no-build` 跳过资源准备。 |
+| `node tools/cli.mjs dev` | 准备开发资源并启动 Web 与 Editor 开发服务。 |
 | `node tools/cli.mjs build` | 构建 `dist/`。 |
 | `node tools/cli.mjs preview` | 静态预览已有构建。 |
 | `node tools/cli.mjs test [分类] [子目录]` | 按 `tests/` 目录过滤并运行非 smoke 测试。 |

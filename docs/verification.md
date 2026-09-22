@@ -39,4 +39,8 @@ node tools/pipeline/source-quality.mjs
 
 `tests/integration/assets/asset-bootstrap.test.mjs` 在隔离临时目录中复制 Model 源码及 CLI，建立本地 workspace 链接，并分别验证 `assets prepare` 与 `assets rebuild` 从缺少 Model 编译产物的状态生成语义地图。该测试随 `npm test` 与 `npm run verify` 执行。
 
+`tests/integration/build/dev-cold-start.test.mjs` 另行建立不含任何 workspace `dist`
+和生成资产的隔离检出，执行完整 `npm run dev`，确认只 bootstrap Model、生成开发资产并同时提供
+Web 首页与 `/edit`。该测试防止 CLI、资产准备和 Vite 启动之间的冷启动编排发生漂移。
+
 修改构建、资产或验证入口时，还应在隔离的干净检出中运行 `npm ci` 和 `npm run verify`，确认完整流水线的结果独立于已有 `dist` 与 `.tsbuildinfo`。

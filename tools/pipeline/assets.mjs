@@ -7,6 +7,12 @@ import {
   originalExploreFilters,
   originalExploreMapFilters,
 } from "../original/explore-filter-tags.mjs";
+import {
+  clearAssetsPrepareOutputs,
+  inspectAssetsPrepareCache,
+  invalidateAssetsPrepareCache,
+  writeAssetsPrepareCache,
+} from "./assets-cache.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const original = path.join(root, "original");
@@ -31,10 +37,24 @@ export function rebuildAssets(options = {}) {
     "assets",
   ])
     cleanUntracked(directory);
-  prepareAssets(options);
+  prepareAssets({ ...options, force: true });
 }
 
-export function prepareAssets({ includeDevCollections = false } = {}) {
+export function prepareAssets({
+  includeDevCollections = false,
+  force = false,
+} = {}) {
+  const cache = inspectAssetsPrepareCache({ includeDevCollections });
+  if (!force && cache.hit) {
+    console.log(
+      `资产准备缓存命中：${cache.snapshot.inputs.length} 个输入未变化，跳过内容生成。`,
+    );
+    return;
+  }
+  const reason = force ? "请求完整重建" : cache.reason;
+  console.log(`资产准备缓存未命中：${reason}。`);
+  invalidateAssetsPrepareCache();
+  clearAssetsPrepareOutputs();
   run(process.execPath, ["tools/original/extract.mjs"]);
   run(process.execPath, ["tools/original/decode.mjs"]);
   run(process.execPath, ["tools/original/adapt.mjs"]);
@@ -53,6 +73,16 @@ export function prepareAssets({ includeDevCollections = false } = {}) {
   buildAdventureIndex();
   fs.rmSync(path.join(assets, "art/hd"), { recursive: true, force: true });
   copyTree(path.join(original, "adapted/art"), path.join(assets, "art"));
+  const result = writeAssetsPrepareCache(cache.snapshot, {
+    includeDevCollections,
+  });
+  if (result.written) {
+    console.log(
+      `资产准备缓存已更新：${result.inputCount} 个输入，${result.outputCount} 个生成文件。`,
+    );
+  } else {
+    console.log(`资产准备缓存未写入：${result.reason}。`);
+  }
 }
 
 function buildOriginalCollection() {

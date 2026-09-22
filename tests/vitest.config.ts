@@ -1,7 +1,7 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { defineConfig, mergeConfig } from "vitest/config";
-import webConfig from "../web/vite.config.ts";
+import { createWebViteConfig } from "../web/vite.config.ts";
 
 const projectRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -9,7 +9,7 @@ const projectRoot = path.resolve(
 );
 
 export default mergeConfig(
-  webConfig,
+  createWebViteConfig("build"),
   defineConfig({
     test: {
       dir: projectRoot,

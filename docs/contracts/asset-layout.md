@@ -147,7 +147,11 @@ Adventure 不拥有地图内容；它引用 `assets/maps/` 下的 MapDocument。
 
 `custom-maps/` 是 generic custom collection 的构建输入。人工维护的地图可以直接提交语义 JSON；外部批量关卡集也可以先保留其原始文本，再由专用工具生成这个统一输入格式。
 
-生成型 custom map 目录必须加入 `.gitignore`，每次 `assets prepare` 都从唯一源重新生成，不能手工修改生成文件。
+生成型 custom map 目录必须加入 `.gitignore`，不能手工修改生成文件。`assets prepare`
+根据生成器、Model 合同、手写地图与运行模式的 SHA-256 复用完整生成结果；输入变化、
+生成文件缺失或执行 `assets rebuild` 时，先清理明确登记的生成目录，再从唯一源重新生成。
+10 个只读原版高清 JAR 作为 extract 的源输入参与缓存指纹；生成物文件清单只用于完整性
+检查，不把 Replay 写入的 `verified` 当作输入变化。
 
 LOMA Pushbox 使用：
 
