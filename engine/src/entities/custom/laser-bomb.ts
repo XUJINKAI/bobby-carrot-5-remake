@@ -29,6 +29,8 @@ const LASER_BOMB_CHAIN_ACTION = "laser-bomb-chain";
 export const LASER_BOMB_EXPLOSION_FRAME_MS = 100;
 export const LASER_BOMB_EXPLOSION_DURATION_MS =
   6 * LASER_BOMB_EXPLOSION_FRAME_MS;
+export const LASER_BOMB_IGNITION_DURATION_MS =
+  6 * LASER_BOMB_EXPLOSION_FRAME_MS;
 
 export interface LaserExplosion {
   bombId: EntityId;
@@ -38,6 +40,27 @@ export interface LaserExplosion {
   chainedBombIds: readonly EntityId[];
 }
 
+const laserBombIgnitionVisual: TransientVisualDefinition = {
+  id: "laser-bomb-ignition",
+  eventType: "laser-bomb-ignition-started",
+  durationMs: LASER_BOMB_IGNITION_DURATION_MS,
+  renderPass: "effect",
+  resolve({ progress }) {
+    return {
+      layers: [{
+        kind: "image",
+        asset: ROBO2_GAMEPLAY_IMAGE_IDS.bombExplosion,
+        frameWidth: 14,
+        frameHeight: 14,
+        frameRows: 6,
+        frameProgress: progress,
+        sourceTileSize: 12,
+        anchor: "center",
+      }],
+    };
+  },
+};
+
 const laserBombExplosionVisual: TransientVisualDefinition = {
   id: "laser-bomb-explosion",
   eventType: "laser-bomb-exploded",
@@ -46,23 +69,18 @@ const laserBombExplosionVisual: TransientVisualDefinition = {
   resolve({ event, progress }) {
     const cells = explosionOffsetsFromEvent(event.data?.cells);
     return {
-      layers: cells.map((cell) => {
-        const center = cell.x === 0 && cell.y === 0;
-        return {
-          kind: "image" as const,
-          asset: center
-            ? ROBO2_GAMEPLAY_IMAGE_IDS.bombExplosion
-            : ROBO2_GAMEPLAY_IMAGE_IDS.explosion,
-          frameWidth: 14,
-          frameHeight: center ? 14 : 12,
-          frameRows: 6,
-          frameProgress: progress,
-          sourceTileSize: 12,
-          anchor: "center" as const,
-          offsetX: cell.x * 12,
-          offsetY: cell.y * 12,
-        };
-      }),
+      layers: cells.map((cell) => ({
+        kind: "image" as const,
+        asset: ROBO2_GAMEPLAY_IMAGE_IDS.explosion,
+        frameWidth: 14,
+        frameHeight: 12,
+        frameRows: 6,
+        frameProgress: progress,
+        sourceTileSize: 12,
+        anchor: "center" as const,
+        offsetX: cell.x * 12,
+        offsetY: cell.y * 12,
+      })),
     };
   },
 };
@@ -72,42 +90,52 @@ const laserBombChainAction: RuntimeActionDefinition = {
   update({ action, time, query, commands }) {
     const queue = entityIdList(action.state.queue);
     const seen = new Set(entityIdList(action.state.seen));
-    let elapsedMs = finiteNumber(action.state.elapsedMs) + time.stepMs;
-    if (
-      action.state.started === true &&
-      elapsedMs + time.stepMs / 2 < LASER_BOMB_EXPLOSION_DURATION_MS
-    ) {
+    let currentBombId = positiveEntityId(action.state.currentBombId);
+    if (currentBombId === null || !query.entity(currentBombId)) {
+      currentBombId = takeNextBomb(query, queue);
+      if (currentBombId === null) return "complete";
+      emitLaserBombIgnition(query, commands, currentBombId);
+      action.state.currentBombId = currentBombId;
+      action.state.queue = queue;
+      action.state.elapsedMs = 0;
+      return "running";
+    }
+
+    const elapsedMs = finiteNumber(action.state.elapsedMs) + time.stepMs;
+    if (elapsedMs < LASER_BOMB_IGNITION_DURATION_MS) {
       action.state.elapsedMs = elapsedMs;
       return "running";
     }
-    if (action.state.started === true) {
-      elapsedMs = Math.max(0, elapsedMs - LASER_BOMB_EXPLOSION_DURATION_MS);
-    } else {
-      elapsedMs = 0;
-    }
 
-    while (queue.length > 0) {
-      const bombId = queue.shift()!;
-      const chainedBombIds = detonateLaserBomb(query, commands, bombId);
-      if (chainedBombIds === null) continue;
-      for (const chainedBombId of chainedBombIds) {
-        if (seen.has(chainedBombId)) continue;
-        const chainedBomb = query.entity(chainedBombId);
-        if (chainedBomb?.type !== MapEntityTypeId.LASER_BOMB) continue;
-        seen.add(chainedBombId);
-        queue.push(chainedBombId);
-        commands.setState(chainedBombId, {
-          ...chainedBomb.state,
-          armed: true,
-        });
+    const chainedBombIds = detonateLaserBomb(
+      query,
+      commands,
+      currentBombId,
+    ) ?? [];
+    for (const chainedBombId of chainedBombIds) {
+      if (seen.has(chainedBombId)) continue;
+      const chainedBomb = query.entity(chainedBombId);
+      if (
+        chainedBomb?.type !== MapEntityTypeId.LASER_BOMB ||
+        chainedBomb.state?.armed === true
+      ) {
+        continue;
       }
-      action.state.queue = queue;
-      action.state.seen = [...seen].sort(compareEntityIds);
-      action.state.elapsedMs = elapsedMs;
-      action.state.started = true;
-      return queue.length > 0 ? "running" : "complete";
+      seen.add(chainedBombId);
+      queue.push(chainedBombId);
+      commands.setState(chainedBombId, {
+        ...chainedBomb.state,
+        armed: true,
+      });
     }
-    return "complete";
+    const nextBombId = takeNextBomb(query, queue);
+    action.state.queue = queue;
+    action.state.seen = [...seen].sort(compareEntityIds);
+    action.state.elapsedMs = 0;
+    action.state.currentBombId = nextBombId ?? 0;
+    if (nextBombId === null) return "complete";
+    emitLaserBombIgnition(query, commands, nextBombId);
+    return "running";
   },
 };
 
@@ -136,7 +164,7 @@ export const laserBomb: EntityModule = defineEntityModule({
       }],
     }),
   },
-  transientVisuals: [laserBombExplosionVisual],
+  transientVisuals: [laserBombIgnitionVisual, laserBombExplosionVisual],
   runtimeActions: [laserBombChainAction],
 });
 
@@ -159,6 +187,7 @@ export function armLaserBombChain(
     commands.setState(bomb.id, { ...bomb.state, armed: true });
   }
   if (armedBombIds.length > 0) {
+    emitLaserBombIgnition(query, commands, armedBombIds[0]!);
     commands.startAction(createLaserBombChainAction(systemId, armedBombIds));
   }
 }
@@ -282,12 +311,40 @@ function createLaserBombChainAction(
     kind: LASER_BOMB_CHAIN_ACTION,
     ownerEntityId: systemId,
     state: {
-      queue: [...bombIds],
+      currentBombId: bombIds[0] ?? 0,
+      queue: bombIds.slice(1),
       seen: [...bombIds],
       elapsedMs: 0,
-      started: false,
     },
   };
+}
+
+function emitLaserBombIgnition(
+  query: WorldQueryApi,
+  commands: WorldCommandApi,
+  bombId: EntityId,
+): void {
+  const bomb = query.entity(bombId);
+  if (bomb?.type !== MapEntityTypeId.LASER_BOMB) return;
+  commands.emit({
+    type: "laser-bomb-ignition-started",
+    entityId: bomb.id,
+    x: bomb.anchor.x,
+    y: bomb.anchor.y,
+  });
+}
+
+function takeNextBomb(
+  query: WorldQueryApi,
+  queue: EntityId[],
+): EntityId | null {
+  while (queue.length > 0) {
+    const bombId = queue.shift()!;
+    if (query.entity(bombId)?.type === MapEntityTypeId.LASER_BOMB) {
+      return bombId;
+    }
+  }
+  return null;
 }
 
 function entityIdList(value: unknown): EntityId[] {
@@ -299,6 +356,12 @@ function entityIdList(value: unknown): EntityId[] {
 
 function finiteNumber(value: unknown): number {
   return typeof value === "number" && Number.isFinite(value) ? value : 0;
+}
+
+function positiveEntityId(value: unknown): EntityId | null {
+  return typeof value === "number" && Number.isInteger(value) && value > 0
+    ? value
+    : null;
 }
 
 function compareEntityIds(left: EntityId, right: EntityId): number {
