@@ -37,6 +37,43 @@ function canvas() {
   };
 }
 
+function laserCanvas() {
+  const strokes = [];
+  let path = [];
+  const context = {
+    strokeStyle: "",
+    lineWidth: 0,
+    setTransform() {},
+    fillRect() {},
+    clearRect() {},
+    strokeRect() {},
+    save() {},
+    restore() {},
+    translate() {},
+    rotate() {},
+    scale() {},
+    drawImage() {},
+    fillText() {},
+    beginPath() {
+      path = [];
+    },
+    moveTo(x, y) {
+      path.push([x, y]);
+    },
+    lineTo(x, y) {
+      path.push([x, y]);
+    },
+    stroke() {
+      strokes.push({ color: this.strokeStyle, path });
+    },
+  };
+  return {
+    style: {},
+    getContext: () => context,
+    strokes: () => strokes,
+  };
+}
+
 test("Canvas 为两个以上 Palette 层显示数量角标", () => {
   const level = {
     schemaVersion: 1,
@@ -127,6 +164,56 @@ test("同一不可变关卡 revision 复用空间投影", () => {
     editorPreviewFor(structuredClone(level), builtinEngineEnvironment),
     editorPreviewFor(level, builtinEngineEnvironment),
   );
+});
+
+test("Editor Canvas 复用 Engine 光路投影且不污染可编辑空间", () => {
+  const level = {
+    schemaVersion: 1,
+    meta: { name: "激光预览" },
+    width: 5,
+    height: 1,
+    entities: [
+      { type: "laser-emitter", direction: "right", x: 0, y: 0 },
+      { type: "stump", x: 3, y: 0 },
+    ],
+  };
+  const preview = new EditorPreview(level, builtinEngineEnvironment);
+  assert.equal(
+    preview.entities.all().some((entity) => entity.type === "laser-beam"),
+    false,
+  );
+  assert.deepEqual(
+    preview.renderEntities.all()
+      .filter((entity) => entity.type === "laser-beam")
+      .map((entity) => ({ x: entity.anchor.x, terminal: entity.state?.terminal })),
+    [
+      { x: 1, terminal: false },
+      { x: 2, terminal: false },
+      { x: 3, terminal: true },
+    ],
+  );
+
+  const target = laserCanvas();
+  const renderer = new EditorCanvasRenderer(target, {
+    sourceTileSize: 48,
+    atlasId: "atlas",
+    image: () => ({ width: 768, height: 768 }),
+  });
+  renderer.render({
+    level,
+    tool: "select",
+    placement: null,
+    selection: null,
+    hover: null,
+    viewport: { zoom: 1, panX: 0, panY: 0 },
+  });
+
+  assert.equal(target.strokes().length, 2);
+  assert.ok(target.strokes().every((stroke) => stroke.color === "#ff0000"));
+  assert.deepEqual(target.strokes().map((stroke) => stroke.path), [
+    [[38, 19], [76, 19]],
+    [[76, 19], [114, 19]],
+  ]);
 });
 
 test("放置预览保留邻格与多格身份，并隔离替换结果", () => {

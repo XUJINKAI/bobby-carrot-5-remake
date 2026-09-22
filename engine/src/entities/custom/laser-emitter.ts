@@ -8,6 +8,7 @@ import type {
   CellPosition,
   EntityId,
   EntityInstance,
+  EntitySpawnSpec,
 } from "../../world/entity/EntityInstance.js";
 import type { EntityPresence } from "../../world/spatial/EntityPresence.js";
 import { defineEntityModule, type EntityModule } from "../EntityModule.js";
@@ -18,17 +19,22 @@ import {
   reflectedLaserDirection,
 } from "./laser-mirror.js";
 
-interface LaserRayQuery {
+export interface LaserRayQuery {
   inBounds(cell: CellPosition): boolean;
   presencesAt(cell: CellPosition): readonly EntityPresence[];
   entity(id: EntityId): Readonly<EntityInstance> | undefined;
 }
 
-interface LaserRaySegment {
+export interface LaserRaySegment {
   cell: CellPosition;
   direction: Direction;
   outgoingDirection?: Direction;
   terminal: boolean;
+}
+
+export interface LaserRayProjection {
+  sourceId: EntityId;
+  segments: readonly LaserRaySegment[];
 }
 
 const LASER_EMITTER_FLASH_COUNT = 3;
@@ -41,8 +47,12 @@ const laserEmitterBehavior: Behavior = {
   onInitialize({ self, query, commands }) {
     const emitters = laserEmitters(query);
     if (emitters[0]?.id !== self.entity.id) return;
-    for (const emitter of emitters) {
-      replaceOwnedBeam(commands, emitter, [], traceEmitterRay(query, emitter));
+    for (const projection of projectLaserRays(query, emitters)) {
+      const emitter = emitters.find((candidate) =>
+        candidate.id === projection.sourceId
+      );
+      if (!emitter) continue;
+      replaceOwnedBeam(commands, emitter, [], projection.segments);
     }
     commands.spawn({
       type: RuntimeEntityTypeId.LASER_SYSTEM,
@@ -235,6 +245,35 @@ export function traceLaserRay(
   return segments;
 }
 
+export function projectLaserRays(
+  query: LaserRayQuery,
+  emitters: readonly Readonly<EntityInstance>[],
+): readonly LaserRayProjection[] {
+  return emitters.map((emitter) => ({
+    sourceId: emitter.id,
+    segments: traceEmitterRay(query, emitter),
+  }));
+}
+
+export function laserBeamSpawnSpecs(
+  sourceId: EntityId,
+  ray: readonly LaserRaySegment[],
+): readonly EntitySpawnSpec[] {
+  return ray.map((segment) => ({
+    type: RuntimeEntityTypeId.LASER_BEAM,
+    x: segment.cell.x,
+    y: segment.cell.y,
+    direction: segment.direction,
+    state: {
+      sourceId,
+      terminal: segment.terminal,
+      ...(segment.outgoingDirection
+        ? { outgoingDirection: segment.outgoingDirection }
+        : {}),
+    },
+  }));
+}
+
 function updateLaserSystem(
   query: WorldQueryApi,
   commands: WorldCommandApi,
@@ -244,12 +283,16 @@ function updateLaserSystem(
   if (system.state?.topologySignature === topologySignature) return;
 
   const emitters = laserEmitters(query);
-  const rays = new Map<EntityId, readonly LaserRaySegment[]>();
+  const rays = new Map(
+    projectLaserRays(query, emitters).map((projection) => [
+      projection.sourceId,
+      projection.segments,
+    ]),
+  );
   const hitEmitters = new Set<EntityId>();
   const hitBombs = new Set<EntityId>();
   for (const emitter of emitters) {
-    const ray = traceEmitterRay(query, emitter);
-    rays.set(emitter.id, ray);
+    const ray = rays.get(emitter.id) ?? [];
     collectLaserTargets(query, ray, hitEmitters, hitBombs);
   }
 
@@ -407,21 +450,8 @@ function replaceOwnedBeam(
   for (const beam of current) {
     commands.destroy(beam.id);
   }
-  for (const segment of ray) {
-    commands.spawn({
-      type: RuntimeEntityTypeId.LASER_BEAM,
-      x: segment.cell.x,
-      y: segment.cell.y,
-      direction: segment.direction,
-      state: {
-        sourceId: emitter.id,
-        terminal: segment.terminal,
-        ...(segment.outgoingDirection
-          ? { outgoingDirection: segment.outgoingDirection }
-          : {}),
-      },
-    });
-  }
+  for (const beam of laserBeamSpawnSpecs(emitter.id, ray))
+    commands.spawn(beam);
   return true;
 }
 

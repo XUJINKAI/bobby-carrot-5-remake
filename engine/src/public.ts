@@ -100,6 +100,14 @@ export {
   type Robo2GameplayImageFile,
 } from "./image/Robo2GameplayImages.js";
 export {
+  laserBeamSpawnSpecs,
+  projectLaserRays,
+  traceLaserRay,
+  type LaserRayProjection,
+  type LaserRayQuery,
+  type LaserRaySegment,
+} from "./entities/custom/laser-emitter.js";
+export {
   prepareCanvas,
   resolveDevicePixelRatio,
   snapRectToDevicePixels,

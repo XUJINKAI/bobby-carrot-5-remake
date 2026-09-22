@@ -1,13 +1,16 @@
 import {
   EntityStore,
+  laserBeamSpawnSpecs,
+  projectLaserRays,
   prepareRuntimeLevel,
+  SpatialVisualQuery,
   SpatialIndex,
   type EngineEnvironment,
   type EntityCatalogEntry,
   type EntityId,
   type EntityPresence,
 } from "@bobby/engine";
-import type { LevelEntity } from "@bobby/model";
+import { MapEntityTypeId, type LevelEntity } from "@bobby/model";
 import type { EditorMap, EntityRef } from "../level/types.js";
 import { materializeSurfaceVariants } from "./surfacePersistence.js";
 
@@ -29,6 +32,9 @@ export interface EditorCellInspection {
 export class EditorPreview {
   readonly entities: EntityStore;
   readonly spatial: SpatialIndex;
+  /** 包含 Engine 派生表现 Entity 的只读绘制空间。 */
+  readonly renderEntities: EntityStore;
+  readonly renderSpatial: SpatialIndex;
   private readonly refByEntityId = new Map<EntityId, EntityRef>();
   private readonly entityIdByRef = new Map<number, EntityId>();
 
@@ -54,6 +60,32 @@ export class EditorPreview {
       level.height,
       environment.facts,
     );
+    const query = new SpatialVisualQuery(this.entities, this.spatial);
+    const projections = projectLaserRays(
+      query,
+      query.entitiesOfType(MapEntityTypeId.LASER_EMITTER),
+    );
+    if (projections.length === 0) {
+      this.renderEntities = this.entities;
+      this.renderSpatial = this.spatial;
+    } else {
+      this.renderEntities = new EntityStore(runtimeLevel.entities);
+      for (const projection of projections) {
+        for (const beam of laserBeamSpawnSpecs(
+          projection.sourceId,
+          projection.segments,
+        )) {
+          this.renderEntities.spawn(beam);
+        }
+      }
+      this.renderSpatial = new SpatialIndex(
+        this.renderEntities,
+        environment.catalog.entities,
+        level.width,
+        level.height,
+        environment.facts,
+      );
+    }
   }
 
   inspectCell(x: number, y: number): EditorCellInspection {
