@@ -187,7 +187,7 @@
       "x": 7,
       "y": 1,
       "stackOrder": 1,
-      "direction": "up"
+      "direction": "down"
     },
     {
       "type": "sand",
@@ -199,7 +199,7 @@
       "x": 8,
       "y": 1,
       "stackOrder": 1,
-      "direction": "up"
+      "direction": "down"
     },
     {
       "type": "sand",
@@ -211,7 +211,7 @@
       "x": 9,
       "y": 1,
       "stackOrder": 1,
-      "direction": "up"
+      "direction": "down"
     },
     {
       "type": "sand",
@@ -234,7 +234,7 @@
       "x": 11,
       "y": 1,
       "stackOrder": 1,
-      "direction": "up"
+      "direction": "down"
     },
     {
       "type": "sand",
@@ -246,7 +246,7 @@
       "x": 12,
       "y": 1,
       "stackOrder": 1,
-      "direction": "up"
+      "direction": "down"
     },
     {
       "type": "sand",
@@ -258,7 +258,7 @@
       "x": 13,
       "y": 1,
       "stackOrder": 1,
-      "direction": "up"
+      "direction": "down"
     },
     {
       "type": "sand",
@@ -280,7 +280,7 @@
       "x": 16,
       "y": 1,
       "stackOrder": 1,
-      "direction": "up"
+      "direction": "down"
     },
     {
       "type": "sand",
@@ -441,7 +441,7 @@
       "x": 2,
       "y": 3,
       "stackOrder": 1,
-      "direction": "down"
+      "direction": "right"
     },
     {
       "type": "sand",
@@ -832,7 +832,7 @@
       "x": 10,
       "y": 6,
       "stackOrder": 1,
-      "direction": "right"
+      "direction": "up"
     },
     {
       "type": "sand",
@@ -1044,7 +1044,7 @@
       "x": 6,
       "y": 8,
       "stackOrder": 1,
-      "direction": "up"
+      "direction": "down"
     },
     {
       "type": "sand",
@@ -2165,7 +2165,7 @@
       "x": 3,
       "y": 18,
       "stackOrder": 1,
-      "direction": "right"
+      "direction": "up"
     },
     {
       "type": "sand",
@@ -2298,7 +2298,7 @@
       "x": 4,
       "y": 19,
       "stackOrder": 1,
-      "direction": "right"
+      "direction": "up"
     },
     {
       "type": "sand",
@@ -2370,7 +2370,7 @@
       "x": 17,
       "y": 19,
       "stackOrder": 1,
-      "direction": "right"
+      "direction": "up"
     },
     {
       "type": "stone-wall",

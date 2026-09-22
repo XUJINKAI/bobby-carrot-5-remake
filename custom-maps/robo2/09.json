@@ -154,7 +154,7 @@
       "x": 6,
       "y": 1,
       "stackOrder": 1,
-      "direction": "up"
+      "direction": "down"
     },
     {
       "type": "sand",
@@ -294,7 +294,7 @@
       "x": 1,
       "y": 3,
       "stackOrder": 1,
-      "direction": "down"
+      "direction": "right"
     },
     {
       "type": "sand",

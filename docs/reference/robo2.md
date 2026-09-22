@@ -39,13 +39,13 @@ u4 cells[width * height]
 | `0x4` | Bomb | `laser-bomb` |
 | `0x5` | `mirrorL` | `laser-mirror` / `slash` |
 | `0x6` | `mirrorR` | `laser-mirror` / `backslash` |
-| `0x7` | `laserDown` | `laser-emitter` / `up` |
-| `0x8` | `laserUp` | `laser-emitter` / `down` |
-| `0x9` | `laserLeft` | `laser-emitter` / `right` |
-| `0xA` | `laserRight` | `laser-emitter` / `left` |
+| `0x7` | `laserDown` | `laser-emitter` / `down` |
+| `0x8` | `laserRight` | `laser-emitter` / `right` |
+| `0x9` | `laserUp` | `laser-emitter` / `up` |
+| `0xA` | `laserLeft` | `laser-emitter` / `left` |
 | `0xB` | Robo 起点 | `bobby` |
 
-映射依据是 `b.class` 构造器、静态素材初始化与 v1.0 a1 模拟器实测。四张 `laser*` 素材名描述炮身朝向，实际光束从相反方向射出；`mirrorL.png` 的镜面为 `/`，`mirrorR.png` 的镜面为 `\`。记录解码位于 `tools/custom/robo2/format.mjs`，语义转换位于 `tools/custom/robo2/convert.mjs`；Robo 2 byte 与语义 Entity 的转换只能位于该来源工具边界。
+方向映射以实际 gameplay 字节码为准：`b.<init>(byte,int,int)` 把 `0x7..0xA` 保存为方向索引 `0..3`；`c.try()` 将这四个索引依次转换为 `(0,+1)`、`(+1,0)`、`(0,-1)`、`(-1,0)`，即下、右、上、左。JAR 的静态素材数组顺序也按这个方向索引重排，不能直接按常量池中的文件名出现顺序解释 tile code。`mirrorL.png` 的镜面为 `/`，`mirrorR.png` 的镜面为 `\`。记录解码位于 `tools/custom/robo2/format.mjs`，语义转换位于 `tools/custom/robo2/convert.mjs`；Robo 2 byte 与语义 Entity 的转换只能位于该来源工具边界。
 
 来源主题按 `0..3` 对应太空、冰雪、遗迹、森林。当前转换分别复用 Sand / Stone Wall、Snow Cloud / Snowy Rock、Sand / Stone Wall、Grass / Hedge；这些 Surface 只负责保持可通行地面与阻挡墙的语义，并为四组关卡提供基础视觉区分。
 

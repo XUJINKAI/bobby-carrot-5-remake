@@ -90,7 +90,7 @@
       "x": 3,
       "y": 1,
       "stackOrder": 1,
-      "direction": "up"
+      "direction": "down"
     },
     {
       "type": "grass",
@@ -164,7 +164,7 @@
       "x": 1,
       "y": 3,
       "stackOrder": 1,
-      "direction": "down"
+      "direction": "right"
     },
     {
       "type": "grass",

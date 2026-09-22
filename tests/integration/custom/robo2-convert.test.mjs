@@ -27,9 +27,9 @@ test("Robo 2 第一关按模拟器坐标和炮口方向转换", () => {
 
   assert.deepEqual(objects, [
     { type: "exit", x: 3, y: 0 },
-    { type: "laser-emitter", x: 3, y: 1, direction: "up" },
+    { type: "laser-emitter", x: 3, y: 1, direction: "down" },
     { type: "laser-emitter", x: 4, y: 2, direction: "left" },
-    { type: "laser-emitter", x: 1, y: 3, direction: "down" },
+    { type: "laser-emitter", x: 1, y: 3, direction: "right" },
     { type: "bobby", x: 2, y: 4 },
   ]);
 });
@@ -44,9 +44,9 @@ test("Robo 2 tile 转换为可校验的语义 Entity", () => {
     ROBO2_TILE_CODE.MIRROR_LEFT,
     ROBO2_TILE_CODE.MIRROR_RIGHT,
     ROBO2_TILE_CODE.LASER_DOWN,
+    ROBO2_TILE_CODE.LASER_RIGHT,
     ROBO2_TILE_CODE.LASER_UP,
     ROBO2_TILE_CODE.LASER_LEFT,
-    ROBO2_TILE_CODE.LASER_RIGHT,
     ROBO2_TILE_CODE.PLAYER,
   ];
   const document = parseMapDocument(convertRobo2Level({
@@ -80,9 +80,9 @@ test("Robo 2 tile 转换为可校验的语义 Entity", () => {
     stackOrder: 1,
   });
   assert.equal(entityAt(document, "laser-mirror", 2, 1).variant, "backslash");
-  assert.equal(entityAt(document, "laser-emitter", 3, 1).direction, "up");
-  assert.equal(entityAt(document, "laser-emitter", 0, 2).direction, "down");
-  assert.equal(entityAt(document, "laser-emitter", 1, 2).direction, "right");
+  assert.equal(entityAt(document, "laser-emitter", 3, 1).direction, "down");
+  assert.equal(entityAt(document, "laser-emitter", 0, 2).direction, "right");
+  assert.equal(entityAt(document, "laser-emitter", 1, 2).direction, "up");
   assert.equal(entityAt(document, "laser-emitter", 2, 2).direction, "left");
 });
 

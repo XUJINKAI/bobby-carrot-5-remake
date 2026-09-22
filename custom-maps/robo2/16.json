@@ -322,7 +322,7 @@
       "x": 1,
       "y": 3,
       "stackOrder": 1,
-      "direction": "down"
+      "direction": "right"
     },
     {
       "type": "snow-cloud",
@@ -544,7 +544,7 @@
       "x": 2,
       "y": 5,
       "stackOrder": 1,
-      "direction": "down"
+      "direction": "right"
     },
     {
       "type": "snow-cloud",
@@ -768,7 +768,7 @@
       "x": 4,
       "y": 7,
       "stackOrder": 1,
-      "direction": "down"
+      "direction": "right"
     },
     {
       "type": "snow-cloud",

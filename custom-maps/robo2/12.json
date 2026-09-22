@@ -261,7 +261,7 @@
       "x": 7,
       "y": 2,
       "stackOrder": 1,
-      "direction": "up"
+      "direction": "down"
     },
     {
       "type": "sand",
@@ -726,7 +726,7 @@
       "x": 5,
       "y": 7,
       "stackOrder": 1,
-      "direction": "down"
+      "direction": "right"
     },
     {
       "type": "sand",
@@ -1035,7 +1035,7 @@
       "x": 9,
       "y": 10,
       "stackOrder": 1,
-      "direction": "right"
+      "direction": "up"
     },
     {
       "type": "sand",
@@ -1615,7 +1615,7 @@
       "x": 10,
       "y": 15,
       "stackOrder": 1,
-      "direction": "right"
+      "direction": "up"
     },
     {
       "type": "stone-wall",

@@ -186,7 +186,7 @@
       "x": 11,
       "y": 1,
       "stackOrder": 1,
-      "direction": "up"
+      "direction": "down"
     },
     {
       "type": "sand",
@@ -567,7 +567,7 @@
       "x": 6,
       "y": 5,
       "stackOrder": 1,
-      "direction": "right"
+      "direction": "up"
     },
     {
       "type": "sand",
@@ -590,7 +590,7 @@
       "x": 8,
       "y": 5,
       "stackOrder": 1,
-      "direction": "down"
+      "direction": "right"
     },
     {
       "type": "sand",
@@ -1097,7 +1097,7 @@
       "x": 3,
       "y": 11,
       "stackOrder": 1,
-      "direction": "right"
+      "direction": "up"
     },
     {
       "type": "sand",

@@ -20,10 +20,10 @@ const THEME_SURFACES = Object.freeze([
 ]);
 
 const LASER_DIRECTIONS = new Map([
-  [ROBO2_TILE_CODE.LASER_DOWN, "up"],
-  [ROBO2_TILE_CODE.LASER_UP, "down"],
-  [ROBO2_TILE_CODE.LASER_LEFT, "right"],
-  [ROBO2_TILE_CODE.LASER_RIGHT, "left"],
+  [ROBO2_TILE_CODE.LASER_DOWN, "down"],
+  [ROBO2_TILE_CODE.LASER_RIGHT, "right"],
+  [ROBO2_TILE_CODE.LASER_UP, "up"],
+  [ROBO2_TILE_CODE.LASER_LEFT, "left"],
 ]);
 
 /**

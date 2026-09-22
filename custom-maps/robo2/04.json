@@ -144,7 +144,7 @@
       "x": 7,
       "y": 1,
       "stackOrder": 1,
-      "direction": "up"
+      "direction": "down"
     },
     {
       "type": "grass",
@@ -194,7 +194,7 @@
       "x": 1,
       "y": 2,
       "stackOrder": 1,
-      "direction": "down"
+      "direction": "right"
     },
     {
       "type": "grass",
@@ -637,7 +637,7 @@
       "x": 7,
       "y": 7,
       "stackOrder": 1,
-      "direction": "up"
+      "direction": "down"
     },
     {
       "type": "grass",

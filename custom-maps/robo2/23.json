@@ -578,7 +578,7 @@
       "x": 13,
       "y": 4,
       "stackOrder": 1,
-      "direction": "down"
+      "direction": "right"
     },
     {
       "type": "sand",
@@ -661,7 +661,7 @@
       "x": 5,
       "y": 5,
       "stackOrder": 1,
-      "direction": "up"
+      "direction": "down"
     },
     {
       "type": "sand",
@@ -671,93 +671,93 @@
     {
       "type": "laser-emitter",
       "x": 6,
-      "y": 5,
-      "stackOrder": 1,
-      "direction": "up"
-    },
-    {
-      "type": "sand",
-      "x": 7,
-      "y": 5
-    },
-    {
-      "type": "laser-emitter",
-      "x": 7,
-      "y": 5,
-      "stackOrder": 1,
-      "direction": "up"
-    },
-    {
-      "type": "sand",
-      "x": 8,
-      "y": 5
-    },
-    {
-      "type": "laser-emitter",
-      "x": 8,
-      "y": 5,
-      "stackOrder": 1,
-      "direction": "up"
-    },
-    {
-      "type": "sand",
-      "x": 9,
-      "y": 5
-    },
-    {
-      "type": "laser-emitter",
-      "x": 9,
-      "y": 5,
-      "stackOrder": 1,
-      "direction": "up"
-    },
-    {
-      "type": "sand",
-      "x": 10,
-      "y": 5
-    },
-    {
-      "type": "laser-emitter",
-      "x": 10,
-      "y": 5,
-      "stackOrder": 1,
-      "direction": "up"
-    },
-    {
-      "type": "sand",
-      "x": 11,
-      "y": 5
-    },
-    {
-      "type": "laser-emitter",
-      "x": 11,
-      "y": 5,
-      "stackOrder": 1,
-      "direction": "up"
-    },
-    {
-      "type": "sand",
-      "x": 12,
-      "y": 5
-    },
-    {
-      "type": "laser-emitter",
-      "x": 12,
-      "y": 5,
-      "stackOrder": 1,
-      "direction": "up"
-    },
-    {
-      "type": "sand",
-      "x": 13,
-      "y": 5
-    },
-    {
-      "type": "laser-emitter",
-      "x": 13,
       "y": 5,
       "stackOrder": 1,
       "direction": "down"
+    },
+    {
+      "type": "sand",
+      "x": 7,
+      "y": 5
+    },
+    {
+      "type": "laser-emitter",
+      "x": 7,
+      "y": 5,
+      "stackOrder": 1,
+      "direction": "down"
+    },
+    {
+      "type": "sand",
+      "x": 8,
+      "y": 5
+    },
+    {
+      "type": "laser-emitter",
+      "x": 8,
+      "y": 5,
+      "stackOrder": 1,
+      "direction": "down"
+    },
+    {
+      "type": "sand",
+      "x": 9,
+      "y": 5
+    },
+    {
+      "type": "laser-emitter",
+      "x": 9,
+      "y": 5,
+      "stackOrder": 1,
+      "direction": "down"
+    },
+    {
+      "type": "sand",
+      "x": 10,
+      "y": 5
+    },
+    {
+      "type": "laser-emitter",
+      "x": 10,
+      "y": 5,
+      "stackOrder": 1,
+      "direction": "down"
+    },
+    {
+      "type": "sand",
+      "x": 11,
+      "y": 5
+    },
+    {
+      "type": "laser-emitter",
+      "x": 11,
+      "y": 5,
+      "stackOrder": 1,
+      "direction": "down"
+    },
+    {
+      "type": "sand",
+      "x": 12,
+      "y": 5
+    },
+    {
+      "type": "laser-emitter",
+      "x": 12,
+      "y": 5,
+      "stackOrder": 1,
+      "direction": "down"
+    },
+    {
+      "type": "sand",
+      "x": 13,
+      "y": 5
+    },
+    {
+      "type": "laser-emitter",
+      "x": 13,
+      "y": 5,
+      "stackOrder": 1,
+      "direction": "right"
     },
     {
       "type": "sand",
@@ -1116,7 +1116,7 @@
       "x": 17,
       "y": 8,
       "stackOrder": 1,
-      "direction": "right"
+      "direction": "up"
     },
     {
       "type": "stone-wall",
@@ -1145,7 +1145,7 @@
       "x": 1,
       "y": 9,
       "stackOrder": 1,
-      "direction": "down"
+      "direction": "right"
     },
     {
       "type": "sand",
@@ -1198,7 +1198,7 @@
       "x": 10,
       "y": 9,
       "stackOrder": 1,
-      "direction": "down"
+      "direction": "right"
     },
     {
       "type": "sand",
@@ -1271,7 +1271,7 @@
       "x": 1,
       "y": 10,
       "stackOrder": 1,
-      "direction": "down"
+      "direction": "right"
     },
     {
       "type": "sand",
@@ -1388,7 +1388,7 @@
       "x": 1,
       "y": 11,
       "stackOrder": 1,
-      "direction": "down"
+      "direction": "right"
     },
     {
       "type": "sand",
@@ -1498,7 +1498,7 @@
       "x": 1,
       "y": 12,
       "stackOrder": 1,
-      "direction": "down"
+      "direction": "right"
     },
     {
       "type": "sand",
@@ -1622,7 +1622,7 @@
       "x": 1,
       "y": 13,
       "stackOrder": 1,
-      "direction": "down"
+      "direction": "right"
     },
     {
       "type": "sand",
@@ -1740,7 +1740,7 @@
       "x": 1,
       "y": 14,
       "stackOrder": 1,
-      "direction": "down"
+      "direction": "right"
     },
     {
       "type": "sand",

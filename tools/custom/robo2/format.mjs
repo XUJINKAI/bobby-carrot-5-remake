@@ -12,9 +12,9 @@ export const ROBO2_TILE_CODE = Object.freeze({
   MIRROR_LEFT: 0x5,
   MIRROR_RIGHT: 0x6,
   LASER_DOWN: 0x7,
-  LASER_UP: 0x8,
-  LASER_LEFT: 0x9,
-  LASER_RIGHT: 0xa,
+  LASER_RIGHT: 0x8,
+  LASER_UP: 0x9,
+  LASER_LEFT: 0xa,
   PLAYER: 0xb,
 });
 
@@ -27,9 +27,9 @@ export const ROBO2_TILE_NAME_BY_CODE = Object.freeze([
   "mirror-left",
   "mirror-right",
   "laser-down",
+  "laser-right",
   "laser-up",
   "laser-left",
-  "laser-right",
   "player",
 ]);
 

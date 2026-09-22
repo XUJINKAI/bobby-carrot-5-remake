@@ -329,7 +329,7 @@
       "x": 2,
       "y": 3,
       "stackOrder": 1,
-      "direction": "down"
+      "direction": "right"
     },
     {
       "type": "snow-cloud",
@@ -589,7 +589,7 @@
       "x": 6,
       "y": 5,
       "stackOrder": 1,
-      "direction": "down"
+      "direction": "right"
     },
     {
       "type": "snow-cloud",
@@ -731,7 +731,7 @@
       "x": 13,
       "y": 6,
       "stackOrder": 1,
-      "direction": "right"
+      "direction": "up"
     },
     {
       "type": "snow-cloud",
@@ -1138,7 +1138,7 @@
       "x": 10,
       "y": 10,
       "stackOrder": 1,
-      "direction": "up"
+      "direction": "down"
     },
     {
       "type": "snow-cloud",

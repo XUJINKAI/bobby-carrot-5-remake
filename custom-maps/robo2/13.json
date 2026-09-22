@@ -281,7 +281,7 @@
       "x": 7,
       "y": 2,
       "stackOrder": 1,
-      "direction": "up"
+      "direction": "down"
     },
     {
       "type": "snow-cloud",
@@ -357,7 +357,7 @@
       "x": 1,
       "y": 3,
       "stackOrder": 1,
-      "direction": "down"
+      "direction": "right"
     },
     {
       "type": "snow-cloud",
@@ -592,7 +592,7 @@
       "x": 4,
       "y": 5,
       "stackOrder": 1,
-      "direction": "down"
+      "direction": "right"
     },
     {
       "type": "snow-cloud",
@@ -1237,7 +1237,7 @@
       "x": 1,
       "y": 11,
       "stackOrder": 1,
-      "direction": "down"
+      "direction": "right"
     },
     {
       "type": "snow-cloud",
@@ -1418,7 +1418,7 @@
       "x": 13,
       "y": 12,
       "stackOrder": 1,
-      "direction": "right"
+      "direction": "up"
     },
     {
       "type": "snow-cloud",
@@ -1888,7 +1888,7 @@
       "x": 9,
       "y": 16,
       "stackOrder": 1,
-      "direction": "right"
+      "direction": "up"
     },
     {
       "type": "snow-cloud",
