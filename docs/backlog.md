@@ -4,6 +4,38 @@
 
 ## Architecture
 
+### 统一内置地图与运行时资产生成流程
+
+在 Robo 2 功能合并后，以独立 PR 重构 BC5 Original、Robo 2、LOMA 与 Novoban 的资产生成流程。`assets/` 继续作为网站最终运行时资产树，保持现有 `/assets/maps`、`/assets/adventure` 与 `/assets/art` 路径；生成器按各自拥有的输出目录原子发布，不再通过 `custom-maps/` 保存生成地图。
+
+目标目录与依赖边界：
+
+- 在 `tools/assets/` 下按 `bc5 / robo2 / loma / novoban` 组织四个显式 Asset Producer，并由统一 registry、Collection Publisher、缓存与 watcher 编排。
+- `tools/assets/collections.json` 统一声明 collection 顺序、展示信息、可见性与 producer；目录型 producer 继续读取 `custom-maps/engine-lab`、`custom-maps/original-patch` 等人工维护地图。
+- `custom-maps/` 只保存人工维护的语义地图，不保存 Robo 2 或 Pushbox 生成物。
+- 根 `original/` 只保留 `official/`、`official-hd/` 与 `reverse-engineering/` 等来源和研究材料。
+- `tools/original/lib/` 提供无 CLI 副作用、路径可注入的 JAR / DAT、Adapter、Catalog、Patch 与研究函数；`tools/original/` 根脚本只负责参数解析、默认路径、日志和错误出口。
+- `tools/assets/bc5/` 只依赖 `tools/original/lib/`；`tools/original/lib/` 不依赖 `tools/assets/`。DAT byte 与 atlas 坐标换算仍只位于 `tools/original/dat/`，由 Original library 内部调用。
+
+生成阶段：
+
+- BC5 使用 `tmp/assets/bc5/extracted / decoded / adapted` 保存可审阅、可缓存的三阶段产物，再发布到 `assets/maps/original`、`assets/adventure` 与 `assets/art/hd`。
+- Robo 2 使用 `tmp/assets/robo2/extracted / decoded / adapted` 保存对应阶段；decoded 地图保留来源 entry、record SHA、theme 与 tile code，并继续通过 encode round-trip 验证无损，再发布到 `assets/maps/robo2` 与 `assets/art/robo2`。
+- LOMA 与 Novoban 从文本源直接转换为统一 `PreparedCollection` 并发布，不人为增加没有格式意义的中间阶段。
+- Collection Publisher 统一校验和规范化 `MapDocument`、写入地图与 collection index，并根据有序 manifest 汇总 `assets/maps/index.json`。
+
+缓存与开发流程：
+
+- 每个 Producer 和阶段显式声明输入、依赖与独占输出，缓存按任务保存输入摘要、依赖摘要和输出清单。
+- 输入变化只执行受影响阶段及其下游；Adapter 变化不重新解包 JAR，单个 collection 变化不重建其它 collection。
+- `npm run dev` 的 Vite watcher 复用同一任务图，合并连续文件事件、串行重建并在成功后刷新页面；失败时保留上一份完整输出。
+- `npm run clean` 清理全部 `tmp/assets` 阶段产物、任务缓存和最终生成目录，同时保留官方 JAR、研究材料与 Git 托管的音频、Replay、UI 资源。
+
+迁移验证：
+
+- 为 Original library / CLI 边界、Producer 依赖方向、任务失效传播、原子发布、冷启动和 watcher 增加自动测试，并把可机械检查的导入边界纳入 `npm run verify`。
+- 结构迁移阶段比较迁移前后的 MapDocument、collection index、Adventure index 与美术文件 hash，证明目录和流水线重构不改变已发布内容。
+
 ### 激光对象推动时的光束表现同步
 
 激光发生器或激光镜被推动时，World 会在移动完成后的下一次 Behavior tick 重新投影光束，视觉上会短暂保留原光路。
