@@ -492,17 +492,8 @@ function drawLaserLine(
   const endX = centerX + outgoingVector.x * size * endFactor;
   const endY = centerY + outgoingVector.y * size * endFactor;
   context.save();
-  context.strokeStyle = "rgba(255,45,45,.35)";
-  context.lineWidth = Math.max(5, size * 0.18);
-  context.beginPath();
-  context.moveTo(startX, startY);
-  if (outgoingDirection) {
-    context.lineTo(centerX, centerY);
-  }
-  context.lineTo(endX, endY);
-  context.stroke();
-  context.strokeStyle = "#ffefef";
-  context.lineWidth = Math.max(1, size * 0.045);
+  context.strokeStyle = "#ff0000";
+  context.lineWidth = Math.max(1, size / 12);
   context.beginPath();
   context.moveTo(startX, startY);
   if (outgoingDirection) {

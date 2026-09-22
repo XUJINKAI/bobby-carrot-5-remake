@@ -49,6 +49,35 @@ test("四向激光发生器使用对应的 Robo 2 原图", () => {
   }
 });
 
+test("激光使用单次纯红色描边", () => {
+  const visual = resolveLevelEntityVisualPreview({
+    type: MapEntityTypeId.LASER_EMITTER,
+    direction: "right",
+  });
+  const layer = visual?.layers[1];
+  assert.equal(layer?.kind, "canvas");
+
+  const strokes = [];
+  const context = {
+    strokeStyle: "",
+    lineWidth: 0,
+    save() {},
+    restore() {},
+    beginPath() {},
+    moveTo() {},
+    lineTo() {},
+    stroke() {
+      strokes.push({
+        color: this.strokeStyle,
+        width: this.lineWidth,
+      });
+    },
+  };
+  layer.draw(context, 0, 0, 36);
+
+  assert.deepEqual(strokes, [{ color: "#ff0000", width: 3 }]);
+});
+
 test("激光从发生器沿固定方向延伸，并停在首个阻挡格", () => {
   const entities = [];
   for (let y = 0; y < 2; y += 1)
