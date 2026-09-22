@@ -150,8 +150,9 @@ Adventure 不拥有地图内容；它引用 `assets/maps/` 下的 MapDocument。
 生成型 custom map 目录必须加入 `.gitignore`，不能手工修改生成文件。`assets prepare`
 根据生成器、Model 合同、手写地图与运行模式的 SHA-256 复用完整生成结果；输入变化、
 生成文件缺失或执行 `assets rebuild` 时，先清理明确登记的生成目录，再从唯一源重新生成。
-10 个只读原版高清 JAR 作为 extract 的源输入参与缓存指纹；生成物文件清单只用于完整性
-检查，不把 Replay 写入的 `verified` 当作输入变化。
+10 个只读原版高清 JAR 与 Robo2 源 JAR 作为 extract 的源输入参与缓存指纹；
+`custom-maps/robo2/` 与 `assets/art/robo2/` 作为生成目录参与完整性检查。
+生成物内容本身不作为输入，因此地图重新生成或 Replay 写入 `verified` 不会造成缓存失效。
 
 LOMA Pushbox 使用：
 

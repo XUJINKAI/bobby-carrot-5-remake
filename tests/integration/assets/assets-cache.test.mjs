@@ -31,6 +31,22 @@ test("assets prepare 缓存跟踪源码输入并忽略生成内容变化", (t) =
   );
 });
 
+test("assets prepare 冷启动生成 Robo 2 内容后可以直接写入缓存", (t) => {
+  const repositoryRoot = createRepositoryFixture(t);
+  clearAssetsPrepareOutputs(repositoryRoot);
+
+  const coldStart = inspectAssetsPrepareCache({ repositoryRoot });
+  assert.equal(coldStart.hit, false);
+  assert.equal(coldStart.reason, "尚无缓存状态");
+
+  writeGeneratedOutputs(repositoryRoot);
+  const written = writeAssetsPrepareCache(coldStart.snapshot, {
+    repositoryRoot,
+  });
+  assert.equal(written.written, true);
+  assert.equal(inspectAssetsPrepareCache({ repositoryRoot }).hit, true);
+});
+
 test("assets prepare 缓存在原版 JAR 内容变化时失效", (t) => {
   const repositoryRoot = createRepositoryFixture(t);
   const initial = inspectAssetsPrepareCache({ repositoryRoot });
@@ -43,6 +59,23 @@ test("assets prepare 缓存在原版 JAR 内容变化时失效", (t) => {
   assert.equal(
     changedJar.reason,
     "输入变化：original/official-hd/base.jar",
+  );
+});
+
+test("assets prepare 缓存跟踪 Robo 2 JAR 而非生成地图", (t) => {
+  const repositoryRoot = createRepositoryFixture(t);
+  const initial = inspectAssetsPrepareCache({ repositoryRoot });
+  writeAssetsPrepareCache(initial.snapshot, { repositoryRoot });
+
+  write(repositoryRoot, "custom-maps/robo2/01.json", "变化后的生成地图");
+  assert.equal(inspectAssetsPrepareCache({ repositoryRoot }).hit, true);
+
+  write(repositoryRoot, "tools/custom/robo2/robo2.jar", "变化后的 Robo 2 JAR");
+  const changedJar = inspectAssetsPrepareCache({ repositoryRoot });
+  assert.equal(changedJar.hit, false);
+  assert.equal(
+    changedJar.reason,
+    "输入变化：tools/custom/robo2/robo2.jar",
   );
 });
 
@@ -64,6 +97,15 @@ test("assets prepare 缓存在模式或生成文件清单变化时失效", (t) =
   assert.equal(
     missingOutput.reason,
     "生成文件缺失：assets/adventure/index.json",
+  );
+
+  write(repositoryRoot, "assets/adventure/index.json", "恢复 Adventure index");
+  fs.rmSync(path.join(repositoryRoot, "assets/art/robo2/stone.png"));
+  const missingRobo2Art = inspectAssetsPrepareCache({ repositoryRoot });
+  assert.equal(missingRobo2Art.hit, false);
+  assert.equal(
+    missingRobo2Art.reason,
+    "生成文件缺失：assets/art/robo2/stone.png",
   );
 
   invalidateAssetsPrepareCache(repositoryRoot);
@@ -123,23 +165,30 @@ function createRepositoryFixture(t) {
     "tools/original/extract.mjs",
     "tools/custom/prepare.mjs",
     "tools/custom/LOMA.txt",
+    "tools/custom/robo2/robo2.jar",
     "custom-maps/sample/map.json",
   ]) {
     write(repositoryRoot, relative, `输入：${relative}`);
   }
+  writeGeneratedOutputs(repositoryRoot);
+  return repositoryRoot;
+}
+
+function writeGeneratedOutputs(repositoryRoot) {
   for (const relative of [
     "original/extracted/base/00.dat",
     "original/decoded/source-index.json",
     "original/adapted/catalog.json",
     "custom-maps/loma-pushbox/01/01-01.json",
     "custom-maps/novoban-pushbox/01.json",
+    "custom-maps/robo2/01.json",
     "assets/maps/sample/index.json",
     "assets/adventure/index.json",
     "assets/art/hd/ts.png",
+    "assets/art/robo2/stone.png",
   ]) {
     write(repositoryRoot, relative, `生成：${relative}`);
   }
-  return repositoryRoot;
 }
 
 function write(repositoryRoot, relative, content) {
