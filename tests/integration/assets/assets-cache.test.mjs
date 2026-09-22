@@ -10,7 +10,7 @@ import {
   writeAssetsPrepareCache,
 } from "../../../tools/pipeline/assets-cache.mjs";
 
-test("assets prepare 缓存忽略固定 JAR 与生成内容，只跟踪输入和文件清单", (t) => {
+test("assets prepare 缓存跟踪源码输入并忽略生成内容变化", (t) => {
   const repositoryRoot = createRepositoryFixture(t);
   const initial = inspectAssetsPrepareCache({ repositoryRoot });
   assert.equal(initial.hit, false);
@@ -19,7 +19,6 @@ test("assets prepare 缓存忽略固定 JAR 与生成内容，只跟踪输入和
   assert.equal(written.written, true);
   assert.equal(inspectAssetsPrepareCache({ repositoryRoot }).hit, true);
 
-  write(repositoryRoot, "original/official-hd/base.jar", "变化后的固定 JAR");
   write(repositoryRoot, "assets/maps/sample/index.json", "Replay 标记后的内容");
   assert.equal(inspectAssetsPrepareCache({ repositoryRoot }).hit, true);
 
@@ -29,6 +28,21 @@ test("assets prepare 缓存忽略固定 JAR 与生成内容，只跟踪输入和
   assert.equal(
     changedInput.reason,
     "输入变化：custom-maps/sample/map.json",
+  );
+});
+
+test("assets prepare 缓存在原版 JAR 内容变化时失效", (t) => {
+  const repositoryRoot = createRepositoryFixture(t);
+  const initial = inspectAssetsPrepareCache({ repositoryRoot });
+  writeAssetsPrepareCache(initial.snapshot, { repositoryRoot });
+
+  write(repositoryRoot, "original/official-hd/base.jar", "变化后的原版 JAR");
+
+  const changedJar = inspectAssetsPrepareCache({ repositoryRoot });
+  assert.equal(changedJar.hit, false);
+  assert.equal(
+    changedJar.reason,
+    "输入变化：original/official-hd/base.jar",
   );
 });
 
@@ -105,6 +119,7 @@ function createRepositoryFixture(t) {
     "tools/pipeline/assets-cache.mjs",
     "custom-maps/collections.json",
     "model/src/index.ts",
+    "original/official-hd/base.jar",
     "tools/original/extract.mjs",
     "tools/custom/prepare.mjs",
     "tools/custom/LOMA.txt",
