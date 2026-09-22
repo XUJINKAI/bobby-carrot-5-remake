@@ -37,10 +37,10 @@ export interface LaserRayProjection {
   segments: readonly LaserRaySegment[];
 }
 
-const LASER_EMITTER_FLASH_COUNT = 3;
+const LASER_EMITTER_FLASH_PHASE_COUNT = 3;
 export const LASER_EMITTER_FLASH_PHASE_MS = 100;
 export const LASER_EMITTER_FLASH_DURATION_MS =
-  LASER_EMITTER_FLASH_COUNT * 2 * LASER_EMITTER_FLASH_PHASE_MS;
+  LASER_EMITTER_FLASH_PHASE_COUNT * LASER_EMITTER_FLASH_PHASE_MS;
 
 const laserEmitterBehavior: Behavior = {
   id: "laser-emitter",
@@ -71,7 +71,11 @@ const laserSystemBehavior: Behavior = {
 
 const laserBeamHazard: Behavior = {
   id: "laser-beam-hazard",
-  onEnter({ actor, query, commands }) {
+  onEnter({ actor, self, query, commands }) {
+    // MovementPlan 可能在光束销毁前已经建立；中点交互必须重新确认光束仍存在。
+    if (query.entity(self.entity.id)?.type !== RuntimeEntityTypeId.LASER_BEAM) {
+      return;
+    }
     if (!query.entityHasFact(actor.id, "player")) return;
     commands.downActor(actor.id, "laser-beam");
   },
@@ -114,8 +118,8 @@ export const laserEmitter: EntityModule = defineEntityModule({
     renderPass: "world-effect",
     resolve({ event, progress }) {
       const phase = Math.min(
-        LASER_EMITTER_FLASH_COUNT * 2 - 1,
-        Math.floor(progress * LASER_EMITTER_FLASH_COUNT * 2),
+        LASER_EMITTER_FLASH_PHASE_COUNT - 1,
+        Math.floor(progress * LASER_EMITTER_FLASH_PHASE_COUNT),
       );
       if (phase % 2 === 1) return null;
       const direction = directionState(event.direction) ?? "right";

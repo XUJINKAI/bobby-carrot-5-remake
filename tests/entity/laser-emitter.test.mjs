@@ -415,11 +415,48 @@ test("发生器与所属光束在销毁后同步闪烁三次", () => {
 
   assert.equal(transientAt(LASER_EMITTER_FLASH_PHASE_MS), undefined);
   assert.ok(transientAt(LASER_EMITTER_FLASH_PHASE_MS * 2));
-  assert.equal(transientAt(LASER_EMITTER_FLASH_PHASE_MS * 3), undefined);
-  assert.ok(transientAt(LASER_EMITTER_FLASH_PHASE_MS * 4));
-  assert.equal(transientAt(LASER_EMITTER_FLASH_PHASE_MS * 5), undefined);
   assert.equal(transientAt(LASER_EMITTER_FLASH_DURATION_MS), undefined);
   assert.equal(visual.isAnimating, false);
+});
+
+test("移动途中已经销毁的光束不会在交互点造成伤害", () => {
+  const behavior = createBuiltinBehaviorRegistry().require(
+    "laser-beam-hazard",
+  );
+  const beam = {
+    id: 20,
+    type: RuntimeEntityTypeId.LASER_BEAM,
+    anchor: { x: 1, y: 0 },
+    state: {},
+  };
+  const actor = {
+    id: 10,
+    type: MapEntityTypeId.BOBBY,
+    anchor: { x: 0, y: 0 },
+    state: {},
+  };
+  const downed = [];
+  behavior.onEnter({
+    actor,
+    self: {
+      entity: beam,
+      presence: {
+        entityId: beam.id,
+        cell: beam.anchor,
+        facts: [],
+        stackOrder: 0,
+      },
+    },
+    query: {
+      entity: () => undefined,
+      entityHasFact: () => true,
+    },
+    commands: {
+      downActor: (entityId, reason) => downed.push({ entityId, reason }),
+    },
+  });
+
+  assert.deepEqual(downed, []);
 });
 
 test("把相向发生器推入同一直线后两者同时摧毁", () => {

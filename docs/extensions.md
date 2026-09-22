@@ -38,7 +38,7 @@ Novoban 和 LOMA 的 XSB 地图由 `tools/custom/sokoban-xsb.mjs` 转换。地�
 
 激光命中另一个 `laser-emitter` 时摧毁目标发生器及其光束。若两个发生器互相照射，它们在同一个 World tick 中一起摧毁；其它发生器随后按更新后的阻挡布局重新投影。
 
-发生器和所属光束在 gameplay 中立即销毁，并把销毁前的完整光路快照交给 Presentation。表现层以 `100ms` 明暗相间的节拍同步闪烁发生器与光束三次，总时长 `600ms`；该 transient visual 不延迟爆炸、碰撞或后续光路重算。
+发生器和所属光束在 gameplay 中立即销毁，并把销毁前的完整光路快照交给 Presentation。表现层以 `100ms` 为一相位，按亮、灭、亮完成三次明暗切换后消失，总时长 `300ms`。发生器与光束始终使用同一相位；销毁前已经建立的移动也会在交互点重新确认光束仍存在，因此遗留表现不参与碰撞或伤害。
 
 `laser-bomb` 是使用 Robo 2 `bombTickTick.png` 原图的可推动阻挡对象。激光命中后，炸弹摧毁自身以及上、右、下、左相邻格中的 `laser-stone`、`laser-mirror`、`laser-emitter` 和 `laser-bomb`；相邻炸弹继续以各自位置扩展十字范围。对角格、其它 Entity 与 Surface 保持不变。
 
