@@ -1,6 +1,7 @@
 import { MapEntityTypeId, type Direction } from "@bobby/model";
+import { RuntimeEntityTypeId } from "../runtime-types.js";
 import type { WorldQueryApi } from "../../world/behavior/WorldQueryApi.js";
-import { RuntimeEntityTypeId } from "../../entities/runtime-types.js";
+import type { EntityInstance } from "../../world/entity/EntityInstance.js";
 
 export type EnergyPropagationResult =
   | { readonly kind: "blocked" }
@@ -49,6 +50,23 @@ const ENERGY_TERRAIN = new Set<string>([
   RuntimeEntityTypeId.SHOVEL_CLEARED_GROUND,
 ]);
 
+const LASER_MIRROR_REFLECTIONS: Readonly<
+  Record<"slash" | "backslash", Readonly<Record<Direction, Direction>>>
+> = {
+  slash: {
+    up: "right",
+    right: "up",
+    down: "left",
+    left: "down",
+  },
+  backslash: {
+    up: "left",
+    left: "up",
+    down: "right",
+    right: "down",
+  },
+};
+
 /**
  * 解析 Energy 进入一个格子的结果。
  *
@@ -65,7 +83,7 @@ export function resolveEnergyPropagationAt(
   }
   if (energyObjectBlocksEntry(query, cell)) return { kind: "blocked" };
 
-  const reflected = originalMirrorReflectionAt(query, cell, incoming);
+  const reflected = energyReflectionAt(query, cell, incoming);
   if (reflected === false) return { kind: "blocked" };
   if (reflected !== null) {
     return { kind: "reflected", direction: reflected };
@@ -110,23 +128,39 @@ function energyObjectBlocksEntry(
   });
 }
 
-function originalMirrorReflectionAt(
+function energyReflectionAt(
   query: Pick<WorldQueryApi, "presencesAt" | "entity">,
   cell: { readonly x: number; readonly y: number },
   incoming: Direction,
 ): Direction | null | false {
   for (const presence of query.presencesAt(cell)) {
     const entity = query.entity(presence.entityId);
-    if (entity?.type !== MapEntityTypeId.MIRROR) continue;
-    const reflection: Partial<Record<Direction, Direction>> =
-      entity.state?.variant === "left-bottom"
-        ? { right: "down", up: "left" }
-        : entity.state?.variant === "right-top"
-          ? { left: "up", down: "right" }
-          : entity.state?.variant === "left-top"
-            ? { right: "up", down: "left" }
-            : { left: "down", up: "right" };
-    return reflection[incoming] ?? false;
+    if (!entity) continue;
+    const reflected = resolveEnergyReflection(entity, incoming);
+    if (reflected !== null) return reflected;
   }
   return null;
+}
+
+/** 单面 Mirror 与双面 LaserMirror 共用的 Energy 方向变换。 */
+export function resolveEnergyReflection(
+  entity: Readonly<EntityInstance>,
+  incoming: Direction,
+): Direction | null | false {
+  if (entity.type === MapEntityTypeId.LASER_MIRROR) {
+    const variant = entity.state?.variant === "backslash"
+      ? "backslash"
+      : "slash";
+    return LASER_MIRROR_REFLECTIONS[variant][incoming];
+  }
+  if (entity.type !== MapEntityTypeId.MIRROR) return null;
+  const reflection: Partial<Record<Direction, Direction>> =
+    entity.state?.variant === "left-bottom"
+      ? { right: "down", up: "left" }
+      : entity.state?.variant === "right-top"
+        ? { left: "up", down: "right" }
+        : entity.state?.variant === "left-top"
+          ? { right: "up", down: "left" }
+          : { left: "down", up: "right" };
+  return reflection[incoming] ?? false;
 }

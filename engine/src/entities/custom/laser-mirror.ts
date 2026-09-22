@@ -14,23 +14,6 @@ import {
 export type LaserMirrorVariant = "slash" | "backslash";
 
 const variants: readonly LaserMirrorVariant[] = ["slash", "backslash"];
-const reflections: Readonly<
-  Record<LaserMirrorVariant, Readonly<Record<Direction, Direction>>>
-> = {
-  slash: {
-    up: "right",
-    right: "up",
-    down: "left",
-    left: "down",
-  },
-  backslash: {
-    up: "left",
-    left: "up",
-    down: "right",
-    right: "down",
-  },
-};
-
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.LASER_MIRROR,
   presenceFacts: ["blocking", "pushable"],
@@ -65,16 +48,7 @@ export const laserMirror: EntityModule = defineEntityModule({
   },
 });
 
-export function reflectedLaserDirection(
-  entity: Readonly<EntityInstance>,
-  incoming: Direction,
-): Direction | null {
-  if (entity.type !== MapEntityTypeId.LASER_MIRROR) return null;
-  const variant = laserMirrorVariant(entity.state?.variant);
-  return reflections[variant][incoming];
-}
-
-/** 原版镜面只有朝向反光面的一侧会覆绘入射光。 */
+/** Robo 2 镜面按斜面朝向覆绘指定一侧的入射光。 */
 export function laserMirrorCoversIncoming(
   entity: Readonly<EntityInstance>,
   incoming: Direction,

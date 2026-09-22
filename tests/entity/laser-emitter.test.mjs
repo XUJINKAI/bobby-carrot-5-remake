@@ -174,7 +174,9 @@ test("激光从发生器沿固定方向延伸，并停在首个阻挡格", () =>
 
 test("Stump 在格子边界阻断激光", () => {
   const entities = [];
-  for (let x = 0; x < 5; x += 1) entities.push(ground(x, 0));
+  for (let x = 0; x < 5; x += 1) {
+    if (x !== 3) entities.push(ground(x, 0));
+  }
   entities.push(
     { type: MapEntityTypeId.LASER_EMITTER, direction: "right", x: 0, y: 0 },
     { type: MapEntityTypeId.STUMP, x: 3, y: 0, stackOrder: 1 },
@@ -203,6 +205,39 @@ test("Stump 在格子边界阻断激光", () => {
     state: { sourceId: 1, terminal: true },
   });
   assert.equal(terminal, null);
+});
+
+test("激光按 Energy 规则穿过 High Grass、Fence 和普通可推动物", () => {
+  const entities = [];
+  for (let x = 0; x < 8; x += 1) entities.push(ground(x, 0));
+  entities.push(
+    { type: MapEntityTypeId.LASER_EMITTER, direction: "right", x: 0, y: 0 },
+    { type: MapEntityTypeId.HIGH_GRASS, x: 2, y: 0, stackOrder: 1 },
+    { type: MapEntityTypeId.FENCE, x: 3, y: 0, stackOrder: 1 },
+    { type: MapEntityTypeId.PUSHABLE_BOX, x: 4, y: 0, stackOrder: 1 },
+    { type: MapEntityTypeId.EXIT, x: 6, y: 0, stackOrder: 1 },
+  );
+  const world = new World({
+    schemaVersion: 1,
+    width: 8,
+    height: 1,
+    entities,
+  });
+
+  assert.deepEqual(
+    beamEntities(world).map((beam) => ({
+      x: beam.anchor.x,
+      terminal: beam.state?.terminal,
+    })),
+    [
+      { x: 1, terminal: false },
+      { x: 2, terminal: false },
+      { x: 3, terminal: false },
+      { x: 4, terminal: false },
+      { x: 5, terminal: false },
+      { x: 6, terminal: true },
+    ],
+  );
 });
 
 test("Bobby 进入激光格八成时死亡", () => {

@@ -1,5 +1,6 @@
 import { MapEntityTypeId, type Direction } from "@bobby/model";
 import { ROBO2_GAMEPLAY_IMAGE_IDS } from "../../image/Robo2GameplayImages.js";
+import { resolveEnergyPropagationAt } from "../energy/EnergyPropagation.js";
 import type { TransientVisualDefinition } from "../../visual/VisualDefinition.js";
 import type { RuntimeActionDefinition } from "../../world/action/RuntimeAction.js";
 import type { Behavior } from "../../world/behavior/Behavior.js";
@@ -22,7 +23,6 @@ import {
 } from "./laser-emitter-destruction.js";
 import {
   laserMirrorCoversIncoming,
-  reflectedLaserDirection,
 } from "./laser-mirror.js";
 
 export interface LaserRayQuery {
@@ -287,14 +287,16 @@ export function traceLaserRay(
     const visitKey = `${cellKey(cell)}:${currentDirection}`;
     if (visited.has(visitKey)) break;
     visited.add(visitKey);
-    const outgoingDirection = reflectedDirectionAt(
+    const propagation = resolveEnergyPropagationAt(
       query,
       cell,
       currentDirection,
     );
-    const terminal = outgoingDirection
-      ? false
-      : laserStopsAt(query, cell);
+    const terminal = propagation.kind === "blocked" ||
+      laserTargetStopsAt(query, cell);
+    const outgoingDirection = !terminal && propagation.kind === "reflected"
+      ? propagation.direction
+      : undefined;
     segments.push({
       cell,
       direction: currentDirection,
@@ -394,25 +396,34 @@ function laserTopologySignature(query: WorldQueryApi): string {
   const entities = query.entitiesMatching({
     kind: "any",
     selectors: [
-      { kind: "fact", value: "blocking" },
       { kind: "type", value: MapEntityTypeId.EXIT },
       { kind: "type", value: MapEntityTypeId.MIRROR },
-      { kind: "type", value: MapEntityTypeId.STUMP },
       { kind: "type", value: MapEntityTypeId.LASER_MIRROR },
+      { kind: "type", value: MapEntityTypeId.LASER_STONE },
+      { kind: "type", value: MapEntityTypeId.LASER_EMITTER },
+      { kind: "type", value: MapEntityTypeId.LASER_BOMB },
+      { kind: "type", value: MapEntityTypeId.CRUMBLY_ROCK },
+      { kind: "type", value: MapEntityTypeId.DRAGON },
+      { kind: "type", value: MapEntityTypeId.COLOR_BLOCK },
+      { kind: "type", value: MapEntityTypeId.SNOW },
     ],
   });
   return entities
-    .filter((entity) => !query.entityHasFact(entity.id, "player"))
     .map((entity) => [
       entity.id,
       entity.type,
       entity.anchor.x,
       entity.anchor.y,
-      entity.type === MapEntityTypeId.LASER_EMITTER
+      entity.type === MapEntityTypeId.LASER_EMITTER ||
+        entity.type === MapEntityTypeId.DRAGON
         ? entity.direction ?? "right"
         : "",
-      entity.type === MapEntityTypeId.LASER_MIRROR
-        ? entity.state?.variant ?? "slash"
+      entity.type === MapEntityTypeId.LASER_MIRROR ||
+        entity.type === MapEntityTypeId.MIRROR
+        ? entity.state?.variant ?? ""
+        : "",
+      entity.type === MapEntityTypeId.COLOR_BLOCK
+        ? entity.state?.raised !== false
         : "",
     ].join(":"))
     .join("|");
@@ -504,36 +515,17 @@ function beamMatches(
   return beamKeys.every((key, index) => key === rayKeys[index]);
 }
 
-function laserStopsAt(query: LaserRayQuery, cell: CellPosition): boolean {
-  return query.presencesAt(cell).some((presence) => {
-    const entity = query.entity(presence.entityId);
-    if (!entity || entity.type === RuntimeEntityTypeId.LASER_BEAM) return false;
-    // Bobby 的 blocking 只约束空间占用；激光穿过玩家并由 hazard 单独结算。
-    if (presence.facts.includes("player")) return false;
-    if (
-      entity.type === MapEntityTypeId.EXIT ||
-      entity.type === MapEntityTypeId.MIRROR ||
-      entity.type === MapEntityTypeId.STUMP
-    ) {
-      return true;
-    }
-    if (entity.type === MapEntityTypeId.LASER_MIRROR) return false;
-    return presence.facts.includes("blocking");
-  });
-}
-
-function reflectedDirectionAt(
+function laserTargetStopsAt(
   query: LaserRayQuery,
   cell: CellPosition,
-  incoming: Direction,
-): Direction | null {
-  for (const presence of query.presencesAt(cell)) {
+): boolean {
+  return query.presencesAt(cell).some((presence) => {
     const entity = query.entity(presence.entityId);
-    if (!entity) continue;
-    const reflected = reflectedLaserDirection(entity, incoming);
-    if (reflected) return reflected;
-  }
-  return null;
+    return entity?.type === MapEntityTypeId.EXIT ||
+      entity?.type === MapEntityTypeId.LASER_STONE ||
+      entity?.type === MapEntityTypeId.LASER_EMITTER ||
+      entity?.type === MapEntityTypeId.LASER_BOMB;
+  });
 }
 
 function mirrorAt(

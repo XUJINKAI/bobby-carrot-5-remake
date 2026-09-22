@@ -391,3 +391,40 @@ test("Fireball 按四种 Mirror 语义 variant 反射，并拒绝其余入射方
     }
   }
 });
+
+test("Fireball 按两种 LaserMirror variant 双面反射", () => {
+  const reflections = {
+    slash: { up: "right", right: "up", down: "left", left: "down" },
+    backslash: { up: "left", left: "up", down: "right", right: "down" },
+  };
+  const starts = {
+    left: { x: 2, y: 1 },
+    right: { x: 0, y: 1 },
+    up: { x: 1, y: 2 },
+    down: { x: 1, y: 0 },
+  };
+  for (const [variant, table] of Object.entries(reflections)) {
+    for (const [incoming, start] of Object.entries(starts)) {
+      const entities = [];
+      for (let y = 0; y < 3; y += 1) {
+        for (let x = 0; x < 3; x += 1) {
+          entities.push({ type: "grass", variant: "ts-10-1", x, y });
+        }
+      }
+      entities.push(
+        { type: MapEntityTypeId.LASER_MIRROR, variant, x: 1, y: 1 },
+        { type: RuntimeEntityTypeId.FIREBALL, ...start, direction: incoming },
+      );
+      const world = new World({ schemaVersion: 1, width: 3, height: 3, entities });
+      update(world, 1, 1);
+      update(world, 2, FIREBALL_MOVEMENT.cellMs);
+      const fireball = world.query.entitiesMatching({
+        kind: "type",
+        value: RuntimeEntityTypeId.FIREBALL,
+      })[0];
+
+      assert.deepEqual(fireball.anchor, { x: 1, y: 1 }, `${variant}/${incoming}`);
+      assert.equal(fireball.direction, table[incoming], `${variant}/${incoming}`);
+    }
+  }
+});

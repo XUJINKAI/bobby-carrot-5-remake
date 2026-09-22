@@ -1,5 +1,5 @@
 import { type Direction } from "@bobby/model";
-import { resolveEnergyPropagationAt } from "../../mechanism/energy/EnergyPropagation.js";
+import { resolveEnergyPropagationAt } from "../energy/EnergyPropagation.js";
 import type {
   RuntimeActionDefinition,
   RuntimeActionInstance,

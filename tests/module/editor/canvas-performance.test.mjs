@@ -173,6 +173,9 @@ test("Editor Canvas 复用 Engine 光路投影且不污染可编辑空间", () =
     width: 5,
     height: 1,
     entities: [
+      { type: "grass", variant: "ts-10-1", x: 0, y: 0 },
+      { type: "grass", variant: "ts-10-1", x: 1, y: 0 },
+      { type: "grass", variant: "ts-10-1", x: 2, y: 0 },
       { type: "laser-emitter", direction: "right", x: 0, y: 0 },
       { type: "stump", x: 3, y: 0 },
     ],
@@ -220,6 +223,45 @@ test("Editor Canvas 复用 Engine 光路投影且不污染可编辑空间", () =
   renderer.render(state, 700);
   assert.notEqual(target.strokes()[0].color, target.strokes()[2].color);
   assert.notEqual(target.strokes()[0].width, target.strokes()[2].width);
+});
+
+test("Editor 光路按 Energy 规则穿过覆盖物并由原版 Mirror 反射", () => {
+  const entities = [];
+  for (let y = 0; y < 3; y += 1) {
+    for (let x = 0; x < 5; x += 1) {
+      entities.push({ type: "grass", variant: "ts-10-1", x, y });
+    }
+  }
+  entities.push(
+    { type: "laser-emitter", direction: "right", x: 0, y: 1 },
+    { type: "high-grass", x: 1, y: 1, stackOrder: 1 },
+    { type: "fence", x: 2, y: 1, stackOrder: 1 },
+    { type: "mirror", variant: "left-bottom", x: 3, y: 1 },
+  );
+  const preview = new EditorPreview({
+    schemaVersion: 1,
+    meta: { name: "Energy 光路预览" },
+    width: 5,
+    height: 3,
+    entities,
+  }, builtinEngineEnvironment);
+
+  assert.deepEqual(
+    preview.renderEntities.all()
+      .filter((entity) => entity.type === "laser-beam")
+      .map((entity) => ({
+        x: entity.anchor.x,
+        y: entity.anchor.y,
+        direction: entity.direction,
+        outgoingDirection: entity.state?.outgoingDirection,
+      })),
+    [
+      { x: 1, y: 1, direction: "right", outgoingDirection: undefined },
+      { x: 2, y: 1, direction: "right", outgoingDirection: undefined },
+      { x: 3, y: 1, direction: "right", outgoingDirection: "down" },
+      { x: 3, y: 2, direction: "down", outgoingDirection: undefined },
+    ],
+  );
 });
 
 test("放置预览保留邻格与多格身份，并隔离替换结果", () => {
