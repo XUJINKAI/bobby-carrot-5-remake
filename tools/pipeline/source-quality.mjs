@@ -237,6 +237,7 @@ function checkRepositoryStructure() {
   for (const file of [
     "custom-maps/loma-pushbox/01/01-01.json",
     "custom-maps/novoban-pushbox/01.json",
+    "custom-maps/robo2/01.json",
   ]) {
     const ignored = spawnSync("git", ["check-ignore", "--quiet", file], {
       cwd: root,

@@ -6,10 +6,12 @@ import { root } from "../../lib/fs.mjs";
 import {
   decodeRobo2Archive,
   ROBO2_A1_SHA256,
+  ROBO2_SOURCE_FILE,
 } from "./archive.mjs";
 import { convertRobo2Level } from "./convert.mjs";
 
 const outputDirectory = path.join(root, "custom-maps/robo2");
+export { ROBO2_SOURCE_FILE } from "./archive.mjs";
 
 export function buildRobo2Maps(input) {
   const archive = decodeRobo2Archive(input);
@@ -47,10 +49,9 @@ function isMainModule() {
 }
 
 if (isMainModule()) {
-  const source = process.argv[2];
-  if (!source) {
-    throw new Error("用法：node tools/custom/robo2/generate.mjs <robo2.jar>");
-  }
-  const maps = writeRobo2Maps(fs.readFileSync(path.resolve(source)));
+  const source = process.argv[2]
+    ? path.resolve(process.argv[2])
+    : ROBO2_SOURCE_FILE;
+  const maps = writeRobo2Maps(fs.readFileSync(source));
   console.log(`构建 Robo 2：${maps.length} 张地图。`);
 }

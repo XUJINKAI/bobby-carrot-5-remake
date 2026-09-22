@@ -1,7 +1,11 @@
 import crypto from "node:crypto";
+import { fileURLToPath } from "node:url";
 import { readZipEntry } from "../../lib/zip-patch.mjs";
 import { decodeRobo2LevelRecord } from "./format.mjs";
 
+export const ROBO2_SOURCE_FILE = fileURLToPath(
+  new URL("./robo2.jar", import.meta.url),
+);
 export const ROBO2_A1_SHA256 =
   "089499b7d5bbd3438ec970ac4ec42ff9e71b92a79824881bb2583b608b042be3";
 

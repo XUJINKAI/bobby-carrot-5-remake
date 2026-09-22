@@ -181,6 +181,19 @@ assets/maps/novoban-pushbox/<map-id>.json
 
 Novoban 的 50 张地图按源文件顺序生成 `01` ～ `50`；原注释标题成为地图展示名，作者统一保留为 François Marques。版权与来源边界见根目录 `THIRD_PARTY_ASSETS.md`。
 
+Robo 2 使用受 Git 管理的原始 J2ME 包作为唯一地图源：
+
+```text
+tools/custom/robo2/robo2.jar
+  ↓ tools/custom/robo2/generate.mjs
+custom-maps/robo2/*.json              # ignored / generated
+  ↓ tools/custom/prepare.mjs
+assets/maps/robo2/index.json
+assets/maps/robo2/<map-id>.json
+```
+
+生成器在读取 25 条 `data/<index>` 记录前校验固定 SHA-256，并只在来源工具边界处理 JAR byte、列优先格子和半字节 tile code。Robo 2 JAR、关卡及转换结果的版权边界见根目录 `THIRD_PARTY_ASSETS.md`。
+
 LOMA 与 Novoban 的 XSB 字符转换由 `tools/custom/sokoban-xsb.mjs` 统一负责。每张地图从
 `PUSHBOX_TERRAIN_TABLE` 稳定选择一个主题，并按 `ground / boundary / obstacle` 类别与坐标
 选择具体素材。矩形外框使用 `boundary`，内部墙与外部空白填充使用 `obstacle`；所有可行走

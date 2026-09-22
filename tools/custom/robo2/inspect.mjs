@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import {
   decodeRobo2Archive,
   ROBO2_A1_SHA256,
+  ROBO2_SOURCE_FILE,
 } from "./archive.mjs";
 
 export function inspectRobo2Jar(jarPath) {
@@ -16,11 +17,10 @@ export function inspectRobo2Jar(jarPath) {
 }
 
 function main() {
-  const jarPath = process.argv[2];
-  if (!jarPath) {
-    throw new Error("用法：node tools/custom/robo2/inspect.mjs <robo2.jar>");
-  }
-  const result = inspectRobo2Jar(path.resolve(jarPath));
+  const jarPath = process.argv[2]
+    ? path.resolve(process.argv[2])
+    : ROBO2_SOURCE_FILE;
+  const result = inspectRobo2Jar(jarPath);
   console.log(JSON.stringify(result, null, 2));
 }
 

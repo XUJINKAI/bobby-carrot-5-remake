@@ -8,6 +8,7 @@ const generatedDirectories = [
   "original/adapted",
   "custom-maps/loma-pushbox",
   "custom-maps/novoban-pushbox",
+  "custom-maps/robo2",
   "assets/art/hd",
   "assets/audio/midi",
   "assets/maps",

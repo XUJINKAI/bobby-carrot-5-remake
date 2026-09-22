@@ -60,6 +60,7 @@ export function prepareAssets({
   run(process.execPath, ["tools/original/adapt.mjs"]);
   run(process.execPath, ["tools/original/adventure-catalog.mjs"]);
   fs.mkdirSync(assets, { recursive: true });
+  run(process.execPath, ["tools/custom/robo2/generate.mjs"]);
   run(process.execPath, ["tools/custom/loma-pushbox.mjs"]);
   run(process.execPath, ["tools/custom/novoban-pushbox.mjs"]);
   const customCollections = prepareCustomCollections({

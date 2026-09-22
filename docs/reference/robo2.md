@@ -4,10 +4,10 @@
 
 ## 研究输入
 
-当前研究输入由用户放在 `tmp/`，不作为仓库输入提交：
+当前研究与构建输入固定保存在：
 
 ```text
-Robo 2 (2004)(HeroCraft)(v1.0)(a1).jar
+tools/custom/robo2/robo2.jar
 SHA-256 089499b7d5bbd3438ec970ac4ec42ff9e71b92a79824881bb2583b608b042be3
 MIDlet-Version 1.0
 MIDlet-Vendor HeroCraft
@@ -52,10 +52,10 @@ u4 cells[width * height]
 使用已确认的 JAR 生成 25 张语义地图：
 
 ```sh
-node tools/custom/robo2/generate.mjs "tmp/Robo 2 (2004)(HeroCraft)(v1.0)(a1).jar"
+node tools/custom/robo2/generate.mjs
 ```
 
-生成器校验 JAR SHA-256，输出固定为 `custom-maps/robo2/01.json`～`25.json`。输出只包含 `LevelMap` 语义、展示 metadata 与终点胜利规则，不携带 JAR 路径、record 编号或 archive hash。
+生成器校验 JAR SHA-256，输出固定为被 Git 忽略的 `custom-maps/robo2/01.json`～`25.json`。`npm run assets`、`npm test` 与 `npm run verify` 都会先从该 JAR 重建地图，再进入统一的 custom collection 构建流程。输出只包含 `LevelMap` 语义、展示 metadata 与终点胜利规则，不携带 JAR 路径、record 编号或 archive hash。
 
 ## 已确认 gameplay
 
