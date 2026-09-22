@@ -10,6 +10,7 @@ import type {
 import type { EntityPresence } from "../../world/spatial/EntityPresence.js";
 import { defineEntityModule, type EntityModule } from "../EntityModule.js";
 import { RuntimeEntityTypeId } from "../runtime-types.js";
+import { laserExplosionTargetIds } from "./laser-bomb.js";
 import { reflectedLaserDirection } from "./laser-mirror.js";
 
 interface LaserRayQuery {
@@ -28,27 +29,23 @@ interface LaserRaySegment {
 const laserEmitterBehavior: Behavior = {
   id: "laser-emitter",
   onInitialize({ self, query, commands }) {
-    replaceOwnedBeam(query, commands, self.entity);
+    const emitters = laserEmitters(query);
+    if (emitters[0]?.id !== self.entity.id) return;
+    for (const emitter of emitters) {
+      replaceOwnedBeam(commands, emitter, [], traceEmitterRay(query, emitter));
+    }
+    commands.spawn({
+      type: RuntimeEntityTypeId.LASER_SYSTEM,
+      x: self.entity.anchor.x,
+      y: self.entity.anchor.y,
+    });
   },
+};
+
+const laserSystemBehavior: Behavior = {
+  id: "laser-system",
   onTick({ self, query, commands }) {
-    const ray = traceLaserRay(
-      query,
-      self.entity.anchor,
-      self.entity.direction ?? "right",
-    );
-    if (emitterIsHitByLaser(query, self.entity.id)) {
-      destroyLaserEmitter(query, commands, self.entity.id);
-    } else {
-      const changed = replaceOwnedBeam(query, commands, self.entity, ray);
-      if (changed) {
-        downActorsInRay(query, commands, ray);
-      }
-    }
-  },
-  onDestroy({ self, query, commands }) {
-    for (const beam of ownedBeamEntities(query, self.entity.id)) {
-      commands.destroy(beam.id);
-    }
+    updateLaserSystem(query, commands, self.entity);
   },
 };
 
@@ -138,6 +135,28 @@ export const laserBeam: EntityModule = defineEntityModule({
   },
 });
 
+/** 每个 World 唯一的激光调度 Entity，集中计算光路、命中与爆炸。 */
+export const laserSystem: EntityModule = defineEntityModule({
+  definition: {
+    type: RuntimeEntityTypeId.LASER_SYSTEM,
+    presenceFacts: [],
+    state: [
+      {
+        key: "topologySignature",
+        kind: "string",
+        label: "光路拓扑签名",
+        default: "",
+      },
+    ],
+    presentation: { name: "Laser System" },
+  },
+  visual: {
+    id: RuntimeEntityTypeId.LASER_SYSTEM,
+    resolve: () => null,
+  },
+  behaviorBindings: [{ behavior: laserSystemBehavior }],
+});
+
 export function traceLaserRay(
   query: LaserRayQuery,
   origin: CellPosition,
@@ -176,52 +195,147 @@ export function traceLaserRay(
   return segments;
 }
 
-export function destroyLaserEmitter(
+function updateLaserSystem(
   query: WorldQueryApi,
   commands: WorldCommandApi,
-  emitterId: EntityId,
+  system: Readonly<EntityInstance>,
 ): void {
-  for (const beam of ownedBeamEntities(query, emitterId)) {
-    commands.destroy(beam.id);
+  const topologySignature = laserTopologySignature(query);
+  if (system.state?.topologySignature === topologySignature) return;
+
+  const emitters = laserEmitters(query);
+  const rays = new Map<EntityId, readonly LaserRaySegment[]>();
+  const hitEmitters = new Set<EntityId>();
+  const hitBombs = new Set<EntityId>();
+  for (const emitter of emitters) {
+    const ray = traceEmitterRay(query, emitter);
+    rays.set(emitter.id, ray);
+    collectLaserTargets(query, ray, hitEmitters, hitBombs);
   }
-  commands.destroy(emitterId);
+
+  const explosionTargets = laserExplosionTargetIds(query, hitBombs);
+  const destroyedEmitters = new Set(hitEmitters);
+  for (const entityId of explosionTargets) {
+    if (query.entity(entityId)?.type === MapEntityTypeId.LASER_EMITTER) {
+      destroyedEmitters.add(entityId);
+    }
+  }
+
+  const beamsBySource = groupBeamEntities(query);
+  for (const entityId of [...explosionTargets].sort(compareEntityIds)) {
+    if (destroyedEmitters.has(entityId)) continue;
+    commands.destroy(entityId);
+  }
+  for (const emitterId of [...destroyedEmitters].sort(compareEntityIds)) {
+    destroyLaserEmitter(commands, emitterId, beamsBySource.get(emitterId) ?? []);
+  }
+
+  for (const emitter of emitters) {
+    if (destroyedEmitters.has(emitter.id)) continue;
+    const ray = rays.get(emitter.id) ?? [];
+    const changed = replaceOwnedBeam(
+      commands,
+      emitter,
+      beamsBySource.get(emitter.id) ?? [],
+      ray,
+    );
+    if (changed) downActorsInRay(query, commands, ray);
+  }
+  commands.setState(system.id, { topologySignature });
 }
 
-function emitterIsHitByLaser(
+function laserTopologySignature(query: WorldQueryApi): string {
+  const entities = query.entitiesMatching({
+    kind: "any",
+    selectors: [
+      { kind: "fact", value: "blocking" },
+      { kind: "type", value: MapEntityTypeId.EXIT },
+      { kind: "type", value: MapEntityTypeId.MIRROR },
+      { kind: "type", value: MapEntityTypeId.LASER_MIRROR },
+    ],
+  });
+  return entities.map((entity) => [
+    entity.id,
+    entity.type,
+    entity.anchor.x,
+    entity.anchor.y,
+    entity.type === MapEntityTypeId.LASER_EMITTER
+      ? entity.direction ?? "right"
+      : "",
+    entity.type === MapEntityTypeId.LASER_MIRROR
+      ? entity.state?.variant ?? "slash"
+      : "",
+  ].join(":"))
+    .join("|");
+}
+
+function laserEmitters(
   query: WorldQueryApi,
-  emitterId: EntityId,
-): boolean {
-  for (const source of query.entitiesMatching({
+): readonly Readonly<EntityInstance>[] {
+  return query.entitiesMatching({
     kind: "type",
     value: MapEntityTypeId.LASER_EMITTER,
-  })) {
-    const ray = traceLaserRay(
-      query,
-      source.anchor,
-      source.direction ?? "right",
-    );
-    for (const segment of ray) {
-      if (
-        query.presencesAt(segment.cell).some(
-          (presence) => presence.entityId === emitterId,
-        )
-      ) {
-        return true;
+  });
+}
+
+function traceEmitterRay(
+  query: LaserRayQuery,
+  emitter: Readonly<EntityInstance>,
+): readonly LaserRaySegment[] {
+  return traceLaserRay(
+    query,
+    emitter.anchor,
+    emitter.direction ?? "right",
+  );
+}
+
+function collectLaserTargets(
+  query: WorldQueryApi,
+  ray: readonly LaserRaySegment[],
+  hitEmitters: Set<EntityId>,
+  hitBombs: Set<EntityId>,
+): void {
+  for (const segment of ray) {
+    for (const presence of query.presencesAt(segment.cell)) {
+      const entity = query.entity(presence.entityId);
+      if (entity?.type === MapEntityTypeId.LASER_EMITTER) {
+        hitEmitters.add(entity.id);
+      } else if (entity?.type === MapEntityTypeId.LASER_BOMB) {
+        hitBombs.add(entity.id);
       }
     }
   }
-  return false;
+}
+
+function groupBeamEntities(
+  query: WorldQueryApi,
+): ReadonlyMap<EntityId, readonly Readonly<EntityInstance>[]> {
+  const result = new Map<EntityId, Readonly<EntityInstance>[]>();
+  for (const beam of laserBeamEntities(query)) {
+    const sourceId = beam.state?.sourceId;
+    if (typeof sourceId !== "number") continue;
+    const group = result.get(sourceId) ?? [];
+    group.push(beam);
+    result.set(sourceId, group);
+  }
+  return result;
+}
+
+function destroyLaserEmitter(
+  commands: WorldCommandApi,
+  emitterId: EntityId,
+  beams: readonly Readonly<EntityInstance>[],
+): void {
+  for (const beam of beams) commands.destroy(beam.id);
+  commands.destroy(emitterId);
 }
 
 function replaceOwnedBeam(
-  query: WorldQueryApi,
   commands: WorldCommandApi,
   emitter: Readonly<EntityInstance>,
-  tracedRay?: readonly LaserRaySegment[],
+  current: readonly Readonly<EntityInstance>[],
+  ray: readonly LaserRaySegment[],
 ): boolean {
-  const direction = emitter.direction ?? "right";
-  const ray = tracedRay ?? traceLaserRay(query, emitter.anchor, direction);
-  const current = ownedBeamEntities(query, emitter.id);
   if (beamMatches(current, ray)) return false;
   for (const beam of current) {
     commands.destroy(beam.id);
@@ -260,14 +374,17 @@ function downActorsInRay(
   }
 }
 
-function ownedBeamEntities(
+function laserBeamEntities(
   query: WorldQueryApi,
-  sourceId: EntityId,
 ): readonly Readonly<EntityInstance>[] {
   return query.entitiesMatching({
     kind: "type",
     value: RuntimeEntityTypeId.LASER_BEAM,
-  }).filter((entity) => entity.state?.sourceId === sourceId);
+  });
+}
+
+function compareEntityIds(left: EntityId, right: EntityId): number {
+  return left - right;
 }
 
 function beamMatches(

@@ -1,6 +1,6 @@
 import type { EntityModule } from "../EntityModule.js";
 import { laserBomb } from "./laser-bomb.js";
-import { laserBeam, laserEmitter } from "./laser-emitter.js";
+import { laserBeam, laserEmitter, laserSystem } from "./laser-emitter.js";
 import { laserMirror } from "./laser-mirror.js";
 import { portal } from "./portal.js";
 import { pushGoal } from "./push-goal.js";
@@ -13,6 +13,7 @@ export const customEntityModules: readonly EntityModule[] = [
   pushableStone,
   laserEmitter,
   laserBeam,
+  laserSystem,
   laserMirror,
   laserBomb,
   portal,

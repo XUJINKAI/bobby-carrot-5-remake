@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { MapEntityTypeId } from "@bobby/model";
+import {
+  createBuiltinBehaviorRegistry,
+  createBuiltinEntityRegistry,
+} from "../../engine/dist/entities/registry.js";
 import { RuntimeEntityTypeId } from "../../engine/dist/entities/runtime-types.js";
 import { World } from "../support/engine/World.mjs";
 
@@ -241,4 +245,51 @@ test("把相向发生器推入同一直线后两者同时摧毁", () => {
 
   assert.deepEqual(emitterEntities(world), []);
   assert.deepEqual(beamEntities(world), []);
+});
+
+test("多发生器地图由单个激光调度器统一更新", () => {
+  const entities = [];
+  for (let y = 0; y < 5; y += 1) {
+    for (let x = 0; x < 12; x += 1) entities.push(ground(x, y));
+  }
+  for (let x = 0; x < 12; x += 1) {
+    entities.push(
+      { type: MapEntityTypeId.LASER_EMITTER, direction: "down", x, y: 0 },
+      { type: MapEntityTypeId.PUSHABLE_STONE, x, y: 2 },
+    );
+  }
+  entities.push({ type: MapEntityTypeId.BOBBY, x: 0, y: 4 });
+  const world = new World({
+    schemaVersion: 1,
+    width: 12,
+    height: 5,
+    entities,
+  });
+
+  assert.equal(
+    world.query.entitiesMatching({
+      kind: "type",
+      value: RuntimeEntityTypeId.LASER_SYSTEM,
+    }).length,
+    1,
+  );
+  assert.equal(beamEntities(world).length, 24);
+
+  const definitions = createBuiltinEntityRegistry();
+  const behaviors = createBuiltinBehaviorRegistry();
+  const emitterBehaviorId = definitions
+    .require(MapEntityTypeId.LASER_EMITTER).behaviors[0];
+  const systemBehaviorId = definitions
+    .require(RuntimeEntityTypeId.LASER_SYSTEM).behaviors[0];
+  assert.equal(behaviors.require(emitterBehaviorId).onTick, undefined);
+  assert.equal(typeof behaviors.require(systemBehaviorId).onTick, "function");
+  assert.deepEqual(
+    definitions.require(MapEntityTypeId.LASER_BOMB).behaviors ?? [],
+    [],
+  );
+
+  const firstUpdate = world.update({ tick: 0, stepMs: 16 });
+  const secondUpdate = world.update({ tick: 1, stepMs: 16 });
+  assert.equal(firstUpdate.mutations.stateChanged.length, 1);
+  assert.deepEqual(secondUpdate.mutations.stateChanged, []);
 });
