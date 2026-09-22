@@ -107,7 +107,7 @@ test("Robo 2 theme 只改变 Surface 映射", () => {
   assert.deepEqual(surfaces.map((entities) => entities.map(({ x, y, ...entity }) => entity)), [
     [
       { type: "snow-cloud", variant: "ts-8-16" },
-      { type: "starfield", variant: "empty" },
+      { type: "snowy-rock" },
       { type: "snow-cloud", variant: "ts-8-16" },
     ],
     [
@@ -128,37 +128,12 @@ test("Robo 2 theme 只改变 Surface 映射", () => {
   ]);
 });
 
-test("Robo 2 太空和沙地墙面按坐标稳定选取视觉", () => {
+test("Robo 2 沙地墙面按坐标稳定选取视觉", () => {
   const tiles = [
     ROBO2_TILE_CODE.PLAYER,
     ...Array.from({ length: 998 }, () => ROBO2_TILE_CODE.WALL),
     ROBO2_TILE_CODE.EXIT,
   ];
-  const space = convertRobo2Level({
-    width: 100,
-    height: 10,
-    theme: 0,
-    tiles,
-  }, {
-    id: "space-distribution",
-    title: "Space Distribution",
-  });
-  const repeatedSpace = convertRobo2Level({
-    width: 100,
-    height: 10,
-    theme: 0,
-    tiles,
-  }, {
-    id: "space-distribution",
-    title: "Space Distribution",
-  });
-  assert.deepEqual(repeatedSpace, space);
-
-  const starCounts = countVariants(space, "starfield");
-  assert.ok((starCounts.get("empty") ?? 0) > 750);
-  assert.ok((starCounts.get("small-star") ?? 0) > 50);
-  assert.ok((starCounts.get("large-star") ?? 0) > 20);
-
   const sand = convertRobo2Level({
     width: 100,
     height: 10,
@@ -168,12 +143,24 @@ test("Robo 2 太空和沙地墙面按坐标稳定选取视觉", () => {
     id: "sand-distribution",
     title: "Sand Distribution",
   });
+  const repeatedSand = convertRobo2Level({
+    width: 100,
+    height: 10,
+    theme: 2,
+    tiles,
+  }, {
+    id: "sand-distribution",
+    title: "Sand Distribution",
+  });
+  assert.deepEqual(repeatedSand, sand);
+
+  const cactusCounts = countVariants(sand, "cactus");
   assert.deepEqual(
-    new Set(sand.entities
-      .filter((entity) => entity.type === "cactus")
-      .map((entity) => entity.variant)),
+    new Set(cactusCounts.keys()),
     new Set(["small", "round"]),
   );
+  assert.ok((cactusCounts.get("small") ?? 0) > 400);
+  assert.ok((cactusCounts.get("round") ?? 0) > 400);
 });
 
 test("Robo 2 转换要求唯一玩家与终点", () => {

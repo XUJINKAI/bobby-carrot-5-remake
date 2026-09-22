@@ -1,22 +1,15 @@
 import { ROBO2_TILE_CODE } from "./format.mjs";
 
+const SNOW_THEME = Object.freeze({
+  floor: Object.freeze([
+    surface({ type: "snow-cloud", variant: "ts-8-16" }),
+  ]),
+  wall: Object.freeze([surface({ type: "snowy-rock" })]),
+});
+
 const THEME_SURFACES = Object.freeze([
-  Object.freeze({
-    floor: Object.freeze([
-      surface({ type: "snow-cloud", variant: "ts-8-16" }),
-    ]),
-    wall: Object.freeze([
-      surface({ type: "starfield", variant: "large-star" }, 5),
-      surface({ type: "starfield", variant: "small-star" }, 10),
-      surface({ type: "starfield", variant: "empty" }, 85),
-    ]),
-  }),
-  Object.freeze({
-    floor: Object.freeze([
-      surface({ type: "snow-cloud", variant: "ts-8-16" }),
-    ]),
-    wall: Object.freeze([surface({ type: "snowy-rock" })]),
-  }),
+  SNOW_THEME,
+  SNOW_THEME,
   Object.freeze({
     floor: Object.freeze([surface({ type: "sand" })]),
     wall: Object.freeze([

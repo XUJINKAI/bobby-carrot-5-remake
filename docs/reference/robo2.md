@@ -51,11 +51,11 @@ u4 cells[width * height]
 
 记录解码位于 `tools/custom/robo2/format.mjs`，语义转换位于 `tools/custom/robo2/convert.mjs`；Robo 2 byte 与语义 Entity 的转换只能位于该来源工具边界。
 
-来源主题按 `0..3` 对应太空、冰雪、遗迹、森林，并使用兔子波比5重制版的语义 Surface 形成四套视觉：
+来源主题按 `0..3` 对应太空、冰雪、遗迹、森林。转换使用兔子波比5重制版的语义 Surface，并将来源 theme `0/1` 合并为同一套雪地视觉：
 
 | theme | 关卡 | 可通行地面 | 阻挡墙面 |
 | --- | --- | --- | --- |
-| `0` | 19～25 | `snow-cloud / ts-8-16` | `starfield` 的 `large-star / small-star / empty`，按 `5 / 10 / 85` 权重稳定选取 |
+| `0` | 19～25 | `snow-cloud / ts-8-16` | `snowy-rock` |
 | `1` | 13～18 | `snow-cloud / ts-8-16` | `snowy-rock` |
 | `2` | 7～12 | `sand` | `cactus / small / round` 等概率稳定选取 |
 | `3` | 1～6 | `grass / ts-10-1` | `stump` |
