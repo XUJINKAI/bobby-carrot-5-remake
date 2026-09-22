@@ -14,6 +14,7 @@ import type { EntityPresence } from "../../world/spatial/EntityPresence.js";
 import { defineEntityModule, type EntityModule } from "../EntityModule.js";
 import { RuntimeEntityTypeId } from "../runtime-types.js";
 import { armLaserBombChain } from "./laser-bomb.js";
+import { resolveLaserAppearance } from "./laser-appearance.js";
 import {
   destroyLaserEmitter,
   groupLaserBeamsBySource,
@@ -120,7 +121,7 @@ export const laserEmitter: EntityModule = defineEntityModule({
     eventType: "laser-emitter-destroyed",
     durationMs: LASER_EMITTER_FLASH_DURATION_MS,
     renderPass: "world-effect",
-    resolve({ event, progress }) {
+    resolve({ event, progress, time }) {
       const phase = Math.min(
         LASER_EMITTER_FLASH_PHASE_COUNT - 1,
         Math.floor(progress * LASER_EMITTER_FLASH_PHASE_COUNT),
@@ -139,7 +140,15 @@ export const laserEmitter: EntityModule = defineEntityModule({
           {
             kind: "canvas",
             draw: (context, x, y, size) =>
-              drawLaserSnapshot(context, x, y, size, segments),
+              drawLaserSnapshot(
+                context,
+                x,
+                y,
+                size,
+                segments,
+                event.entityId ?? 0,
+                time.nowMs,
+              ),
           },
         ],
       };
@@ -167,7 +176,7 @@ export const laserBeam: EntityModule = defineEntityModule({
   visual: {
     id: RuntimeEntityTypeId.LASER_BEAM,
     renderPass: "world-effect",
-    resolve: ({ entity, query }) => {
+    resolve: ({ entity, query, time }) => {
       if (entity.state?.terminal === true) return null;
       const direction = entity.direction ?? "right";
       const mirror = mirrorAt(query, entity.anchor);
@@ -186,6 +195,8 @@ export const laserBeam: EntityModule = defineEntityModule({
               size,
               direction,
               directionState(entity.state?.outgoingDirection),
+              numericState(entity.state?.sourceId),
+              time?.nowMs ?? 0,
             ),
         }],
       };
@@ -528,6 +539,10 @@ function directionState(value: unknown): Direction | null {
   return null;
 }
 
+function numericState(value: unknown): number {
+  return typeof value === "number" && Number.isFinite(value) ? value : 0;
+}
+
 interface LaserFlashSegment {
   x: number;
   y: number;
@@ -571,6 +586,8 @@ function drawLaserSnapshot(
   y: number,
   size: number,
   segments: readonly LaserFlashSegment[],
+  sourceId: number,
+  nowMs: number,
 ): void {
   for (const segment of segments) {
     if (segment.terminal) continue;
@@ -581,6 +598,8 @@ function drawLaserSnapshot(
       size,
       segment.direction,
       segment.outgoingDirection ?? null,
+      sourceId,
+      nowMs,
     );
   }
 }
@@ -592,6 +611,8 @@ function drawLaserLine(
   size: number,
   direction: Direction,
   outgoingDirection: Direction | null = null,
+  sourceId = 0,
+  nowMs = 0,
 ): void {
   const vector = directionVector(direction);
   const outgoingVector = directionVector(outgoingDirection ?? direction);
@@ -601,9 +622,10 @@ function drawLaserLine(
   const startY = centerY - vector.y * size / 2;
   const endX = centerX + outgoingVector.x * size / 2;
   const endY = centerY + outgoingVector.y * size / 2;
+  const appearance = resolveLaserAppearance(sourceId, nowMs);
   context.save();
-  context.strokeStyle = "#ff0000";
-  context.lineWidth = Math.max(1, size / 12);
+  context.strokeStyle = appearance.color;
+  context.lineWidth = Math.max(1, size * appearance.widthRatio);
   context.beginPath();
   context.moveTo(startX, startY);
   if (outgoingDirection) {

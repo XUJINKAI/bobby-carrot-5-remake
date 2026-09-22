@@ -14,6 +14,7 @@ import {
   LASER_EMITTER_FLASH_DURATION_MS,
   LASER_EMITTER_FLASH_PHASE_MS,
 } from "../../engine/dist/entities/custom/laser-emitter.js";
+import { resolveLaserAppearance } from "../../engine/dist/entities/custom/laser-appearance.js";
 import { RuntimeEntityTypeId } from "../../engine/dist/entities/runtime-types.js";
 import { resolveLevelEntityVisualPreview } from "../../engine/dist/visual/preview.js";
 import { VisualRuntime } from "../../engine/dist/visual/VisualRuntime.js";
@@ -56,7 +57,7 @@ test("四向激光发生器使用对应的 Robo 2 原图", () => {
   }
 });
 
-test("激光使用单次纯红色描边", () => {
+test("激光按发生器身份循环渐变颜色与粗细", () => {
   const visual = resolveEntityVisualPreview({
     type: RuntimeEntityTypeId.LASER_BEAM,
     direction: "right",
@@ -83,8 +84,25 @@ test("激光使用单次纯红色描边", () => {
   };
   layer.draw(context, 0, 0, 36);
 
-  assert.deepEqual(strokes, [{ color: "#ff0000", width: 3 }]);
+  const expected = resolveLaserAppearance(1, 0);
+  assert.deepEqual(strokes, [{
+    color: expected.color,
+    width: 36 * expected.widthRatio,
+  }]);
   assert.equal(layer.renderPass, "world-effect");
+
+  assert.notDeepEqual(
+    resolveLaserAppearance(1, 0),
+    resolveLaserAppearance(2, 0),
+  );
+  assert.notDeepEqual(
+    resolveLaserAppearance(1, 0),
+    resolveLaserAppearance(1, 700),
+  );
+  assert.deepEqual(
+    resolveLaserAppearance(1, 700),
+    resolveLaserAppearance(1, 700),
+  );
 });
 
 test("激光只在空格的两侧边界之间绘制", () => {
@@ -411,7 +429,8 @@ test("发生器与所属光束在销毁后同步闪烁三次", () => {
       strokes.push(this.strokeStyle);
     },
   }, 0, 0, 12);
-  assert.deepEqual(strokes, ["#ff0000", "#ff0000"]);
+  const expectedColor = resolveLaserAppearance(target.id, start.nowMs).color;
+  assert.deepEqual(strokes, [expectedColor, expectedColor]);
 
   assert.equal(transientAt(LASER_EMITTER_FLASH_PHASE_MS), undefined);
   assert.ok(transientAt(LASER_EMITTER_FLASH_PHASE_MS * 2));

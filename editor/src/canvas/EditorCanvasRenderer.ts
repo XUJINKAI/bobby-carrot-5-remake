@@ -65,7 +65,7 @@ export class EditorCanvasRenderer {
     await this.images.preload();
   }
 
-  render(state: EditorCanvasRenderState): void {
+  render(state: EditorCanvasRenderState, nowMs = 0): void {
     const { level } = state;
     const cssWidth = level.width * EDITOR_TILE_SIZE;
     const cssHeight = level.height * EDITOR_TILE_SIZE;
@@ -100,6 +100,13 @@ export class EditorCanvasRenderer {
     const scene = buildSpatialScene({
       source,
       visuals: this.environment.visuals,
+      context: {
+        time: {
+          frame: Math.floor(nowMs / (1000 / 60)),
+          nowMs,
+          deltaMs: 0,
+        },
+      },
       resolveVisual: (definition, resolveContext) => {
         const editorVisual = definition.placeholder === "unknown"
           ? undefined

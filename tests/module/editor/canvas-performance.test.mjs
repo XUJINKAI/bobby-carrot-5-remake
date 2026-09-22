@@ -64,7 +64,7 @@ function laserCanvas() {
       path.push([x, y]);
     },
     stroke() {
-      strokes.push({ color: this.strokeStyle, path });
+      strokes.push({ color: this.strokeStyle, width: this.lineWidth, path });
     },
   };
   return {
@@ -199,21 +199,27 @@ test("Editor Canvas 复用 Engine 光路投影且不污染可编辑空间", () =
     atlasId: "atlas",
     image: () => ({ width: 768, height: 768 }),
   });
-  renderer.render({
+  const state = {
     level,
     tool: "select",
     placement: null,
     selection: null,
     hover: null,
     viewport: { zoom: 1, panX: 0, panY: 0 },
-  });
+  };
+  renderer.render(state, 0);
 
   assert.equal(target.strokes().length, 2);
-  assert.ok(target.strokes().every((stroke) => stroke.color === "#ff0000"));
+  assert.equal(new Set(target.strokes().map((stroke) => stroke.color)).size, 1);
+  assert.equal(new Set(target.strokes().map((stroke) => stroke.width)).size, 1);
   assert.deepEqual(target.strokes().map((stroke) => stroke.path), [
     [[38, 19], [76, 19]],
     [[76, 19], [114, 19]],
   ]);
+
+  renderer.render(state, 700);
+  assert.notEqual(target.strokes()[0].color, target.strokes()[2].color);
+  assert.notEqual(target.strokes()[0].width, target.strokes()[2].width);
 });
 
 test("放置预览保留邻格与多格身份，并隔离替换结果", () => {

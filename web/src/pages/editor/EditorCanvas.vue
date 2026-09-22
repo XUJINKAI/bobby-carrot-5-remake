@@ -46,6 +46,8 @@ const viewport = new EditorViewport();
 let renderer: EditorCanvasRenderer | null = null;
 let input: EditorCanvasInput | null = null;
 let renderFrame: number | null = null;
+let laserAnimationFrame: number | null = null;
+let lastLaserRenderMs = Number.NEGATIVE_INFINITY;
 let baseRenderPending = false;
 let interactionRenderPending = false;
 let resizeDrag: null | {
@@ -67,7 +69,26 @@ function render(): void {
     stage.value.style.width = `${props.level.width * EDITOR_TILE_SIZE}px`;
     stage.value.style.height = `${props.level.height * EDITOR_TILE_SIZE}px`;
   }
-  renderer?.render(renderState());
+  renderer?.render(renderState(), performance.now());
+}
+
+function hasAnimatedLasers(): boolean {
+  return props.level.entities.some((entity) => entity.type === "laser-emitter");
+}
+
+function scheduleLaserAnimation(): void {
+  if (laserAnimationFrame !== null || !hasAnimatedLasers()) return;
+  laserAnimationFrame = requestAnimationFrame(animateLasers);
+}
+
+function animateLasers(nowMs: number): void {
+  laserAnimationFrame = null;
+  if (!hasAnimatedLasers()) return;
+  if (nowMs - lastLaserRenderMs >= 1000 / 30) {
+    renderer?.render(renderState(), nowMs);
+    lastLaserRenderMs = nowMs;
+  }
+  scheduleLaserAnimation();
 }
 
 function scheduleRender(base: boolean): void {
@@ -173,7 +194,10 @@ function fitInitialViewport(): void {
 
 watch(
   () => [props.level, props.revision],
-  () => scheduleRender(true),
+  () => {
+    scheduleRender(true);
+    scheduleLaserAnimation();
+  },
 );
 
 watch(
@@ -205,11 +229,13 @@ onMounted(async () => {
   input.setEnabled(props.enabled);
   await renderer.load();
   await nextTick();
+  scheduleLaserAnimation();
   requestAnimationFrame(fitInitialViewport);
 });
 
 onBeforeUnmount(() => {
   if (renderFrame !== null) cancelAnimationFrame(renderFrame);
+  if (laserAnimationFrame !== null) cancelAnimationFrame(laserAnimationFrame);
   input?.destroy();
 });
 </script>
