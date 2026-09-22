@@ -155,7 +155,7 @@
       "x": 1,
       "y": 1,
       "stackOrder": 1,
-      "direction": "down"
+      "direction": "up"
     },
     {
       "type": "snow-cloud",
@@ -194,11 +194,11 @@
       "variant": "ts-7-9"
     },
     {
-      "type": "laser-mirror",
+      "type": "laser-emitter",
       "x": 7,
       "y": 1,
       "stackOrder": 1,
-      "variant": "slash"
+      "direction": "up"
     },
     {
       "type": "snowy-rock",
@@ -247,11 +247,11 @@
       "variant": "ts-7-9"
     },
     {
-      "type": "laser-mirror",
+      "type": "laser-emitter",
       "x": 15,
       "y": 1,
       "stackOrder": 1,
-      "variant": "backslash"
+      "direction": "up"
     },
     {
       "type": "snow-cloud",
@@ -294,7 +294,7 @@
       "x": 21,
       "y": 1,
       "stackOrder": 1,
-      "direction": "left"
+      "direction": "up"
     },
     {
       "type": "snowy-rock",
@@ -318,9 +318,10 @@
       "y": 2
     },
     {
-      "type": "snowy-rock",
+      "type": "snow-cloud",
       "x": 3,
-      "y": 2
+      "y": 2,
+      "variant": "ts-7-9"
     },
     {
       "type": "snow-cloud",
@@ -362,1235 +363,1228 @@
       "y": 2
     },
     {
-      "type": "snowy-rock",
-      "x": 11,
-      "y": 2
-    },
-    {
-      "type": "snowy-rock",
-      "x": 12,
-      "y": 2
-    },
-    {
-      "type": "snowy-rock",
-      "x": 13,
-      "y": 2
-    },
-    {
-      "type": "snowy-rock",
-      "x": 14,
-      "y": 2
-    },
-    {
       "type": "snow-cloud",
-      "x": 15,
+      "x": 11,
       "y": 2,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 16,
-      "y": 2,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 17,
-      "y": 2,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 18,
-      "y": 2,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snowy-rock",
-      "x": 19,
-      "y": 2
-    },
-    {
-      "type": "snowy-rock",
-      "x": 20,
-      "y": 2
-    },
-    {
-      "type": "snow-cloud",
-      "x": 21,
-      "y": 2,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snowy-rock",
-      "x": 22,
-      "y": 2
-    },
-    {
-      "type": "snowy-rock",
-      "x": 0,
-      "y": 3
-    },
-    {
-      "type": "snow-cloud",
-      "x": 1,
-      "y": 3,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 2,
-      "y": 3,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snowy-rock",
-      "x": 3,
-      "y": 3
-    },
-    {
-      "type": "snowy-rock",
-      "x": 4,
-      "y": 3
-    },
-    {
-      "type": "snow-cloud",
-      "x": 5,
-      "y": 3,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 6,
-      "y": 3,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 7,
-      "y": 3,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 8,
-      "y": 3,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 9,
-      "y": 3,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 10,
-      "y": 3,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 11,
-      "y": 3,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 12,
-      "y": 3,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 13,
-      "y": 3,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 14,
-      "y": 3,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 15,
-      "y": 3,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 16,
-      "y": 3,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 17,
-      "y": 3,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snowy-rock",
-      "x": 18,
-      "y": 3
-    },
-    {
-      "type": "snowy-rock",
-      "x": 19,
-      "y": 3
-    },
-    {
-      "type": "snow-cloud",
-      "x": 20,
-      "y": 3,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 21,
-      "y": 3,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snowy-rock",
-      "x": 22,
-      "y": 3
-    },
-    {
-      "type": "snowy-rock",
-      "x": 0,
-      "y": 4
-    },
-    {
-      "type": "snow-cloud",
-      "x": 1,
-      "y": 4,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 2,
-      "y": 4,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 3,
-      "y": 4,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snowy-rock",
-      "x": 4,
-      "y": 4
-    },
-    {
-      "type": "snowy-rock",
-      "x": 5,
-      "y": 4
-    },
-    {
-      "type": "snow-cloud",
-      "x": 6,
-      "y": 4,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 7,
-      "y": 4,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 8,
-      "y": 4,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 9,
-      "y": 4,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 10,
-      "y": 4,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 11,
-      "y": 4,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 12,
-      "y": 4,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 13,
-      "y": 4,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 14,
-      "y": 4,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 15,
-      "y": 4,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 16,
-      "y": 4,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snowy-rock",
-      "x": 17,
-      "y": 4
-    },
-    {
-      "type": "snowy-rock",
-      "x": 18,
-      "y": 4
-    },
-    {
-      "type": "snow-cloud",
-      "x": 19,
-      "y": 4,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 20,
-      "y": 4,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 21,
-      "y": 4,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snowy-rock",
-      "x": 22,
-      "y": 4
-    },
-    {
-      "type": "snowy-rock",
-      "x": 0,
-      "y": 5
-    },
-    {
-      "type": "snow-cloud",
-      "x": 1,
-      "y": 5,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 2,
-      "y": 5,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 3,
-      "y": 5,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 4,
-      "y": 5,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snowy-rock",
-      "x": 5,
-      "y": 5
-    },
-    {
-      "type": "snowy-rock",
-      "x": 6,
-      "y": 5
-    },
-    {
-      "type": "snow-cloud",
-      "x": 7,
-      "y": 5,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "laser-mirror",
-      "x": 7,
-      "y": 5,
-      "stackOrder": 1,
-      "variant": "slash"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 8,
-      "y": 5,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 9,
-      "y": 5,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "laser-mirror",
-      "x": 9,
-      "y": 5,
-      "stackOrder": 1,
-      "variant": "slash"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 10,
-      "y": 5,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 11,
-      "y": 5,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 12,
-      "y": 5,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 13,
-      "y": 5,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "laser-mirror",
-      "x": 13,
-      "y": 5,
-      "stackOrder": 1,
-      "variant": "backslash"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 14,
-      "y": 5,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 15,
-      "y": 5,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "laser-mirror",
-      "x": 15,
-      "y": 5,
-      "stackOrder": 1,
-      "variant": "backslash"
-    },
-    {
-      "type": "snowy-rock",
-      "x": 16,
-      "y": 5
-    },
-    {
-      "type": "snowy-rock",
-      "x": 17,
-      "y": 5
-    },
-    {
-      "type": "snow-cloud",
-      "x": 18,
-      "y": 5,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 19,
-      "y": 5,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 20,
-      "y": 5,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "laser-bomb",
-      "x": 20,
-      "y": 5,
-      "stackOrder": 1
-    },
-    {
-      "type": "snow-cloud",
-      "x": 21,
-      "y": 5,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snowy-rock",
-      "x": 22,
-      "y": 5
-    },
-    {
-      "type": "snowy-rock",
-      "x": 0,
-      "y": 6
-    },
-    {
-      "type": "snow-cloud",
-      "x": 1,
-      "y": 6,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 2,
-      "y": 6,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 3,
-      "y": 6,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 4,
-      "y": 6,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 5,
-      "y": 6,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snowy-rock",
-      "x": 6,
-      "y": 6
-    },
-    {
-      "type": "snowy-rock",
-      "x": 7,
-      "y": 6
-    },
-    {
-      "type": "snow-cloud",
-      "x": 8,
-      "y": 6,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 9,
-      "y": 6,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 10,
-      "y": 6,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 11,
-      "y": 6,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 12,
-      "y": 6,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 13,
-      "y": 6,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 14,
-      "y": 6,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snowy-rock",
-      "x": 15,
-      "y": 6
-    },
-    {
-      "type": "snowy-rock",
-      "x": 16,
-      "y": 6
-    },
-    {
-      "type": "snow-cloud",
-      "x": 17,
-      "y": 6,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 18,
-      "y": 6,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 19,
-      "y": 6,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 20,
-      "y": 6,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 21,
-      "y": 6,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snowy-rock",
-      "x": 22,
-      "y": 6
-    },
-    {
-      "type": "snowy-rock",
-      "x": 0,
-      "y": 7
-    },
-    {
-      "type": "snow-cloud",
-      "x": 1,
-      "y": 7,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "laser-emitter",
-      "x": 1,
-      "y": 7,
-      "stackOrder": 1,
-      "direction": "down"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 2,
-      "y": 7,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 3,
-      "y": 7,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 4,
-      "y": 7,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 5,
-      "y": 7,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 6,
-      "y": 7,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "laser-mirror",
-      "x": 6,
-      "y": 7,
-      "stackOrder": 1,
-      "variant": "slash"
-    },
-    {
-      "type": "snowy-rock",
-      "x": 7,
-      "y": 7
-    },
-    {
-      "type": "snow-cloud",
-      "x": 8,
-      "y": 7,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 9,
-      "y": 7,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 10,
-      "y": 7,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 11,
-      "y": 7,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 12,
-      "y": 7,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 13,
-      "y": 7,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 14,
-      "y": 7,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snowy-rock",
-      "x": 15,
-      "y": 7
-    },
-    {
-      "type": "snow-cloud",
-      "x": 16,
-      "y": 7,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "laser-mirror",
-      "x": 16,
-      "y": 7,
-      "stackOrder": 1,
-      "variant": "backslash"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 17,
-      "y": 7,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 18,
-      "y": 7,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 19,
-      "y": 7,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 20,
-      "y": 7,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 21,
-      "y": 7,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "laser-emitter",
-      "x": 21,
-      "y": 7,
-      "stackOrder": 1,
-      "direction": "left"
-    },
-    {
-      "type": "snowy-rock",
-      "x": 22,
-      "y": 7
-    },
-    {
-      "type": "snowy-rock",
-      "x": 0,
-      "y": 8
-    },
-    {
-      "type": "snowy-rock",
-      "x": 1,
-      "y": 8
-    },
-    {
-      "type": "snowy-rock",
-      "x": 2,
-      "y": 8
-    },
-    {
-      "type": "snow-cloud",
-      "x": 3,
-      "y": 8,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 4,
-      "y": 8,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 5,
-      "y": 8,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 6,
-      "y": 8,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "laser-mirror",
-      "x": 6,
-      "y": 8,
-      "stackOrder": 1,
-      "variant": "slash"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 7,
-      "y": 8,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 8,
-      "y": 8,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 9,
-      "y": 8,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 10,
-      "y": 8,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 11,
-      "y": 8,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 12,
-      "y": 8,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 13,
-      "y": 8,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 14,
-      "y": 8,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 15,
-      "y": 8,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 16,
-      "y": 8,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 17,
-      "y": 8,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 18,
-      "y": 8,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 19,
-      "y": 8,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snowy-rock",
-      "x": 20,
-      "y": 8
-    },
-    {
-      "type": "snowy-rock",
-      "x": 21,
-      "y": 8
-    },
-    {
-      "type": "snowy-rock",
-      "x": 22,
-      "y": 8
-    },
-    {
-      "type": "snow-cloud",
-      "x": 0,
-      "y": 9,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 1,
-      "y": 9,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snowy-rock",
-      "x": 2,
-      "y": 9
-    },
-    {
-      "type": "snow-cloud",
-      "x": 3,
-      "y": 9,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 4,
-      "y": 9,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 5,
-      "y": 9,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 6,
-      "y": 9,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 7,
-      "y": 9,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 8,
-      "y": 9,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 9,
-      "y": 9,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 10,
-      "y": 9,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 11,
-      "y": 9,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 12,
-      "y": 9,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 13,
-      "y": 9,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 14,
-      "y": 9,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 15,
-      "y": 9,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 16,
-      "y": 9,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "laser-mirror",
-      "x": 16,
-      "y": 9,
-      "stackOrder": 1,
-      "variant": "backslash"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 17,
-      "y": 9,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 18,
-      "y": 9,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 19,
-      "y": 9,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snowy-rock",
-      "x": 20,
-      "y": 9
-    },
-    {
-      "type": "snow-cloud",
-      "x": 21,
-      "y": 9,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 22,
-      "y": 9,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 0,
-      "y": 10,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 1,
-      "y": 10,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snowy-rock",
-      "x": 2,
-      "y": 10
-    },
-    {
-      "type": "snow-cloud",
-      "x": 3,
-      "y": 10,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 4,
-      "y": 10,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 5,
-      "y": 10,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 6,
-      "y": 10,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 7,
-      "y": 10,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 8,
-      "y": 10,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 9,
-      "y": 10,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 10,
-      "y": 10,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 11,
-      "y": 10,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 12,
-      "y": 10,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 13,
-      "y": 10,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 14,
-      "y": 10,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 15,
-      "y": 10,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 16,
-      "y": 10,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 17,
-      "y": 10,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 18,
-      "y": 10,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 19,
-      "y": 10,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snowy-rock",
-      "x": 20,
-      "y": 10
-    },
-    {
-      "type": "snow-cloud",
-      "x": 21,
-      "y": 10,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 22,
-      "y": 10,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 0,
-      "y": 11,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 1,
-      "y": 11,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 2,
-      "y": 11,
       "variant": "ts-7-9"
     },
     {
       "type": "exit",
-      "x": 2,
-      "y": 11,
+      "x": 11,
+      "y": 2,
       "stackOrder": 1
+    },
+    {
+      "type": "snowy-rock",
+      "x": 12,
+      "y": 2
+    },
+    {
+      "type": "snowy-rock",
+      "x": 13,
+      "y": 2
+    },
+    {
+      "type": "snowy-rock",
+      "x": 14,
+      "y": 2
+    },
+    {
+      "type": "snow-cloud",
+      "x": 15,
+      "y": 2,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 16,
+      "y": 2,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 17,
+      "y": 2,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 18,
+      "y": 2,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 19,
+      "y": 2,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 20,
+      "y": 2
+    },
+    {
+      "type": "snow-cloud",
+      "x": 21,
+      "y": 2,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 22,
+      "y": 2
+    },
+    {
+      "type": "snowy-rock",
+      "x": 0,
+      "y": 3
+    },
+    {
+      "type": "snow-cloud",
+      "x": 1,
+      "y": 3,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 2,
+      "y": 3
+    },
+    {
+      "type": "snowy-rock",
+      "x": 3,
+      "y": 3
+    },
+    {
+      "type": "snow-cloud",
+      "x": 4,
+      "y": 3,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 5,
+      "y": 3,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 6,
+      "y": 3,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 7,
+      "y": 3,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 8,
+      "y": 3,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 9,
+      "y": 3,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 10,
+      "y": 3,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 11,
+      "y": 3,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 12,
+      "y": 3,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 13,
+      "y": 3,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 14,
+      "y": 3,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 15,
+      "y": 3,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 16,
+      "y": 3,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 17,
+      "y": 3,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 18,
+      "y": 3,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 19,
+      "y": 3
+    },
+    {
+      "type": "snowy-rock",
+      "x": 20,
+      "y": 3
+    },
+    {
+      "type": "snow-cloud",
+      "x": 21,
+      "y": 3,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 22,
+      "y": 3
+    },
+    {
+      "type": "snowy-rock",
+      "x": 0,
+      "y": 4
+    },
+    {
+      "type": "snow-cloud",
+      "x": 1,
+      "y": 4,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 2,
+      "y": 4,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 3,
+      "y": 4
+    },
+    {
+      "type": "snowy-rock",
+      "x": 4,
+      "y": 4
+    },
+    {
+      "type": "snow-cloud",
+      "x": 5,
+      "y": 4,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 6,
+      "y": 4,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 7,
+      "y": 4,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 8,
+      "y": 4,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 9,
+      "y": 4,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 10,
+      "y": 4,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 11,
+      "y": 4,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 12,
+      "y": 4,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 13,
+      "y": 4,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 14,
+      "y": 4,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 15,
+      "y": 4,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 16,
+      "y": 4,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 17,
+      "y": 4,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 18,
+      "y": 4
+    },
+    {
+      "type": "snowy-rock",
+      "x": 19,
+      "y": 4
+    },
+    {
+      "type": "snow-cloud",
+      "x": 20,
+      "y": 4,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 21,
+      "y": 4,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 22,
+      "y": 4
+    },
+    {
+      "type": "snowy-rock",
+      "x": 0,
+      "y": 5
+    },
+    {
+      "type": "snow-cloud",
+      "x": 1,
+      "y": 5,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 2,
+      "y": 5,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 3,
+      "y": 5,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 4,
+      "y": 5
+    },
+    {
+      "type": "snowy-rock",
+      "x": 5,
+      "y": 5
+    },
+    {
+      "type": "snow-cloud",
+      "x": 6,
+      "y": 5,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 7,
+      "y": 5,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 8,
+      "y": 5,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 9,
+      "y": 5,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 10,
+      "y": 5,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 11,
+      "y": 5,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 12,
+      "y": 5,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 13,
+      "y": 5,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 14,
+      "y": 5,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 15,
+      "y": 5,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 16,
+      "y": 5,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 17,
+      "y": 5
+    },
+    {
+      "type": "snowy-rock",
+      "x": 18,
+      "y": 5
+    },
+    {
+      "type": "snow-cloud",
+      "x": 19,
+      "y": 5,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 20,
+      "y": 5,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 21,
+      "y": 5,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 22,
+      "y": 5
+    },
+    {
+      "type": "snowy-rock",
+      "x": 0,
+      "y": 6
+    },
+    {
+      "type": "snow-cloud",
+      "x": 1,
+      "y": 6,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 2,
+      "y": 6,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 3,
+      "y": 6,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 4,
+      "y": 6,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 5,
+      "y": 6
+    },
+    {
+      "type": "snowy-rock",
+      "x": 6,
+      "y": 6
+    },
+    {
+      "type": "snow-cloud",
+      "x": 7,
+      "y": 6,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "laser-mirror",
+      "x": 7,
+      "y": 6,
+      "stackOrder": 1,
+      "variant": "slash"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 8,
+      "y": 6,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "laser-mirror",
+      "x": 8,
+      "y": 6,
+      "stackOrder": 1,
+      "variant": "slash"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 9,
+      "y": 6,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 10,
+      "y": 6,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 11,
+      "y": 6,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 12,
+      "y": 6,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 13,
+      "y": 6,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 14,
+      "y": 6,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "laser-mirror",
+      "x": 14,
+      "y": 6,
+      "stackOrder": 1,
+      "variant": "backslash"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 15,
+      "y": 6,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "laser-mirror",
+      "x": 15,
+      "y": 6,
+      "stackOrder": 1,
+      "variant": "backslash"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 16,
+      "y": 6
+    },
+    {
+      "type": "snowy-rock",
+      "x": 17,
+      "y": 6
+    },
+    {
+      "type": "snow-cloud",
+      "x": 18,
+      "y": 6,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 19,
+      "y": 6,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 20,
+      "y": 6,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 21,
+      "y": 6,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 22,
+      "y": 6
+    },
+    {
+      "type": "snowy-rock",
+      "x": 0,
+      "y": 7
+    },
+    {
+      "type": "snow-cloud",
+      "x": 1,
+      "y": 7,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "laser-mirror",
+      "x": 1,
+      "y": 7,
+      "stackOrder": 1,
+      "variant": "slash"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 2,
+      "y": 7,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 3,
+      "y": 7,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 4,
+      "y": 7,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 5,
+      "y": 7,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "laser-mirror",
+      "x": 5,
+      "y": 7,
+      "stackOrder": 1,
+      "variant": "slash"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 6,
+      "y": 7
+    },
+    {
+      "type": "snowy-rock",
+      "x": 7,
+      "y": 7
+    },
+    {
+      "type": "snow-cloud",
+      "x": 8,
+      "y": 7,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 9,
+      "y": 7,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 10,
+      "y": 7,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 11,
+      "y": 7,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 12,
+      "y": 7,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 13,
+      "y": 7,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 14,
+      "y": 7,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 15,
+      "y": 7
+    },
+    {
+      "type": "snowy-rock",
+      "x": 16,
+      "y": 7
+    },
+    {
+      "type": "snow-cloud",
+      "x": 17,
+      "y": 7,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "laser-mirror",
+      "x": 17,
+      "y": 7,
+      "stackOrder": 1,
+      "variant": "backslash"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 18,
+      "y": 7,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 19,
+      "y": 7,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 20,
+      "y": 7,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 21,
+      "y": 7,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "laser-mirror",
+      "x": 21,
+      "y": 7,
+      "stackOrder": 1,
+      "variant": "backslash"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 22,
+      "y": 7
+    },
+    {
+      "type": "snowy-rock",
+      "x": 0,
+      "y": 8
+    },
+    {
+      "type": "snowy-rock",
+      "x": 1,
+      "y": 8
+    },
+    {
+      "type": "snowy-rock",
+      "x": 2,
+      "y": 8
+    },
+    {
+      "type": "snow-cloud",
+      "x": 3,
+      "y": 8,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 4,
+      "y": 8,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 5,
+      "y": 8,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 6,
+      "y": 8,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 7,
+      "y": 8,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 8,
+      "y": 8,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 9,
+      "y": 8,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 10,
+      "y": 8,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 11,
+      "y": 8,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 12,
+      "y": 8,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 13,
+      "y": 8,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 14,
+      "y": 8,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 15,
+      "y": 8,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 16,
+      "y": 8,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 17,
+      "y": 8,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "laser-mirror",
+      "x": 17,
+      "y": 8,
+      "stackOrder": 1,
+      "variant": "backslash"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 18,
+      "y": 8,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 19,
+      "y": 8,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 20,
+      "y": 8
+    },
+    {
+      "type": "snowy-rock",
+      "x": 21,
+      "y": 8
+    },
+    {
+      "type": "snowy-rock",
+      "x": 22,
+      "y": 8
+    },
+    {
+      "type": "snow-cloud",
+      "x": 0,
+      "y": 9,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 1,
+      "y": 9,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 2,
+      "y": 9
+    },
+    {
+      "type": "snow-cloud",
+      "x": 3,
+      "y": 9,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 4,
+      "y": 9,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 5,
+      "y": 9,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "laser-mirror",
+      "x": 5,
+      "y": 9,
+      "stackOrder": 1,
+      "variant": "slash"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 6,
+      "y": 9,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 7,
+      "y": 9,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 8,
+      "y": 9,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 9,
+      "y": 9,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 10,
+      "y": 9,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 11,
+      "y": 9,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 12,
+      "y": 9,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 13,
+      "y": 9,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 14,
+      "y": 9,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 15,
+      "y": 9,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 16,
+      "y": 9,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 17,
+      "y": 9,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 18,
+      "y": 9,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 19,
+      "y": 9,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 20,
+      "y": 9
+    },
+    {
+      "type": "snow-cloud",
+      "x": 21,
+      "y": 9,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 22,
+      "y": 9,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 0,
+      "y": 10,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 1,
+      "y": 10,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 2,
+      "y": 10
+    },
+    {
+      "type": "snow-cloud",
+      "x": 3,
+      "y": 10,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 4,
+      "y": 10,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 5,
+      "y": 10,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 6,
+      "y": 10,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 7,
+      "y": 10,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 8,
+      "y": 10,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 9,
+      "y": 10,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 10,
+      "y": 10,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 11,
+      "y": 10,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 12,
+      "y": 10,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 13,
+      "y": 10,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 14,
+      "y": 10,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 15,
+      "y": 10,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 16,
+      "y": 10,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 17,
+      "y": 10,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 18,
+      "y": 10,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 19,
+      "y": 10,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 20,
+      "y": 10
+    },
+    {
+      "type": "snow-cloud",
+      "x": 21,
+      "y": 10,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 22,
+      "y": 10,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 0,
+      "y": 11,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 1,
+      "y": 11,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 2,
+      "y": 11
     },
     {
       "type": "snow-cloud",
@@ -1687,12 +1681,6 @@
       "x": 18,
       "y": 11,
       "variant": "ts-7-9"
-    },
-    {
-      "type": "bobby",
-      "x": 18,
-      "y": 11,
-      "stackOrder": 1
     },
     {
       "type": "snow-cloud",
@@ -1889,6 +1877,13 @@
       "variant": "ts-7-9"
     },
     {
+      "type": "laser-mirror",
+      "x": 5,
+      "y": 13,
+      "stackOrder": 1,
+      "variant": "backslash"
+    },
+    {
       "type": "snow-cloud",
       "x": 6,
       "y": 13,
@@ -1953,13 +1948,6 @@
       "x": 16,
       "y": 13,
       "variant": "ts-7-9"
-    },
-    {
-      "type": "laser-mirror",
-      "x": 16,
-      "y": 13,
-      "stackOrder": 1,
-      "variant": "slash"
     },
     {
       "type": "snow-cloud",
@@ -2036,13 +2024,6 @@
       "variant": "ts-7-9"
     },
     {
-      "type": "laser-mirror",
-      "x": 6,
-      "y": 14,
-      "stackOrder": 1,
-      "variant": "backslash"
-    },
-    {
       "type": "snow-cloud",
       "x": 7,
       "y": 14,
@@ -2107,6 +2088,13 @@
       "x": 17,
       "y": 14,
       "variant": "ts-7-9"
+    },
+    {
+      "type": "laser-mirror",
+      "x": 17,
+      "y": 14,
+      "stackOrder": 1,
+      "variant": "slash"
     },
     {
       "type": "snow-cloud",
@@ -2147,11 +2135,11 @@
       "variant": "ts-7-9"
     },
     {
-      "type": "laser-emitter",
+      "type": "laser-mirror",
       "x": 1,
       "y": 15,
       "stackOrder": 1,
-      "direction": "down"
+      "variant": "backslash"
     },
     {
       "type": "snow-cloud",
@@ -2178,17 +2166,16 @@
       "variant": "ts-7-9"
     },
     {
-      "type": "snow-cloud",
-      "x": 6,
-      "y": 15,
-      "variant": "ts-7-9"
-    },
-    {
       "type": "laser-mirror",
-      "x": 6,
+      "x": 5,
       "y": 15,
       "stackOrder": 1,
       "variant": "backslash"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 6,
+      "y": 15
     },
     {
       "type": "snowy-rock",
@@ -2243,23 +2230,22 @@
       "y": 15
     },
     {
-      "type": "snow-cloud",
+      "type": "snowy-rock",
       "x": 16,
-      "y": 15,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "laser-mirror",
-      "x": 16,
-      "y": 15,
-      "stackOrder": 1,
-      "variant": "slash"
+      "y": 15
     },
     {
       "type": "snow-cloud",
       "x": 17,
       "y": 15,
       "variant": "ts-7-9"
+    },
+    {
+      "type": "laser-mirror",
+      "x": 17,
+      "y": 15,
+      "stackOrder": 1,
+      "variant": "slash"
     },
     {
       "type": "snow-cloud",
@@ -2286,11 +2272,11 @@
       "variant": "ts-7-9"
     },
     {
-      "type": "laser-emitter",
+      "type": "laser-mirror",
       "x": 21,
       "y": 15,
       "stackOrder": 1,
-      "direction": "left"
+      "variant": "slash"
     },
     {
       "type": "snowy-rock",
@@ -2327,10 +2313,9 @@
       "variant": "ts-7-9"
     },
     {
-      "type": "snow-cloud",
+      "type": "snowy-rock",
       "x": 5,
-      "y": 16,
-      "variant": "ts-7-9"
+      "y": 16
     },
     {
       "type": "snowy-rock",
@@ -2338,9 +2323,17 @@
       "y": 16
     },
     {
-      "type": "snowy-rock",
+      "type": "snow-cloud",
       "x": 7,
-      "y": 16
+      "y": 16,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "laser-mirror",
+      "x": 7,
+      "y": 16,
+      "stackOrder": 1,
+      "variant": "backslash"
     },
     {
       "type": "snow-cloud",
@@ -2353,6 +2346,13 @@
       "x": 9,
       "y": 16,
       "variant": "ts-7-9"
+    },
+    {
+      "type": "laser-mirror",
+      "x": 9,
+      "y": 16,
+      "stackOrder": 1,
+      "variant": "backslash"
     },
     {
       "type": "snow-cloud",
@@ -2379,15 +2379,30 @@
       "variant": "ts-7-9"
     },
     {
+      "type": "laser-mirror",
+      "x": 13,
+      "y": 16,
+      "stackOrder": 1,
+      "variant": "slash"
+    },
+    {
       "type": "snow-cloud",
       "x": 14,
       "y": 16,
       "variant": "ts-7-9"
     },
     {
-      "type": "snowy-rock",
+      "type": "snow-cloud",
       "x": 15,
-      "y": 16
+      "y": 16,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "laser-mirror",
+      "x": 15,
+      "y": 16,
+      "stackOrder": 1,
+      "variant": "slash"
     },
     {
       "type": "snowy-rock",
@@ -2395,10 +2410,9 @@
       "y": 16
     },
     {
-      "type": "snow-cloud",
+      "type": "snowy-rock",
       "x": 17,
-      "y": 16,
-      "variant": "ts-7-9"
+      "y": 16
     },
     {
       "type": "snow-cloud",
@@ -2453,10 +2467,9 @@
       "variant": "ts-7-9"
     },
     {
-      "type": "snow-cloud",
+      "type": "snowy-rock",
       "x": 4,
-      "y": 17,
-      "variant": "ts-7-9"
+      "y": 17
     },
     {
       "type": "snowy-rock",
@@ -2464,9 +2477,10 @@
       "y": 17
     },
     {
-      "type": "snowy-rock",
+      "type": "snow-cloud",
       "x": 6,
-      "y": 17
+      "y": 17,
+      "variant": "ts-7-9"
     },
     {
       "type": "snow-cloud",
@@ -2475,24 +2489,10 @@
       "variant": "ts-7-9"
     },
     {
-      "type": "laser-mirror",
-      "x": 7,
-      "y": 17,
-      "stackOrder": 1,
-      "variant": "backslash"
-    },
-    {
       "type": "snow-cloud",
       "x": 8,
       "y": 17,
       "variant": "ts-7-9"
-    },
-    {
-      "type": "laser-mirror",
-      "x": 8,
-      "y": 17,
-      "stackOrder": 1,
-      "variant": "backslash"
     },
     {
       "type": "snow-cloud",
@@ -2531,29 +2531,16 @@
       "variant": "ts-7-9"
     },
     {
-      "type": "laser-mirror",
-      "x": 14,
-      "y": 17,
-      "stackOrder": 1,
-      "variant": "slash"
-    },
-    {
       "type": "snow-cloud",
       "x": 15,
       "y": 17,
       "variant": "ts-7-9"
     },
     {
-      "type": "laser-mirror",
-      "x": 15,
-      "y": 17,
-      "stackOrder": 1,
-      "variant": "slash"
-    },
-    {
-      "type": "snowy-rock",
+      "type": "snow-cloud",
       "x": 16,
-      "y": 17
+      "y": 17,
+      "variant": "ts-7-9"
     },
     {
       "type": "snowy-rock",
@@ -2561,10 +2548,9 @@
       "y": 17
     },
     {
-      "type": "snow-cloud",
+      "type": "snowy-rock",
       "x": 18,
-      "y": 17,
-      "variant": "ts-7-9"
+      "y": 17
     },
     {
       "type": "snow-cloud",
@@ -2579,93 +2565,93 @@
       "variant": "ts-7-9"
     },
     {
-      "type": "laser-bomb",
-      "x": 20,
+      "type": "snow-cloud",
+      "x": 21,
       "y": 17,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 22,
+      "y": 17
+    },
+    {
+      "type": "snowy-rock",
+      "x": 0,
+      "y": 18
+    },
+    {
+      "type": "snow-cloud",
+      "x": 1,
+      "y": 18,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 2,
+      "y": 18,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 3,
+      "y": 18
+    },
+    {
+      "type": "snowy-rock",
+      "x": 4,
+      "y": 18
+    },
+    {
+      "type": "snow-cloud",
+      "x": 5,
+      "y": 18,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 6,
+      "y": 18,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 7,
+      "y": 18,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 8,
+      "y": 18,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 9,
+      "y": 18,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 10,
+      "y": 18,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 11,
+      "y": 18,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "bobby",
+      "x": 11,
+      "y": 18,
       "stackOrder": 1
     },
     {
       "type": "snow-cloud",
-      "x": 21,
-      "y": 17,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snowy-rock",
-      "x": 22,
-      "y": 17
-    },
-    {
-      "type": "snowy-rock",
-      "x": 0,
-      "y": 18
-    },
-    {
-      "type": "snow-cloud",
-      "x": 1,
-      "y": 18,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 2,
-      "y": 18,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 3,
-      "y": 18,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snowy-rock",
-      "x": 4,
-      "y": 18
-    },
-    {
-      "type": "snowy-rock",
-      "x": 5,
-      "y": 18
-    },
-    {
-      "type": "snow-cloud",
-      "x": 6,
-      "y": 18,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 7,
-      "y": 18,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 8,
-      "y": 18,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 9,
-      "y": 18,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 10,
-      "y": 18,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 11,
-      "y": 18,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
       "x": 12,
       "y": 18,
       "variant": "ts-7-9"
@@ -2695,9 +2681,10 @@
       "variant": "ts-7-9"
     },
     {
-      "type": "snowy-rock",
+      "type": "snow-cloud",
       "x": 17,
-      "y": 18
+      "y": 18,
+      "variant": "ts-7-9"
     },
     {
       "type": "snowy-rock",
@@ -2705,10 +2692,9 @@
       "y": 18
     },
     {
-      "type": "snow-cloud",
+      "type": "snowy-rock",
       "x": 19,
-      "y": 18,
-      "variant": "ts-7-9"
+      "y": 18
     },
     {
       "type": "snow-cloud",
@@ -2739,10 +2725,9 @@
       "variant": "ts-7-9"
     },
     {
-      "type": "snow-cloud",
+      "type": "snowy-rock",
       "x": 2,
-      "y": 19,
-      "variant": "ts-7-9"
+      "y": 19
     },
     {
       "type": "snowy-rock",
@@ -2750,9 +2735,10 @@
       "y": 19
     },
     {
-      "type": "snowy-rock",
+      "type": "snow-cloud",
       "x": 4,
-      "y": 19
+      "y": 19,
+      "variant": "ts-7-9"
     },
     {
       "type": "snow-cloud",
@@ -2833,9 +2819,10 @@
       "variant": "ts-7-9"
     },
     {
-      "type": "snowy-rock",
+      "type": "snow-cloud",
       "x": 18,
-      "y": 19
+      "y": 19,
+      "variant": "ts-7-9"
     },
     {
       "type": "snowy-rock",
@@ -2843,10 +2830,9 @@
       "y": 19
     },
     {
-      "type": "snow-cloud",
+      "type": "snowy-rock",
       "x": 20,
-      "y": 19,
-      "variant": "ts-7-9"
+      "y": 19
     },
     {
       "type": "snow-cloud",
@@ -2876,9 +2862,10 @@
       "y": 20
     },
     {
-      "type": "snowy-rock",
+      "type": "snow-cloud",
       "x": 3,
-      "y": 20
+      "y": 20,
+      "variant": "ts-7-9"
     },
     {
       "type": "snow-cloud",
@@ -2891,6 +2878,12 @@
       "x": 5,
       "y": 20,
       "variant": "ts-7-9"
+    },
+    {
+      "type": "laser-bomb",
+      "x": 5,
+      "y": 20,
+      "stackOrder": 1
     },
     {
       "type": "snow-cloud",
@@ -2958,15 +2951,22 @@
       "variant": "ts-7-9"
     },
     {
+      "type": "laser-bomb",
+      "x": 17,
+      "y": 20,
+      "stackOrder": 1
+    },
+    {
       "type": "snow-cloud",
       "x": 18,
       "y": 20,
       "variant": "ts-7-9"
     },
     {
-      "type": "snowy-rock",
+      "type": "snow-cloud",
       "x": 19,
-      "y": 20
+      "y": 20,
+      "variant": "ts-7-9"
     },
     {
       "type": "snowy-rock",
@@ -3000,7 +3000,7 @@
       "x": 1,
       "y": 21,
       "stackOrder": 1,
-      "direction": "down"
+      "direction": "right"
     },
     {
       "type": "snow-cloud",
@@ -3039,11 +3039,11 @@
       "variant": "ts-7-9"
     },
     {
-      "type": "laser-mirror",
+      "type": "laser-emitter",
       "x": 7,
       "y": 21,
       "stackOrder": 1,
-      "variant": "backslash"
+      "direction": "right"
     },
     {
       "type": "snowy-rock",
@@ -3092,11 +3092,11 @@
       "variant": "ts-7-9"
     },
     {
-      "type": "laser-mirror",
+      "type": "laser-emitter",
       "x": 15,
       "y": 21,
       "stackOrder": 1,
-      "variant": "slash"
+      "direction": "right"
     },
     {
       "type": "snow-cloud",
@@ -3139,7 +3139,7 @@
       "x": 21,
       "y": 21,
       "stackOrder": 1,
-      "direction": "left"
+      "direction": "right"
     },
     {
       "type": "snowy-rock",

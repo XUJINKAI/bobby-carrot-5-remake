@@ -38,10 +38,16 @@
       "variant": "ts-5-7"
     },
     {
-      "type": "hedge",
+      "type": "grass",
       "x": 3,
       "y": 0,
-      "variant": "ts-5-7"
+      "variant": "ts-10-1"
+    },
+    {
+      "type": "exit",
+      "x": 3,
+      "y": 0,
+      "stackOrder": 1
     },
     {
       "type": "hedge",
@@ -129,10 +135,11 @@
       "variant": "ts-10-1"
     },
     {
-      "type": "bobby",
+      "type": "laser-emitter",
       "x": 4,
       "y": 2,
-      "stackOrder": 1
+      "stackOrder": 1,
+      "direction": "left"
     },
     {
       "type": "hedge",
@@ -141,16 +148,10 @@
       "variant": "ts-5-7"
     },
     {
-      "type": "grass",
+      "type": "hedge",
       "x": 0,
       "y": 3,
-      "variant": "ts-10-1"
-    },
-    {
-      "type": "exit",
-      "x": 0,
-      "y": 3,
-      "stackOrder": 1
+      "variant": "ts-5-7"
     },
     {
       "type": "grass",
@@ -208,11 +209,10 @@
       "variant": "ts-10-1"
     },
     {
-      "type": "laser-emitter",
+      "type": "bobby",
       "x": 2,
       "y": 4,
-      "stackOrder": 1,
-      "direction": "right"
+      "stackOrder": 1
     },
     {
       "type": "grass",

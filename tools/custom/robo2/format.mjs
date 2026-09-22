@@ -37,7 +37,7 @@ const KNOWN_THEME_COUNT = 4;
 const MAX_TILE_CODE = ROBO2_TILE_CODE.PLAYER;
 
 /**
- * 解码 JAR `data/<index>` 记录。Robo 2 使用行优先顺序，每字节先存高半字节。
+ * 解码 JAR `data/<index>` 记录。Robo 2 使用列优先顺序，每字节先存高半字节。
  */
 export function decodeRobo2LevelRecord(input, source = "Robo 2 level record") {
   const bytes = asBytes(input);
@@ -58,18 +58,18 @@ export function decodeRobo2LevelRecord(input, source = "Robo 2 level record") {
     );
   }
 
-  const tiles = [];
+  const tiles = Array.from({ length: cellCount });
   for (let index = 0; index < cellCount; index += 1) {
     const packed = bytes[HEADER_BYTES + Math.floor(index / 2)];
     const code = index % 2 === 0 ? packed >> 4 : packed & 0x0f;
+    const x = Math.floor(index / height);
+    const y = index % height;
     if (code > MAX_TILE_CODE) {
-      const x = index % width;
-      const y = Math.floor(index / width);
       throw new Error(
         `${source}: (${x}, ${y}) 使用未知 tile code 0x${code.toString(16)}`,
       );
     }
-    tiles.push(code);
+    tiles[y * width + x] = code;
   }
 
   if (cellCount % 2 === 1 && (bytes.at(-1) & 0x0f) !== 0) {
@@ -100,7 +100,9 @@ export function encodeRobo2LevelRecord(level, source = "Robo 2 level") {
   output[1] = height;
   output[2] = theme;
   for (let index = 0; index < level.tiles.length; index += 1) {
-    const code = level.tiles[index];
+    const x = Math.floor(index / height);
+    const y = index % height;
+    const code = level.tiles[y * width + x];
     if (!Number.isInteger(code) || code < 0 || code > MAX_TILE_CODE) {
       throw new Error(`${source}: tiles[${index}] 不是已知 tile code`);
     }

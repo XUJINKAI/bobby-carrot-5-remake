@@ -423,28 +423,21 @@
       "y": 2
     },
     {
-      "type": "laser-emitter",
-      "x": 11,
-      "y": 2,
-      "stackOrder": 1,
-      "direction": "up"
-    },
-    {
       "type": "sand",
       "x": 12,
       "y": 2
     },
     {
-      "type": "sand",
-      "x": 13,
-      "y": 2
-    },
-    {
       "type": "laser-emitter",
-      "x": 13,
+      "x": 12,
       "y": 2,
       "stackOrder": 1,
       "direction": "up"
+    },
+    {
+      "type": "sand",
+      "x": 13,
+      "y": 2
     },
     {
       "type": "sand",
@@ -604,6 +597,12 @@
       "y": 3
     },
     {
+      "type": "laser-bomb",
+      "x": 15,
+      "y": 3,
+      "stackOrder": 1
+    },
+    {
       "type": "sand",
       "x": 16,
       "y": 3
@@ -768,7 +767,7 @@
       "x": 20,
       "y": 4,
       "stackOrder": 1,
-      "variant": "backslash"
+      "variant": "slash"
     },
     {
       "type": "sand",
@@ -839,6 +838,13 @@
       "y": 5
     },
     {
+      "type": "laser-mirror",
+      "x": 8,
+      "y": 5,
+      "stackOrder": 1,
+      "variant": "slash"
+    },
+    {
       "type": "sand",
       "x": 9,
       "y": 5
@@ -1234,13 +1240,6 @@
       "y": 8
     },
     {
-      "type": "laser-mirror",
-      "x": 5,
-      "y": 8,
-      "stackOrder": 1,
-      "variant": "slash"
-    },
-    {
       "type": "sand",
       "x": 6,
       "y": 8
@@ -1448,9 +1447,21 @@
       "y": 9
     },
     {
+      "type": "laser-bomb",
+      "x": 16,
+      "y": 9,
+      "stackOrder": 1
+    },
+    {
       "type": "sand",
       "x": 17,
       "y": 9
+    },
+    {
+      "type": "laser-bomb",
+      "x": 17,
+      "y": 9,
+      "stackOrder": 1
     },
     {
       "type": "sand",
@@ -1679,150 +1690,143 @@
       "y": 11
     },
     {
-      "type": "sand",
-      "x": 3,
-      "y": 11
-    },
-    {
-      "type": "sand",
-      "x": 4,
-      "y": 11
-    },
-    {
-      "type": "sand",
-      "x": 5,
-      "y": 11
-    },
-    {
-      "type": "sand",
-      "x": 6,
-      "y": 11
-    },
-    {
-      "type": "sand",
-      "x": 7,
-      "y": 11
-    },
-    {
-      "type": "sand",
-      "x": 8,
-      "y": 11
-    },
-    {
-      "type": "sand",
-      "x": 9,
-      "y": 11
-    },
-    {
-      "type": "sand",
-      "x": 10,
-      "y": 11
-    },
-    {
-      "type": "sand",
-      "x": 11,
-      "y": 11
-    },
-    {
-      "type": "sand",
-      "x": 12,
-      "y": 11
-    },
-    {
-      "type": "sand",
-      "x": 13,
-      "y": 11
-    },
-    {
-      "type": "sand",
-      "x": 14,
-      "y": 11
-    },
-    {
-      "type": "sand",
-      "x": 15,
-      "y": 11
-    },
-    {
-      "type": "sand",
-      "x": 16,
-      "y": 11
-    },
-    {
-      "type": "sand",
-      "x": 17,
-      "y": 11
-    },
-    {
-      "type": "sand",
-      "x": 18,
-      "y": 11
-    },
-    {
-      "type": "sand",
-      "x": 19,
-      "y": 11
-    },
-    {
-      "type": "sand",
-      "x": 20,
-      "y": 11
-    },
-    {
-      "type": "sand",
-      "x": 21,
-      "y": 11
-    },
-    {
-      "type": "sand",
-      "x": 22,
-      "y": 11
-    },
-    {
-      "type": "laser-emitter",
-      "x": 22,
-      "y": 11,
-      "stackOrder": 1,
-      "direction": "left"
-    },
-    {
-      "type": "stone-wall",
-      "x": 23,
-      "y": 11,
-      "variant": "ts-1-4"
-    },
-    {
-      "type": "stone-wall",
-      "x": 24,
-      "y": 11,
-      "variant": "ts-1-4"
-    },
-    {
-      "type": "sand",
-      "x": 0,
-      "y": 12
-    },
-    {
-      "type": "stone-wall",
-      "x": 1,
-      "y": 12,
-      "variant": "ts-1-4"
-    },
-    {
-      "type": "sand",
-      "x": 2,
-      "y": 12
-    },
-    {
       "type": "laser-emitter",
       "x": 2,
-      "y": 12,
+      "y": 11,
       "stackOrder": 1,
       "direction": "down"
     },
     {
       "type": "sand",
       "x": 3,
+      "y": 11
+    },
+    {
+      "type": "sand",
+      "x": 4,
+      "y": 11
+    },
+    {
+      "type": "sand",
+      "x": 5,
+      "y": 11
+    },
+    {
+      "type": "sand",
+      "x": 6,
+      "y": 11
+    },
+    {
+      "type": "sand",
+      "x": 7,
+      "y": 11
+    },
+    {
+      "type": "sand",
+      "x": 8,
+      "y": 11
+    },
+    {
+      "type": "sand",
+      "x": 9,
+      "y": 11
+    },
+    {
+      "type": "sand",
+      "x": 10,
+      "y": 11
+    },
+    {
+      "type": "sand",
+      "x": 11,
+      "y": 11
+    },
+    {
+      "type": "sand",
+      "x": 12,
+      "y": 11
+    },
+    {
+      "type": "sand",
+      "x": 13,
+      "y": 11
+    },
+    {
+      "type": "sand",
+      "x": 14,
+      "y": 11
+    },
+    {
+      "type": "sand",
+      "x": 15,
+      "y": 11
+    },
+    {
+      "type": "sand",
+      "x": 16,
+      "y": 11
+    },
+    {
+      "type": "sand",
+      "x": 17,
+      "y": 11
+    },
+    {
+      "type": "sand",
+      "x": 18,
+      "y": 11
+    },
+    {
+      "type": "sand",
+      "x": 19,
+      "y": 11
+    },
+    {
+      "type": "sand",
+      "x": 20,
+      "y": 11
+    },
+    {
+      "type": "sand",
+      "x": 21,
+      "y": 11
+    },
+    {
+      "type": "sand",
+      "x": 22,
+      "y": 11
+    },
+    {
+      "type": "stone-wall",
+      "x": 23,
+      "y": 11,
+      "variant": "ts-1-4"
+    },
+    {
+      "type": "stone-wall",
+      "x": 24,
+      "y": 11,
+      "variant": "ts-1-4"
+    },
+    {
+      "type": "sand",
+      "x": 0,
+      "y": 12
+    },
+    {
+      "type": "stone-wall",
+      "x": 1,
+      "y": 12,
+      "variant": "ts-1-4"
+    },
+    {
+      "type": "sand",
+      "x": 2,
+      "y": 12
+    },
+    {
+      "type": "sand",
+      "x": 3,
       "y": 12
     },
     {
@@ -1921,6 +1925,13 @@
       "y": 12
     },
     {
+      "type": "laser-emitter",
+      "x": 22,
+      "y": 12,
+      "stackOrder": 1,
+      "direction": "left"
+    },
+    {
       "type": "stone-wall",
       "x": 23,
       "y": 12,
@@ -1947,6 +1958,13 @@
       "type": "sand",
       "x": 2,
       "y": 13
+    },
+    {
+      "type": "laser-emitter",
+      "x": 2,
+      "y": 13,
+      "stackOrder": 1,
+      "direction": "down"
     },
     {
       "type": "sand",
@@ -2047,13 +2065,6 @@
       "type": "sand",
       "x": 22,
       "y": 13
-    },
-    {
-      "type": "laser-emitter",
-      "x": 22,
-      "y": 13,
-      "stackOrder": 1,
-      "direction": "left"
     },
     {
       "type": "stone-wall",
@@ -2249,12 +2260,6 @@
       "y": 15
     },
     {
-      "type": "laser-bomb",
-      "x": 3,
-      "y": 15,
-      "stackOrder": 1
-    },
-    {
       "type": "sand",
       "x": 4,
       "y": 15
@@ -2338,9 +2343,21 @@
       "y": 15
     },
     {
+      "type": "laser-bomb",
+      "x": 16,
+      "y": 15,
+      "stackOrder": 1
+    },
+    {
       "type": "sand",
       "x": 17,
       "y": 15
+    },
+    {
+      "type": "laser-bomb",
+      "x": 17,
+      "y": 15,
+      "stackOrder": 1
     },
     {
       "type": "sand",
@@ -2443,12 +2460,6 @@
       "y": 16
     },
     {
-      "type": "laser-bomb",
-      "x": 9,
-      "y": 16,
-      "stackOrder": 1
-    },
-    {
       "type": "sand",
       "x": 10,
       "y": 16
@@ -2479,12 +2490,6 @@
       "y": 16
     },
     {
-      "type": "laser-bomb",
-      "x": 15,
-      "y": 16,
-      "stackOrder": 1
-    },
-    {
       "type": "sand",
       "x": 16,
       "y": 16
@@ -2508,13 +2513,6 @@
       "type": "sand",
       "x": 20,
       "y": 16
-    },
-    {
-      "type": "laser-mirror",
-      "x": 20,
-      "y": 16,
-      "stackOrder": 1,
-      "variant": "backslash"
     },
     {
       "type": "sand",
@@ -2590,12 +2588,6 @@
       "y": 17
     },
     {
-      "type": "laser-bomb",
-      "x": 9,
-      "y": 17,
-      "stackOrder": 1
-    },
-    {
       "type": "sand",
       "x": 10,
       "y": 17
@@ -2624,12 +2616,6 @@
       "type": "sand",
       "x": 15,
       "y": 17
-    },
-    {
-      "type": "laser-bomb",
-      "x": 15,
-      "y": 17,
-      "stackOrder": 1
     },
     {
       "type": "sand",
@@ -2991,7 +2977,7 @@
       "x": 4,
       "y": 20,
       "stackOrder": 1,
-      "variant": "slash"
+      "variant": "backslash"
     },
     {
       "type": "sand",
@@ -3052,6 +3038,13 @@
       "type": "sand",
       "x": 16,
       "y": 20
+    },
+    {
+      "type": "laser-mirror",
+      "x": 16,
+      "y": 20,
+      "stackOrder": 1,
+      "variant": "backslash"
     },
     {
       "type": "sand",
@@ -3304,21 +3297,28 @@
       "y": 22
     },
     {
-      "type": "sand",
-      "x": 12,
-      "y": 22
-    },
-    {
       "type": "laser-emitter",
-      "x": 12,
+      "x": 11,
       "y": 22,
       "stackOrder": 1,
       "direction": "right"
     },
     {
       "type": "sand",
+      "x": 12,
+      "y": 22
+    },
+    {
+      "type": "sand",
       "x": 13,
       "y": 22
+    },
+    {
+      "type": "laser-emitter",
+      "x": 13,
+      "y": 22,
+      "stackOrder": 1,
+      "direction": "right"
     },
     {
       "type": "sand",

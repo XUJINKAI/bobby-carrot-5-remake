@@ -77,22 +77,19 @@
       "y": 0
     },
     {
-      "type": "snow-cloud",
+      "type": "snowy-rock",
       "x": 11,
-      "y": 0,
-      "variant": "ts-7-9"
+      "y": 0
     },
     {
-      "type": "snow-cloud",
+      "type": "snowy-rock",
       "x": 12,
-      "y": 0,
-      "variant": "ts-7-9"
+      "y": 0
     },
     {
-      "type": "snow-cloud",
+      "type": "snowy-rock",
       "x": 13,
-      "y": 0,
-      "variant": "ts-7-9"
+      "y": 0
     },
     {
       "type": "snow-cloud",
@@ -136,13 +133,6 @@
       "variant": "ts-7-9"
     },
     {
-      "type": "laser-mirror",
-      "x": 4,
-      "y": 1,
-      "stackOrder": 1,
-      "variant": "backslash"
-    },
-    {
       "type": "snow-cloud",
       "x": 5,
       "y": 1,
@@ -161,13 +151,6 @@
       "variant": "ts-7-9"
     },
     {
-      "type": "laser-mirror",
-      "x": 7,
-      "y": 1,
-      "stackOrder": 1,
-      "variant": "slash"
-    },
-    {
       "type": "snow-cloud",
       "x": 8,
       "y": 1,
@@ -180,28 +163,36 @@
       "variant": "ts-7-9"
     },
     {
-      "type": "snowy-rock",
+      "type": "snow-cloud",
       "x": 10,
+      "y": 1,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 11,
+      "y": 1,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 12,
+      "y": 1,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "laser-mirror",
+      "x": 12,
+      "y": 1,
+      "stackOrder": 1,
+      "variant": "slash"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 13,
       "y": 1
     },
     {
-      "type": "snowy-rock",
-      "x": 11,
-      "y": 1
-    },
-    {
-      "type": "snow-cloud",
-      "x": 12,
-      "y": 1,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 13,
-      "y": 1,
-      "variant": "ts-7-9"
-    },
-    {
       "type": "snow-cloud",
       "x": 14,
       "y": 1,
@@ -235,13 +226,6 @@
       "variant": "ts-7-9"
     },
     {
-      "type": "laser-emitter",
-      "x": 3,
-      "y": 2,
-      "stackOrder": 1,
-      "direction": "up"
-    },
-    {
       "type": "snow-cloud",
       "x": 4,
       "y": 2,
@@ -272,819 +256,913 @@
       "variant": "ts-7-9"
     },
     {
-      "type": "snow-cloud",
-      "x": 9,
-      "y": 2,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 10,
-      "y": 2,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snowy-rock",
-      "x": 11,
-      "y": 2
-    },
-    {
-      "type": "snowy-rock",
-      "x": 12,
-      "y": 2
-    },
-    {
-      "type": "snowy-rock",
-      "x": 13,
-      "y": 2
-    },
-    {
-      "type": "snowy-rock",
-      "x": 14,
-      "y": 2
-    },
-    {
-      "type": "snow-cloud",
-      "x": 15,
-      "y": 2,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snowy-rock",
-      "x": 0,
-      "y": 3
-    },
-    {
-      "type": "snow-cloud",
-      "x": 1,
-      "y": 3,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 2,
-      "y": 3,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 3,
-      "y": 3,
-      "variant": "ts-7-9"
-    },
-    {
       "type": "laser-mirror",
-      "x": 3,
-      "y": 3,
+      "x": 8,
+      "y": 2,
       "stackOrder": 1,
       "variant": "slash"
     },
     {
       "type": "snow-cloud",
-      "x": 4,
-      "y": 3,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 5,
-      "y": 3,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "laser-mirror",
-      "x": 5,
-      "y": 3,
-      "stackOrder": 1,
-      "variant": "backslash"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 6,
-      "y": 3,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 7,
-      "y": 3,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 8,
-      "y": 3,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
       "x": 9,
-      "y": 3,
+      "y": 2,
       "variant": "ts-7-9"
     },
     {
       "type": "snow-cloud",
       "x": 10,
-      "y": 3,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 11,
-      "y": 3,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 12,
-      "y": 3,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 13,
-      "y": 3,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "laser-mirror",
-      "x": 13,
-      "y": 3,
-      "stackOrder": 1,
-      "variant": "slash"
-    },
-    {
-      "type": "snowy-rock",
-      "x": 14,
-      "y": 3
-    },
-    {
-      "type": "snow-cloud",
-      "x": 15,
-      "y": 3,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snowy-rock",
-      "x": 0,
-      "y": 4
-    },
-    {
-      "type": "snow-cloud",
-      "x": 1,
-      "y": 4,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 2,
-      "y": 4,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 3,
-      "y": 4,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 4,
-      "y": 4,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 5,
-      "y": 4,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 6,
-      "y": 4,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 7,
-      "y": 4,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 8,
-      "y": 4,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 9,
-      "y": 4,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 10,
-      "y": 4,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 11,
-      "y": 4,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 12,
-      "y": 4,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 13,
-      "y": 4,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snowy-rock",
-      "x": 14,
-      "y": 4
-    },
-    {
-      "type": "snowy-rock",
-      "x": 15,
-      "y": 4
-    },
-    {
-      "type": "snowy-rock",
-      "x": 0,
-      "y": 5
-    },
-    {
-      "type": "snow-cloud",
-      "x": 1,
-      "y": 5,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 2,
-      "y": 5,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 3,
-      "y": 5,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "laser-mirror",
-      "x": 3,
-      "y": 5,
-      "stackOrder": 1,
-      "variant": "backslash"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 4,
-      "y": 5,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "laser-mirror",
-      "x": 4,
-      "y": 5,
-      "stackOrder": 1,
-      "variant": "slash"
-    },
-    {
-      "type": "snowy-rock",
-      "x": 5,
-      "y": 5
-    },
-    {
-      "type": "snowy-rock",
-      "x": 6,
-      "y": 5
-    },
-    {
-      "type": "snow-cloud",
-      "x": 7,
-      "y": 5,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 8,
-      "y": 5,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 9,
-      "y": 5,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 10,
-      "y": 5,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 11,
-      "y": 5,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 12,
-      "y": 5,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 13,
-      "y": 5,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 14,
-      "y": 5,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snowy-rock",
-      "x": 15,
-      "y": 5
-    },
-    {
-      "type": "snowy-rock",
-      "x": 0,
-      "y": 6
-    },
-    {
-      "type": "snow-cloud",
-      "x": 1,
-      "y": 6,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 2,
-      "y": 6,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 3,
-      "y": 6,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 4,
-      "y": 6,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 5,
-      "y": 6,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "laser-emitter",
-      "x": 5,
-      "y": 6,
-      "stackOrder": 1,
-      "direction": "up"
-    },
-    {
-      "type": "snowy-rock",
-      "x": 6,
-      "y": 6
-    },
-    {
-      "type": "snow-cloud",
-      "x": 7,
-      "y": 6,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 8,
-      "y": 6,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 9,
-      "y": 6,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 10,
-      "y": 6,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 11,
-      "y": 6,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 12,
-      "y": 6,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 13,
-      "y": 6,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 14,
-      "y": 6,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snowy-rock",
-      "x": 15,
-      "y": 6
-    },
-    {
-      "type": "snowy-rock",
-      "x": 0,
-      "y": 7
-    },
-    {
-      "type": "snow-cloud",
-      "x": 1,
-      "y": 7,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 2,
-      "y": 7,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 3,
-      "y": 7,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 4,
-      "y": 7,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 5,
-      "y": 7,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snowy-rock",
-      "x": 6,
-      "y": 7
-    },
-    {
-      "type": "snowy-rock",
-      "x": 7,
-      "y": 7
-    },
-    {
-      "type": "snowy-rock",
-      "x": 8,
-      "y": 7
-    },
-    {
-      "type": "snowy-rock",
-      "x": 9,
-      "y": 7
-    },
-    {
-      "type": "snowy-rock",
-      "x": 10,
-      "y": 7
-    },
-    {
-      "type": "snowy-rock",
-      "x": 11,
-      "y": 7
-    },
-    {
-      "type": "snowy-rock",
-      "x": 12,
-      "y": 7
-    },
-    {
-      "type": "snow-cloud",
-      "x": 13,
-      "y": 7,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 14,
-      "y": 7,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snowy-rock",
-      "x": 15,
-      "y": 7
-    },
-    {
-      "type": "snowy-rock",
-      "x": 0,
-      "y": 8
-    },
-    {
-      "type": "snow-cloud",
-      "x": 1,
-      "y": 8,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 2,
-      "y": 8,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "laser-mirror",
-      "x": 2,
-      "y": 8,
-      "stackOrder": 1,
-      "variant": "slash"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 3,
-      "y": 8,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 4,
-      "y": 8,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 5,
-      "y": 8,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snowy-rock",
-      "x": 6,
-      "y": 8
-    },
-    {
-      "type": "snow-cloud",
-      "x": 7,
-      "y": 8,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 8,
-      "y": 8,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 9,
-      "y": 8,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 10,
-      "y": 8,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 11,
-      "y": 8,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snowy-rock",
-      "x": 12,
-      "y": 8
-    },
-    {
-      "type": "snow-cloud",
-      "x": 13,
-      "y": 8,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 14,
-      "y": 8,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snowy-rock",
-      "x": 15,
-      "y": 8
-    },
-    {
-      "type": "snowy-rock",
-      "x": 0,
-      "y": 9
-    },
-    {
-      "type": "snow-cloud",
-      "x": 1,
-      "y": 9,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 2,
-      "y": 9,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 3,
-      "y": 9,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 4,
-      "y": 9,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 5,
-      "y": 9,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snowy-rock",
-      "x": 6,
-      "y": 9
-    },
-    {
-      "type": "snow-cloud",
-      "x": 7,
-      "y": 9,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 8,
-      "y": 9,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snowy-rock",
-      "x": 9,
-      "y": 9
-    },
-    {
-      "type": "snowy-rock",
-      "x": 10,
-      "y": 9
-    },
-    {
-      "type": "snowy-rock",
-      "x": 11,
-      "y": 9
-    },
-    {
-      "type": "snowy-rock",
-      "x": 12,
-      "y": 9
-    },
-    {
-      "type": "snow-cloud",
-      "x": 13,
-      "y": 9,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 14,
-      "y": 9,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snowy-rock",
-      "x": 15,
-      "y": 9
-    },
-    {
-      "type": "snowy-rock",
-      "x": 0,
-      "y": 10
-    },
-    {
-      "type": "snow-cloud",
-      "x": 1,
-      "y": 10,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 2,
-      "y": 10,
+      "y": 2,
       "variant": "ts-7-9"
     },
     {
       "type": "bobby",
-      "x": 2,
-      "y": 10,
+      "x": 10,
+      "y": 2,
       "stackOrder": 1
     },
     {
       "type": "snow-cloud",
-      "x": 3,
-      "y": 10,
+      "x": 11,
+      "y": 2,
       "variant": "ts-7-9"
     },
     {
       "type": "snow-cloud",
-      "x": 4,
-      "y": 10,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 5,
-      "y": 10,
+      "x": 12,
+      "y": 2,
       "variant": "ts-7-9"
     },
     {
       "type": "snowy-rock",
-      "x": 6,
-      "y": 10
-    },
-    {
-      "type": "snow-cloud",
-      "x": 7,
-      "y": 10,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 8,
-      "y": 10,
-      "variant": "ts-7-9"
+      "x": 13,
+      "y": 2
     },
     {
       "type": "snowy-rock",
-      "x": 9,
-      "y": 10
+      "x": 14,
+      "y": 2
+    },
+    {
+      "type": "snowy-rock",
+      "x": 15,
+      "y": 2
+    },
+    {
+      "type": "snowy-rock",
+      "x": 0,
+      "y": 3
     },
     {
       "type": "snow-cloud",
-      "x": 10,
-      "y": 10,
+      "x": 1,
+      "y": 3,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 2,
+      "y": 3,
       "variant": "ts-7-9"
     },
     {
       "type": "laser-emitter",
-      "x": 10,
-      "y": 10,
+      "x": 2,
+      "y": 3,
       "stackOrder": 1,
       "direction": "down"
     },
     {
       "type": "snow-cloud",
+      "x": 3,
+      "y": 3,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "laser-mirror",
+      "x": 3,
+      "y": 3,
+      "stackOrder": 1,
+      "variant": "slash"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 4,
+      "y": 3,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 5,
+      "y": 3,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "laser-mirror",
+      "x": 5,
+      "y": 3,
+      "stackOrder": 1,
+      "variant": "backslash"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 6,
+      "y": 3,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 7,
+      "y": 3,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 8,
+      "y": 3,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 9,
+      "y": 3,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 10,
+      "y": 3,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 11,
+      "y": 3,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 12,
+      "y": 3,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 13,
+      "y": 3,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 14,
+      "y": 3,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 15,
+      "y": 3
+    },
+    {
+      "type": "snowy-rock",
+      "x": 0,
+      "y": 4
+    },
+    {
+      "type": "snow-cloud",
+      "x": 1,
+      "y": 4,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "laser-mirror",
+      "x": 1,
+      "y": 4,
+      "stackOrder": 1,
+      "variant": "backslash"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 2,
+      "y": 4,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 3,
+      "y": 4,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 4,
+      "y": 4,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 5,
+      "y": 4,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "laser-mirror",
+      "x": 5,
+      "y": 4,
+      "stackOrder": 1,
+      "variant": "slash"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 6,
+      "y": 4,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 7,
+      "y": 4,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 8,
+      "y": 4,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 9,
+      "y": 4,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 10,
+      "y": 4,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 11,
+      "y": 4,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 12,
+      "y": 4,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 13,
+      "y": 4,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 14,
+      "y": 4,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "laser-emitter",
+      "x": 14,
+      "y": 4,
+      "stackOrder": 1,
+      "direction": "left"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 15,
+      "y": 4
+    },
+    {
+      "type": "snowy-rock",
+      "x": 0,
+      "y": 5
+    },
+    {
+      "type": "snow-cloud",
+      "x": 1,
+      "y": 5,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 2,
+      "y": 5,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 3,
+      "y": 5,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "laser-mirror",
+      "x": 3,
+      "y": 5,
+      "stackOrder": 1,
+      "variant": "backslash"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 4,
+      "y": 5,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 5,
+      "y": 5
+    },
+    {
+      "type": "snow-cloud",
+      "x": 6,
+      "y": 5,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "laser-emitter",
+      "x": 6,
+      "y": 5,
+      "stackOrder": 1,
+      "direction": "down"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 7,
+      "y": 5,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 8,
+      "y": 5,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 9,
+      "y": 5,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 10,
+      "y": 5,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 11,
+      "y": 5,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 12,
+      "y": 5,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 13,
+      "y": 5,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 14,
+      "y": 5,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "exit",
+      "x": 14,
+      "y": 5,
+      "stackOrder": 1
+    },
+    {
+      "type": "snowy-rock",
+      "x": 15,
+      "y": 5
+    },
+    {
+      "type": "snowy-rock",
+      "x": 0,
+      "y": 6
+    },
+    {
+      "type": "snow-cloud",
+      "x": 1,
+      "y": 6,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 2,
+      "y": 6,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 3,
+      "y": 6,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 4,
+      "y": 6,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 5,
+      "y": 6
+    },
+    {
+      "type": "snowy-rock",
+      "x": 6,
+      "y": 6
+    },
+    {
+      "type": "snowy-rock",
+      "x": 7,
+      "y": 6
+    },
+    {
+      "type": "snowy-rock",
+      "x": 8,
+      "y": 6
+    },
+    {
+      "type": "snowy-rock",
+      "x": 9,
+      "y": 6
+    },
+    {
+      "type": "snowy-rock",
+      "x": 10,
+      "y": 6
+    },
+    {
+      "type": "snowy-rock",
+      "x": 11,
+      "y": 6
+    },
+    {
+      "type": "snow-cloud",
+      "x": 12,
+      "y": 6,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 13,
+      "y": 6,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "laser-emitter",
+      "x": 13,
+      "y": 6,
+      "stackOrder": 1,
+      "direction": "right"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 14,
+      "y": 6,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "laser-mirror",
+      "x": 14,
+      "y": 6,
+      "stackOrder": 1,
+      "variant": "slash"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 15,
+      "y": 6
+    },
+    {
+      "type": "snowy-rock",
+      "x": 0,
+      "y": 7
+    },
+    {
+      "type": "snow-cloud",
+      "x": 1,
+      "y": 7,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "laser-mirror",
+      "x": 1,
+      "y": 7,
+      "stackOrder": 1,
+      "variant": "slash"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 2,
+      "y": 7,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 3,
+      "y": 7,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 4,
+      "y": 7,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 5,
+      "y": 7,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 6,
+      "y": 7,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 7,
+      "y": 7
+    },
+    {
+      "type": "snow-cloud",
+      "x": 8,
+      "y": 7,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 9,
+      "y": 7,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 10,
+      "y": 7,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 11,
+      "y": 7
+    },
+    {
+      "type": "snow-cloud",
+      "x": 12,
+      "y": 7,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 13,
+      "y": 7,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 14,
+      "y": 7,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "laser-emitter",
+      "x": 14,
+      "y": 7,
+      "stackOrder": 1,
+      "direction": "left"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 15,
+      "y": 7
+    },
+    {
+      "type": "snowy-rock",
+      "x": 0,
+      "y": 8
+    },
+    {
+      "type": "snow-cloud",
+      "x": 1,
+      "y": 8,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 2,
+      "y": 8,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 3,
+      "y": 8,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 4,
+      "y": 8,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 5,
+      "y": 8,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 6,
+      "y": 8,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 7,
+      "y": 8
+    },
+    {
+      "type": "snow-cloud",
+      "x": 8,
+      "y": 8,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 9,
+      "y": 8,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 10,
+      "y": 8,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 11,
+      "y": 8
+    },
+    {
+      "type": "snow-cloud",
+      "x": 12,
+      "y": 8,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "laser-mirror",
+      "x": 12,
+      "y": 8,
+      "stackOrder": 1,
+      "variant": "slash"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 13,
+      "y": 8,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "laser-bomb",
+      "x": 13,
+      "y": 8,
+      "stackOrder": 1
+    },
+    {
+      "type": "snow-cloud",
+      "x": 14,
+      "y": 8,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "pushable-stone",
+      "x": 14,
+      "y": 8,
+      "stackOrder": 1
+    },
+    {
+      "type": "snowy-rock",
+      "x": 15,
+      "y": 8
+    },
+    {
+      "type": "snowy-rock",
+      "x": 0,
+      "y": 9
+    },
+    {
+      "type": "snow-cloud",
+      "x": 1,
+      "y": 9,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 2,
+      "y": 9,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 3,
+      "y": 9,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 4,
+      "y": 9,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 5,
+      "y": 9,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 6,
+      "y": 9,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 7,
+      "y": 9
+    },
+    {
+      "type": "snow-cloud",
+      "x": 8,
+      "y": 9,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 9,
+      "y": 9
+    },
+    {
+      "type": "snowy-rock",
+      "x": 10,
+      "y": 9
+    },
+    {
+      "type": "snowy-rock",
+      "x": 11,
+      "y": 9
+    },
+    {
+      "type": "snowy-rock",
+      "x": 12,
+      "y": 9
+    },
+    {
+      "type": "snow-cloud",
+      "x": 13,
+      "y": 9,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "laser-mirror",
+      "x": 13,
+      "y": 9,
+      "stackOrder": 1,
+      "variant": "backslash"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 14,
+      "y": 9,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "laser-mirror",
+      "x": 14,
+      "y": 9,
+      "stackOrder": 1,
+      "variant": "backslash"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 15,
+      "y": 9
+    },
+    {
+      "type": "snowy-rock",
+      "x": 0,
+      "y": 10
+    },
+    {
+      "type": "snowy-rock",
+      "x": 1,
+      "y": 10
+    },
+    {
+      "type": "snow-cloud",
+      "x": 2,
+      "y": 10,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 3,
+      "y": 10,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 4,
+      "y": 10,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 5,
+      "y": 10,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 6,
+      "y": 10,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 7,
+      "y": 10
+    },
+    {
+      "type": "snow-cloud",
+      "x": 8,
+      "y": 10,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 9,
+      "y": 10
+    },
+    {
+      "type": "snow-cloud",
+      "x": 10,
+      "y": 10,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "laser-emitter",
+      "x": 10,
+      "y": 10,
+      "stackOrder": 1,
+      "direction": "up"
+    },
+    {
+      "type": "snow-cloud",
       "x": 11,
       "y": 10,
       "variant": "ts-7-9"
+    },
+    {
+      "type": "laser-bomb",
+      "x": 11,
+      "y": 10,
+      "stackOrder": 1
     },
     {
       "type": "snow-cloud",
       "x": 12,
       "y": 10,
       "variant": "ts-7-9"
+    },
+    {
+      "type": "laser-bomb",
+      "x": 12,
+      "y": 10,
+      "stackOrder": 1
     },
     {
       "type": "snow-cloud",
@@ -1104,21 +1182,20 @@
       "y": 10
     },
     {
-      "type": "snowy-rock",
+      "type": "snow-cloud",
       "x": 0,
+      "y": 11,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 1,
       "y": 11
     },
     {
-      "type": "snow-cloud",
-      "x": 1,
-      "y": 11,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
+      "type": "snowy-rock",
       "x": 2,
-      "y": 11,
-      "variant": "ts-7-9"
+      "y": 11
     },
     {
       "type": "snow-cloud",
@@ -1139,9 +1216,10 @@
       "variant": "ts-7-9"
     },
     {
-      "type": "snowy-rock",
+      "type": "snow-cloud",
       "x": 6,
-      "y": 11
+      "y": 11,
+      "variant": "ts-7-9"
     },
     {
       "type": "snowy-rock",
@@ -1149,9 +1227,10 @@
       "y": 11
     },
     {
-      "type": "snowy-rock",
+      "type": "snow-cloud",
       "x": 8,
-      "y": 11
+      "y": 11,
+      "variant": "ts-7-9"
     },
     {
       "type": "snowy-rock",
@@ -1163,12 +1242,6 @@
       "x": 10,
       "y": 11,
       "variant": "ts-7-9"
-    },
-    {
-      "type": "laser-bomb",
-      "x": 10,
-      "y": 11,
-      "stackOrder": 1
     },
     {
       "type": "snow-cloud",
@@ -1183,16 +1256,27 @@
       "variant": "ts-7-9"
     },
     {
+      "type": "laser-bomb",
+      "x": 12,
+      "y": 11,
+      "stackOrder": 1
+    },
+    {
       "type": "snow-cloud",
       "x": 13,
       "y": 11,
       "variant": "ts-7-9"
     },
     {
-      "type": "snow-cloud",
-      "x": 14,
+      "type": "laser-bomb",
+      "x": 13,
       "y": 11,
-      "variant": "ts-7-9"
+      "stackOrder": 1
+    },
+    {
+      "type": "snowy-rock",
+      "x": 14,
+      "y": 11
     },
     {
       "type": "snowy-rock",
@@ -1200,9 +1284,10 @@
       "y": 11
     },
     {
-      "type": "snowy-rock",
+      "type": "snow-cloud",
       "x": 0,
-      "y": 12
+      "y": 12,
+      "variant": "ts-7-9"
     },
     {
       "type": "snow-cloud",
@@ -1211,17 +1296,9 @@
       "variant": "ts-7-9"
     },
     {
-      "type": "laser-mirror",
-      "x": 1,
-      "y": 12,
-      "stackOrder": 1,
-      "variant": "slash"
-    },
-    {
-      "type": "snow-cloud",
+      "type": "snowy-rock",
       "x": 2,
-      "y": 12,
-      "variant": "ts-7-9"
+      "y": 12
     },
     {
       "type": "snow-cloud",
@@ -1248,23 +1325,14 @@
       "variant": "ts-7-9"
     },
     {
-      "type": "snow-cloud",
+      "type": "snowy-rock",
       "x": 7,
-      "y": 12,
-      "variant": "ts-7-9"
+      "y": 12
     },
     {
-      "type": "snow-cloud",
+      "type": "snowy-rock",
       "x": 8,
-      "y": 12,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "laser-mirror",
-      "x": 8,
-      "y": 12,
-      "stackOrder": 1,
-      "variant": "slash"
+      "y": 12
     },
     {
       "type": "snowy-rock",
@@ -1278,22 +1346,10 @@
       "variant": "ts-7-9"
     },
     {
-      "type": "laser-bomb",
-      "x": 10,
-      "y": 12,
-      "stackOrder": 1
-    },
-    {
       "type": "snow-cloud",
       "x": 11,
       "y": 12,
       "variant": "ts-7-9"
-    },
-    {
-      "type": "laser-bomb",
-      "x": 11,
-      "y": 12,
-      "stackOrder": 1
     },
     {
       "type": "snow-cloud",
@@ -1308,25 +1364,27 @@
       "variant": "ts-7-9"
     },
     {
-      "type": "snow-cloud",
+      "type": "snowy-rock",
       "x": 14,
+      "y": 12
+    },
+    {
+      "type": "snow-cloud",
+      "x": 15,
       "y": 12,
       "variant": "ts-7-9"
     },
     {
-      "type": "snowy-rock",
-      "x": 15,
-      "y": 12
-    },
-    {
-      "type": "snowy-rock",
+      "type": "snow-cloud",
       "x": 0,
-      "y": 13
+      "y": 13,
+      "variant": "ts-7-9"
     },
     {
-      "type": "snowy-rock",
+      "type": "snow-cloud",
       "x": 1,
-      "y": 13
+      "y": 13,
+      "variant": "ts-7-9"
     },
     {
       "type": "snowy-rock",
@@ -1338,6 +1396,13 @@
       "x": 3,
       "y": 13,
       "variant": "ts-7-9"
+    },
+    {
+      "type": "laser-mirror",
+      "x": 3,
+      "y": 13,
+      "stackOrder": 1,
+      "variant": "slash"
     },
     {
       "type": "snow-cloud",
@@ -1355,230 +1420,166 @@
       "type": "snow-cloud",
       "x": 6,
       "y": 13,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 7,
+      "y": 13,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 8,
+      "y": 13,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 9,
+      "y": 13,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 10,
+      "y": 13,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 11,
+      "y": 13,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 12,
+      "y": 13,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 13,
+      "y": 13,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "laser-mirror",
+      "x": 13,
+      "y": 13,
+      "stackOrder": 1,
+      "variant": "backslash"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 14,
+      "y": 13
+    },
+    {
+      "type": "snow-cloud",
+      "x": 15,
+      "y": 13,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 0,
+      "y": 14,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 1,
+      "y": 14,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 2,
+      "y": 14
+    },
+    {
+      "type": "snowy-rock",
+      "x": 3,
+      "y": 14
+    },
+    {
+      "type": "snowy-rock",
+      "x": 4,
+      "y": 14
+    },
+    {
+      "type": "snow-cloud",
+      "x": 5,
+      "y": 14,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 6,
+      "y": 14,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 7,
+      "y": 14,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 8,
+      "y": 14,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 9,
+      "y": 14,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 10,
+      "y": 14,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 11,
+      "y": 14,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 12,
+      "y": 14,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 13,
+      "y": 14,
       "variant": "ts-7-9"
     },
     {
       "type": "laser-emitter",
-      "x": 6,
-      "y": 13,
+      "x": 13,
+      "y": 14,
       "stackOrder": 1,
       "direction": "left"
     },
     {
-      "type": "snow-cloud",
-      "x": 7,
-      "y": 13,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 8,
-      "y": 13,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "laser-bomb",
-      "x": 8,
-      "y": 13,
-      "stackOrder": 1
-    },
-    {
-      "type": "snow-cloud",
-      "x": 9,
-      "y": 13,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "laser-mirror",
-      "x": 9,
-      "y": 13,
-      "stackOrder": 1,
-      "variant": "backslash"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 10,
-      "y": 13,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 11,
-      "y": 13,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "laser-bomb",
-      "x": 11,
-      "y": 13,
-      "stackOrder": 1
-    },
-    {
-      "type": "snow-cloud",
-      "x": 12,
-      "y": 13,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 13,
-      "y": 13,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "laser-mirror",
-      "x": 13,
-      "y": 13,
-      "stackOrder": 1,
-      "variant": "backslash"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 14,
-      "y": 13,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "laser-emitter",
-      "x": 14,
-      "y": 13,
-      "stackOrder": 1,
-      "direction": "right"
-    },
-    {
       "type": "snowy-rock",
+      "x": 14,
+      "y": 14
+    },
+    {
+      "type": "snow-cloud",
       "x": 15,
-      "y": 13
-    },
-    {
-      "type": "snow-cloud",
-      "x": 0,
       "y": 14,
       "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 1,
-      "y": 14,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snowy-rock",
-      "x": 2,
-      "y": 14
-    },
-    {
-      "type": "snow-cloud",
-      "x": 3,
-      "y": 14,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 4,
-      "y": 14,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "laser-emitter",
-      "x": 4,
-      "y": 14,
-      "stackOrder": 1,
-      "direction": "right"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 5,
-      "y": 14,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "exit",
-      "x": 5,
-      "y": 14,
-      "stackOrder": 1
-    },
-    {
-      "type": "snow-cloud",
-      "x": 6,
-      "y": 14,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "laser-mirror",
-      "x": 6,
-      "y": 14,
-      "stackOrder": 1,
-      "variant": "slash"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 7,
-      "y": 14,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "laser-emitter",
-      "x": 7,
-      "y": 14,
-      "stackOrder": 1,
-      "direction": "right"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 8,
-      "y": 14,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "pushable-stone",
-      "x": 8,
-      "y": 14,
-      "stackOrder": 1
-    },
-    {
-      "type": "snow-cloud",
-      "x": 9,
-      "y": 14,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "laser-mirror",
-      "x": 9,
-      "y": 14,
-      "stackOrder": 1,
-      "variant": "backslash"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 10,
-      "y": 14,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snowy-rock",
-      "x": 11,
-      "y": 14
-    },
-    {
-      "type": "snowy-rock",
-      "x": 12,
-      "y": 14
-    },
-    {
-      "type": "snowy-rock",
-      "x": 13,
-      "y": 14
-    },
-    {
-      "type": "snowy-rock",
-      "x": 14,
-      "y": 14
-    },
-    {
-      "type": "snowy-rock",
-      "x": 15,
-      "y": 14
     },
     {
       "type": "snow-cloud",
@@ -1593,14 +1594,16 @@
       "variant": "ts-7-9"
     },
     {
-      "type": "snowy-rock",
+      "type": "snow-cloud",
       "x": 2,
-      "y": 15
+      "y": 15,
+      "variant": "ts-7-9"
     },
     {
-      "type": "snowy-rock",
+      "type": "snow-cloud",
       "x": 3,
-      "y": 15
+      "y": 15,
+      "variant": "ts-7-9"
     },
     {
       "type": "snowy-rock",
@@ -1643,22 +1646,19 @@
       "y": 15
     },
     {
-      "type": "snow-cloud",
+      "type": "snowy-rock",
       "x": 12,
-      "y": 15,
-      "variant": "ts-7-9"
+      "y": 15
     },
     {
-      "type": "snow-cloud",
+      "type": "snowy-rock",
       "x": 13,
-      "y": 15,
-      "variant": "ts-7-9"
+      "y": 15
     },
     {
-      "type": "snow-cloud",
+      "type": "snowy-rock",
       "x": 14,
-      "y": 15,
-      "variant": "ts-7-9"
+      "y": 15
     },
     {
       "type": "snow-cloud",

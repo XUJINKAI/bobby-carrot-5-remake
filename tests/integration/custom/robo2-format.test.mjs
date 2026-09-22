@@ -17,11 +17,11 @@ test("Robo 2 记录按高半字节优先解码并可逐字节往返", () => {
   assert.equal(level.height, 6);
   assert.equal(level.theme, 3);
   assert.deepEqual(level.rows, [
-    "111111",
-    "100801",
-    "1000b1",
-    "270001",
-    "10a001",
+    "111211",
+    "100701",
+    "1000a1",
+    "180001",
+    "10b001",
     "111111",
   ]);
   assert.equal(level.tiles.filter((code) => code === ROBO2_TILE_CODE.EXIT).length, 1);

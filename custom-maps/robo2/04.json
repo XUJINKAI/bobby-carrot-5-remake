@@ -110,44 +110,44 @@
       "variant": "ts-10-1"
     },
     {
+      "type": "grass",
+      "x": 3,
+      "y": 1,
+      "variant": "ts-10-1"
+    },
+    {
+      "type": "grass",
+      "x": 4,
+      "y": 1,
+      "variant": "ts-10-1"
+    },
+    {
+      "type": "grass",
+      "x": 5,
+      "y": 1,
+      "variant": "ts-10-1"
+    },
+    {
+      "type": "grass",
+      "x": 6,
+      "y": 1,
+      "variant": "ts-10-1"
+    },
+    {
+      "type": "grass",
+      "x": 7,
+      "y": 1,
+      "variant": "ts-10-1"
+    },
+    {
       "type": "laser-emitter",
-      "x": 2,
+      "x": 7,
       "y": 1,
       "stackOrder": 1,
       "direction": "up"
     },
     {
       "type": "grass",
-      "x": 3,
-      "y": 1,
-      "variant": "ts-10-1"
-    },
-    {
-      "type": "grass",
-      "x": 4,
-      "y": 1,
-      "variant": "ts-10-1"
-    },
-    {
-      "type": "grass",
-      "x": 5,
-      "y": 1,
-      "variant": "ts-10-1"
-    },
-    {
-      "type": "hedge",
-      "x": 6,
-      "y": 1,
-      "variant": "ts-5-7"
-    },
-    {
-      "type": "grass",
-      "x": 7,
-      "y": 1,
-      "variant": "ts-10-1"
-    },
-    {
-      "type": "grass",
       "x": 8,
       "y": 1,
       "variant": "ts-10-1"
@@ -157,7 +157,7 @@
       "x": 8,
       "y": 1,
       "stackOrder": 1,
-      "variant": "backslash"
+      "variant": "slash"
     },
     {
       "type": "grass",
@@ -170,13 +170,6 @@
       "x": 10,
       "y": 1,
       "variant": "ts-10-1"
-    },
-    {
-      "type": "laser-mirror",
-      "x": 10,
-      "y": 1,
-      "stackOrder": 1,
-      "variant": "slash"
     },
     {
       "type": "hedge",
@@ -197,6 +190,13 @@
       "variant": "ts-10-1"
     },
     {
+      "type": "laser-emitter",
+      "x": 1,
+      "y": 2,
+      "stackOrder": 1,
+      "direction": "down"
+    },
+    {
       "type": "grass",
       "x": 2,
       "y": 2,
@@ -215,572 +215,566 @@
       "variant": "ts-10-1"
     },
     {
+      "type": "grass",
+      "x": 5,
+      "y": 2,
+      "variant": "ts-10-1"
+    },
+    {
+      "type": "grass",
+      "x": 6,
+      "y": 2,
+      "variant": "ts-10-1"
+    },
+    {
+      "type": "grass",
+      "x": 7,
+      "y": 2,
+      "variant": "ts-10-1"
+    },
+    {
+      "type": "grass",
+      "x": 8,
+      "y": 2,
+      "variant": "ts-10-1"
+    },
+    {
+      "type": "grass",
+      "x": 9,
+      "y": 2,
+      "variant": "ts-10-1"
+    },
+    {
+      "type": "grass",
+      "x": 10,
+      "y": 2,
+      "variant": "ts-10-1"
+    },
+    {
       "type": "laser-mirror",
-      "x": 4,
+      "x": 10,
       "y": 2,
       "stackOrder": 1,
       "variant": "slash"
     },
     {
+      "type": "hedge",
+      "x": 11,
+      "y": 2,
+      "variant": "ts-5-7"
+    },
+    {
+      "type": "hedge",
+      "x": 0,
+      "y": 3,
+      "variant": "ts-5-7"
+    },
+    {
+      "type": "grass",
+      "x": 1,
+      "y": 3,
+      "variant": "ts-10-1"
+    },
+    {
+      "type": "grass",
+      "x": 2,
+      "y": 3,
+      "variant": "ts-10-1"
+    },
+    {
+      "type": "hedge",
+      "x": 3,
+      "y": 3,
+      "variant": "ts-5-7"
+    },
+    {
+      "type": "hedge",
+      "x": 4,
+      "y": 3,
+      "variant": "ts-5-7"
+    },
+    {
+      "type": "hedge",
+      "x": 5,
+      "y": 3,
+      "variant": "ts-5-7"
+    },
+    {
+      "type": "grass",
+      "x": 6,
+      "y": 3,
+      "variant": "ts-10-1"
+    },
+    {
+      "type": "grass",
+      "x": 7,
+      "y": 3,
+      "variant": "ts-10-1"
+    },
+    {
+      "type": "grass",
+      "x": 8,
+      "y": 3,
+      "variant": "ts-10-1"
+    },
+    {
+      "type": "grass",
+      "x": 9,
+      "y": 3,
+      "variant": "ts-10-1"
+    },
+    {
+      "type": "grass",
+      "x": 10,
+      "y": 3,
+      "variant": "ts-10-1"
+    },
+    {
+      "type": "hedge",
+      "x": 11,
+      "y": 3,
+      "variant": "ts-5-7"
+    },
+    {
+      "type": "hedge",
+      "x": 0,
+      "y": 4,
+      "variant": "ts-5-7"
+    },
+    {
+      "type": "grass",
+      "x": 1,
+      "y": 4,
+      "variant": "ts-10-1"
+    },
+    {
+      "type": "grass",
+      "x": 2,
+      "y": 4,
+      "variant": "ts-10-1"
+    },
+    {
+      "type": "laser-mirror",
+      "x": 2,
+      "y": 4,
+      "stackOrder": 1,
+      "variant": "slash"
+    },
+    {
+      "type": "grass",
+      "x": 3,
+      "y": 4,
+      "variant": "ts-10-1"
+    },
+    {
+      "type": "grass",
+      "x": 4,
+      "y": 4,
+      "variant": "ts-10-1"
+    },
+    {
       "type": "grass",
       "x": 5,
-      "y": 2,
+      "y": 4,
+      "variant": "ts-10-1"
+    },
+    {
+      "type": "grass",
+      "x": 6,
+      "y": 4,
+      "variant": "ts-10-1"
+    },
+    {
+      "type": "grass",
+      "x": 7,
+      "y": 4,
+      "variant": "ts-10-1"
+    },
+    {
+      "type": "grass",
+      "x": 8,
+      "y": 4,
+      "variant": "ts-10-1"
+    },
+    {
+      "type": "grass",
+      "x": 9,
+      "y": 4,
+      "variant": "ts-10-1"
+    },
+    {
+      "type": "grass",
+      "x": 10,
+      "y": 4,
+      "variant": "ts-10-1"
+    },
+    {
+      "type": "laser-mirror",
+      "x": 10,
+      "y": 4,
+      "stackOrder": 1,
+      "variant": "backslash"
+    },
+    {
+      "type": "hedge",
+      "x": 11,
+      "y": 4,
+      "variant": "ts-5-7"
+    },
+    {
+      "type": "hedge",
+      "x": 0,
+      "y": 5,
+      "variant": "ts-5-7"
+    },
+    {
+      "type": "grass",
+      "x": 1,
+      "y": 5,
+      "variant": "ts-10-1"
+    },
+    {
+      "type": "grass",
+      "x": 2,
+      "y": 5,
       "variant": "ts-10-1"
     },
     {
       "type": "bobby",
-      "x": 5,
-      "y": 2,
+      "x": 2,
+      "y": 5,
       "stackOrder": 1
     },
     {
-      "type": "hedge",
+      "type": "grass",
+      "x": 3,
+      "y": 5,
+      "variant": "ts-10-1"
+    },
+    {
+      "type": "grass",
+      "x": 4,
+      "y": 5,
+      "variant": "ts-10-1"
+    },
+    {
+      "type": "grass",
+      "x": 5,
+      "y": 5,
+      "variant": "ts-10-1"
+    },
+    {
+      "type": "grass",
       "x": 6,
-      "y": 2,
-      "variant": "ts-5-7"
+      "y": 5,
+      "variant": "ts-10-1"
     },
     {
       "type": "grass",
       "x": 7,
-      "y": 2,
+      "y": 5,
       "variant": "ts-10-1"
     },
     {
       "type": "grass",
       "x": 8,
-      "y": 2,
+      "y": 5,
       "variant": "ts-10-1"
+    },
+    {
+      "type": "laser-mirror",
+      "x": 8,
+      "y": 5,
+      "stackOrder": 1,
+      "variant": "backslash"
     },
     {
       "type": "grass",
       "x": 9,
-      "y": 2,
+      "y": 5,
+      "variant": "ts-10-1"
+    },
+    {
+      "type": "grass",
+      "x": 10,
+      "y": 5,
+      "variant": "ts-10-1"
+    },
+    {
+      "type": "hedge",
+      "x": 11,
+      "y": 5,
+      "variant": "ts-5-7"
+    },
+    {
+      "type": "hedge",
+      "x": 0,
+      "y": 6,
+      "variant": "ts-5-7"
+    },
+    {
+      "type": "hedge",
+      "x": 1,
+      "y": 6,
+      "variant": "ts-5-7"
+    },
+    {
+      "type": "hedge",
+      "x": 2,
+      "y": 6,
+      "variant": "ts-5-7"
+    },
+    {
+      "type": "hedge",
+      "x": 3,
+      "y": 6,
+      "variant": "ts-5-7"
+    },
+    {
+      "type": "grass",
+      "x": 4,
+      "y": 6,
       "variant": "ts-10-1"
     },
     {
       "type": "pushable-stone",
-      "x": 9,
-      "y": 2,
+      "x": 4,
+      "y": 6,
       "stackOrder": 1
     },
     {
       "type": "grass",
+      "x": 5,
+      "y": 6,
+      "variant": "ts-10-1"
+    },
+    {
+      "type": "grass",
+      "x": 6,
+      "y": 6,
+      "variant": "ts-10-1"
+    },
+    {
+      "type": "hedge",
+      "x": 7,
+      "y": 6,
+      "variant": "ts-5-7"
+    },
+    {
+      "type": "hedge",
+      "x": 8,
+      "y": 6,
+      "variant": "ts-5-7"
+    },
+    {
+      "type": "grass",
+      "x": 9,
+      "y": 6,
+      "variant": "ts-10-1"
+    },
+    {
+      "type": "grass",
       "x": 10,
-      "y": 2,
+      "y": 6,
       "variant": "ts-10-1"
     },
     {
       "type": "hedge",
       "x": 11,
-      "y": 2,
+      "y": 6,
       "variant": "ts-5-7"
     },
     {
       "type": "hedge",
       "x": 0,
-      "y": 3,
+      "y": 7,
       "variant": "ts-5-7"
     },
     {
       "type": "grass",
       "x": 1,
-      "y": 3,
+      "y": 7,
       "variant": "ts-10-1"
     },
     {
       "type": "grass",
       "x": 2,
-      "y": 3,
+      "y": 7,
       "variant": "ts-10-1"
     },
     {
-      "type": "hedge",
+      "type": "grass",
       "x": 3,
-      "y": 3,
-      "variant": "ts-5-7"
+      "y": 7,
+      "variant": "ts-10-1"
     },
     {
       "type": "grass",
       "x": 4,
-      "y": 3,
+      "y": 7,
       "variant": "ts-10-1"
     },
     {
       "type": "grass",
       "x": 5,
-      "y": 3,
+      "y": 7,
       "variant": "ts-10-1"
     },
     {
-      "type": "hedge",
+      "type": "grass",
       "x": 6,
-      "y": 3,
-      "variant": "ts-5-7"
+      "y": 7,
+      "variant": "ts-10-1"
     },
     {
       "type": "grass",
       "x": 7,
-      "y": 3,
+      "y": 7,
       "variant": "ts-10-1"
+    },
+    {
+      "type": "laser-emitter",
+      "x": 7,
+      "y": 7,
+      "stackOrder": 1,
+      "direction": "up"
     },
     {
       "type": "grass",
       "x": 8,
-      "y": 3,
+      "y": 7,
       "variant": "ts-10-1"
     },
     {
       "type": "grass",
       "x": 9,
-      "y": 3,
-      "variant": "ts-10-1"
-    },
-    {
-      "type": "grass",
-      "x": 10,
-      "y": 3,
+      "y": 7,
       "variant": "ts-10-1"
     },
     {
       "type": "hedge",
+      "x": 10,
+      "y": 7,
+      "variant": "ts-5-7"
+    },
+    {
+      "type": "hedge",
       "x": 11,
-      "y": 3,
+      "y": 7,
       "variant": "ts-5-7"
     },
     {
       "type": "hedge",
       "x": 0,
-      "y": 4,
+      "y": 8,
       "variant": "ts-5-7"
     },
     {
       "type": "grass",
       "x": 1,
-      "y": 4,
+      "y": 8,
       "variant": "ts-10-1"
+    },
+    {
+      "type": "laser-mirror",
+      "x": 1,
+      "y": 8,
+      "stackOrder": 1,
+      "variant": "backslash"
     },
     {
       "type": "grass",
       "x": 2,
-      "y": 4,
+      "y": 8,
       "variant": "ts-10-1"
     },
     {
-      "type": "hedge",
+      "type": "grass",
       "x": 3,
-      "y": 4,
-      "variant": "ts-5-7"
+      "y": 8,
+      "variant": "ts-10-1"
     },
     {
       "type": "grass",
       "x": 4,
-      "y": 4,
+      "y": 8,
       "variant": "ts-10-1"
     },
     {
       "type": "grass",
       "x": 5,
-      "y": 4,
+      "y": 8,
       "variant": "ts-10-1"
+    },
+    {
+      "type": "laser-mirror",
+      "x": 5,
+      "y": 8,
+      "stackOrder": 1,
+      "variant": "backslash"
     },
     {
       "type": "grass",
       "x": 6,
-      "y": 4,
+      "y": 8,
+      "variant": "ts-10-1"
+    },
+    {
+      "type": "hedge",
+      "x": 7,
+      "y": 8,
+      "variant": "ts-5-7"
+    },
+    {
+      "type": "hedge",
+      "x": 8,
+      "y": 8,
+      "variant": "ts-5-7"
+    },
+    {
+      "type": "hedge",
+      "x": 9,
+      "y": 8,
+      "variant": "ts-5-7"
+    },
+    {
+      "type": "hedge",
+      "x": 10,
+      "y": 8,
+      "variant": "ts-5-7"
+    },
+    {
+      "type": "hedge",
+      "x": 11,
+      "y": 8,
+      "variant": "ts-5-7"
+    },
+    {
+      "type": "hedge",
+      "x": 0,
+      "y": 9,
+      "variant": "ts-5-7"
+    },
+    {
+      "type": "grass",
+      "x": 1,
+      "y": 9,
+      "variant": "ts-10-1"
+    },
+    {
+      "type": "grass",
+      "x": 2,
+      "y": 9,
       "variant": "ts-10-1"
     },
     {
       "type": "pushable-stone",
-      "x": 6,
-      "y": 4,
+      "x": 2,
+      "y": 9,
       "stackOrder": 1
     },
     {
       "type": "grass",
-      "x": 7,
-      "y": 4,
-      "variant": "ts-10-1"
-    },
-    {
-      "type": "grass",
-      "x": 8,
-      "y": 4,
-      "variant": "ts-10-1"
-    },
-    {
-      "type": "grass",
-      "x": 9,
-      "y": 4,
-      "variant": "ts-10-1"
-    },
-    {
-      "type": "grass",
-      "x": 10,
-      "y": 4,
-      "variant": "ts-10-1"
-    },
-    {
-      "type": "hedge",
-      "x": 11,
-      "y": 4,
-      "variant": "ts-5-7"
-    },
-    {
-      "type": "hedge",
-      "x": 0,
-      "y": 5,
-      "variant": "ts-5-7"
-    },
-    {
-      "type": "grass",
-      "x": 1,
-      "y": 5,
-      "variant": "ts-10-1"
-    },
-    {
-      "type": "grass",
-      "x": 2,
-      "y": 5,
-      "variant": "ts-10-1"
-    },
-    {
-      "type": "hedge",
-      "x": 3,
-      "y": 5,
-      "variant": "ts-5-7"
-    },
-    {
-      "type": "grass",
-      "x": 4,
-      "y": 5,
-      "variant": "ts-10-1"
-    },
-    {
-      "type": "grass",
-      "x": 5,
-      "y": 5,
-      "variant": "ts-10-1"
-    },
-    {
-      "type": "grass",
-      "x": 6,
-      "y": 5,
-      "variant": "ts-10-1"
-    },
-    {
-      "type": "grass",
-      "x": 7,
-      "y": 5,
-      "variant": "ts-10-1"
-    },
-    {
-      "type": "grass",
-      "x": 8,
-      "y": 5,
-      "variant": "ts-10-1"
-    },
-    {
-      "type": "laser-mirror",
-      "x": 8,
-      "y": 5,
-      "stackOrder": 1,
-      "variant": "backslash"
-    },
-    {
-      "type": "grass",
-      "x": 9,
-      "y": 5,
-      "variant": "ts-10-1"
-    },
-    {
-      "type": "grass",
-      "x": 10,
-      "y": 5,
-      "variant": "ts-10-1"
-    },
-    {
-      "type": "laser-emitter",
-      "x": 10,
-      "y": 5,
-      "stackOrder": 1,
-      "direction": "right"
-    },
-    {
-      "type": "hedge",
-      "x": 11,
-      "y": 5,
-      "variant": "ts-5-7"
-    },
-    {
-      "type": "hedge",
-      "x": 0,
-      "y": 6,
-      "variant": "ts-5-7"
-    },
-    {
-      "type": "grass",
-      "x": 1,
-      "y": 6,
-      "variant": "ts-10-1"
-    },
-    {
-      "type": "grass",
-      "x": 2,
-      "y": 6,
-      "variant": "ts-10-1"
-    },
-    {
-      "type": "grass",
-      "x": 3,
-      "y": 6,
-      "variant": "ts-10-1"
-    },
-    {
-      "type": "grass",
-      "x": 4,
-      "y": 6,
-      "variant": "ts-10-1"
-    },
-    {
-      "type": "grass",
-      "x": 5,
-      "y": 6,
-      "variant": "ts-10-1"
-    },
-    {
-      "type": "grass",
-      "x": 6,
-      "y": 6,
-      "variant": "ts-10-1"
-    },
-    {
-      "type": "grass",
-      "x": 7,
-      "y": 6,
-      "variant": "ts-10-1"
-    },
-    {
-      "type": "grass",
-      "x": 8,
-      "y": 6,
-      "variant": "ts-10-1"
-    },
-    {
-      "type": "grass",
-      "x": 9,
-      "y": 6,
-      "variant": "ts-10-1"
-    },
-    {
-      "type": "grass",
-      "x": 10,
-      "y": 6,
-      "variant": "ts-10-1"
-    },
-    {
-      "type": "laser-bomb",
-      "x": 10,
-      "y": 6,
-      "stackOrder": 1
-    },
-    {
-      "type": "hedge",
-      "x": 11,
-      "y": 6,
-      "variant": "ts-5-7"
-    },
-    {
-      "type": "hedge",
-      "x": 0,
-      "y": 7,
-      "variant": "ts-5-7"
-    },
-    {
-      "type": "grass",
-      "x": 1,
-      "y": 7,
-      "variant": "ts-10-1"
-    },
-    {
-      "type": "laser-emitter",
-      "x": 1,
-      "y": 7,
-      "stackOrder": 1,
-      "direction": "down"
-    },
-    {
-      "type": "grass",
-      "x": 2,
-      "y": 7,
-      "variant": "ts-10-1"
-    },
-    {
-      "type": "grass",
-      "x": 3,
-      "y": 7,
-      "variant": "ts-10-1"
-    },
-    {
-      "type": "grass",
-      "x": 4,
-      "y": 7,
-      "variant": "ts-10-1"
-    },
-    {
-      "type": "grass",
-      "x": 5,
-      "y": 7,
-      "variant": "ts-10-1"
-    },
-    {
-      "type": "hedge",
-      "x": 6,
-      "y": 7,
-      "variant": "ts-5-7"
-    },
-    {
-      "type": "grass",
-      "x": 7,
-      "y": 7,
-      "variant": "ts-10-1"
-    },
-    {
-      "type": "laser-emitter",
-      "x": 7,
-      "y": 7,
-      "stackOrder": 1,
-      "direction": "down"
-    },
-    {
-      "type": "hedge",
-      "x": 8,
-      "y": 7,
-      "variant": "ts-5-7"
-    },
-    {
-      "type": "hedge",
-      "x": 9,
-      "y": 7,
-      "variant": "ts-5-7"
-    },
-    {
-      "type": "grass",
-      "x": 10,
-      "y": 7,
-      "variant": "ts-10-1"
-    },
-    {
-      "type": "hedge",
-      "x": 11,
-      "y": 7,
-      "variant": "ts-5-7"
-    },
-    {
-      "type": "hedge",
-      "x": 0,
-      "y": 8,
-      "variant": "ts-5-7"
-    },
-    {
-      "type": "grass",
-      "x": 1,
-      "y": 8,
-      "variant": "ts-10-1"
-    },
-    {
-      "type": "laser-mirror",
-      "x": 1,
-      "y": 8,
-      "stackOrder": 1,
-      "variant": "slash"
-    },
-    {
-      "type": "grass",
-      "x": 2,
-      "y": 8,
-      "variant": "ts-10-1"
-    },
-    {
-      "type": "grass",
-      "x": 3,
-      "y": 8,
-      "variant": "ts-10-1"
-    },
-    {
-      "type": "grass",
-      "x": 4,
-      "y": 8,
-      "variant": "ts-10-1"
-    },
-    {
-      "type": "grass",
-      "x": 5,
-      "y": 8,
-      "variant": "ts-10-1"
-    },
-    {
-      "type": "laser-mirror",
-      "x": 5,
-      "y": 8,
-      "stackOrder": 1,
-      "variant": "backslash"
-    },
-    {
-      "type": "hedge",
-      "x": 6,
-      "y": 8,
-      "variant": "ts-5-7"
-    },
-    {
-      "type": "grass",
-      "x": 7,
-      "y": 8,
-      "variant": "ts-10-1"
-    },
-    {
-      "type": "hedge",
-      "x": 8,
-      "y": 8,
-      "variant": "ts-5-7"
-    },
-    {
-      "type": "grass",
-      "x": 9,
-      "y": 8,
-      "variant": "ts-10-1"
-    },
-    {
-      "type": "grass",
-      "x": 10,
-      "y": 8,
-      "variant": "ts-10-1"
-    },
-    {
-      "type": "hedge",
-      "x": 11,
-      "y": 8,
-      "variant": "ts-5-7"
-    },
-    {
-      "type": "hedge",
-      "x": 0,
-      "y": 9,
-      "variant": "ts-5-7"
-    },
-    {
-      "type": "grass",
-      "x": 1,
-      "y": 9,
-      "variant": "ts-10-1"
-    },
-    {
-      "type": "grass",
-      "x": 2,
-      "y": 9,
-      "variant": "ts-10-1"
-    },
-    {
-      "type": "grass",
       "x": 3,
       "y": 9,
       "variant": "ts-10-1"
@@ -804,16 +798,16 @@
       "variant": "ts-10-1"
     },
     {
-      "type": "grass",
+      "type": "hedge",
       "x": 7,
       "y": 9,
-      "variant": "ts-10-1"
+      "variant": "ts-5-7"
     },
     {
-      "type": "hedge",
+      "type": "grass",
       "x": 8,
       "y": 9,
-      "variant": "ts-5-7"
+      "variant": "ts-10-1"
     },
     {
       "type": "grass",
@@ -825,93 +819,99 @@
       "type": "grass",
       "x": 10,
       "y": 9,
-      "variant": "ts-10-1"
-    },
-    {
-      "type": "hedge",
-      "x": 11,
-      "y": 9,
-      "variant": "ts-5-7"
-    },
-    {
-      "type": "hedge",
-      "x": 0,
-      "y": 10,
-      "variant": "ts-5-7"
-    },
-    {
-      "type": "grass",
-      "x": 1,
-      "y": 10,
-      "variant": "ts-10-1"
-    },
-    {
-      "type": "grass",
-      "x": 2,
-      "y": 10,
-      "variant": "ts-10-1"
-    },
-    {
-      "type": "laser-mirror",
-      "x": 2,
-      "y": 10,
-      "stackOrder": 1,
-      "variant": "slash"
-    },
-    {
-      "type": "grass",
-      "x": 3,
-      "y": 10,
-      "variant": "ts-10-1"
-    },
-    {
-      "type": "grass",
-      "x": 4,
-      "y": 10,
-      "variant": "ts-10-1"
-    },
-    {
-      "type": "laser-mirror",
-      "x": 4,
-      "y": 10,
-      "stackOrder": 1,
-      "variant": "backslash"
-    },
-    {
-      "type": "grass",
-      "x": 5,
-      "y": 10,
-      "variant": "ts-10-1"
-    },
-    {
-      "type": "grass",
-      "x": 6,
-      "y": 10,
-      "variant": "ts-10-1"
-    },
-    {
-      "type": "hedge",
-      "x": 7,
-      "y": 10,
-      "variant": "ts-5-7"
-    },
-    {
-      "type": "hedge",
-      "x": 8,
-      "y": 10,
-      "variant": "ts-5-7"
-    },
-    {
-      "type": "grass",
-      "x": 9,
-      "y": 10,
       "variant": "ts-10-1"
     },
     {
       "type": "exit",
-      "x": 9,
+      "x": 10,
+      "y": 9,
+      "stackOrder": 1
+    },
+    {
+      "type": "hedge",
+      "x": 11,
+      "y": 9,
+      "variant": "ts-5-7"
+    },
+    {
+      "type": "hedge",
+      "x": 0,
+      "y": 10,
+      "variant": "ts-5-7"
+    },
+    {
+      "type": "grass",
+      "x": 1,
+      "y": 10,
+      "variant": "ts-10-1"
+    },
+    {
+      "type": "laser-mirror",
+      "x": 1,
+      "y": 10,
+      "stackOrder": 1,
+      "variant": "slash"
+    },
+    {
+      "type": "grass",
+      "x": 2,
+      "y": 10,
+      "variant": "ts-10-1"
+    },
+    {
+      "type": "grass",
+      "x": 3,
+      "y": 10,
+      "variant": "ts-10-1"
+    },
+    {
+      "type": "grass",
+      "x": 4,
+      "y": 10,
+      "variant": "ts-10-1"
+    },
+    {
+      "type": "grass",
+      "x": 5,
+      "y": 10,
+      "variant": "ts-10-1"
+    },
+    {
+      "type": "laser-emitter",
+      "x": 5,
+      "y": 10,
+      "stackOrder": 1,
+      "direction": "left"
+    },
+    {
+      "type": "grass",
+      "x": 6,
+      "y": 10,
+      "variant": "ts-10-1"
+    },
+    {
+      "type": "laser-bomb",
+      "x": 6,
       "y": 10,
       "stackOrder": 1
+    },
+    {
+      "type": "grass",
+      "x": 7,
+      "y": 10,
+      "variant": "ts-10-1"
+    },
+    {
+      "type": "grass",
+      "x": 8,
+      "y": 10,
+      "variant": "ts-10-1"
+    },
+    {
+      "type": "grass",
+      "x": 9,
+      "y": 10,
+      "variant": "ts-10-1"
     },
     {
       "type": "grass",

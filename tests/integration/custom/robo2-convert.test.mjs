@@ -2,7 +2,37 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { parseMapDocument } from "@bobby/model";
 import { convertRobo2Level } from "../../../tools/custom/robo2/convert.mjs";
-import { ROBO2_TILE_CODE } from "../../../tools/custom/robo2/format.mjs";
+import {
+  decodeRobo2LevelRecord,
+  ROBO2_TILE_CODE,
+} from "../../../tools/custom/robo2/format.mjs";
+
+test("Robo 2 第一关按模拟器坐标和炮口方向转换", () => {
+  const decoded = decodeRobo2LevelRecord(
+    Buffer.from("0606031111111008011000b127000110a001111111", "hex"),
+    "data/0",
+  );
+  const document = convertRobo2Level(decoded, {
+    id: "01",
+    title: "The beggining!",
+  });
+  const objects = document.entities
+    .filter((entity) => entity.stackOrder === 1)
+    .map(({ type, x, y, direction }) => ({
+      type,
+      x,
+      y,
+      ...(direction ? { direction } : {}),
+    }));
+
+  assert.deepEqual(objects, [
+    { type: "exit", x: 3, y: 0 },
+    { type: "laser-emitter", x: 3, y: 1, direction: "up" },
+    { type: "laser-emitter", x: 4, y: 2, direction: "left" },
+    { type: "laser-emitter", x: 1, y: 3, direction: "down" },
+    { type: "bobby", x: 2, y: 4 },
+  ]);
+});
 
 test("Robo 2 tile 转换为可校验的语义 Entity", () => {
   const tiles = [
@@ -50,10 +80,10 @@ test("Robo 2 tile 转换为可校验的语义 Entity", () => {
     stackOrder: 1,
   });
   assert.equal(entityAt(document, "laser-mirror", 2, 1).variant, "backslash");
-  assert.equal(entityAt(document, "laser-emitter", 3, 1).direction, "down");
-  assert.equal(entityAt(document, "laser-emitter", 0, 2).direction, "up");
-  assert.equal(entityAt(document, "laser-emitter", 1, 2).direction, "left");
-  assert.equal(entityAt(document, "laser-emitter", 2, 2).direction, "right");
+  assert.equal(entityAt(document, "laser-emitter", 3, 1).direction, "up");
+  assert.equal(entityAt(document, "laser-emitter", 0, 2).direction, "down");
+  assert.equal(entityAt(document, "laser-emitter", 1, 2).direction, "right");
+  assert.equal(entityAt(document, "laser-emitter", 2, 2).direction, "left");
 });
 
 test("Robo 2 theme 只改变 Surface 映射", () => {

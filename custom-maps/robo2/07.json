@@ -30,34 +30,29 @@
       "y": 0
     },
     {
-      "type": "stone-wall",
+      "type": "sand",
       "x": 2,
-      "y": 0,
-      "variant": "ts-1-4"
+      "y": 0
     },
     {
-      "type": "stone-wall",
+      "type": "sand",
       "x": 3,
-      "y": 0,
-      "variant": "ts-1-4"
+      "y": 0
     },
     {
-      "type": "stone-wall",
+      "type": "sand",
       "x": 4,
-      "y": 0,
-      "variant": "ts-1-4"
+      "y": 0
     },
     {
-      "type": "stone-wall",
+      "type": "sand",
       "x": 5,
-      "y": 0,
-      "variant": "ts-1-4"
+      "y": 0
     },
     {
-      "type": "stone-wall",
+      "type": "sand",
       "x": 6,
-      "y": 0,
-      "variant": "ts-1-4"
+      "y": 0
     },
     {
       "type": "stone-wall",
@@ -102,10 +97,9 @@
       "variant": "ts-1-4"
     },
     {
-      "type": "stone-wall",
+      "type": "sand",
       "x": 14,
-      "y": 0,
-      "variant": "ts-1-4"
+      "y": 0
     },
     {
       "type": "sand",
@@ -123,10 +117,9 @@
       "y": 1
     },
     {
-      "type": "stone-wall",
+      "type": "sand",
       "x": 2,
-      "y": 1,
-      "variant": "ts-1-4"
+      "y": 1
     },
     {
       "type": "sand",
@@ -144,64 +137,60 @@
       "y": 1
     },
     {
+      "type": "sand",
+      "x": 6,
+      "y": 1
+    },
+    {
+      "type": "stone-wall",
+      "x": 7,
+      "y": 1,
+      "variant": "ts-1-4"
+    },
+    {
+      "type": "sand",
+      "x": 8,
+      "y": 1
+    },
+    {
+      "type": "sand",
+      "x": 9,
+      "y": 1
+    },
+    {
+      "type": "laser-mirror",
+      "x": 9,
+      "y": 1,
+      "stackOrder": 1,
+      "variant": "backslash"
+    },
+    {
+      "type": "sand",
+      "x": 10,
+      "y": 1
+    },
+    {
+      "type": "sand",
+      "x": 11,
+      "y": 1
+    },
+    {
+      "type": "sand",
+      "x": 12,
+      "y": 1
+    },
+    {
       "type": "laser-emitter",
-      "x": 5,
+      "x": 12,
       "y": 1,
       "stackOrder": 1,
       "direction": "up"
     },
     {
       "type": "stone-wall",
-      "x": 6,
+      "x": 13,
       "y": 1,
       "variant": "ts-1-4"
-    },
-    {
-      "type": "sand",
-      "x": 7,
-      "y": 1
-    },
-    {
-      "type": "sand",
-      "x": 8,
-      "y": 1
-    },
-    {
-      "type": "sand",
-      "x": 9,
-      "y": 1
-    },
-    {
-      "type": "sand",
-      "x": 10,
-      "y": 1
-    },
-    {
-      "type": "pushable-stone",
-      "x": 10,
-      "y": 1,
-      "stackOrder": 1
-    },
-    {
-      "type": "sand",
-      "x": 11,
-      "y": 1
-    },
-    {
-      "type": "sand",
-      "x": 12,
-      "y": 1
-    },
-    {
-      "type": "sand",
-      "x": 13,
-      "y": 1
-    },
-    {
-      "type": "bobby",
-      "x": 13,
-      "y": 1,
-      "stackOrder": 1
     },
     {
       "type": "stone-wall",
@@ -215,14 +204,16 @@
       "y": 1
     },
     {
-      "type": "sand",
+      "type": "stone-wall",
       "x": 0,
-      "y": 2
+      "y": 2,
+      "variant": "ts-1-4"
     },
     {
-      "type": "sand",
+      "type": "stone-wall",
       "x": 1,
-      "y": 2
+      "y": 2,
+      "variant": "ts-1-4"
     },
     {
       "type": "stone-wall",
@@ -231,19 +222,22 @@
       "variant": "ts-1-4"
     },
     {
-      "type": "sand",
+      "type": "stone-wall",
       "x": 3,
-      "y": 2
+      "y": 2,
+      "variant": "ts-1-4"
     },
     {
-      "type": "sand",
+      "type": "stone-wall",
       "x": 4,
-      "y": 2
+      "y": 2,
+      "variant": "ts-1-4"
     },
     {
-      "type": "sand",
+      "type": "stone-wall",
       "x": 5,
-      "y": 2
+      "y": 2,
+      "variant": "ts-1-4"
     },
     {
       "type": "stone-wall",
@@ -252,15 +246,15 @@
       "variant": "ts-1-4"
     },
     {
-      "type": "sand",
-      "x": 7,
-      "y": 2
-    },
-    {
       "type": "stone-wall",
-      "x": 8,
+      "x": 7,
       "y": 2,
       "variant": "ts-1-4"
+    },
+    {
+      "type": "sand",
+      "x": 8,
+      "y": 2
     },
     {
       "type": "sand",
@@ -268,10 +262,9 @@
       "y": 2
     },
     {
-      "type": "stone-wall",
+      "type": "sand",
       "x": 10,
-      "y": 2,
-      "variant": "ts-1-4"
+      "y": 2
     },
     {
       "type": "sand",
@@ -289,884 +282,902 @@
       "y": 2
     },
     {
-      "type": "stone-wall",
-      "x": 14,
+      "type": "exit",
+      "x": 13,
       "y": 2,
-      "variant": "ts-1-4"
-    },
-    {
-      "type": "sand",
-      "x": 15,
-      "y": 2
-    },
-    {
-      "type": "sand",
-      "x": 0,
-      "y": 3
-    },
-    {
-      "type": "sand",
-      "x": 1,
-      "y": 3
-    },
-    {
-      "type": "stone-wall",
-      "x": 2,
-      "y": 3,
-      "variant": "ts-1-4"
-    },
-    {
-      "type": "sand",
-      "x": 3,
-      "y": 3
-    },
-    {
-      "type": "sand",
-      "x": 4,
-      "y": 3
-    },
-    {
-      "type": "sand",
-      "x": 5,
-      "y": 3
-    },
-    {
-      "type": "stone-wall",
-      "x": 6,
-      "y": 3,
-      "variant": "ts-1-4"
-    },
-    {
-      "type": "sand",
-      "x": 7,
-      "y": 3
-    },
-    {
-      "type": "stone-wall",
-      "x": 8,
-      "y": 3,
-      "variant": "ts-1-4"
-    },
-    {
-      "type": "sand",
-      "x": 9,
-      "y": 3
-    },
-    {
-      "type": "sand",
-      "x": 10,
-      "y": 3
-    },
-    {
-      "type": "pushable-stone",
-      "x": 10,
-      "y": 3,
       "stackOrder": 1
     },
     {
+      "type": "stone-wall",
+      "x": 14,
+      "y": 2,
+      "variant": "ts-1-4"
+    },
+    {
+      "type": "stone-wall",
+      "x": 15,
+      "y": 2,
+      "variant": "ts-1-4"
+    },
+    {
+      "type": "stone-wall",
+      "x": 0,
+      "y": 3,
+      "variant": "ts-1-4"
+    },
+    {
+      "type": "sand",
+      "x": 1,
+      "y": 3
+    },
+    {
+      "type": "sand",
+      "x": 2,
+      "y": 3
+    },
+    {
+      "type": "sand",
+      "x": 3,
+      "y": 3
+    },
+    {
+      "type": "sand",
+      "x": 4,
+      "y": 3
+    },
+    {
+      "type": "sand",
+      "x": 5,
+      "y": 3
+    },
+    {
+      "type": "sand",
+      "x": 6,
+      "y": 3
+    },
+    {
+      "type": "sand",
+      "x": 7,
+      "y": 3
+    },
+    {
+      "type": "sand",
+      "x": 8,
+      "y": 3
+    },
+    {
+      "type": "sand",
+      "x": 9,
+      "y": 3
+    },
+    {
+      "type": "sand",
+      "x": 10,
+      "y": 3
+    },
+    {
       "type": "sand",
       "x": 11,
       "y": 3
     },
     {
-      "type": "stone-wall",
-      "x": 12,
-      "y": 3,
-      "variant": "ts-1-4"
-    },
-    {
-      "type": "stone-wall",
-      "x": 13,
-      "y": 3,
-      "variant": "ts-1-4"
-    },
-    {
-      "type": "stone-wall",
-      "x": 14,
-      "y": 3,
-      "variant": "ts-1-4"
-    },
-    {
       "type": "sand",
-      "x": 15,
+      "x": 12,
       "y": 3
     },
     {
       "type": "sand",
-      "x": 0,
-      "y": 4
-    },
-    {
-      "type": "sand",
-      "x": 1,
-      "y": 4
-    },
-    {
-      "type": "stone-wall",
-      "x": 2,
-      "y": 4,
-      "variant": "ts-1-4"
-    },
-    {
-      "type": "sand",
-      "x": 3,
-      "y": 4
-    },
-    {
-      "type": "sand",
-      "x": 4,
-      "y": 4
-    },
-    {
-      "type": "sand",
-      "x": 5,
-      "y": 4
-    },
-    {
-      "type": "stone-wall",
-      "x": 6,
-      "y": 4,
-      "variant": "ts-1-4"
-    },
-    {
-      "type": "sand",
-      "x": 7,
-      "y": 4
-    },
-    {
-      "type": "stone-wall",
-      "x": 8,
-      "y": 4,
-      "variant": "ts-1-4"
-    },
-    {
-      "type": "sand",
-      "x": 9,
-      "y": 4
-    },
-    {
-      "type": "stone-wall",
-      "x": 10,
-      "y": 4,
-      "variant": "ts-1-4"
-    },
-    {
-      "type": "sand",
-      "x": 11,
-      "y": 4
-    },
-    {
-      "type": "stone-wall",
-      "x": 12,
-      "y": 4,
-      "variant": "ts-1-4"
-    },
-    {
-      "type": "sand",
       "x": 13,
-      "y": 4
+      "y": 3
     },
     {
       "type": "sand",
       "x": 14,
-      "y": 4
-    },
-    {
-      "type": "sand",
-      "x": 15,
-      "y": 4
-    },
-    {
-      "type": "sand",
-      "x": 0,
-      "y": 5
-    },
-    {
-      "type": "sand",
-      "x": 1,
-      "y": 5
-    },
-    {
-      "type": "stone-wall",
-      "x": 2,
-      "y": 5,
-      "variant": "ts-1-4"
-    },
-    {
-      "type": "sand",
-      "x": 3,
-      "y": 5
-    },
-    {
-      "type": "sand",
-      "x": 4,
-      "y": 5
-    },
-    {
-      "type": "sand",
-      "x": 5,
-      "y": 5
-    },
-    {
-      "type": "stone-wall",
-      "x": 6,
-      "y": 5,
-      "variant": "ts-1-4"
-    },
-    {
-      "type": "sand",
-      "x": 7,
-      "y": 5
-    },
-    {
-      "type": "stone-wall",
-      "x": 8,
-      "y": 5,
-      "variant": "ts-1-4"
-    },
-    {
-      "type": "sand",
-      "x": 9,
-      "y": 5
-    },
-    {
-      "type": "sand",
-      "x": 10,
-      "y": 5
-    },
-    {
-      "type": "pushable-stone",
-      "x": 10,
-      "y": 5,
-      "stackOrder": 1
-    },
-    {
-      "type": "sand",
-      "x": 11,
-      "y": 5
-    },
-    {
-      "type": "stone-wall",
-      "x": 12,
-      "y": 5,
-      "variant": "ts-1-4"
-    },
-    {
-      "type": "sand",
-      "x": 13,
-      "y": 5
-    },
-    {
-      "type": "sand",
-      "x": 14,
-      "y": 5
-    },
-    {
-      "type": "sand",
-      "x": 15,
-      "y": 5
-    },
-    {
-      "type": "sand",
-      "x": 0,
-      "y": 6
-    },
-    {
-      "type": "sand",
-      "x": 1,
-      "y": 6
-    },
-    {
-      "type": "stone-wall",
-      "x": 2,
-      "y": 6,
-      "variant": "ts-1-4"
-    },
-    {
-      "type": "sand",
-      "x": 3,
-      "y": 6
-    },
-    {
-      "type": "sand",
-      "x": 4,
-      "y": 6
-    },
-    {
-      "type": "sand",
-      "x": 5,
-      "y": 6
-    },
-    {
-      "type": "stone-wall",
-      "x": 6,
-      "y": 6,
-      "variant": "ts-1-4"
-    },
-    {
-      "type": "sand",
-      "x": 7,
-      "y": 6
-    },
-    {
-      "type": "sand",
-      "x": 8,
-      "y": 6
-    },
-    {
-      "type": "pushable-stone",
-      "x": 8,
-      "y": 6,
-      "stackOrder": 1
-    },
-    {
-      "type": "sand",
-      "x": 9,
-      "y": 6
-    },
-    {
-      "type": "stone-wall",
-      "x": 10,
-      "y": 6,
-      "variant": "ts-1-4"
-    },
-    {
-      "type": "sand",
-      "x": 11,
-      "y": 6
-    },
-    {
-      "type": "stone-wall",
-      "x": 12,
-      "y": 6,
-      "variant": "ts-1-4"
-    },
-    {
-      "type": "stone-wall",
-      "x": 13,
-      "y": 6,
-      "variant": "ts-1-4"
-    },
-    {
-      "type": "stone-wall",
-      "x": 14,
-      "y": 6,
-      "variant": "ts-1-4"
-    },
-    {
-      "type": "sand",
-      "x": 15,
-      "y": 6
-    },
-    {
-      "type": "stone-wall",
-      "x": 0,
-      "y": 7,
-      "variant": "ts-1-4"
-    },
-    {
-      "type": "stone-wall",
-      "x": 1,
-      "y": 7,
-      "variant": "ts-1-4"
-    },
-    {
-      "type": "stone-wall",
-      "x": 2,
-      "y": 7,
-      "variant": "ts-1-4"
-    },
-    {
-      "type": "sand",
-      "x": 3,
-      "y": 7
-    },
-    {
-      "type": "sand",
-      "x": 4,
-      "y": 7
-    },
-    {
-      "type": "sand",
-      "x": 5,
-      "y": 7
-    },
-    {
-      "type": "stone-wall",
-      "x": 6,
-      "y": 7,
-      "variant": "ts-1-4"
-    },
-    {
-      "type": "sand",
-      "x": 7,
-      "y": 7
-    },
-    {
-      "type": "sand",
-      "x": 8,
-      "y": 7
-    },
-    {
-      "type": "sand",
-      "x": 9,
-      "y": 7
-    },
-    {
-      "type": "sand",
-      "x": 10,
-      "y": 7
-    },
-    {
-      "type": "sand",
-      "x": 11,
-      "y": 7
-    },
-    {
-      "type": "sand",
-      "x": 12,
-      "y": 7
-    },
-    {
-      "type": "sand",
-      "x": 13,
-      "y": 7
+      "y": 3
     },
     {
       "type": "laser-emitter",
-      "x": 13,
-      "y": 7,
+      "x": 14,
+      "y": 3,
       "stackOrder": 1,
       "direction": "left"
     },
     {
       "type": "stone-wall",
-      "x": 14,
-      "y": 7,
-      "variant": "ts-1-4"
-    },
-    {
-      "type": "sand",
       "x": 15,
-      "y": 7
+      "y": 3,
+      "variant": "ts-1-4"
     },
     {
       "type": "stone-wall",
       "x": 0,
-      "y": 8,
+      "y": 4,
       "variant": "ts-1-4"
     },
     {
       "type": "sand",
       "x": 1,
-      "y": 8
+      "y": 4
     },
     {
       "type": "sand",
       "x": 2,
-      "y": 8
+      "y": 4
     },
     {
       "type": "sand",
       "x": 3,
-      "y": 8
+      "y": 4
     },
     {
       "type": "sand",
       "x": 4,
-      "y": 8
+      "y": 4
     },
     {
       "type": "sand",
       "x": 5,
-      "y": 8
+      "y": 4
     },
     {
-      "type": "stone-wall",
+      "type": "sand",
       "x": 6,
-      "y": 8,
-      "variant": "ts-1-4"
+      "y": 4
     },
     {
-      "type": "stone-wall",
+      "type": "sand",
       "x": 7,
-      "y": 8,
-      "variant": "ts-1-4"
+      "y": 4
     },
     {
-      "type": "stone-wall",
+      "type": "sand",
       "x": 8,
-      "y": 8,
-      "variant": "ts-1-4"
+      "y": 4
     },
     {
-      "type": "stone-wall",
+      "type": "sand",
       "x": 9,
-      "y": 8,
-      "variant": "ts-1-4"
+      "y": 4
     },
     {
       "type": "sand",
       "x": 10,
-      "y": 8
-    },
-    {
-      "type": "pushable-stone",
-      "x": 10,
-      "y": 8,
-      "stackOrder": 1
+      "y": 4
     },
     {
       "type": "stone-wall",
       "x": 11,
-      "y": 8,
+      "y": 4,
       "variant": "ts-1-4"
     },
     {
       "type": "sand",
       "x": 12,
-      "y": 8
+      "y": 4
     },
     {
       "type": "sand",
       "x": 13,
-      "y": 8
+      "y": 4
     },
     {
-      "type": "stone-wall",
+      "type": "sand",
       "x": 14,
-      "y": 8,
-      "variant": "ts-1-4"
-    },
-    {
-      "type": "sand",
-      "x": 15,
-      "y": 8
-    },
-    {
-      "type": "stone-wall",
-      "x": 0,
-      "y": 9,
-      "variant": "ts-1-4"
-    },
-    {
-      "type": "sand",
-      "x": 1,
-      "y": 9
-    },
-    {
-      "type": "laser-mirror",
-      "x": 1,
-      "y": 9,
-      "stackOrder": 1,
-      "variant": "backslash"
-    },
-    {
-      "type": "sand",
-      "x": 2,
-      "y": 9
-    },
-    {
-      "type": "sand",
-      "x": 3,
-      "y": 9
-    },
-    {
-      "type": "sand",
-      "x": 4,
-      "y": 9
-    },
-    {
-      "type": "sand",
-      "x": 5,
-      "y": 9
-    },
-    {
-      "type": "sand",
-      "x": 6,
-      "y": 9
-    },
-    {
-      "type": "laser-mirror",
-      "x": 6,
-      "y": 9,
-      "stackOrder": 1,
-      "variant": "backslash"
-    },
-    {
-      "type": "sand",
-      "x": 7,
-      "y": 9
-    },
-    {
-      "type": "stone-wall",
-      "x": 8,
-      "y": 9,
-      "variant": "ts-1-4"
-    },
-    {
-      "type": "sand",
-      "x": 9,
-      "y": 9
-    },
-    {
-      "type": "sand",
-      "x": 10,
-      "y": 9
-    },
-    {
-      "type": "stone-wall",
-      "x": 11,
-      "y": 9,
-      "variant": "ts-1-4"
-    },
-    {
-      "type": "sand",
-      "x": 12,
-      "y": 9
-    },
-    {
-      "type": "sand",
-      "x": 13,
-      "y": 9
-    },
-    {
-      "type": "stone-wall",
-      "x": 14,
-      "y": 9,
-      "variant": "ts-1-4"
+      "y": 4
     },
     {
       "type": "stone-wall",
       "x": 15,
-      "y": 9,
+      "y": 4,
       "variant": "ts-1-4"
     },
     {
       "type": "stone-wall",
       "x": 0,
-      "y": 10,
+      "y": 5,
       "variant": "ts-1-4"
     },
     {
       "type": "sand",
       "x": 1,
-      "y": 10
-    },
-    {
-      "type": "sand",
-      "x": 2,
-      "y": 10
-    },
-    {
-      "type": "sand",
-      "x": 3,
-      "y": 10
-    },
-    {
-      "type": "sand",
-      "x": 4,
-      "y": 10
-    },
-    {
-      "type": "sand",
-      "x": 5,
-      "y": 10
-    },
-    {
-      "type": "sand",
-      "x": 6,
-      "y": 10
-    },
-    {
-      "type": "pushable-stone",
-      "x": 6,
-      "y": 10,
-      "stackOrder": 1
-    },
-    {
-      "type": "sand",
-      "x": 7,
-      "y": 10
-    },
-    {
-      "type": "stone-wall",
-      "x": 8,
-      "y": 10,
-      "variant": "ts-1-4"
-    },
-    {
-      "type": "sand",
-      "x": 9,
-      "y": 10
-    },
-    {
-      "type": "sand",
-      "x": 10,
-      "y": 10
-    },
-    {
-      "type": "stone-wall",
-      "x": 11,
-      "y": 10,
-      "variant": "ts-1-4"
-    },
-    {
-      "type": "sand",
-      "x": 12,
-      "y": 10
-    },
-    {
-      "type": "sand",
-      "x": 13,
-      "y": 10
-    },
-    {
-      "type": "sand",
-      "x": 14,
-      "y": 10
-    },
-    {
-      "type": "stone-wall",
-      "x": 15,
-      "y": 10,
-      "variant": "ts-1-4"
-    },
-    {
-      "type": "stone-wall",
-      "x": 0,
-      "y": 11,
-      "variant": "ts-1-4"
-    },
-    {
-      "type": "sand",
-      "x": 1,
-      "y": 11
-    },
-    {
-      "type": "sand",
-      "x": 2,
-      "y": 11
-    },
-    {
-      "type": "sand",
-      "x": 3,
-      "y": 11
-    },
-    {
-      "type": "stone-wall",
-      "x": 4,
-      "y": 11,
-      "variant": "ts-1-4"
-    },
-    {
-      "type": "sand",
-      "x": 5,
-      "y": 11
-    },
-    {
-      "type": "sand",
-      "x": 6,
-      "y": 11
-    },
-    {
-      "type": "laser-mirror",
-      "x": 6,
-      "y": 11,
-      "stackOrder": 1,
-      "variant": "slash"
-    },
-    {
-      "type": "sand",
-      "x": 7,
-      "y": 11
-    },
-    {
-      "type": "stone-wall",
-      "x": 8,
-      "y": 11,
-      "variant": "ts-1-4"
-    },
-    {
-      "type": "sand",
-      "x": 9,
-      "y": 11
-    },
-    {
-      "type": "sand",
-      "x": 10,
-      "y": 11
-    },
-    {
-      "type": "sand",
-      "x": 11,
-      "y": 11
-    },
-    {
-      "type": "sand",
-      "x": 12,
-      "y": 11
-    },
-    {
-      "type": "sand",
-      "x": 13,
-      "y": 11
-    },
-    {
-      "type": "sand",
-      "x": 14,
-      "y": 11
-    },
-    {
-      "type": "laser-mirror",
-      "x": 14,
-      "y": 11,
-      "stackOrder": 1,
-      "variant": "slash"
-    },
-    {
-      "type": "stone-wall",
-      "x": 15,
-      "y": 11,
-      "variant": "ts-1-4"
-    },
-    {
-      "type": "stone-wall",
-      "x": 0,
-      "y": 12,
-      "variant": "ts-1-4"
-    },
-    {
-      "type": "sand",
-      "x": 1,
-      "y": 12
+      "y": 5
     },
     {
       "type": "laser-emitter",
       "x": 1,
-      "y": 12,
+      "y": 5,
       "stackOrder": 1,
       "direction": "down"
     },
     {
       "type": "sand",
       "x": 2,
-      "y": 12
+      "y": 5
     },
     {
       "type": "sand",
       "x": 3,
-      "y": 12
+      "y": 5
     },
     {
       "type": "sand",
       "x": 4,
-      "y": 12
+      "y": 5
     },
     {
       "type": "sand",
       "x": 5,
+      "y": 5
+    },
+    {
+      "type": "sand",
+      "x": 6,
+      "y": 5
+    },
+    {
+      "type": "sand",
+      "x": 7,
+      "y": 5
+    },
+    {
+      "type": "sand",
+      "x": 8,
+      "y": 5
+    },
+    {
+      "type": "sand",
+      "x": 9,
+      "y": 5
+    },
+    {
+      "type": "sand",
+      "x": 10,
+      "y": 5
+    },
+    {
+      "type": "sand",
+      "x": 11,
+      "y": 5
+    },
+    {
+      "type": "sand",
+      "x": 12,
+      "y": 5
+    },
+    {
+      "type": "sand",
+      "x": 13,
+      "y": 5
+    },
+    {
+      "type": "sand",
+      "x": 14,
+      "y": 5
+    },
+    {
+      "type": "stone-wall",
+      "x": 15,
+      "y": 5,
+      "variant": "ts-1-4"
+    },
+    {
+      "type": "stone-wall",
+      "x": 0,
+      "y": 6,
+      "variant": "ts-1-4"
+    },
+    {
+      "type": "stone-wall",
+      "x": 1,
+      "y": 6,
+      "variant": "ts-1-4"
+    },
+    {
+      "type": "stone-wall",
+      "x": 2,
+      "y": 6,
+      "variant": "ts-1-4"
+    },
+    {
+      "type": "stone-wall",
+      "x": 3,
+      "y": 6,
+      "variant": "ts-1-4"
+    },
+    {
+      "type": "stone-wall",
+      "x": 4,
+      "y": 6,
+      "variant": "ts-1-4"
+    },
+    {
+      "type": "stone-wall",
+      "x": 5,
+      "y": 6,
+      "variant": "ts-1-4"
+    },
+    {
+      "type": "stone-wall",
+      "x": 6,
+      "y": 6,
+      "variant": "ts-1-4"
+    },
+    {
+      "type": "stone-wall",
+      "x": 7,
+      "y": 6,
+      "variant": "ts-1-4"
+    },
+    {
+      "type": "stone-wall",
+      "x": 8,
+      "y": 6,
+      "variant": "ts-1-4"
+    },
+    {
+      "type": "sand",
+      "x": 9,
+      "y": 6
+    },
+    {
+      "type": "laser-mirror",
+      "x": 9,
+      "y": 6,
+      "stackOrder": 1,
+      "variant": "backslash"
+    },
+    {
+      "type": "sand",
+      "x": 10,
+      "y": 6
+    },
+    {
+      "type": "pushable-stone",
+      "x": 10,
+      "y": 6,
+      "stackOrder": 1
+    },
+    {
+      "type": "sand",
+      "x": 11,
+      "y": 6
+    },
+    {
+      "type": "laser-mirror",
+      "x": 11,
+      "y": 6,
+      "stackOrder": 1,
+      "variant": "slash"
+    },
+    {
+      "type": "stone-wall",
+      "x": 12,
+      "y": 6,
+      "variant": "ts-1-4"
+    },
+    {
+      "type": "sand",
+      "x": 13,
+      "y": 6
+    },
+    {
+      "type": "stone-wall",
+      "x": 14,
+      "y": 6,
+      "variant": "ts-1-4"
+    },
+    {
+      "type": "stone-wall",
+      "x": 15,
+      "y": 6,
+      "variant": "ts-1-4"
+    },
+    {
+      "type": "stone-wall",
+      "x": 0,
+      "y": 7,
+      "variant": "ts-1-4"
+    },
+    {
+      "type": "sand",
+      "x": 1,
+      "y": 7
+    },
+    {
+      "type": "sand",
+      "x": 2,
+      "y": 7
+    },
+    {
+      "type": "sand",
+      "x": 3,
+      "y": 7
+    },
+    {
+      "type": "sand",
+      "x": 4,
+      "y": 7
+    },
+    {
+      "type": "sand",
+      "x": 5,
+      "y": 7
+    },
+    {
+      "type": "sand",
+      "x": 6,
+      "y": 7
+    },
+    {
+      "type": "sand",
+      "x": 7,
+      "y": 7
+    },
+    {
+      "type": "stone-wall",
+      "x": 8,
+      "y": 7,
+      "variant": "ts-1-4"
+    },
+    {
+      "type": "sand",
+      "x": 9,
+      "y": 7
+    },
+    {
+      "type": "sand",
+      "x": 10,
+      "y": 7
+    },
+    {
+      "type": "sand",
+      "x": 11,
+      "y": 7
+    },
+    {
+      "type": "sand",
+      "x": 12,
+      "y": 7
+    },
+    {
+      "type": "sand",
+      "x": 13,
+      "y": 7
+    },
+    {
+      "type": "sand",
+      "x": 14,
+      "y": 7
+    },
+    {
+      "type": "stone-wall",
+      "x": 15,
+      "y": 7,
+      "variant": "ts-1-4"
+    },
+    {
+      "type": "stone-wall",
+      "x": 0,
+      "y": 8,
+      "variant": "ts-1-4"
+    },
+    {
+      "type": "sand",
+      "x": 1,
+      "y": 8
+    },
+    {
+      "type": "stone-wall",
+      "x": 2,
+      "y": 8,
+      "variant": "ts-1-4"
+    },
+    {
+      "type": "stone-wall",
+      "x": 3,
+      "y": 8,
+      "variant": "ts-1-4"
+    },
+    {
+      "type": "stone-wall",
+      "x": 4,
+      "y": 8,
+      "variant": "ts-1-4"
+    },
+    {
+      "type": "stone-wall",
+      "x": 5,
+      "y": 8,
+      "variant": "ts-1-4"
+    },
+    {
+      "type": "sand",
+      "x": 6,
+      "y": 8
+    },
+    {
+      "type": "pushable-stone",
+      "x": 6,
+      "y": 8,
+      "stackOrder": 1
+    },
+    {
+      "type": "sand",
+      "x": 7,
+      "y": 8
+    },
+    {
+      "type": "stone-wall",
+      "x": 8,
+      "y": 8,
+      "variant": "ts-1-4"
+    },
+    {
+      "type": "stone-wall",
+      "x": 9,
+      "y": 8,
+      "variant": "ts-1-4"
+    },
+    {
+      "type": "stone-wall",
+      "x": 10,
+      "y": 8,
+      "variant": "ts-1-4"
+    },
+    {
+      "type": "stone-wall",
+      "x": 11,
+      "y": 8,
+      "variant": "ts-1-4"
+    },
+    {
+      "type": "stone-wall",
+      "x": 12,
+      "y": 8,
+      "variant": "ts-1-4"
+    },
+    {
+      "type": "sand",
+      "x": 13,
+      "y": 8
+    },
+    {
+      "type": "sand",
+      "x": 14,
+      "y": 8
+    },
+    {
+      "type": "stone-wall",
+      "x": 15,
+      "y": 8,
+      "variant": "ts-1-4"
+    },
+    {
+      "type": "stone-wall",
+      "x": 0,
+      "y": 9,
+      "variant": "ts-1-4"
+    },
+    {
+      "type": "sand",
+      "x": 1,
+      "y": 9
+    },
+    {
+      "type": "sand",
+      "x": 2,
+      "y": 9
+    },
+    {
+      "type": "sand",
+      "x": 3,
+      "y": 9
+    },
+    {
+      "type": "sand",
+      "x": 4,
+      "y": 9
+    },
+    {
+      "type": "sand",
+      "x": 5,
+      "y": 9
+    },
+    {
+      "type": "sand",
+      "x": 6,
+      "y": 9
+    },
+    {
+      "type": "sand",
+      "x": 7,
+      "y": 9
+    },
+    {
+      "type": "stone-wall",
+      "x": 8,
+      "y": 9,
+      "variant": "ts-1-4"
+    },
+    {
+      "type": "sand",
+      "x": 9,
+      "y": 9
+    },
+    {
+      "type": "sand",
+      "x": 10,
+      "y": 9
+    },
+    {
+      "type": "sand",
+      "x": 11,
+      "y": 9
+    },
+    {
+      "type": "stone-wall",
+      "x": 12,
+      "y": 9,
+      "variant": "ts-1-4"
+    },
+    {
+      "type": "sand",
+      "x": 13,
+      "y": 9
+    },
+    {
+      "type": "sand",
+      "x": 14,
+      "y": 9
+    },
+    {
+      "type": "stone-wall",
+      "x": 15,
+      "y": 9,
+      "variant": "ts-1-4"
+    },
+    {
+      "type": "stone-wall",
+      "x": 0,
+      "y": 10,
+      "variant": "ts-1-4"
+    },
+    {
+      "type": "sand",
+      "x": 1,
+      "y": 10
+    },
+    {
+      "type": "pushable-stone",
+      "x": 1,
+      "y": 10,
+      "stackOrder": 1
+    },
+    {
+      "type": "stone-wall",
+      "x": 2,
+      "y": 10,
+      "variant": "ts-1-4"
+    },
+    {
+      "type": "sand",
+      "x": 3,
+      "y": 10
+    },
+    {
+      "type": "pushable-stone",
+      "x": 3,
+      "y": 10,
+      "stackOrder": 1
+    },
+    {
+      "type": "stone-wall",
+      "x": 4,
+      "y": 10,
+      "variant": "ts-1-4"
+    },
+    {
+      "type": "sand",
+      "x": 5,
+      "y": 10
+    },
+    {
+      "type": "pushable-stone",
+      "x": 5,
+      "y": 10,
+      "stackOrder": 1
+    },
+    {
+      "type": "stone-wall",
+      "x": 6,
+      "y": 10,
+      "variant": "ts-1-4"
+    },
+    {
+      "type": "sand",
+      "x": 7,
+      "y": 10
+    },
+    {
+      "type": "sand",
+      "x": 8,
+      "y": 10
+    },
+    {
+      "type": "pushable-stone",
+      "x": 8,
+      "y": 10,
+      "stackOrder": 1
+    },
+    {
+      "type": "sand",
+      "x": 9,
+      "y": 10
+    },
+    {
+      "type": "sand",
+      "x": 10,
+      "y": 10
+    },
+    {
+      "type": "sand",
+      "x": 11,
+      "y": 10
+    },
+    {
+      "type": "stone-wall",
+      "x": 12,
+      "y": 10,
+      "variant": "ts-1-4"
+    },
+    {
+      "type": "sand",
+      "x": 13,
+      "y": 10
+    },
+    {
+      "type": "laser-emitter",
+      "x": 13,
+      "y": 10,
+      "stackOrder": 1,
+      "direction": "down"
+    },
+    {
+      "type": "sand",
+      "x": 14,
+      "y": 10
+    },
+    {
+      "type": "stone-wall",
+      "x": 15,
+      "y": 10,
+      "variant": "ts-1-4"
+    },
+    {
+      "type": "stone-wall",
+      "x": 0,
+      "y": 11,
+      "variant": "ts-1-4"
+    },
+    {
+      "type": "sand",
+      "x": 1,
+      "y": 11
+    },
+    {
+      "type": "sand",
+      "x": 2,
+      "y": 11
+    },
+    {
+      "type": "sand",
+      "x": 3,
+      "y": 11
+    },
+    {
+      "type": "sand",
+      "x": 4,
+      "y": 11
+    },
+    {
+      "type": "sand",
+      "x": 5,
+      "y": 11
+    },
+    {
+      "type": "sand",
+      "x": 6,
+      "y": 11
+    },
+    {
+      "type": "sand",
+      "x": 7,
+      "y": 11
+    },
+    {
+      "type": "stone-wall",
+      "x": 8,
+      "y": 11,
+      "variant": "ts-1-4"
+    },
+    {
+      "type": "stone-wall",
+      "x": 9,
+      "y": 11,
+      "variant": "ts-1-4"
+    },
+    {
+      "type": "stone-wall",
+      "x": 10,
+      "y": 11,
+      "variant": "ts-1-4"
+    },
+    {
+      "type": "sand",
+      "x": 11,
+      "y": 11
+    },
+    {
+      "type": "stone-wall",
+      "x": 12,
+      "y": 11,
+      "variant": "ts-1-4"
+    },
+    {
+      "type": "sand",
+      "x": 13,
+      "y": 11
+    },
+    {
+      "type": "laser-bomb",
+      "x": 13,
+      "y": 11,
+      "stackOrder": 1
+    },
+    {
+      "type": "sand",
+      "x": 14,
+      "y": 11
+    },
+    {
+      "type": "stone-wall",
+      "x": 15,
+      "y": 11,
+      "variant": "ts-1-4"
+    },
+    {
+      "type": "stone-wall",
+      "x": 0,
+      "y": 12,
+      "variant": "ts-1-4"
+    },
+    {
+      "type": "sand",
+      "x": 1,
       "y": 12
+    },
+    {
+      "type": "sand",
+      "x": 2,
+      "y": 12
+    },
+    {
+      "type": "stone-wall",
+      "x": 3,
+      "y": 12,
+      "variant": "ts-1-4"
+    },
+    {
+      "type": "stone-wall",
+      "x": 4,
+      "y": 12,
+      "variant": "ts-1-4"
+    },
+    {
+      "type": "stone-wall",
+      "x": 5,
+      "y": 12,
+      "variant": "ts-1-4"
     },
     {
       "type": "stone-wall",
@@ -1180,28 +1191,24 @@
       "y": 12
     },
     {
-      "type": "stone-wall",
+      "type": "sand",
       "x": 8,
-      "y": 12,
-      "variant": "ts-1-4"
+      "y": 12
     },
     {
-      "type": "stone-wall",
+      "type": "sand",
       "x": 9,
-      "y": 12,
-      "variant": "ts-1-4"
+      "y": 12
     },
     {
-      "type": "stone-wall",
+      "type": "sand",
       "x": 10,
-      "y": 12,
-      "variant": "ts-1-4"
+      "y": 12
     },
     {
-      "type": "stone-wall",
+      "type": "sand",
       "x": 11,
-      "y": 12,
-      "variant": "ts-1-4"
+      "y": 12
     },
     {
       "type": "sand",
@@ -1218,6 +1225,12 @@
       "type": "sand",
       "x": 13,
       "y": 12
+    },
+    {
+      "type": "laser-bomb",
+      "x": 13,
+      "y": 12,
+      "stackOrder": 1
     },
     {
       "type": "sand",
@@ -1237,26 +1250,26 @@
       "variant": "ts-1-4"
     },
     {
-      "type": "stone-wall",
-      "x": 1,
-      "y": 13,
-      "variant": "ts-1-4"
-    },
-    {
       "type": "sand",
-      "x": 2,
+      "x": 1,
       "y": 13
     },
     {
-      "type": "exit",
-      "x": 2,
+      "type": "bobby",
+      "x": 1,
       "y": 13,
       "stackOrder": 1
     },
     {
       "type": "sand",
-      "x": 3,
+      "x": 2,
       "y": 13
+    },
+    {
+      "type": "stone-wall",
+      "x": 3,
+      "y": 13,
+      "variant": "ts-1-4"
     },
     {
       "type": "sand",
@@ -1269,14 +1282,22 @@
       "y": 13
     },
     {
-      "type": "sand",
+      "type": "stone-wall",
       "x": 6,
-      "y": 13
+      "y": 13,
+      "variant": "ts-1-4"
     },
     {
       "type": "sand",
       "x": 7,
       "y": 13
+    },
+    {
+      "type": "laser-emitter",
+      "x": 7,
+      "y": 13,
+      "stackOrder": 1,
+      "direction": "right"
     },
     {
       "type": "sand",
@@ -1294,33 +1315,14 @@
       "y": 13
     },
     {
-      "type": "laser-emitter",
-      "x": 10,
-      "y": 13,
-      "stackOrder": 1,
-      "direction": "up"
-    },
-    {
       "type": "sand",
       "x": 11,
       "y": 13
     },
     {
-      "type": "laser-bomb",
-      "x": 11,
-      "y": 13,
-      "stackOrder": 1
-    },
-    {
       "type": "sand",
       "x": 12,
       "y": 13
-    },
-    {
-      "type": "laser-bomb",
-      "x": 12,
-      "y": 13,
-      "stackOrder": 1
     },
     {
       "type": "sand",
@@ -1331,13 +1333,6 @@
       "type": "sand",
       "x": 14,
       "y": 13
-    },
-    {
-      "type": "laser-emitter",
-      "x": 14,
-      "y": 13,
-      "stackOrder": 1,
-      "direction": "right"
     },
     {
       "type": "stone-wall",
@@ -1346,9 +1341,10 @@
       "variant": "ts-1-4"
     },
     {
-      "type": "sand",
+      "type": "stone-wall",
       "x": 0,
-      "y": 14
+      "y": 14,
+      "variant": "ts-1-4"
     },
     {
       "type": "stone-wall",
@@ -1363,16 +1359,10 @@
       "variant": "ts-1-4"
     },
     {
-      "type": "sand",
-      "x": 3,
-      "y": 14
-    },
-    {
-      "type": "laser-emitter",
+      "type": "stone-wall",
       "x": 3,
       "y": 14,
-      "stackOrder": 1,
-      "direction": "right"
+      "variant": "ts-1-4"
     },
     {
       "type": "sand",
@@ -1391,19 +1381,22 @@
       "variant": "ts-1-4"
     },
     {
-      "type": "sand",
+      "type": "stone-wall",
       "x": 7,
-      "y": 14
+      "y": 14,
+      "variant": "ts-1-4"
     },
     {
-      "type": "sand",
+      "type": "stone-wall",
       "x": 8,
-      "y": 14
+      "y": 14,
+      "variant": "ts-1-4"
     },
     {
-      "type": "sand",
+      "type": "stone-wall",
       "x": 9,
-      "y": 14
+      "y": 14,
+      "variant": "ts-1-4"
     },
     {
       "type": "sand",
@@ -1416,6 +1409,13 @@
       "y": 14
     },
     {
+      "type": "laser-mirror",
+      "x": 11,
+      "y": 14,
+      "stackOrder": 1,
+      "variant": "slash"
+    },
+    {
       "type": "sand",
       "x": 12,
       "y": 14
@@ -1424,6 +1424,13 @@
       "type": "sand",
       "x": 13,
       "y": 14
+    },
+    {
+      "type": "laser-emitter",
+      "x": 13,
+      "y": 14,
+      "stackOrder": 1,
+      "direction": "left"
     },
     {
       "type": "stone-wall",
@@ -1448,46 +1455,39 @@
       "y": 15
     },
     {
-      "type": "stone-wall",
+      "type": "sand",
       "x": 2,
-      "y": 15,
-      "variant": "ts-1-4"
+      "y": 15
     },
     {
-      "type": "stone-wall",
+      "type": "sand",
       "x": 3,
-      "y": 15,
-      "variant": "ts-1-4"
+      "y": 15
     },
     {
-      "type": "stone-wall",
+      "type": "sand",
       "x": 4,
-      "y": 15,
-      "variant": "ts-1-4"
+      "y": 15
     },
     {
-      "type": "stone-wall",
+      "type": "sand",
       "x": 5,
-      "y": 15,
-      "variant": "ts-1-4"
+      "y": 15
     },
     {
-      "type": "stone-wall",
+      "type": "sand",
       "x": 6,
-      "y": 15,
-      "variant": "ts-1-4"
+      "y": 15
     },
     {
-      "type": "stone-wall",
+      "type": "sand",
       "x": 7,
-      "y": 15,
-      "variant": "ts-1-4"
+      "y": 15
     },
     {
-      "type": "stone-wall",
+      "type": "sand",
       "x": 8,
-      "y": 15,
-      "variant": "ts-1-4"
+      "y": 15
     },
     {
       "type": "stone-wall",

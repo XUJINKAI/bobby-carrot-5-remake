@@ -26,7 +26,7 @@ u8 theme
 u4 cells[width * height]
 ```
 
-格子按行优先排列；每字节先存高半字节，再存低半字节。奇数格地图最后一个低半字节是 `0` padding。记录长度严格为 `3 + ceil(width * height / 2)`。
+格子按列优先排列，即 `index = x * height + y`；每字节先存高半字节，再存低半字节。奇数格地图最后一个低半字节是 `0` padding。记录长度严格为 `3 + ceil(width * height / 2)`。转换工具在解码边界把它规范化为 `LevelMap` 使用的行优先 Entity 坐标。
 
 `theme` 取值为 `0..3`，分别选择 JAR 中四套 `level1`～`level4` 地貌。它属于来源格式的视觉主题，转换到 `LevelMap` 时应映射为语义 Surface，不进入 Engine gameplay 字段。
 
@@ -39,13 +39,13 @@ u4 cells[width * height]
 | `0x4` | Bomb | `laser-bomb` |
 | `0x5` | `mirrorL` | `laser-mirror` / `slash` |
 | `0x6` | `mirrorR` | `laser-mirror` / `backslash` |
-| `0x7` | `laserDown` | `laser-emitter` / `down` |
-| `0x8` | `laserUp` | `laser-emitter` / `up` |
-| `0x9` | `laserLeft` | `laser-emitter` / `left` |
-| `0xA` | `laserRight` | `laser-emitter` / `right` |
+| `0x7` | `laserDown` | `laser-emitter` / `up` |
+| `0x8` | `laserUp` | `laser-emitter` / `down` |
+| `0x9` | `laserLeft` | `laser-emitter` / `right` |
+| `0xA` | `laserRight` | `laser-emitter` / `left` |
 | `0xB` | Robo 起点 | `bobby` |
 
-映射依据是 `b.class` 构造器与静态素材初始化。`mirrorL.png` 的镜面为 `/`，`mirrorR.png` 的镜面为 `\`。记录解码位于 `tools/custom/robo2/format.mjs`，语义转换位于 `tools/custom/robo2/convert.mjs`；Robo 2 byte 与语义 Entity 的转换只能位于该来源工具边界。
+映射依据是 `b.class` 构造器、静态素材初始化与 v1.0 a1 模拟器实测。四张 `laser*` 素材名描述炮身朝向，实际光束从相反方向射出；`mirrorL.png` 的镜面为 `/`，`mirrorR.png` 的镜面为 `\`。记录解码位于 `tools/custom/robo2/format.mjs`，语义转换位于 `tools/custom/robo2/convert.mjs`；Robo 2 byte 与语义 Entity 的转换只能位于该来源工具边界。
 
 来源主题按 `0..3` 对应太空、冰雪、遗迹、森林。当前转换分别复用 Sand / Stone Wall、Snow Cloud / Snowy Rock、Sand / Stone Wall、Grass / Hedge；这些 Surface 只负责保持可通行地面与阻挡墙的语义，并为四组关卡提供基础视觉区分。
 

@@ -56,76 +56,64 @@
       "variant": "ts-7-9"
     },
     {
-      "type": "snow-cloud",
+      "type": "snowy-rock",
       "x": 6,
-      "y": 0,
-      "variant": "ts-7-9"
+      "y": 0
     },
     {
-      "type": "snow-cloud",
+      "type": "snowy-rock",
       "x": 7,
-      "y": 0,
-      "variant": "ts-7-9"
+      "y": 0
     },
     {
-      "type": "snow-cloud",
+      "type": "snowy-rock",
       "x": 8,
-      "y": 0,
-      "variant": "ts-7-9"
+      "y": 0
     },
     {
-      "type": "snow-cloud",
+      "type": "snowy-rock",
       "x": 9,
-      "y": 0,
-      "variant": "ts-7-9"
+      "y": 0
     },
     {
-      "type": "snow-cloud",
+      "type": "snowy-rock",
       "x": 10,
-      "y": 0,
-      "variant": "ts-7-9"
+      "y": 0
     },
     {
-      "type": "snow-cloud",
+      "type": "snowy-rock",
       "x": 11,
-      "y": 0,
-      "variant": "ts-7-9"
+      "y": 0
     },
     {
-      "type": "snow-cloud",
+      "type": "snowy-rock",
       "x": 12,
-      "y": 0,
-      "variant": "ts-7-9"
+      "y": 0
     },
     {
-      "type": "snow-cloud",
+      "type": "snowy-rock",
       "x": 13,
-      "y": 0,
-      "variant": "ts-7-9"
+      "y": 0
     },
     {
-      "type": "snow-cloud",
+      "type": "snowy-rock",
       "x": 14,
-      "y": 0,
-      "variant": "ts-7-9"
+      "y": 0
     },
     {
-      "type": "snow-cloud",
+      "type": "snowy-rock",
       "x": 15,
-      "y": 0,
-      "variant": "ts-7-9"
+      "y": 0
     },
     {
-      "type": "snow-cloud",
+      "type": "snowy-rock",
       "x": 16,
-      "y": 0,
-      "variant": "ts-7-9"
+      "y": 0
     },
     {
-      "type": "snow-cloud",
+      "type": "snowy-rock",
       "x": 17,
-      "y": 0,
-      "variant": "ts-7-9"
+      "y": 0
     },
     {
       "type": "snow-cloud",
@@ -188,10 +176,9 @@
       "variant": "ts-7-9"
     },
     {
-      "type": "snow-cloud",
+      "type": "snowy-rock",
       "x": 6,
-      "y": 1,
-      "variant": "ts-7-9"
+      "y": 1
     },
     {
       "type": "snow-cloud",
@@ -209,304 +196,318 @@
       "type": "snow-cloud",
       "x": 9,
       "y": 1,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 10,
-      "y": 1,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 11,
-      "y": 1,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 12,
-      "y": 1,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 13,
-      "y": 1,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snowy-rock",
-      "x": 14,
-      "y": 1
-    },
-    {
-      "type": "snowy-rock",
-      "x": 15,
-      "y": 1
-    },
-    {
-      "type": "snowy-rock",
-      "x": 16,
-      "y": 1
-    },
-    {
-      "type": "snowy-rock",
-      "x": 17,
-      "y": 1
-    },
-    {
-      "type": "snowy-rock",
-      "x": 18,
-      "y": 1
-    },
-    {
-      "type": "snowy-rock",
-      "x": 19,
-      "y": 1
-    },
-    {
-      "type": "snowy-rock",
-      "x": 20,
-      "y": 1
-    },
-    {
-      "type": "snow-cloud",
-      "x": 21,
-      "y": 1,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 0,
-      "y": 2,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 1,
-      "y": 2,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 2,
-      "y": 2,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 3,
-      "y": 2,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 4,
-      "y": 2,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 5,
-      "y": 2,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snowy-rock",
-      "x": 6,
-      "y": 2
-    },
-    {
-      "type": "snowy-rock",
-      "x": 7,
-      "y": 2
-    },
-    {
-      "type": "snowy-rock",
-      "x": 8,
-      "y": 2
-    },
-    {
-      "type": "snow-cloud",
-      "x": 9,
-      "y": 2,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 10,
-      "y": 2,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 11,
-      "y": 2,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 12,
-      "y": 2,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 13,
-      "y": 2,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snowy-rock",
-      "x": 14,
-      "y": 2
-    },
-    {
-      "type": "snow-cloud",
-      "x": 15,
-      "y": 2,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 16,
-      "y": 2,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 17,
-      "y": 2,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 18,
-      "y": 2,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 19,
-      "y": 2,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snowy-rock",
-      "x": 20,
-      "y": 2
-    },
-    {
-      "type": "snow-cloud",
-      "x": 21,
-      "y": 2,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 0,
-      "y": 3,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 1,
-      "y": 3,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 2,
-      "y": 3,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 3,
-      "y": 3,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 4,
-      "y": 3,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 5,
-      "y": 3,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snowy-rock",
-      "x": 6,
-      "y": 3
-    },
-    {
-      "type": "snow-cloud",
-      "x": 7,
-      "y": 3,
       "variant": "ts-7-9"
     },
     {
       "type": "laser-emitter",
-      "x": 7,
-      "y": 3,
-      "stackOrder": 1,
-      "direction": "up"
-    },
-    {
-      "type": "snowy-rock",
-      "x": 8,
-      "y": 3
-    },
-    {
-      "type": "snowy-rock",
       "x": 9,
-      "y": 3
-    },
-    {
-      "type": "snowy-rock",
-      "x": 10,
-      "y": 3
-    },
-    {
-      "type": "snowy-rock",
-      "x": 11,
-      "y": 3
-    },
-    {
-      "type": "snowy-rock",
-      "x": 12,
-      "y": 3
-    },
-    {
-      "type": "snowy-rock",
-      "x": 13,
-      "y": 3
-    },
-    {
-      "type": "snowy-rock",
-      "x": 14,
-      "y": 3
-    },
-    {
-      "type": "snow-cloud",
-      "x": 15,
-      "y": 3,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "laser-emitter",
-      "x": 15,
-      "y": 3,
+      "y": 1,
       "stackOrder": 1,
       "direction": "up"
     },
     {
       "type": "snow-cloud",
+      "x": 10,
+      "y": 1,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 11,
+      "y": 1,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 12,
+      "y": 1,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 13,
+      "y": 1,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 14,
+      "y": 1,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 15,
+      "y": 1,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 16,
+      "y": 1,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "laser-emitter",
+      "x": 16,
+      "y": 1,
+      "stackOrder": 1,
+      "direction": "up"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 17,
+      "y": 1
+    },
+    {
+      "type": "snowy-rock",
+      "x": 18,
+      "y": 1
+    },
+    {
+      "type": "snowy-rock",
+      "x": 19,
+      "y": 1
+    },
+    {
+      "type": "snowy-rock",
+      "x": 20,
+      "y": 1
+    },
+    {
+      "type": "snowy-rock",
+      "x": 21,
+      "y": 1
+    },
+    {
+      "type": "snow-cloud",
+      "x": 0,
+      "y": 2,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 1,
+      "y": 2,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 2,
+      "y": 2,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 3,
+      "y": 2,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 4,
+      "y": 2
+    },
+    {
+      "type": "snowy-rock",
+      "x": 5,
+      "y": 2
+    },
+    {
+      "type": "snowy-rock",
+      "x": 6,
+      "y": 2
+    },
+    {
+      "type": "snow-cloud",
+      "x": 7,
+      "y": 2,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 8,
+      "y": 2,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 9,
+      "y": 2,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 10,
+      "y": 2,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 11,
+      "y": 2,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 12,
+      "y": 2,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 13,
+      "y": 2,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 14,
+      "y": 2,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 15,
+      "y": 2,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 16,
+      "y": 2,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 17,
+      "y": 2,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 18,
+      "y": 2,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 19,
+      "y": 2,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 20,
+      "y": 2,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "laser-emitter",
+      "x": 20,
+      "y": 2,
+      "stackOrder": 1,
+      "direction": "left"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 21,
+      "y": 2
+    },
+    {
+      "type": "snow-cloud",
+      "x": 0,
+      "y": 3,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 1,
+      "y": 3,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 2,
+      "y": 3,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 3,
+      "y": 3,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 4,
+      "y": 3
+    },
+    {
+      "type": "snow-cloud",
+      "x": 5,
+      "y": 3,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 6,
+      "y": 3,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 7,
+      "y": 3,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 8,
+      "y": 3
+    },
+    {
+      "type": "snow-cloud",
+      "x": 9,
+      "y": 3,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 10,
+      "y": 3
+    },
+    {
+      "type": "snow-cloud",
+      "x": 11,
+      "y": 3,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 12,
+      "y": 3
+    },
+    {
+      "type": "snow-cloud",
+      "x": 13,
+      "y": 3,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 14,
+      "y": 3,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 15,
+      "y": 3,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
       "x": 16,
       "y": 3,
       "variant": "ts-7-9"
@@ -524,28 +525,21 @@
       "variant": "ts-7-9"
     },
     {
-      "type": "laser-mirror",
-      "x": 18,
-      "y": 3,
-      "stackOrder": 1,
-      "variant": "slash"
-    },
-    {
       "type": "snow-cloud",
       "x": 19,
       "y": 3,
       "variant": "ts-7-9"
     },
     {
-      "type": "snowy-rock",
-      "x": 20,
-      "y": 3
-    },
-    {
       "type": "snow-cloud",
-      "x": 21,
+      "x": 20,
       "y": 3,
       "variant": "ts-7-9"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 21,
+      "y": 3
     },
     {
       "type": "snow-cloud",
@@ -560,14 +554,16 @@
       "variant": "ts-7-9"
     },
     {
-      "type": "snowy-rock",
+      "type": "snow-cloud",
       "x": 2,
-      "y": 4
+      "y": 4,
+      "variant": "ts-7-9"
     },
     {
-      "type": "snowy-rock",
+      "type": "snow-cloud",
       "x": 3,
-      "y": 4
+      "y": 4,
+      "variant": "ts-7-9"
     },
     {
       "type": "snowy-rock",
@@ -575,14 +571,22 @@
       "y": 4
     },
     {
-      "type": "snowy-rock",
+      "type": "snow-cloud",
       "x": 5,
-      "y": 4
+      "y": 4,
+      "variant": "ts-7-9"
     },
     {
-      "type": "snowy-rock",
+      "type": "snow-cloud",
       "x": 6,
-      "y": 4
+      "y": 4,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "exit",
+      "x": 6,
+      "y": 4,
+      "stackOrder": 1
     },
     {
       "type": "snow-cloud",
@@ -591,10 +595,9 @@
       "variant": "ts-7-9"
     },
     {
-      "type": "snow-cloud",
+      "type": "snowy-rock",
       "x": 8,
-      "y": 4,
-      "variant": "ts-7-9"
+      "y": 4
     },
     {
       "type": "snow-cloud",
@@ -603,10 +606,9 @@
       "variant": "ts-7-9"
     },
     {
-      "type": "snow-cloud",
+      "type": "snowy-rock",
       "x": 10,
-      "y": 4,
-      "variant": "ts-7-9"
+      "y": 4
     },
     {
       "type": "snow-cloud",
@@ -615,1609 +617,1587 @@
       "variant": "ts-7-9"
     },
     {
-      "type": "snow-cloud",
+      "type": "snowy-rock",
       "x": 12,
+      "y": 4
+    },
+    {
+      "type": "snow-cloud",
+      "x": 13,
       "y": 4,
       "variant": "ts-7-9"
     },
     {
-      "type": "laser-mirror",
-      "x": 12,
+      "type": "snow-cloud",
+      "x": 14,
       "y": 4,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 15,
+      "y": 4,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 16,
+      "y": 4,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 17,
+      "y": 4,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 18,
+      "y": 4,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 19,
+      "y": 4,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 20,
+      "y": 4,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 21,
+      "y": 4
+    },
+    {
+      "type": "snow-cloud",
+      "x": 0,
+      "y": 5,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 1,
+      "y": 5,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 2,
+      "y": 5,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 3,
+      "y": 5,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 4,
+      "y": 5
+    },
+    {
+      "type": "snow-cloud",
+      "x": 5,
+      "y": 5,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 6,
+      "y": 5,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 7,
+      "y": 5,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 8,
+      "y": 5
+    },
+    {
+      "type": "snow-cloud",
+      "x": 9,
+      "y": 5,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 10,
+      "y": 5
+    },
+    {
+      "type": "snow-cloud",
+      "x": 11,
+      "y": 5,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 12,
+      "y": 5
+    },
+    {
+      "type": "snow-cloud",
+      "x": 13,
+      "y": 5,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 14,
+      "y": 5,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 15,
+      "y": 5,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 16,
+      "y": 5,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 17,
+      "y": 5,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 18,
+      "y": 5,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 19,
+      "y": 5,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 20,
+      "y": 5,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 21,
+      "y": 5
+    },
+    {
+      "type": "snow-cloud",
+      "x": 0,
+      "y": 6,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 1,
+      "y": 6,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 2,
+      "y": 6
+    },
+    {
+      "type": "snowy-rock",
+      "x": 3,
+      "y": 6
+    },
+    {
+      "type": "snowy-rock",
+      "x": 4,
+      "y": 6
+    },
+    {
+      "type": "snowy-rock",
+      "x": 5,
+      "y": 6
+    },
+    {
+      "type": "snowy-rock",
+      "x": 6,
+      "y": 6
+    },
+    {
+      "type": "snowy-rock",
+      "x": 7,
+      "y": 6
+    },
+    {
+      "type": "snowy-rock",
+      "x": 8,
+      "y": 6
+    },
+    {
+      "type": "snow-cloud",
+      "x": 9,
+      "y": 6,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 10,
+      "y": 6
+    },
+    {
+      "type": "snow-cloud",
+      "x": 11,
+      "y": 6,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 12,
+      "y": 6
+    },
+    {
+      "type": "snowy-rock",
+      "x": 13,
+      "y": 6
+    },
+    {
+      "type": "snowy-rock",
+      "x": 14,
+      "y": 6
+    },
+    {
+      "type": "snowy-rock",
+      "x": 15,
+      "y": 6
+    },
+    {
+      "type": "snow-cloud",
+      "x": 16,
+      "y": 6,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 17,
+      "y": 6,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 18,
+      "y": 6,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 19,
+      "y": 6,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 20,
+      "y": 6,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 21,
+      "y": 6
+    },
+    {
+      "type": "snow-cloud",
+      "x": 0,
+      "y": 7,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 1,
+      "y": 7,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 2,
+      "y": 7
+    },
+    {
+      "type": "snow-cloud",
+      "x": 3,
+      "y": 7,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "laser-emitter",
+      "x": 3,
+      "y": 7,
+      "stackOrder": 1,
+      "direction": "down"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 4,
+      "y": 7,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 5,
+      "y": 7,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 6,
+      "y": 7,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 7,
+      "y": 7,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 8,
+      "y": 7,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 9,
+      "y": 7,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 10,
+      "y": 7,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 11,
+      "y": 7,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 12,
+      "y": 7,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 13,
+      "y": 7,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 14,
+      "y": 7,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 15,
+      "y": 7,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 16,
+      "y": 7,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 17,
+      "y": 7,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 18,
+      "y": 7,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 19,
+      "y": 7,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 20,
+      "y": 7,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 21,
+      "y": 7
+    },
+    {
+      "type": "snow-cloud",
+      "x": 0,
+      "y": 8,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 1,
+      "y": 8,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 2,
+      "y": 8
+    },
+    {
+      "type": "snowy-rock",
+      "x": 3,
+      "y": 8
+    },
+    {
+      "type": "snow-cloud",
+      "x": 4,
+      "y": 8,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 5,
+      "y": 8
+    },
+    {
+      "type": "snowy-rock",
+      "x": 6,
+      "y": 8
+    },
+    {
+      "type": "snowy-rock",
+      "x": 7,
+      "y": 8
+    },
+    {
+      "type": "snowy-rock",
+      "x": 8,
+      "y": 8
+    },
+    {
+      "type": "snow-cloud",
+      "x": 9,
+      "y": 8,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 10,
+      "y": 8,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 11,
+      "y": 8,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 12,
+      "y": 8
+    },
+    {
+      "type": "snowy-rock",
+      "x": 13,
+      "y": 8
+    },
+    {
+      "type": "snowy-rock",
+      "x": 14,
+      "y": 8
+    },
+    {
+      "type": "snowy-rock",
+      "x": 15,
+      "y": 8
+    },
+    {
+      "type": "snow-cloud",
+      "x": 16,
+      "y": 8,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 17,
+      "y": 8,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 18,
+      "y": 8,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 19,
+      "y": 8,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 20,
+      "y": 8,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 21,
+      "y": 8
+    },
+    {
+      "type": "snow-cloud",
+      "x": 0,
+      "y": 9,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 1,
+      "y": 9,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 2,
+      "y": 9,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 3,
+      "y": 9
+    },
+    {
+      "type": "snow-cloud",
+      "x": 4,
+      "y": 9,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 5,
+      "y": 9,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 6,
+      "y": 9,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 7,
+      "y": 9,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 8,
+      "y": 9,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 9,
+      "y": 9,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 10,
+      "y": 9,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 11,
+      "y": 9,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 12,
+      "y": 9,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 13,
+      "y": 9,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 14,
+      "y": 9,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 15,
+      "y": 9,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 16,
+      "y": 9,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 17,
+      "y": 9,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 18,
+      "y": 9,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 19,
+      "y": 9,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 20,
+      "y": 9,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "laser-emitter",
+      "x": 20,
+      "y": 9,
+      "stackOrder": 1,
+      "direction": "left"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 21,
+      "y": 9
+    },
+    {
+      "type": "snow-cloud",
+      "x": 0,
+      "y": 10,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 1,
+      "y": 10,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 2,
+      "y": 10,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 3,
+      "y": 10
+    },
+    {
+      "type": "snow-cloud",
+      "x": 4,
+      "y": 10,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 5,
+      "y": 10
+    },
+    {
+      "type": "snowy-rock",
+      "x": 6,
+      "y": 10
+    },
+    {
+      "type": "snowy-rock",
+      "x": 7,
+      "y": 10
+    },
+    {
+      "type": "snowy-rock",
+      "x": 8,
+      "y": 10
+    },
+    {
+      "type": "snow-cloud",
+      "x": 9,
+      "y": 10,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 10,
+      "y": 10
+    },
+    {
+      "type": "snow-cloud",
+      "x": 11,
+      "y": 10,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 12,
+      "y": 10
+    },
+    {
+      "type": "snowy-rock",
+      "x": 13,
+      "y": 10
+    },
+    {
+      "type": "snowy-rock",
+      "x": 14,
+      "y": 10
+    },
+    {
+      "type": "snowy-rock",
+      "x": 15,
+      "y": 10
+    },
+    {
+      "type": "snow-cloud",
+      "x": 16,
+      "y": 10,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 17,
+      "y": 10,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 18,
+      "y": 10,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 19,
+      "y": 10,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 20,
+      "y": 10,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 21,
+      "y": 10
+    },
+    {
+      "type": "snow-cloud",
+      "x": 0,
+      "y": 11,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 1,
+      "y": 11,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 2,
+      "y": 11,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 3,
+      "y": 11
+    },
+    {
+      "type": "snow-cloud",
+      "x": 4,
+      "y": 11,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 5,
+      "y": 11,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 6,
+      "y": 11,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 7,
+      "y": 11,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 8,
+      "y": 11
+    },
+    {
+      "type": "snow-cloud",
+      "x": 9,
+      "y": 11,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 10,
+      "y": 11
+    },
+    {
+      "type": "snow-cloud",
+      "x": 11,
+      "y": 11,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 12,
+      "y": 11
+    },
+    {
+      "type": "snow-cloud",
+      "x": 13,
+      "y": 11,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 14,
+      "y": 11,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 15,
+      "y": 11,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 16,
+      "y": 11,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 17,
+      "y": 11,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 18,
+      "y": 11,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 19,
+      "y": 11,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 20,
+      "y": 11,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 21,
+      "y": 11
+    },
+    {
+      "type": "snow-cloud",
+      "x": 0,
+      "y": 12,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 1,
+      "y": 12,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 2,
+      "y": 12,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 3,
+      "y": 12
+    },
+    {
+      "type": "snow-cloud",
+      "x": 4,
+      "y": 12,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "laser-mirror",
+      "x": 4,
+      "y": 12,
       "stackOrder": 1,
       "variant": "backslash"
     },
     {
       "type": "snow-cloud",
-      "x": 13,
-      "y": 4,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 14,
-      "y": 4,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 15,
-      "y": 4,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 16,
-      "y": 4,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 17,
-      "y": 4,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 18,
-      "y": 4,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 19,
-      "y": 4,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "laser-emitter",
-      "x": 19,
-      "y": 4,
-      "stackOrder": 1,
-      "direction": "left"
-    },
-    {
-      "type": "snowy-rock",
-      "x": 20,
-      "y": 4
-    },
-    {
-      "type": "snow-cloud",
-      "x": 21,
-      "y": 4,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 0,
-      "y": 5,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 1,
-      "y": 5,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snowy-rock",
-      "x": 2,
-      "y": 5
-    },
-    {
-      "type": "snow-cloud",
-      "x": 3,
-      "y": 5,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 4,
-      "y": 5,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
       "x": 5,
-      "y": 5,
+      "y": 12,
       "variant": "ts-7-9"
     },
     {
-      "type": "snowy-rock",
+      "type": "snow-cloud",
       "x": 6,
-      "y": 5
+      "y": 12,
+      "variant": "ts-7-9"
     },
     {
       "type": "snow-cloud",
       "x": 7,
-      "y": 5,
+      "y": 12,
       "variant": "ts-7-9"
     },
     {
       "type": "snowy-rock",
       "x": 8,
-      "y": 5
+      "y": 12
     },
     {
       "type": "snow-cloud",
       "x": 9,
-      "y": 5,
+      "y": 12,
       "variant": "ts-7-9"
     },
     {
       "type": "snowy-rock",
       "x": 10,
-      "y": 5
+      "y": 12
     },
     {
       "type": "snow-cloud",
       "x": 11,
-      "y": 5,
+      "y": 12,
       "variant": "ts-7-9"
     },
     {
-      "type": "snow-cloud",
+      "type": "snowy-rock",
       "x": 12,
-      "y": 5,
-      "variant": "ts-7-9"
+      "y": 12
     },
     {
       "type": "snow-cloud",
       "x": 13,
-      "y": 5,
+      "y": 12,
       "variant": "ts-7-9"
     },
     {
       "type": "snow-cloud",
       "x": 14,
-      "y": 5,
+      "y": 12,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 15,
+      "y": 12,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 16,
+      "y": 12,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 17,
+      "y": 12,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 18,
+      "y": 12,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 19,
+      "y": 12,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 20,
+      "y": 12,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 21,
+      "y": 12
+    },
+    {
+      "type": "snow-cloud",
+      "x": 0,
+      "y": 13,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 1,
+      "y": 13,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 2,
+      "y": 13,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 3,
+      "y": 13
+    },
+    {
+      "type": "snow-cloud",
+      "x": 4,
+      "y": 13,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 5,
+      "y": 13,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 6,
+      "y": 13,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 7,
+      "y": 13,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 8,
+      "y": 13
+    },
+    {
+      "type": "snow-cloud",
+      "x": 9,
+      "y": 13,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 10,
+      "y": 13
+    },
+    {
+      "type": "snow-cloud",
+      "x": 11,
+      "y": 13,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 12,
+      "y": 13
+    },
+    {
+      "type": "snow-cloud",
+      "x": 13,
+      "y": 13,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 14,
+      "y": 13,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 15,
+      "y": 13,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 16,
+      "y": 13,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 17,
+      "y": 13,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 18,
+      "y": 13,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 19,
+      "y": 13,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 20,
+      "y": 13,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 21,
+      "y": 13
+    },
+    {
+      "type": "snow-cloud",
+      "x": 0,
+      "y": 14,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 1,
+      "y": 14
+    },
+    {
+      "type": "snowy-rock",
+      "x": 2,
+      "y": 14
+    },
+    {
+      "type": "snowy-rock",
+      "x": 3,
+      "y": 14
+    },
+    {
+      "type": "snow-cloud",
+      "x": 4,
+      "y": 14,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 5,
+      "y": 14,
       "variant": "ts-7-9"
     },
     {
       "type": "bobby",
-      "x": 14,
-      "y": 5,
-      "stackOrder": 1
-    },
-    {
-      "type": "snow-cloud",
-      "x": 15,
-      "y": 5,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 16,
-      "y": 5,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 17,
-      "y": 5,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 18,
-      "y": 5,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 19,
-      "y": 5,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snowy-rock",
-      "x": 20,
-      "y": 5
-    },
-    {
-      "type": "snow-cloud",
-      "x": 21,
-      "y": 5,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snowy-rock",
-      "x": 0,
-      "y": 6
-    },
-    {
-      "type": "snowy-rock",
-      "x": 1,
-      "y": 6
-    },
-    {
-      "type": "snowy-rock",
-      "x": 2,
-      "y": 6
-    },
-    {
-      "type": "snow-cloud",
-      "x": 3,
-      "y": 6,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 4,
-      "y": 6,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "exit",
-      "x": 4,
-      "y": 6,
-      "stackOrder": 1
-    },
-    {
-      "type": "snow-cloud",
       "x": 5,
-      "y": 6,
+      "y": 14,
+      "stackOrder": 1
+    },
+    {
+      "type": "snow-cloud",
+      "x": 6,
+      "y": 14,
       "variant": "ts-7-9"
     },
     {
-      "type": "snowy-rock",
+      "type": "pushable-stone",
       "x": 6,
-      "y": 6
+      "y": 14,
+      "stackOrder": 1
     },
     {
       "type": "snow-cloud",
       "x": 7,
-      "y": 6,
+      "y": 14,
       "variant": "ts-7-9"
     },
     {
-      "type": "snowy-rock",
+      "type": "pushable-stone",
+      "x": 7,
+      "y": 14,
+      "stackOrder": 1
+    },
+    {
+      "type": "snow-cloud",
       "x": 8,
-      "y": 6
+      "y": 14,
+      "variant": "ts-7-9"
     },
     {
       "type": "snow-cloud",
       "x": 9,
-      "y": 6,
+      "y": 14,
       "variant": "ts-7-9"
     },
     {
-      "type": "snowy-rock",
+      "type": "snow-cloud",
       "x": 10,
-      "y": 6
+      "y": 14,
+      "variant": "ts-7-9"
     },
     {
       "type": "snow-cloud",
       "x": 11,
-      "y": 6,
+      "y": 14,
       "variant": "ts-7-9"
     },
     {
       "type": "snow-cloud",
       "x": 12,
-      "y": 6,
+      "y": 14,
       "variant": "ts-7-9"
     },
     {
       "type": "snow-cloud",
       "x": 13,
-      "y": 6,
+      "y": 14,
       "variant": "ts-7-9"
     },
     {
       "type": "snow-cloud",
       "x": 14,
-      "y": 6,
+      "y": 14,
       "variant": "ts-7-9"
-    },
-    {
-      "type": "pushable-stone",
-      "x": 14,
-      "y": 6,
-      "stackOrder": 1
     },
     {
       "type": "snow-cloud",
       "x": 15,
-      "y": 6,
+      "y": 14,
       "variant": "ts-7-9"
     },
     {
       "type": "snow-cloud",
       "x": 16,
-      "y": 6,
+      "y": 14,
       "variant": "ts-7-9"
     },
     {
       "type": "snow-cloud",
       "x": 17,
-      "y": 6,
+      "y": 14,
       "variant": "ts-7-9"
     },
     {
       "type": "snow-cloud",
       "x": 18,
-      "y": 6,
+      "y": 14,
       "variant": "ts-7-9"
     },
     {
       "type": "snow-cloud",
       "x": 19,
-      "y": 6,
+      "y": 14,
       "variant": "ts-7-9"
     },
     {
-      "type": "snowy-rock",
+      "type": "snow-cloud",
       "x": 20,
-      "y": 6
-    },
-    {
-      "type": "snow-cloud",
-      "x": 21,
-      "y": 6,
+      "y": 14,
       "variant": "ts-7-9"
     },
     {
       "type": "snowy-rock",
-      "x": 0,
-      "y": 7
+      "x": 21,
+      "y": 14
     },
     {
       "type": "snow-cloud",
-      "x": 1,
-      "y": 7,
+      "x": 0,
+      "y": 15,
       "variant": "ts-7-9"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 1,
+      "y": 15
     },
     {
       "type": "snow-cloud",
       "x": 2,
-      "y": 7,
+      "y": 15,
       "variant": "ts-7-9"
     },
     {
       "type": "snow-cloud",
       "x": 3,
-      "y": 7,
+      "y": 15,
       "variant": "ts-7-9"
+    },
+    {
+      "type": "laser-emitter",
+      "x": 3,
+      "y": 15,
+      "stackOrder": 1,
+      "direction": "down"
     },
     {
       "type": "snow-cloud",
       "x": 4,
-      "y": 7,
+      "y": 15,
       "variant": "ts-7-9"
     },
     {
       "type": "snow-cloud",
       "x": 5,
-      "y": 7,
+      "y": 15,
       "variant": "ts-7-9"
     },
     {
-      "type": "snowy-rock",
+      "type": "snow-cloud",
       "x": 6,
-      "y": 7
+      "y": 15,
+      "variant": "ts-7-9"
     },
     {
       "type": "snow-cloud",
       "x": 7,
-      "y": 7,
+      "y": 15,
       "variant": "ts-7-9"
     },
     {
-      "type": "snowy-rock",
+      "type": "snow-cloud",
       "x": 8,
-      "y": 7
+      "y": 15,
+      "variant": "ts-7-9"
     },
     {
       "type": "snow-cloud",
       "x": 9,
-      "y": 7,
+      "y": 15,
       "variant": "ts-7-9"
     },
     {
-      "type": "snowy-rock",
+      "type": "snow-cloud",
       "x": 10,
-      "y": 7
+      "y": 15,
+      "variant": "ts-7-9"
     },
     {
       "type": "snow-cloud",
       "x": 11,
-      "y": 7,
+      "y": 15,
       "variant": "ts-7-9"
     },
     {
       "type": "snow-cloud",
       "x": 12,
-      "y": 7,
+      "y": 15,
       "variant": "ts-7-9"
     },
     {
-      "type": "snow-cloud",
+      "type": "snowy-rock",
       "x": 13,
-      "y": 7,
-      "variant": "ts-7-9"
+      "y": 15
     },
     {
-      "type": "snow-cloud",
+      "type": "snowy-rock",
       "x": 14,
-      "y": 7,
-      "variant": "ts-7-9"
+      "y": 15
     },
     {
-      "type": "pushable-stone",
-      "x": 14,
-      "y": 7,
-      "stackOrder": 1
-    },
-    {
-      "type": "snow-cloud",
+      "type": "snowy-rock",
       "x": 15,
-      "y": 7,
+      "y": 15
+    },
+    {
+      "type": "snowy-rock",
+      "x": 16,
+      "y": 15
+    },
+    {
+      "type": "snowy-rock",
+      "x": 17,
+      "y": 15
+    },
+    {
+      "type": "snowy-rock",
+      "x": 18,
+      "y": 15
+    },
+    {
+      "type": "snowy-rock",
+      "x": 19,
+      "y": 15
+    },
+    {
+      "type": "snowy-rock",
+      "x": 20,
+      "y": 15
+    },
+    {
+      "type": "snowy-rock",
+      "x": 21,
+      "y": 15
+    },
+    {
+      "type": "snow-cloud",
+      "x": 0,
+      "y": 16,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 1,
+      "y": 16
+    },
+    {
+      "type": "snow-cloud",
+      "x": 2,
+      "y": 16,
       "variant": "ts-7-9"
     },
     {
       "type": "snow-cloud",
-      "x": 16,
-      "y": 7,
+      "x": 3,
+      "y": 16,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 4,
+      "y": 16,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 5,
+      "y": 16,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 6,
+      "y": 16,
+      "variant": "ts-7-9"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 7,
+      "y": 16,
       "variant": "ts-7-9"
     },
     {
       "type": "laser-mirror",
-      "x": 16,
-      "y": 7,
+      "x": 7,
+      "y": 16,
       "stackOrder": 1,
       "variant": "slash"
     },
     {
       "type": "snow-cloud",
-      "x": 17,
-      "y": 7,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 18,
-      "y": 7,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 19,
-      "y": 7,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "laser-emitter",
-      "x": 19,
-      "y": 7,
-      "stackOrder": 1,
-      "direction": "left"
-    },
-    {
-      "type": "snowy-rock",
-      "x": 20,
-      "y": 7
-    },
-    {
-      "type": "snow-cloud",
-      "x": 21,
-      "y": 7,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snowy-rock",
-      "x": 0,
-      "y": 8
-    },
-    {
-      "type": "snow-cloud",
-      "x": 1,
-      "y": 8,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 2,
-      "y": 8,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snowy-rock",
-      "x": 3,
-      "y": 8
-    },
-    {
-      "type": "snowy-rock",
-      "x": 4,
-      "y": 8
-    },
-    {
-      "type": "snowy-rock",
-      "x": 5,
-      "y": 8
-    },
-    {
-      "type": "snowy-rock",
-      "x": 6,
-      "y": 8
-    },
-    {
-      "type": "snow-cloud",
-      "x": 7,
-      "y": 8,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snowy-rock",
       "x": 8,
-      "y": 8
-    },
-    {
-      "type": "snow-cloud",
-      "x": 9,
-      "y": 8,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snowy-rock",
-      "x": 10,
-      "y": 8
-    },
-    {
-      "type": "snowy-rock",
-      "x": 11,
-      "y": 8
-    },
-    {
-      "type": "snowy-rock",
-      "x": 12,
-      "y": 8
-    },
-    {
-      "type": "snowy-rock",
-      "x": 13,
-      "y": 8
-    },
-    {
-      "type": "snow-cloud",
-      "x": 14,
-      "y": 8,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 15,
-      "y": 8,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 16,
-      "y": 8,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 17,
-      "y": 8,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 18,
-      "y": 8,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 19,
-      "y": 8,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snowy-rock",
-      "x": 20,
-      "y": 8
-    },
-    {
-      "type": "snow-cloud",
-      "x": 21,
-      "y": 8,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snowy-rock",
-      "x": 0,
-      "y": 9
-    },
-    {
-      "type": "snow-cloud",
-      "x": 1,
-      "y": 9,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "laser-emitter",
-      "x": 1,
-      "y": 9,
-      "stackOrder": 1,
-      "direction": "down"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 2,
-      "y": 9,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 3,
-      "y": 9,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 4,
-      "y": 9,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 5,
-      "y": 9,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 6,
-      "y": 9,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 7,
-      "y": 9,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 8,
-      "y": 9,
+      "y": 16,
       "variant": "ts-7-9"
     },
     {
       "type": "snow-cloud",
       "x": 9,
-      "y": 9,
+      "y": 16,
       "variant": "ts-7-9"
     },
     {
       "type": "snow-cloud",
       "x": 10,
-      "y": 9,
+      "y": 16,
       "variant": "ts-7-9"
     },
     {
       "type": "snow-cloud",
       "x": 11,
-      "y": 9,
+      "y": 16,
       "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 12,
-      "y": 9,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 13,
-      "y": 9,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 14,
-      "y": 9,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 15,
-      "y": 9,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 16,
-      "y": 9,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 17,
-      "y": 9,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 18,
-      "y": 9,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 19,
-      "y": 9,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snowy-rock",
-      "x": 20,
-      "y": 9
-    },
-    {
-      "type": "snow-cloud",
-      "x": 21,
-      "y": 9,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snowy-rock",
-      "x": 0,
-      "y": 10
-    },
-    {
-      "type": "snow-cloud",
-      "x": 1,
-      "y": 10,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 2,
-      "y": 10,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snowy-rock",
-      "x": 3,
-      "y": 10
-    },
-    {
-      "type": "snowy-rock",
-      "x": 4,
-      "y": 10
-    },
-    {
-      "type": "snowy-rock",
-      "x": 5,
-      "y": 10
-    },
-    {
-      "type": "snowy-rock",
-      "x": 6,
-      "y": 10
-    },
-    {
-      "type": "snow-cloud",
-      "x": 7,
-      "y": 10,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 8,
-      "y": 10,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 9,
-      "y": 10,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snowy-rock",
-      "x": 10,
-      "y": 10
-    },
-    {
-      "type": "snowy-rock",
-      "x": 11,
-      "y": 10
     },
     {
       "type": "snowy-rock",
       "x": 12,
-      "y": 10
+      "y": 16
     },
     {
       "type": "snowy-rock",
       "x": 13,
-      "y": 10
-    },
-    {
-      "type": "snow-cloud",
-      "x": 14,
-      "y": 10,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 15,
-      "y": 10,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 16,
-      "y": 10,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 17,
-      "y": 10,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 18,
-      "y": 10,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 19,
-      "y": 10,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snowy-rock",
-      "x": 20,
-      "y": 10
-    },
-    {
-      "type": "snow-cloud",
-      "x": 21,
-      "y": 10,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snowy-rock",
-      "x": 0,
-      "y": 11
-    },
-    {
-      "type": "snow-cloud",
-      "x": 1,
-      "y": 11,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 2,
-      "y": 11,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 3,
-      "y": 11,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 4,
-      "y": 11,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 5,
-      "y": 11,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 6,
-      "y": 11,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 7,
-      "y": 11,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 8,
-      "y": 11,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 9,
-      "y": 11,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 10,
-      "y": 11,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 11,
-      "y": 11,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 12,
-      "y": 11,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 13,
-      "y": 11,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 14,
-      "y": 11,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 15,
-      "y": 11,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 16,
-      "y": 11,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 17,
-      "y": 11,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "laser-emitter",
-      "x": 17,
-      "y": 11,
-      "stackOrder": 1,
-      "direction": "left"
-    },
-    {
-      "type": "snowy-rock",
-      "x": 18,
-      "y": 11
-    },
-    {
-      "type": "snowy-rock",
-      "x": 19,
-      "y": 11
-    },
-    {
-      "type": "snowy-rock",
-      "x": 20,
-      "y": 11
-    },
-    {
-      "type": "snow-cloud",
-      "x": 21,
-      "y": 11,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snowy-rock",
-      "x": 0,
-      "y": 12
-    },
-    {
-      "type": "snow-cloud",
-      "x": 1,
-      "y": 12,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 2,
-      "y": 12,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snowy-rock",
-      "x": 3,
-      "y": 12
-    },
-    {
-      "type": "snowy-rock",
-      "x": 4,
-      "y": 12
-    },
-    {
-      "type": "snowy-rock",
-      "x": 5,
-      "y": 12
-    },
-    {
-      "type": "snowy-rock",
-      "x": 6,
-      "y": 12
-    },
-    {
-      "type": "snow-cloud",
-      "x": 7,
-      "y": 12,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snowy-rock",
-      "x": 8,
-      "y": 12
-    },
-    {
-      "type": "snow-cloud",
-      "x": 9,
-      "y": 12,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snowy-rock",
-      "x": 10,
-      "y": 12
-    },
-    {
-      "type": "snowy-rock",
-      "x": 11,
-      "y": 12
-    },
-    {
-      "type": "snowy-rock",
-      "x": 12,
-      "y": 12
-    },
-    {
-      "type": "snowy-rock",
-      "x": 13,
-      "y": 12
-    },
-    {
-      "type": "snow-cloud",
-      "x": 14,
-      "y": 12,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 15,
-      "y": 12,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snowy-rock",
-      "x": 16,
-      "y": 12
-    },
-    {
-      "type": "snowy-rock",
-      "x": 17,
-      "y": 12
-    },
-    {
-      "type": "snowy-rock",
-      "x": 18,
-      "y": 12
-    },
-    {
-      "type": "snow-cloud",
-      "x": 19,
-      "y": 12,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 20,
-      "y": 12,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 21,
-      "y": 12,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snowy-rock",
-      "x": 0,
-      "y": 13
-    },
-    {
-      "type": "snow-cloud",
-      "x": 1,
-      "y": 13,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 2,
-      "y": 13,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 3,
-      "y": 13,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 4,
-      "y": 13,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 5,
-      "y": 13,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snowy-rock",
-      "x": 6,
-      "y": 13
-    },
-    {
-      "type": "snow-cloud",
-      "x": 7,
-      "y": 13,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snowy-rock",
-      "x": 8,
-      "y": 13
-    },
-    {
-      "type": "snow-cloud",
-      "x": 9,
-      "y": 13,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snowy-rock",
-      "x": 10,
-      "y": 13
-    },
-    {
-      "type": "snow-cloud",
-      "x": 11,
-      "y": 13,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 12,
-      "y": 13,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 13,
-      "y": 13,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 14,
-      "y": 13,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snowy-rock",
-      "x": 15,
-      "y": 13
-    },
-    {
-      "type": "snowy-rock",
-      "x": 16,
-      "y": 13
-    },
-    {
-      "type": "snow-cloud",
-      "x": 17,
-      "y": 13,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 18,
-      "y": 13,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 19,
-      "y": 13,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 20,
-      "y": 13,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 21,
-      "y": 13,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snowy-rock",
-      "x": 0,
-      "y": 14
-    },
-    {
-      "type": "snow-cloud",
-      "x": 1,
-      "y": 14,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 2,
-      "y": 14,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 3,
-      "y": 14,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 4,
-      "y": 14,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 5,
-      "y": 14,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snowy-rock",
-      "x": 6,
-      "y": 14
-    },
-    {
-      "type": "snow-cloud",
-      "x": 7,
-      "y": 14,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snowy-rock",
-      "x": 8,
-      "y": 14
-    },
-    {
-      "type": "snow-cloud",
-      "x": 9,
-      "y": 14,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snowy-rock",
-      "x": 10,
-      "y": 14
-    },
-    {
-      "type": "snow-cloud",
-      "x": 11,
-      "y": 14,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 12,
-      "y": 14,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 13,
-      "y": 14,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 14,
-      "y": 14,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snowy-rock",
-      "x": 15,
-      "y": 14
-    },
-    {
-      "type": "snow-cloud",
-      "x": 16,
-      "y": 14,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 17,
-      "y": 14,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 18,
-      "y": 14,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 19,
-      "y": 14,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 20,
-      "y": 14,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 21,
-      "y": 14,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snowy-rock",
-      "x": 0,
-      "y": 15
-    },
-    {
-      "type": "snow-cloud",
-      "x": 1,
-      "y": 15,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 2,
-      "y": 15,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 3,
-      "y": 15,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 4,
-      "y": 15,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 5,
-      "y": 15,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snowy-rock",
-      "x": 6,
-      "y": 15
-    },
-    {
-      "type": "snow-cloud",
-      "x": 7,
-      "y": 15,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snowy-rock",
-      "x": 8,
-      "y": 15
-    },
-    {
-      "type": "snow-cloud",
-      "x": 9,
-      "y": 15,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snowy-rock",
-      "x": 10,
-      "y": 15
-    },
-    {
-      "type": "snow-cloud",
-      "x": 11,
-      "y": 15,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 12,
-      "y": 15,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 13,
-      "y": 15,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 14,
-      "y": 15,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snowy-rock",
-      "x": 15,
-      "y": 15
-    },
-    {
-      "type": "snow-cloud",
-      "x": 16,
-      "y": 15,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 17,
-      "y": 15,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 18,
-      "y": 15,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 19,
-      "y": 15,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 20,
-      "y": 15,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 21,
-      "y": 15,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snowy-rock",
-      "x": 0,
       "y": 16
     },
     {
       "type": "snow-cloud",
-      "x": 1,
-      "y": 16,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "laser-emitter",
-      "x": 1,
-      "y": 16,
-      "stackOrder": 1,
-      "direction": "down"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 2,
-      "y": 16,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 3,
-      "y": 16,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 4,
-      "y": 16,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 5,
-      "y": 16,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 6,
-      "y": 16,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 7,
-      "y": 16,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 8,
-      "y": 16,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 9,
-      "y": 16,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 10,
-      "y": 16,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 11,
-      "y": 16,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 12,
-      "y": 16,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
-      "x": 13,
-      "y": 16,
-      "variant": "ts-7-9"
-    },
-    {
-      "type": "snow-cloud",
       "x": 14,
       "y": 16,
       "variant": "ts-7-9"
     },
     {
-      "type": "snowy-rock",
+      "type": "snow-cloud",
       "x": 15,
-      "y": 16
+      "y": 16,
+      "variant": "ts-7-9"
     },
     {
       "type": "snow-cloud",
@@ -2256,9 +2236,10 @@
       "variant": "ts-7-9"
     },
     {
-      "type": "snowy-rock",
+      "type": "snow-cloud",
       "x": 0,
-      "y": 17
+      "y": 17,
+      "variant": "ts-7-9"
     },
     {
       "type": "snowy-rock",
@@ -2326,10 +2307,16 @@
       "variant": "ts-7-9"
     },
     {
-      "type": "snow-cloud",
-      "x": 12,
+      "type": "laser-emitter",
+      "x": 11,
       "y": 17,
-      "variant": "ts-7-9"
+      "stackOrder": 1,
+      "direction": "right"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 12,
+      "y": 17
     },
     {
       "type": "snow-cloud",
@@ -2344,9 +2331,10 @@
       "variant": "ts-7-9"
     },
     {
-      "type": "snowy-rock",
+      "type": "snow-cloud",
       "x": 15,
-      "y": 17
+      "y": 17,
+      "variant": "ts-7-9"
     },
     {
       "type": "snow-cloud",
@@ -2408,6 +2396,13 @@
       "variant": "ts-7-9"
     },
     {
+      "type": "laser-mirror",
+      "x": 3,
+      "y": 18,
+      "stackOrder": 1,
+      "variant": "slash"
+    },
+    {
       "type": "snow-cloud",
       "x": 4,
       "y": 18,
@@ -2450,16 +2445,14 @@
       "variant": "ts-7-9"
     },
     {
-      "type": "snow-cloud",
+      "type": "snowy-rock",
       "x": 11,
-      "y": 18,
-      "variant": "ts-7-9"
+      "y": 18
     },
     {
-      "type": "snow-cloud",
+      "type": "snowy-rock",
       "x": 12,
-      "y": 18,
-      "variant": "ts-7-9"
+      "y": 18
     },
     {
       "type": "snow-cloud",
@@ -2474,9 +2467,10 @@
       "variant": "ts-7-9"
     },
     {
-      "type": "snowy-rock",
+      "type": "snow-cloud",
       "x": 15,
-      "y": 18
+      "y": 18,
+      "variant": "ts-7-9"
     },
     {
       "type": "snow-cloud",
@@ -2544,6 +2538,13 @@
       "variant": "ts-7-9"
     },
     {
+      "type": "laser-emitter",
+      "x": 4,
+      "y": 19,
+      "stackOrder": 1,
+      "direction": "right"
+    },
+    {
       "type": "snow-cloud",
       "x": 5,
       "y": 19,
@@ -2560,6 +2561,13 @@
       "x": 7,
       "y": 19,
       "variant": "ts-7-9"
+    },
+    {
+      "type": "laser-emitter",
+      "x": 7,
+      "y": 19,
+      "stackOrder": 1,
+      "direction": "right"
     },
     {
       "type": "snow-cloud",
@@ -2580,10 +2588,9 @@
       "variant": "ts-7-9"
     },
     {
-      "type": "snow-cloud",
+      "type": "snowy-rock",
       "x": 11,
-      "y": 19,
-      "variant": "ts-7-9"
+      "y": 19
     },
     {
       "type": "snow-cloud",
@@ -2604,9 +2611,10 @@
       "variant": "ts-7-9"
     },
     {
-      "type": "snowy-rock",
+      "type": "snow-cloud",
       "x": 15,
-      "y": 19
+      "y": 19,
+      "variant": "ts-7-9"
     },
     {
       "type": "snow-cloud",
@@ -2656,78 +2664,54 @@
       "y": 20
     },
     {
-      "type": "snow-cloud",
+      "type": "snowy-rock",
       "x": 2,
-      "y": 20,
-      "variant": "ts-7-9"
+      "y": 20
     },
     {
-      "type": "laser-emitter",
-      "x": 2,
-      "y": 20,
-      "stackOrder": 1,
-      "direction": "right"
-    },
-    {
-      "type": "snow-cloud",
+      "type": "snowy-rock",
       "x": 3,
-      "y": 20,
-      "variant": "ts-7-9"
+      "y": 20
     },
     {
-      "type": "snow-cloud",
+      "type": "snowy-rock",
       "x": 4,
-      "y": 20,
-      "variant": "ts-7-9"
+      "y": 20
     },
     {
-      "type": "snow-cloud",
+      "type": "snowy-rock",
       "x": 5,
-      "y": 20,
-      "variant": "ts-7-9"
+      "y": 20
     },
     {
-      "type": "snow-cloud",
+      "type": "snowy-rock",
       "x": 6,
-      "y": 20,
-      "variant": "ts-7-9"
+      "y": 20
     },
     {
-      "type": "snow-cloud",
+      "type": "snowy-rock",
       "x": 7,
-      "y": 20,
-      "variant": "ts-7-9"
+      "y": 20
     },
     {
-      "type": "snow-cloud",
+      "type": "snowy-rock",
       "x": 8,
-      "y": 20,
-      "variant": "ts-7-9"
+      "y": 20
     },
     {
-      "type": "snow-cloud",
+      "type": "snowy-rock",
       "x": 9,
-      "y": 20,
-      "variant": "ts-7-9"
+      "y": 20
     },
     {
-      "type": "laser-emitter",
-      "x": 9,
-      "y": 20,
-      "stackOrder": 1,
-      "direction": "right"
-    },
-    {
-      "type": "snow-cloud",
+      "type": "snowy-rock",
       "x": 10,
-      "y": 20,
-      "variant": "ts-7-9"
+      "y": 20
     },
     {
-      "type": "snow-cloud",
+      "type": "snowy-rock",
       "x": 11,
-      "y": 20,
-      "variant": "ts-7-9"
+      "y": 20
     },
     {
       "type": "snow-cloud",
@@ -2748,9 +2732,10 @@
       "variant": "ts-7-9"
     },
     {
-      "type": "snowy-rock",
+      "type": "snow-cloud",
       "x": 15,
-      "y": 20
+      "y": 20,
+      "variant": "ts-7-9"
     },
     {
       "type": "snow-cloud",
@@ -2795,79 +2780,94 @@
       "variant": "ts-7-9"
     },
     {
-      "type": "snowy-rock",
+      "type": "snow-cloud",
       "x": 1,
-      "y": 21
+      "y": 21,
+      "variant": "ts-7-9"
     },
     {
-      "type": "snowy-rock",
+      "type": "snow-cloud",
       "x": 2,
-      "y": 21
+      "y": 21,
+      "variant": "ts-7-9"
     },
     {
-      "type": "snowy-rock",
+      "type": "snow-cloud",
       "x": 3,
-      "y": 21
+      "y": 21,
+      "variant": "ts-7-9"
     },
     {
-      "type": "snowy-rock",
+      "type": "snow-cloud",
       "x": 4,
-      "y": 21
+      "y": 21,
+      "variant": "ts-7-9"
     },
     {
-      "type": "snowy-rock",
+      "type": "snow-cloud",
       "x": 5,
-      "y": 21
+      "y": 21,
+      "variant": "ts-7-9"
     },
     {
-      "type": "snowy-rock",
+      "type": "snow-cloud",
       "x": 6,
-      "y": 21
+      "y": 21,
+      "variant": "ts-7-9"
     },
     {
-      "type": "snowy-rock",
+      "type": "snow-cloud",
       "x": 7,
-      "y": 21
+      "y": 21,
+      "variant": "ts-7-9"
     },
     {
-      "type": "snowy-rock",
+      "type": "snow-cloud",
       "x": 8,
-      "y": 21
+      "y": 21,
+      "variant": "ts-7-9"
     },
     {
-      "type": "snowy-rock",
+      "type": "snow-cloud",
       "x": 9,
-      "y": 21
+      "y": 21,
+      "variant": "ts-7-9"
     },
     {
-      "type": "snowy-rock",
+      "type": "snow-cloud",
       "x": 10,
-      "y": 21
+      "y": 21,
+      "variant": "ts-7-9"
     },
     {
-      "type": "snowy-rock",
+      "type": "snow-cloud",
       "x": 11,
-      "y": 21
+      "y": 21,
+      "variant": "ts-7-9"
     },
     {
-      "type": "snowy-rock",
+      "type": "snow-cloud",
       "x": 12,
-      "y": 21
+      "y": 21,
+      "variant": "ts-7-9"
     },
     {
-      "type": "snowy-rock",
+      "type": "snow-cloud",
       "x": 13,
-      "y": 21
+      "y": 21,
+      "variant": "ts-7-9"
     },
     {
-      "type": "snowy-rock",
+      "type": "snow-cloud",
       "x": 14,
-      "y": 21
+      "y": 21,
+      "variant": "ts-7-9"
     },
     {
-      "type": "snowy-rock",
+      "type": "snow-cloud",
       "x": 15,
-      "y": 21
+      "y": 21,
+      "variant": "ts-7-9"
     },
     {
       "type": "snow-cloud",
