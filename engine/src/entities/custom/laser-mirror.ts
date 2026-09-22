@@ -55,7 +55,7 @@ export const laserMirror: EntityModule = defineEntityModule({
       return {
         layers: [{
           kind: "image",
-          renderPass: "effect",
+          renderPass: "standing",
           asset: ROBO2_GAMEPLAY_IMAGE_IDS.mirror[variant],
           sourceTileSize: 12,
           anchor: "top-left",

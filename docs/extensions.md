@@ -38,6 +38,8 @@ Novoban 和 LOMA 的 XSB 地图由 `tools/custom/sokoban-xsb.mjs` 转换。地�
 
 `laser-mirror` 是可推动的双面反射镜，使用必填 `variant` 区分两种对角线。`slash`（`/`）按 `up ↔ right`、`down ↔ left` 反射；`backslash`（`\`）按 `up ↔ left`、`down ↔ right` 反射。光路通过镜面后继续投影，循环光路在相同格子和入射方向再次出现时终止追踪。
 
+镜面位于带脚点深度排序的 `standing` pass：反光面可以覆盖指定方向的入射光，Bobby 与镜面相邻时则按双方脚点决定前后关系。
+
 激光命中另一个 `laser-emitter` 时摧毁目标发生器及其光束。若两个发生器互相照射，它们在同一个 World tick 中一起摧毁；其它发生器随后按更新后的阻挡布局重新投影。
 
 发生器和所属光束在 gameplay 中立即销毁，并把销毁前的完整光路快照交给 Presentation。表现层以 `100ms` 为一相位，按亮、灭、亮完成三次明暗切换后消失，总时长 `300ms`。发生器与光束始终使用同一相位；销毁前已经建立的移动也会在交互点重新确认光束仍存在，因此遗留表现不参与碰撞或伤害。

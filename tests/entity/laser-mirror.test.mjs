@@ -111,29 +111,60 @@ test("镜面按朝向覆绘指定方向的入射光", () => {
         createBuiltinVisualRegistry(),
         new Map(),
       );
-      const mirrorEffectIndex = scene.effect.findIndex(
+      const mirrorStandingIndex = scene.standing.findIndex(
         (item) => item.presence.entityId === mirror.id,
       );
-      const beamEffectIndex = scene.effect.findIndex(
+      const beamAboveMirror = scene.effect.some(
         (item) => item.presence.entityId === mirrorBeam.id,
       );
       const beamUnderMirror = scene.worldEffect.some(
         (item) => item.presence.entityId === mirrorBeam.id,
       );
 
-      assert.notEqual(mirrorEffectIndex, -1, `${variant}/${incoming}`);
+      assert.notEqual(mirrorStandingIndex, -1, `${variant}/${incoming}`);
       if (covered[variant].has(incoming)) {
         assert.equal(beamUnderMirror, true, `${variant}/${incoming}`);
-        assert.equal(beamEffectIndex, -1, `${variant}/${incoming}`);
+        assert.equal(beamAboveMirror, false, `${variant}/${incoming}`);
       } else {
         assert.equal(beamUnderMirror, false, `${variant}/${incoming}`);
-        assert.ok(
-          beamEffectIndex > mirrorEffectIndex,
-          `${variant}/${incoming}`,
-        );
+        assert.equal(beamAboveMirror, true, `${variant}/${incoming}`);
       }
     }
   }
+});
+
+test("镜面与 Bobby 按脚点深度排序", () => {
+  const world = new World({
+    schemaVersion: 1,
+    width: 3,
+    height: 3,
+    entities: [
+      ground(1, 1),
+      ground(1, 2),
+      { type: MapEntityTypeId.LASER_MIRROR, variant: "slash", x: 1, y: 1 },
+      { type: MapEntityTypeId.BOBBY, x: 1, y: 2 },
+    ],
+  });
+  const mirror = world.query.entitiesMatching({
+    kind: "type",
+    value: MapEntityTypeId.LASER_MIRROR,
+  })[0];
+  const bobby = world.query.entitiesWithFact("player")[0];
+  const scene = buildVisualScene(
+    world,
+    createBuiltinVisualRegistry(),
+    new Map(),
+  );
+
+  assert.deepEqual(
+    scene.standing
+      .filter((item) =>
+        item.presence.entityId === mirror.id ||
+        item.presence.entityId === bobby.id
+      )
+      .map((item) => item.presence.entityId),
+    [mirror.id, bobby.id],
+  );
 });
 
 test("激光镜使用通用推动规则", () => {
@@ -220,7 +251,7 @@ test("激光镜注册为阻挡、可推动对象，并使用 Robo 2 双面镜视
       {
         layers: [{
           kind: "image",
-          renderPass: "effect",
+          renderPass: "standing",
           asset: ROBO2_GAMEPLAY_IMAGE_IDS.mirror[variant],
           sourceTileSize: 12,
           anchor: "top-left",
