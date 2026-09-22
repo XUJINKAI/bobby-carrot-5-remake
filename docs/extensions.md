@@ -63,7 +63,5 @@ Novoban 和 LOMA 的 XSB 地图由 `tools/custom/sokoban-xsb.mjs` 转换。地�
 - `custom-maps/engine-lab/portal/portal.json`
 - `custom-maps/engine-lab/pushbox/pushable.json`
 - `custom-maps/engine-lab/max-moves.json`
-- `custom-maps/engine-lab/test/02-laser-stone.json`
-- `custom-maps/engine-lab/test/03-laser-emitter.json`
 
 `npm run verify` 校验这些地图的 Editor JSON round-trip、Definition 注册、实例属性和规则格式。

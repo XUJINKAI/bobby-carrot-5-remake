@@ -149,19 +149,11 @@ try {
     `${origin}/explore/engine-lab`,
     [
       'class="explore-ungrouped-maps"',
-      'class="chapter-card"',
-      'class="chapter-name"',
       'data-card-size="medium"',
-      "Test",
       'href="/explore/play/engine-lab/00-intro"',
       'href="/explore/play/engine-lab/01-control2"',
-      'href="/explore/play/engine-lab/02-laser-stone"',
-      'href="/explore/play/engine-lab/03-laser-emitter"',
-      'href="/explore/play/engine-lab/04-laser-mirror"',
-      'href="/explore/play/engine-lab/05-laser-collision"',
-      'href="/explore/play/engine-lab/06-laser-bomb"',
     ],
-    ['class="chapter-separator"'],
+    ['class="chapter-card"', 'class="chapter-separator"'],
   );
   await smoke(`${origin}/explore/robo2`, [
     'class="explore-tabs"',

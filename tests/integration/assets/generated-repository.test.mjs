@@ -98,33 +98,15 @@ const engineLab = collectionIndexes.find(
 if (!engineLab) throw new Error("缺少 Engine Lab collection");
 if (engineLab.cardSize !== "medium")
   throw new Error("Engine Lab collection cardSize 必须为 medium");
-if (
-  engineLab.chapters.length !== 1 ||
-  engineLab.chapters[0]?.id !== "test" ||
-  engineLab.chapters[0]?.name !== "Test" ||
-  engineLab.maps.length !== 7
-) {
-  throw new Error("Engine Lab 必须包含两张根目录地图与 Test chapter");
-}
+if (engineLab.chapters.length !== 0 || engineLab.maps.length !== 2)
+  throw new Error("Engine Lab 必须包含两张根目录地图且不声明 chapter");
 if (
   engineLab.maps[0]?.id !== "00-intro" ||
   engineLab.maps[1]?.id !== "01-control2" ||
-  engineLab.maps[2]?.id !== "02-laser-stone" ||
-  engineLab.maps[3]?.id !== "03-laser-emitter" ||
-  engineLab.maps[4]?.id !== "04-laser-mirror" ||
-  engineLab.maps[5]?.id !== "05-laser-collision" ||
-  engineLab.maps[6]?.id !== "06-laser-bomb" ||
   engineLab.maps[0]?.chapter !== undefined ||
-  engineLab.maps[1]?.chapter !== undefined ||
-  engineLab.maps[2]?.chapter !== "test" ||
-  engineLab.maps[3]?.chapter !== "test" ||
-  engineLab.maps[4]?.chapter !== "test" ||
-  engineLab.maps[5]?.chapter !== "test" ||
-  engineLab.maps[6]?.chapter !== "test"
+  engineLab.maps[1]?.chapter !== undefined
 ) {
-  throw new Error(
-    "Engine Lab 地图顺序必须为 intro、control2、laser-stone、laser-emitter、laser-mirror、laser-collision、laser-bomb",
-  );
+  throw new Error("Engine Lab 地图顺序必须为 intro、control2");
 }
 assertLomaCollection(collectionIndexes);
 assertNovobanCollection(collectionIndexes);
