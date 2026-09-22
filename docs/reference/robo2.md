@@ -33,7 +33,7 @@ u4 cells[width * height]
 | code | 来源含义 | 语义映射 |
 | --- | --- | --- |
 | `0x0` | 可通行地面 | Surface |
-| `0x1` | 墙 | 阻挡 Surface |
+| `0x1` | 墙 | `stump` 阻挡 Surface |
 | `0x2` | 终点 | `exit` |
 | `0x3` | Stone | `laser-stone` |
 | `0x4` | Bomb | `laser-bomb` |
@@ -73,7 +73,7 @@ node tools/custom/robo2/extract.mjs
 
 下列事实来自 JAR 帮助文字与 v1.0 a1 字节码：
 
-- Robo 进入激光路径会死亡；墙、Stone 与终点阻断激光。
+- Robo 进入激光路径会死亡；转换后的 Stump、Stone 与终点在格子边界阻断激光。
 - Stone、Bomb、Mirror 与 Laser Cannon 都能沿玩家移动方向推动一格，后方必须是空地。
 - 四向炮产生持续直线激光；对象移动或爆炸后重新计算光路。
 - 两种 Mirror 都从双面反射，按各自对角线把四种入射方向转成九十度方向。

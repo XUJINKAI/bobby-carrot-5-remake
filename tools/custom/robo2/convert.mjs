@@ -3,19 +3,19 @@ import { ROBO2_TILE_CODE } from "./format.mjs";
 const THEME_SURFACES = Object.freeze([
   Object.freeze({
     floor: Object.freeze({ type: "sand" }),
-    wall: Object.freeze({ type: "stone-wall", variant: "ts-1-4" }),
+    wall: Object.freeze({ type: "stump" }),
   }),
   Object.freeze({
     floor: Object.freeze({ type: "snow-cloud", variant: "ts-7-9" }),
-    wall: Object.freeze({ type: "snowy-rock" }),
+    wall: Object.freeze({ type: "stump" }),
   }),
   Object.freeze({
     floor: Object.freeze({ type: "sand" }),
-    wall: Object.freeze({ type: "stone-wall", variant: "ts-1-4" }),
+    wall: Object.freeze({ type: "stump" }),
   }),
   Object.freeze({
     floor: Object.freeze({ type: "grass", variant: "ts-10-1" }),
-    wall: Object.freeze({ type: "hedge", variant: "ts-5-7" }),
+    wall: Object.freeze({ type: "stump" }),
   }),
 ]);
 

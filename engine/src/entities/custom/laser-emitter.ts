@@ -246,6 +246,7 @@ function laserTopologySignature(query: WorldQueryApi): string {
       { kind: "fact", value: "blocking" },
       { kind: "type", value: MapEntityTypeId.EXIT },
       { kind: "type", value: MapEntityTypeId.MIRROR },
+      { kind: "type", value: MapEntityTypeId.STUMP },
       { kind: "type", value: MapEntityTypeId.LASER_MIRROR },
     ],
   });
@@ -398,7 +399,8 @@ function laserStopsAt(query: LaserRayQuery, cell: CellPosition): boolean {
     if (!entity || entity.type === RuntimeEntityTypeId.LASER_BEAM) return false;
     if (
       entity.type === MapEntityTypeId.EXIT ||
-      entity.type === MapEntityTypeId.MIRROR
+      entity.type === MapEntityTypeId.MIRROR ||
+      entity.type === MapEntityTypeId.STUMP
     ) {
       return true;
     }

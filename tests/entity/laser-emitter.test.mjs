@@ -147,6 +147,39 @@ test("激光从发生器沿固定方向延伸，并停在首个阻挡格", () =>
   );
 });
 
+test("Stump 在格子边界阻断激光", () => {
+  const entities = [];
+  for (let x = 0; x < 5; x += 1) entities.push(ground(x, 0));
+  entities.push(
+    { type: MapEntityTypeId.LASER_EMITTER, direction: "right", x: 0, y: 0 },
+    { type: MapEntityTypeId.STUMP, x: 3, y: 0, stackOrder: 1 },
+  );
+  const world = new World({
+    schemaVersion: 1,
+    width: 5,
+    height: 1,
+    entities,
+  });
+
+  assert.deepEqual(
+    beamEntities(world).map((beam) => ({
+      x: beam.anchor.x,
+      terminal: beam.state?.terminal,
+    })),
+    [
+      { x: 1, terminal: false },
+      { x: 2, terminal: false },
+      { x: 3, terminal: true },
+    ],
+  );
+  const terminal = resolveEntityVisualPreview({
+    type: RuntimeEntityTypeId.LASER_BEAM,
+    direction: "right",
+    state: { sourceId: 1, terminal: true },
+  });
+  assert.equal(terminal, null);
+});
+
 test("Bobby 进入激光格时在移动中点死亡", () => {
   const entities = [];
   for (let y = 0; y < 2; y += 1)

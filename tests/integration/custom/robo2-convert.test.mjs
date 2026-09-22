@@ -66,9 +66,8 @@ test("Robo 2 tile 转换为可校验的语义 Entity", () => {
   assert.deepEqual(document.rules, {
     win: { type: "all", conditions: [{ type: "exit" }] },
   });
-  assert.deepEqual(entityAt(document, "hedge", 1, 0), {
-    type: "hedge",
-    variant: "ts-5-7",
+  assert.deepEqual(entityAt(document, "stump", 1, 0), {
+    type: "stump",
     x: 1,
     y: 0,
   });
@@ -106,10 +105,10 @@ test("Robo 2 theme 只改变 Surface 映射", () => {
   });
 
   assert.deepEqual(surfaces.map((entities) => entities.map((entity) => entity.type)), [
-    ["sand", "stone-wall", "sand"],
-    ["snow-cloud", "snowy-rock", "snow-cloud"],
-    ["sand", "stone-wall", "sand"],
-    ["grass", "hedge", "grass"],
+    ["sand", "stump", "sand"],
+    ["snow-cloud", "stump", "snow-cloud"],
+    ["sand", "stump", "sand"],
+    ["grass", "stump", "grass"],
   ]);
 });
 
