@@ -1,4 +1,5 @@
-import { MapEntityTypeId, type Direction } from "@bobby/model";
+import { type Direction } from "@bobby/model";
+import { resolveEnergyPropagationAt } from "../../mechanism/energy/EnergyPropagation.js";
 import type {
   RuntimeActionDefinition,
   RuntimeActionInstance,
@@ -10,7 +11,6 @@ import {
 } from "../../world/action/ActionDeadline.js";
 import type { Behavior } from "../../world/behavior/Behavior.js";
 import type { WorldCommandApi } from "../../world/behavior/CommandQueue.js";
-import type { WorldQueryApi } from "../../world/behavior/WorldQueryApi.js";
 import { ORIGINAL_GAMEPLAY_IMAGE_IDS } from "../../image/OriginalGameplayImages.js";
 import type { EntityId } from "../../world/entity/EntityInstance.js";
 import type {
@@ -26,7 +26,6 @@ import {
   originalModule,
 } from "./module.js";
 import { meltIceBlocksAt } from "./ice-block.js";
-import { fireballCanTraverseTerrainAt } from "./terrain-semantics.js";
 
 const FIREBALL_ACTION = "dragon-fireball";
 
@@ -85,17 +84,8 @@ const fireballAction: RuntimeActionDefinition = {
 
     const direction = fireball.direction ?? "left";
     const target = addDirection(fireball.anchor, direction);
-    if (
-      !query.inBounds(target) ||
-      !fireballCanTraverseTerrainAt(query, target) ||
-      projectileBlockedAt(query, target)
-    ) {
-      beginFireballTermination(action, commands, fireball);
-      return "running";
-    }
-
-    const reflected = reflectedDirectionAt(query, target, direction);
-    if (reflected === false) {
+    const propagation = resolveEnergyPropagationAt(query, target, direction);
+    if (propagation.kind === "blocked") {
       beginFireballTermination(action, commands, fireball);
       return "running";
     }
@@ -128,12 +118,14 @@ const fireballAction: RuntimeActionDefinition = {
       return;
     }
     meltIceBlocksAt(query, commands, result.to);
-    const reflected = reflectedDirectionAt(
+    const propagation = resolveEnergyPropagationAt(
       query,
       result.to,
       intent.direction,
     );
-    if (reflected) commands.setDirection(fireballId, reflected);
+    if (propagation.kind === "reflected") {
+      commands.setDirection(fireballId, propagation.direction);
+    }
   },
 };
 
@@ -188,41 +180,6 @@ function createFireballAction(
       ...(inputLockActionId === null ? {} : { inputLockActionId }),
     },
   };
-}
-
-function projectileBlockedAt(
-  query: WorldQueryApi,
-  cell: { x: number; y: number },
-): boolean {
-  return query.presencesAt(cell).some((presence) => {
-    const entity = query.entity(presence.entityId);
-    if (entity?.type === MapEntityTypeId.CRUMBLY_ROCK) return true;
-    if (entity?.type === MapEntityTypeId.DRAGON && presence.role !== "tail")
-      return true;
-    if (entity?.type !== MapEntityTypeId.COLOR_BLOCK) return false;
-    return entity?.state?.raised !== false;
-  });
-}
-
-function reflectedDirectionAt(
-  query: WorldQueryApi,
-  cell: { x: number; y: number },
-  incoming: Direction,
-): Direction | null | false {
-  for (const presence of query.presencesAt(cell)) {
-    const entity = query.entity(presence.entityId);
-    if (entity?.type !== MapEntityTypeId.MIRROR) continue;
-    const reflection: Partial<Record<Direction, Direction>> =
-      entity.state?.variant === "left-bottom"
-        ? { right: "down", up: "left" }
-        : entity.state?.variant === "right-top"
-          ? { left: "up", down: "right" }
-          : entity.state?.variant === "left-top"
-            ? { right: "up", down: "left" }
-            : { left: "down", up: "right" };
-    return reflection[incoming] ?? false;
-  }
-  return null;
 }
 
 function destroyFireball(
