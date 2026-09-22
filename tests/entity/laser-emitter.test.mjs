@@ -78,6 +78,7 @@ test("激光使用单次纯红色描边", () => {
   layer.draw(context, 0, 0, 36);
 
   assert.deepEqual(strokes, [{ color: "#ff0000", width: 3 }]);
+  assert.equal(layer.renderPass, "world-effect");
 });
 
 test("激光只在空格的两侧边界之间绘制", () => {

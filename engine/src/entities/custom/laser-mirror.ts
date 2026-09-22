@@ -55,6 +55,7 @@ export const laserMirror: EntityModule = defineEntityModule({
       return {
         layers: [{
           kind: "image",
+          renderPass: "effect",
           asset: ROBO2_GAMEPLAY_IMAGE_IDS.mirror[variant],
           sourceTileSize: 12,
           anchor: "top-left",
@@ -71,6 +72,17 @@ export function reflectedLaserDirection(
   if (entity.type !== MapEntityTypeId.LASER_MIRROR) return null;
   const variant = laserMirrorVariant(entity.state?.variant);
   return reflections[variant][incoming];
+}
+
+/** 原版镜面只有朝向反光面的一侧会覆绘入射光。 */
+export function laserMirrorCoversIncoming(
+  entity: Readonly<EntityInstance>,
+  incoming: Direction,
+): boolean {
+  if (entity.type !== MapEntityTypeId.LASER_MIRROR) return false;
+  const variant = laserMirrorVariant(entity.state?.variant);
+  return incoming === "down" ||
+    (variant === "slash" ? incoming === "right" : incoming === "left");
 }
 
 function laserMirrorVariant(value: JsonValue | undefined): LaserMirrorVariant {

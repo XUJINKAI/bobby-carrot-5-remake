@@ -1,12 +1,16 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { MapEntityTypeId } from "@bobby/model";
-import { createBuiltinEntityRegistry } from "../../engine/dist/entities/registry.js";
+import {
+  createBuiltinEntityRegistry,
+  createBuiltinVisualRegistry,
+} from "../../engine/dist/entities/registry.js";
 import { RuntimeEntityTypeId } from "../../engine/dist/entities/runtime-types.js";
 import {
   ROBO2_GAMEPLAY_IMAGE_IDS,
 } from "../../engine/dist/public.js";
 import { resolveLevelEntityVisualPreview } from "../../engine/dist/visual/preview.js";
+import { buildVisualScene } from "../../engine/dist/visual/VisualSceneBuilder.js";
 import { World } from "../support/engine/World.mjs";
 
 const ground = (x, y) => ({
@@ -82,6 +86,52 @@ test("两种激光镜从双面按对角线反射四种入射方向", () => {
         expected.endpoint,
         `${variant}/${incoming}`,
       );
+    }
+  }
+});
+
+test("镜面按朝向覆绘指定方向的入射光", () => {
+  const covered = {
+    slash: new Set(["right", "down"]),
+    backslash: new Set(["left", "down"]),
+  };
+  for (const variant of ["slash", "backslash"]) {
+    for (const incoming of ["up", "right", "down", "left"]) {
+      const world = createReflectionWorld(variant, incoming);
+      const mirror = world.query.entitiesMatching({
+        kind: "type",
+        value: MapEntityTypeId.LASER_MIRROR,
+      })[0];
+      const mirrorBeam = beamEntities(world).find(
+        (beam) => beam.anchor.x === 2 && beam.anchor.y === 2,
+      );
+      assert.ok(mirrorBeam, `${variant}/${incoming}`);
+      const scene = buildVisualScene(
+        world,
+        createBuiltinVisualRegistry(),
+        new Map(),
+      );
+      const mirrorEffectIndex = scene.effect.findIndex(
+        (item) => item.presence.entityId === mirror.id,
+      );
+      const beamEffectIndex = scene.effect.findIndex(
+        (item) => item.presence.entityId === mirrorBeam.id,
+      );
+      const beamUnderMirror = scene.worldEffect.some(
+        (item) => item.presence.entityId === mirrorBeam.id,
+      );
+
+      assert.notEqual(mirrorEffectIndex, -1, `${variant}/${incoming}`);
+      if (covered[variant].has(incoming)) {
+        assert.equal(beamUnderMirror, true, `${variant}/${incoming}`);
+        assert.equal(beamEffectIndex, -1, `${variant}/${incoming}`);
+      } else {
+        assert.equal(beamUnderMirror, false, `${variant}/${incoming}`);
+        assert.ok(
+          beamEffectIndex > mirrorEffectIndex,
+          `${variant}/${incoming}`,
+        );
+      }
     }
   }
 });
@@ -170,6 +220,7 @@ test("激光镜注册为阻挡、可推动对象，并使用 Robo 2 双面镜视
       {
         layers: [{
           kind: "image",
+          renderPass: "effect",
           asset: ROBO2_GAMEPLAY_IMAGE_IDS.mirror[variant],
           sourceTileSize: 12,
           anchor: "top-left",

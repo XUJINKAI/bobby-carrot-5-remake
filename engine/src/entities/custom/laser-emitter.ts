@@ -12,7 +12,10 @@ import type { EntityPresence } from "../../world/spatial/EntityPresence.js";
 import { defineEntityModule, type EntityModule } from "../EntityModule.js";
 import { RuntimeEntityTypeId } from "../runtime-types.js";
 import { laserExplosionTargetIds } from "./laser-bomb.js";
-import { reflectedLaserDirection } from "./laser-mirror.js";
+import {
+  laserMirrorCoversIncoming,
+  reflectedLaserDirection,
+} from "./laser-mirror.js";
 
 interface LaserRayQuery {
   inBounds(cell: CellPosition): boolean;
@@ -110,18 +113,24 @@ export const laserBeam: EntityModule = defineEntityModule({
   visual: {
     id: RuntimeEntityTypeId.LASER_BEAM,
     renderPass: "world-effect",
-    resolve: ({ entity }) => {
+    resolve: ({ entity, query }) => {
       if (entity.state?.terminal === true) return null;
+      const direction = entity.direction ?? "right";
+      const mirror = mirrorAt(query, entity.anchor);
+      const renderPass = mirror && !laserMirrorCoversIncoming(mirror, direction)
+        ? "effect"
+        : "world-effect";
       return {
         layers: [{
           kind: "canvas",
+          renderPass,
           draw: (context, x, y, size) =>
             drawLaserLine(
               context,
               x,
               y,
               size,
-              entity.direction ?? "right",
+              direction,
               directionState(entity.state?.outgoingDirection),
             ),
         }],
@@ -419,6 +428,17 @@ function reflectedDirectionAt(
     if (!entity) continue;
     const reflected = reflectedLaserDirection(entity, incoming);
     if (reflected) return reflected;
+  }
+  return null;
+}
+
+function mirrorAt(
+  query: LaserRayQuery,
+  cell: CellPosition,
+): Readonly<EntityInstance> | null {
+  for (const presence of query.presencesAt(cell)) {
+    const entity = query.entity(presence.entityId);
+    if (entity?.type === MapEntityTypeId.LASER_MIRROR) return entity;
   }
   return null;
 }
