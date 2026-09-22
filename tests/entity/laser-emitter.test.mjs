@@ -50,8 +50,8 @@ test("四向激光发生器使用对应的 Robo 2 原图", () => {
     assert.deepEqual(visual?.layers[0], {
       kind: "image",
       asset: ROBO2_GAMEPLAY_IMAGE_IDS.emitter[direction],
-      sourceTileSize: 12,
-      anchor: "top-left",
+      sourceTileSize: 14,
+      anchor: "center",
     });
     assert.equal(visual?.layers.length, 1);
   }
@@ -417,8 +417,8 @@ test("发生器与所属光束在销毁后同步闪烁三次", () => {
   assert.deepEqual(first.composition.layers[0], {
     kind: "image",
     asset: ROBO2_GAMEPLAY_IMAGE_IDS.emitter.right,
-    sourceTileSize: 12,
-    anchor: "top-left",
+    sourceTileSize: 14,
+    anchor: "center",
   });
   const strokes = [];
   first.composition.layers[1].draw({

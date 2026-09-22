@@ -30,7 +30,7 @@ Novoban 和 LOMA 的 XSB 地图由 `tools/custom/sokoban-xsb.mjs` 转换。地�
 
 ## 激光发生器
 
-`laser-emitter` 使用必填 `direction` 字段声明固定发射方向。Engine 从发生器相邻格开始投影激光，遇到首个阻挡对象、Exit 或 Bobby Carrot 5 Mirror 时终止；Bobby 进入激光格约八成时死亡。发生器是单格可推动阻挡对象，从侧面或背面推动后保持发射方向，并从新位置重新投影光束。四个方向分别使用 Robo 2 JAR 中的 `laserUp/Right/Down/Left.png`，光束格由 Engine 作为 Runtime Entity 派生，不写回 `LevelMap`。
+`laser-emitter` 使用必填 `direction` 字段声明固定发射方向。Engine 从发生器相邻格开始投影激光，遇到首个阻挡对象、Exit 或 Bobby Carrot 5 Mirror 时终止；Bobby 进入激光格约八成时死亡。发生器是单格可推动阻挡对象，从侧面或背面推动后保持发射方向，并从新位置重新投影光束。四个方向分别使用 Robo 2 JAR 中的 `laserUp/Right/Down/Left.png`，按原图 `14px` 基准居中缩放到单格范围；光束格由 Engine 作为 Runtime Entity 派生，不写回 `LevelMap`。
 
 光束在红、蓝、紫三色之间连续循环，并同步改变线宽。每个发生器以稳定 `sourceId` 派生自己的相位、周期和粗细节奏，同一发生器经过镜面反射后的全部线段始终保持一致；这组参数只属于 Presentation，不进入地图格式、World 状态或伤害判定。Editor 复用 Engine Visual，并只在地图含发生器时以 30 FPS 刷新光束表现。
 

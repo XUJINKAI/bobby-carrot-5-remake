@@ -45,6 +45,7 @@ export interface LaserRayProjection {
 
 const LASER_EMITTER_FLASH_PHASE_COUNT = 3;
 const LASER_BEAM_CONTACT_ACTION = "laser-beam-contact";
+const LASER_EMITTER_SOURCE_TILE_SIZE = 14;
 export const LASER_BEAM_DAMAGE_PROGRESS = 0.8;
 export const LASER_EMITTER_FLASH_PHASE_MS = 100;
 export const LASER_EMITTER_FLASH_DURATION_MS =
@@ -155,8 +156,8 @@ export const laserEmitter: EntityModule = defineEntityModule({
         layers: [{
           kind: "image",
           asset: ROBO2_GAMEPLAY_IMAGE_IDS.emitter[direction],
-          sourceTileSize: 12,
-          anchor: "top-left",
+          sourceTileSize: LASER_EMITTER_SOURCE_TILE_SIZE,
+          anchor: "center",
         }],
       };
     },
@@ -179,8 +180,8 @@ export const laserEmitter: EntityModule = defineEntityModule({
           {
             kind: "image",
             asset: ROBO2_GAMEPLAY_IMAGE_IDS.emitter[direction],
-            sourceTileSize: 12,
-            anchor: "top-left",
+            sourceTileSize: LASER_EMITTER_SOURCE_TILE_SIZE,
+            anchor: "center",
           },
           {
             kind: "canvas",
