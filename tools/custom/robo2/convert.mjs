@@ -2,22 +2,36 @@ import { ROBO2_TILE_CODE } from "./format.mjs";
 
 const THEME_SURFACES = Object.freeze([
   Object.freeze({
-    floor: Object.freeze({ type: "sand" }),
-    wall: Object.freeze({ type: "stump" }),
+    floor: Object.freeze([
+      surface({ type: "snow-cloud", variant: "ts-8-16" }),
+    ]),
+    wall: Object.freeze([
+      surface({ type: "starfield", variant: "large-star" }, 5),
+      surface({ type: "starfield", variant: "small-star" }, 10),
+      surface({ type: "starfield", variant: "empty" }, 85),
+    ]),
   }),
   Object.freeze({
-    floor: Object.freeze({ type: "snow-cloud", variant: "ts-7-9" }),
-    wall: Object.freeze({ type: "stump" }),
+    floor: Object.freeze([
+      surface({ type: "snow-cloud", variant: "ts-8-16" }),
+    ]),
+    wall: Object.freeze([surface({ type: "snowy-rock" })]),
   }),
   Object.freeze({
-    floor: Object.freeze({ type: "sand" }),
-    wall: Object.freeze({ type: "stump" }),
+    floor: Object.freeze([surface({ type: "sand" })]),
+    wall: Object.freeze([
+      surface({ type: "cactus", variant: "small" }),
+      surface({ type: "cactus", variant: "round" }),
+    ]),
   }),
   Object.freeze({
-    floor: Object.freeze({ type: "grass", variant: "ts-10-1" }),
-    wall: Object.freeze({ type: "stump" }),
+    floor: Object.freeze([
+      surface({ type: "grass", variant: "ts-10-1" }),
+    ]),
+    wall: Object.freeze([surface({ type: "stump" })]),
   }),
 ]);
+const ROBO2_TERRAIN_SEED = "robo2-terrain-v1";
 
 const LASER_DIRECTIONS = new Map([
   [ROBO2_TILE_CODE.LASER_DOWN, "down"],
@@ -40,7 +54,7 @@ export function convertRobo2Level(level, metadata) {
     const x = index % level.width;
     const y = Math.floor(index / level.width);
     const code = level.tiles[index];
-    entities.push(surfaceEntity(level.theme, code, x, y));
+    entities.push(surfaceEntity(level.theme, code, x, y, id));
     const object = objectEntity(code, x, y);
     if (object) entities.push(object);
   }
@@ -87,12 +101,38 @@ function validateLevel(level) {
   }
 }
 
-function surfaceEntity(theme, code, x, y) {
+function surfaceEntity(theme, code, x, y, mapKey) {
   const surfaces = THEME_SURFACES[theme];
-  const surface = code === ROBO2_TILE_CODE.WALL
-    ? surfaces.wall
-    : surfaces.floor;
-  return { ...surface, x, y };
+  const category = code === ROBO2_TILE_CODE.WALL ? "wall" : "floor";
+  const choices = surfaces[category];
+  const selected = weightedSurface(
+    choices,
+    `${ROBO2_TERRAIN_SEED}|${mapKey}|${category}|${x},${y}`,
+  );
+  return { ...selected.entity, x, y };
+}
+
+function surface(entity, weight = 1) {
+  return Object.freeze({ entity: Object.freeze(entity), weight });
+}
+
+function weightedSurface(choices, key) {
+  const totalWeight = choices.reduce((sum, choice) => sum + choice.weight, 0);
+  let target = stableHash(key) % totalWeight;
+  for (const choice of choices) {
+    target -= choice.weight;
+    if (target < 0) return choice;
+  }
+  return choices[0];
+}
+
+function stableHash(key) {
+  let hash = 2166136261;
+  for (let index = 0; index < key.length; index += 1) {
+    hash ^= key.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return hash >>> 0;
 }
 
 function objectEntity(code, x, y) {

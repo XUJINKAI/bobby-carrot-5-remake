@@ -104,12 +104,76 @@ test("Robo 2 theme 只改变 Surface 映射", () => {
     return document.entities.filter((entity) => entity.stackOrder !== 1);
   });
 
-  assert.deepEqual(surfaces.map((entities) => entities.map((entity) => entity.type)), [
-    ["sand", "stump", "sand"],
-    ["snow-cloud", "stump", "snow-cloud"],
-    ["sand", "stump", "sand"],
-    ["grass", "stump", "grass"],
+  assert.deepEqual(surfaces.map((entities) => entities.map(({ x, y, ...entity }) => entity)), [
+    [
+      { type: "snow-cloud", variant: "ts-8-16" },
+      { type: "starfield", variant: "empty" },
+      { type: "snow-cloud", variant: "ts-8-16" },
+    ],
+    [
+      { type: "snow-cloud", variant: "ts-8-16" },
+      { type: "snowy-rock" },
+      { type: "snow-cloud", variant: "ts-8-16" },
+    ],
+    [
+      { type: "sand" },
+      { type: "cactus", variant: "small" },
+      { type: "sand" },
+    ],
+    [
+      { type: "grass", variant: "ts-10-1" },
+      { type: "stump" },
+      { type: "grass", variant: "ts-10-1" },
+    ],
   ]);
+});
+
+test("Robo 2 太空和沙地墙面按坐标稳定选取视觉", () => {
+  const tiles = [
+    ROBO2_TILE_CODE.PLAYER,
+    ...Array.from({ length: 998 }, () => ROBO2_TILE_CODE.WALL),
+    ROBO2_TILE_CODE.EXIT,
+  ];
+  const space = convertRobo2Level({
+    width: 100,
+    height: 10,
+    theme: 0,
+    tiles,
+  }, {
+    id: "space-distribution",
+    title: "Space Distribution",
+  });
+  const repeatedSpace = convertRobo2Level({
+    width: 100,
+    height: 10,
+    theme: 0,
+    tiles,
+  }, {
+    id: "space-distribution",
+    title: "Space Distribution",
+  });
+  assert.deepEqual(repeatedSpace, space);
+
+  const starCounts = countVariants(space, "starfield");
+  assert.ok((starCounts.get("empty") ?? 0) > 750);
+  assert.ok((starCounts.get("small-star") ?? 0) > 50);
+  assert.ok((starCounts.get("large-star") ?? 0) > 20);
+
+  const sand = convertRobo2Level({
+    width: 100,
+    height: 10,
+    theme: 2,
+    tiles,
+  }, {
+    id: "sand-distribution",
+    title: "Sand Distribution",
+  });
+  assert.deepEqual(
+    new Set(sand.entities
+      .filter((entity) => entity.type === "cactus")
+      .map((entity) => entity.variant)),
+    new Set(["small", "round"]),
+  );
 });
 
 test("Robo 2 转换要求唯一玩家与终点", () => {
@@ -133,4 +197,14 @@ function entityAt(document, type, x, y) {
   );
   assert.ok(entity, `缺少 ${type} (${x}, ${y})`);
   return entity;
+}
+
+function countVariants(document, type) {
+  const counts = new Map();
+  for (const entity of document.entities.filter((candidate) =>
+    candidate.type === type
+  )) {
+    counts.set(entity.variant, (counts.get(entity.variant) ?? 0) + 1);
+  }
+  return counts;
 }
