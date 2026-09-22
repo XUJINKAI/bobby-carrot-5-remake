@@ -4,6 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 import {
+  clearAssetsPrepareOutputs,
   inspectAssetsPrepareCache,
   invalidateAssetsPrepareCache,
   writeAssetsPrepareCache,
@@ -55,6 +56,32 @@ test("assets prepare 缓存在模式或生成文件清单变化时失效", (t) =
   assert.equal(
     fs.existsSync(path.join(repositoryRoot, "tmp/assets-prepare/state.json")),
     false,
+  );
+});
+
+test("assets prepare 只清理明确登记的生成目录", (t) => {
+  const repositoryRoot = createRepositoryFixture(t);
+  write(repositoryRoot, "assets/maps/removed-collection/index.json", "旧集合");
+  write(repositoryRoot, "assets/replays/original/1-1.json", "保留 Replay");
+  write(repositoryRoot, "assets/ui/icon.svg", "保留静态资源");
+  write(repositoryRoot, "original/official-hd/base.jar", "保留原版 JAR");
+
+  clearAssetsPrepareOutputs(repositoryRoot);
+
+  assert.equal(fs.existsSync(path.join(repositoryRoot, "assets/maps")), false);
+  assert.equal(
+    fs.existsSync(
+      path.join(repositoryRoot, "assets/replays/original/1-1.json"),
+    ),
+    true,
+  );
+  assert.equal(
+    fs.existsSync(path.join(repositoryRoot, "assets/ui/icon.svg")),
+    true,
+  );
+  assert.equal(
+    fs.existsSync(path.join(repositoryRoot, "original/official-hd/base.jar")),
+    true,
   );
 });
 

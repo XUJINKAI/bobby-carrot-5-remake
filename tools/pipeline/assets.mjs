@@ -8,6 +8,7 @@ import {
   originalExploreMapFilters,
 } from "../original/explore-filter-tags.mjs";
 import {
+  clearAssetsPrepareOutputs,
   inspectAssetsPrepareCache,
   invalidateAssetsPrepareCache,
   writeAssetsPrepareCache,
@@ -53,6 +54,7 @@ export function prepareAssets({
   const reason = force ? "请求完整重建" : cache.reason;
   console.log(`资产准备缓存未命中：${reason}。`);
   invalidateAssetsPrepareCache();
+  clearAssetsPrepareOutputs();
   run(process.execPath, ["tools/original/extract.mjs"]);
   run(process.execPath, ["tools/original/decode.mjs"]);
   run(process.execPath, ["tools/original/adapt.mjs"]);

@@ -197,8 +197,8 @@ Replay JSON 可以直接编辑，并可从起点播放、暂停、停止、跳�
 模式下，旁边的“保存内置过法”把当前 Replay 文本写到同一个
 `assets/replays/<collection>/<map-id>.json` 地址；Explore 与 Adventure 使用相同的路径
 规则。保存前使用当前关卡从 tick 0 复跑到 `endTick`，只接受文件声明与实际结果均为
-`won` 的 Replay；步数、位置、计数与耗时不作为保存条件。保存后开发服务器沿用仓库现有的
-内置过法验证与页面刷新流程。面板速率是
+`won` 的 Replay；步数、位置、计数与耗时不作为保存条件。保存后开发服务器按 Replay 文件
+关联的地图更新临时 `verified` 标记并刷新页面。面板速率是
 Engine 的常驻 `timeScale`，同时作用于普通游戏、
 录制和播放。输入合法正数时立即更新 World 与 Presentation；输入为空或非法时保留最近
 一次合法倍率，并在尝试播放时标红。开始、暂停和停止 Replay 均不改变已选择的倍率。快退

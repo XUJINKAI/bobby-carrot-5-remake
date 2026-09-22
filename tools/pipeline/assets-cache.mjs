@@ -29,7 +29,7 @@ const inputDirectories = [
     excludedDirectories: new Set(["loma-pushbox", "novoban-pushbox"]),
   },
 ];
-const generatedDirectories = [
+const assetGeneratedDirectories = [
   "original/extracted",
   "original/decoded",
   "original/adapted",
@@ -157,7 +157,7 @@ function collectInputFiles(repositoryRoot, definition, files) {
 
 function collectGeneratedFiles(repositoryRoot) {
   const files = [];
-  for (const relativeDirectory of generatedDirectories) {
+  for (const relativeDirectory of assetGeneratedDirectories) {
     const directory = path.join(repositoryRoot, relativeDirectory);
     if (!fs.existsSync(directory) || !fs.statSync(directory).isDirectory()) {
       return {
@@ -170,6 +170,15 @@ function collectGeneratedFiles(repositoryRoot) {
     });
   }
   return { complete: true, files: files.sort() };
+}
+
+export function clearAssetsPrepareOutputs(repositoryRoot = root) {
+  for (const relativeDirectory of assetGeneratedDirectories) {
+    fs.rmSync(path.join(repositoryRoot, relativeDirectory), {
+      recursive: true,
+      force: true,
+    });
+  }
 }
 
 function walkFiles(directory, visit) {
