@@ -79,20 +79,12 @@ export const laserEmitter: EntityModule = defineEntityModule({
     resolve: ({ entity }) => {
       const direction = entity.direction ?? "right";
       return {
-        layers: [
-          {
-            kind: "image",
-            asset: ROBO2_GAMEPLAY_IMAGE_IDS.emitter[direction],
-            sourceTileSize: 12,
-            anchor: "top-left",
-          },
-          {
-            kind: "canvas",
-            renderPass: "world-effect",
-            draw: (context, x, y, size) =>
-              drawLaserLine(context, x, y, size, direction, true, false),
-          },
-        ],
+        layers: [{
+          kind: "image",
+          asset: ROBO2_GAMEPLAY_IMAGE_IDS.emitter[direction],
+          sourceTileSize: 12,
+          anchor: "top-left",
+        }],
       };
     },
   },
@@ -118,22 +110,23 @@ export const laserBeam: EntityModule = defineEntityModule({
   visual: {
     id: RuntimeEntityTypeId.LASER_BEAM,
     renderPass: "world-effect",
-    resolve: ({ entity }) => ({
-      layers: [{
-        kind: "canvas",
-        draw: (context, x, y, size) =>
-          drawLaserLine(
-            context,
-            x,
-            y,
-            size,
-            entity.direction ?? "right",
-            false,
-            entity.state?.terminal === true,
-            directionState(entity.state?.outgoingDirection),
-          ),
-      }],
-    }),
+    resolve: ({ entity }) => {
+      if (entity.state?.terminal === true) return null;
+      return {
+        layers: [{
+          kind: "canvas",
+          draw: (context, x, y, size) =>
+            drawLaserLine(
+              context,
+              x,
+              y,
+              size,
+              entity.direction ?? "right",
+              directionState(entity.state?.outgoingDirection),
+            ),
+        }],
+      };
+    },
   },
 });
 
@@ -477,20 +470,16 @@ function drawLaserLine(
   y: number,
   size: number,
   direction: Direction,
-  source: boolean,
-  terminal: boolean,
   outgoingDirection: Direction | null = null,
 ): void {
   const vector = directionVector(direction);
   const outgoingVector = directionVector(outgoingDirection ?? direction);
   const centerX = x + size / 2;
   const centerY = y + size / 2;
-  const startFactor = source ? 0 : -0.5;
-  const endFactor = terminal ? 0 : 0.5;
-  const startX = centerX + vector.x * size * startFactor;
-  const startY = centerY + vector.y * size * startFactor;
-  const endX = centerX + outgoingVector.x * size * endFactor;
-  const endY = centerY + outgoingVector.y * size * endFactor;
+  const startX = centerX - vector.x * size / 2;
+  const startY = centerY - vector.y * size / 2;
+  const endX = centerX + outgoingVector.x * size / 2;
+  const endY = centerY + outgoingVector.y * size / 2;
   context.save();
   context.strokeStyle = "#ff0000";
   context.lineWidth = Math.max(1, size / 12);

@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { MapEntityTypeId } from "@bobby/model";
 import {
+  resolveEntityVisualPreview,
   ROBO2_GAMEPLAY_IMAGE_IDS,
 } from "../../engine/dist/public.js";
 import {
@@ -45,16 +46,17 @@ test("四向激光发生器使用对应的 Robo 2 原图", () => {
       sourceTileSize: 12,
       anchor: "top-left",
     });
-    assert.equal(visual?.layers[1]?.kind, "canvas");
+    assert.equal(visual?.layers.length, 1);
   }
 });
 
 test("激光使用单次纯红色描边", () => {
-  const visual = resolveLevelEntityVisualPreview({
-    type: MapEntityTypeId.LASER_EMITTER,
+  const visual = resolveEntityVisualPreview({
+    type: RuntimeEntityTypeId.LASER_BEAM,
     direction: "right",
+    state: { sourceId: 1, terminal: false },
   });
-  const layer = visual?.layers[1];
+  const layer = visual?.layers[0];
   assert.equal(layer?.kind, "canvas");
 
   const strokes = [];
@@ -76,6 +78,43 @@ test("激光使用单次纯红色描边", () => {
   layer.draw(context, 0, 0, 36);
 
   assert.deepEqual(strokes, [{ color: "#ff0000", width: 3 }]);
+});
+
+test("激光只在空格的两侧边界之间绘制", () => {
+  const through = resolveEntityVisualPreview({
+    type: RuntimeEntityTypeId.LASER_BEAM,
+    direction: "right",
+    state: { sourceId: 1, terminal: false },
+  });
+  const layer = through?.layers[0];
+  assert.equal(layer?.kind, "canvas");
+  const points = [];
+  const context = {
+    strokeStyle: "",
+    lineWidth: 0,
+    save() {},
+    restore() {},
+    beginPath() {},
+    moveTo(x, y) {
+      points.push(["move", x, y]);
+    },
+    lineTo(x, y) {
+      points.push(["line", x, y]);
+    },
+    stroke() {},
+  };
+  layer.draw(context, 10, 20, 36);
+  assert.deepEqual(points, [
+    ["move", 10, 38],
+    ["line", 46, 38],
+  ]);
+
+  const terminal = resolveEntityVisualPreview({
+    type: RuntimeEntityTypeId.LASER_BEAM,
+    direction: "right",
+    state: { sourceId: 1, terminal: true },
+  });
+  assert.equal(terminal, null);
 });
 
 test("激光从发生器沿固定方向延伸，并停在首个阻挡格", () => {
