@@ -13,7 +13,7 @@ const catalog = {
   "home.embed": "将地图内嵌到其他网页",
   "home.importDialog": "导入数据",
   "home.importPlaceholder": "粘贴 JSON、Payload 或分享链接……",
-  "home.demoMove": "WASD / 方向键移动",
+  "home.demoMove": "滑动屏幕 / WASD / 方向键移动",
   "home.demoRemaining": "剩余目标 {count}",
   "home.demoComplete": "喜欢的话给个star或分享出去吧~",
   "home.demoRepository": "前往仓库",

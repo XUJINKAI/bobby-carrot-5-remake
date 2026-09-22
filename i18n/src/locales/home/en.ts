@@ -14,7 +14,7 @@ const catalog = {
   "home.embed": "Embed your custom map on another website",
   "home.importDialog": "Import data",
   "home.importPlaceholder": "Paste JSON, a payload, or a shared link…",
-  "home.demoMove": "Move with WASD / arrow keys",
+  "home.demoMove": "Swipe / WASD / Arrow keys to Move",
   "home.demoRemaining": "{count} targets remaining",
   "home.demoComplete": "Like it? Give us a star or share it~",
   "home.demoRepository": "View repository",
