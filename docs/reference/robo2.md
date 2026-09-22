@@ -51,7 +51,7 @@ u4 cells[width * height]
 
 记录解码位于 `tools/custom/robo2/format.mjs`，语义转换位于 `tools/custom/robo2/convert.mjs`；Robo 2 byte 与语义 Entity 的转换只能位于该来源工具边界。
 
-来源主题按 `0..3` 对应太空、冰雪、遗迹、森林。当前转换分别复用 Sand / Stone Wall、Snow Cloud / Snowy Rock、Sand / Stone Wall、Grass / Hedge；这些 Surface 只负责保持可通行地面与阻挡墙的语义，并为四组关卡提供基础视觉区分。
+来源主题按 `0..3` 对应太空、冰雪、遗迹、森林。当前转换分别使用 Sand、Snow Cloud、Sand、Grass 作为可通行地面，并统一使用 Stump 表达阻挡墙；这些 Surface 只负责保持通行语义，并为四组关卡提供基础视觉区分。
 
 使用已确认的 JAR 生成 25 张语义地图：
 
@@ -65,7 +65,7 @@ node tools/custom/robo2/generate.mjs
 node tools/custom/robo2/extract.mjs
 ```
 
-提取器发布 Engine 使用的八张机关原图：四张炮台图、两张 8×12 双面镜、12×12 的待机炸弹和 10×12 的 Stone。它们以 Robo 2 的 12px 原始格尺寸等比放大，并保留原版左上角绘制锚点；14px 炮台素材因此可以越出所在格。构建结果写入被 Git 忽略的 `assets/art/robo2/`。
+提取器发布 Engine 使用的十张机关原图：四张炮台图、两张 8×12 双面镜、12×12 的待机炸弹、10×12 的 Stone，以及 `bombExplode.png` 与 `explosion.png` 两张六帧爆炸序列。普通机关以 Robo 2 的 12px 原始格尺寸等比放大，并保留原版左上角绘制锚点；14px 炮台素材因此可以越出所在格。爆炸序列按中心和相邻格分别居中绘制。构建结果写入被 Git 忽略的 `assets/art/robo2/`。
 
 生成器校验 JAR SHA-256，输出固定为被 Git 忽略的 `custom-maps/robo2/01.json`～`25.json`。`npm run assets`、`npm test` 与 `npm run verify` 都会先从该 JAR 重建地图，再进入统一的 custom collection 构建流程。输出只包含 `LevelMap` 语义、展示 metadata 与终点胜利规则，不携带 JAR 路径、record 编号或 archive hash。
 
@@ -79,8 +79,8 @@ node tools/custom/robo2/extract.mjs
 - 两种 Mirror 都从双面反射，按各自对角线把四种入射方向转成九十度方向。
 - 激光命中 Laser Cannon 时摧毁目标炮；若目标炮正对来源炮，来源炮同时摧毁。
 - 激光命中 Bomb 会引爆它。
-- Bomb 摧毁中心及上、下、左、右相邻格中的 Stone、Mirror、Laser Cannon 与 Bomb；对角格不受影响。
-- Bomb 可以连锁引爆；爆炸清除对象后重新计算光路。
+- Bomb 摧毁中心及上、下、左、右相邻格中的 Stone、Mirror 与 Laser Cannon；对角格不受影响，不可摧毁的障碍会截断对应方向的爆炸。
+- 相邻 Bomb 逐颗连锁引爆；连锁播放期间 Robo 仍可移动，每次爆炸清除对象后重新计算光路。
 - 墙和终点不被 Bomb 摧毁。
 
 对应字节码位置：

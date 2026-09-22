@@ -19,6 +19,8 @@ const artDefinitions = Object.freeze([
   art("data/mirrorL.png", "mirrorL.png", 8, 12),
   art("data/mirrorR.png", "mirrorR.png", 8, 12),
   art("data/bombTickTick.png", "bombTickTick.png", 12, 12),
+  art("data/bombExplode.png", "bombExplode.png", 14, 84),
+  art("data/explosion.png", "explosion.png", 14, 72),
   art("data/stone.png", "stone.png", 10, 12),
 ]);
 

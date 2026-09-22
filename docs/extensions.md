@@ -40,9 +40,11 @@ Novoban 和 LOMA 的 XSB 地图由 `tools/custom/sokoban-xsb.mjs` 转换。地�
 
 发生器和所属光束在 gameplay 中立即销毁，并把销毁前的完整光路快照交给 Presentation。表现层以 `100ms` 为一相位，按亮、灭、亮完成三次明暗切换后消失，总时长 `300ms`。发生器与光束始终使用同一相位；销毁前已经建立的移动也会在交互点重新确认光束仍存在，因此遗留表现不参与碰撞或伤害。
 
-`laser-bomb` 是使用 Robo 2 `bombTickTick.png` 原图的可推动阻挡对象。激光命中后，炸弹摧毁自身以及上、右、下、左相邻格中的 `laser-stone`、`laser-mirror`、`laser-emitter` 和 `laser-bomb`；相邻炸弹继续以各自位置扩展十字范围。对角格、其它 Entity 与 Surface 保持不变。
+`laser-bomb` 是使用 Robo 2 `bombTickTick.png` 原图的可推动阻挡对象。激光命中后，炸弹摧毁自身以及上、右、下、左相邻格中的 `laser-stone`、`laser-mirror` 和 `laser-emitter`；对角格、其它 Entity 与 Surface 保持不变。不可摧毁的阻挡对象会在边界截去对应方向的爆炸范围。
 
-同一 World 的全部发生器和炸弹由单个 Runtime 激光调度器统一更新。每个 World tick 中，每个发生器只追踪一次光路；命中发生器、引爆炸弹、同步光束 Entity 与机关变化后的伤害都复用该次追踪结果。
+爆炸中心使用 JAR 中 14×84 的 `bombExplode.png`，相邻格使用 14×72 的 `explosion.png`；两张图都按六帧播放。相邻炸弹加入非阻塞 RuntimeAction 队列，每隔 `600ms` 逐颗结算各自当前位置的十字爆炸。连锁期间 Bobby、WorldMotion 与其它机关继续推进；队列与计时进入 World Snapshot、Undo 和 Replay。
+
+同一 World 的全部发生器由单个 Runtime 激光调度器统一更新。每个 World tick 中，每个发生器只追踪一次光路；命中发生器、启动炸弹链、同步光束 Entity 与机关变化后的伤害复用该次追踪结果。
 
 ## 最大步数
 

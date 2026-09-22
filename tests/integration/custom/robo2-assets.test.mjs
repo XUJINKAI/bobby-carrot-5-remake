@@ -8,7 +8,7 @@ import {
 import { ROBO2_SOURCE_FILE } from "../../../tools/custom/robo2/archive.mjs";
 import { buildRobo2Art } from "../../../tools/custom/robo2/extract.mjs";
 
-test("Robo 2 JAR 提供八张激光机关 gameplay 图片", () => {
+test("Robo 2 JAR 提供十张激光机关 gameplay 图片", () => {
   const art = buildRobo2Art(fs.readFileSync(ROBO2_SOURCE_FILE));
 
   assert.deepEqual(
@@ -62,6 +62,18 @@ test("Robo 2 JAR 提供八张激光机关 gameplay 图片", () => {
         height: 12,
       },
       {
+        entry: "data/bombExplode.png",
+        file: "bombExplode.png",
+        width: 14,
+        height: 84,
+      },
+      {
+        entry: "data/explosion.png",
+        file: "explosion.png",
+        width: 14,
+        height: 72,
+      },
+      {
         entry: "data/stone.png",
         file: "stone.png",
         width: 10,
@@ -84,6 +96,14 @@ test("Robo 2 JAR 提供八张激光机关 gameplay 图片", () => {
   assert.equal(
     ROBO2_GAMEPLAY_IMAGE_FILES[ROBO2_GAMEPLAY_IMAGE_IDS.bomb],
     "bombTickTick.png",
+  );
+  assert.equal(
+    ROBO2_GAMEPLAY_IMAGE_FILES[ROBO2_GAMEPLAY_IMAGE_IDS.bombExplosion],
+    "bombExplode.png",
+  );
+  assert.equal(
+    ROBO2_GAMEPLAY_IMAGE_FILES[ROBO2_GAMEPLAY_IMAGE_IDS.explosion],
+    "explosion.png",
   );
   assert.equal(
     ROBO2_GAMEPLAY_IMAGE_FILES[ROBO2_GAMEPLAY_IMAGE_IDS.stone],

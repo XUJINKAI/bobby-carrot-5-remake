@@ -13,7 +13,11 @@ import type {
 import type { EntityPresence } from "../../world/spatial/EntityPresence.js";
 import { defineEntityModule, type EntityModule } from "../EntityModule.js";
 import { RuntimeEntityTypeId } from "../runtime-types.js";
-import { laserExplosionTargetIds } from "./laser-bomb.js";
+import { armLaserBombChain } from "./laser-bomb.js";
+import {
+  destroyLaserEmitter,
+  groupLaserBeamsBySource,
+} from "./laser-emitter-destruction.js";
 import {
   laserMirrorCoversIncoming,
   reflectedLaserDirection,
@@ -300,19 +304,8 @@ function updateLaserSystem(
     collectLaserTargets(query, ray, hitEmitters, hitBombs);
   }
 
-  const explosionTargets = laserExplosionTargetIds(query, hitBombs);
   const destroyedEmitters = new Set(hitEmitters);
-  for (const entityId of explosionTargets) {
-    if (query.entity(entityId)?.type === MapEntityTypeId.LASER_EMITTER) {
-      destroyedEmitters.add(entityId);
-    }
-  }
-
-  const beamsBySource = groupBeamEntities(query);
-  for (const entityId of [...explosionTargets].sort(compareEntityIds)) {
-    if (destroyedEmitters.has(entityId)) continue;
-    commands.destroy(entityId);
-  }
+  const beamsBySource = groupLaserBeamsBySource(query);
   for (const emitterId of [...destroyedEmitters].sort(compareEntityIds)) {
     const emitter = emitters.find((candidate) => candidate.id === emitterId);
     if (!emitter) continue;
@@ -323,6 +316,7 @@ function updateLaserSystem(
       rays.get(emitterId) ?? [],
     );
   }
+  armLaserBombChain(query, commands, system.id, [...hitBombs]);
 
   for (const emitter of emitters) {
     if (destroyedEmitters.has(emitter.id)) continue;
@@ -395,53 +389,14 @@ function collectLaserTargets(
       const entity = query.entity(presence.entityId);
       if (entity?.type === MapEntityTypeId.LASER_EMITTER) {
         hitEmitters.add(entity.id);
-      } else if (entity?.type === MapEntityTypeId.LASER_BOMB) {
+      } else if (
+        entity?.type === MapEntityTypeId.LASER_BOMB &&
+        entity.state?.armed !== true
+      ) {
         hitBombs.add(entity.id);
       }
     }
   }
-}
-
-function groupBeamEntities(
-  query: WorldQueryApi,
-): ReadonlyMap<EntityId, readonly Readonly<EntityInstance>[]> {
-  const result = new Map<EntityId, Readonly<EntityInstance>[]>();
-  for (const beam of laserBeamEntities(query)) {
-    const sourceId = beam.state?.sourceId;
-    if (typeof sourceId !== "number") continue;
-    const group = result.get(sourceId) ?? [];
-    group.push(beam);
-    result.set(sourceId, group);
-  }
-  return result;
-}
-
-function destroyLaserEmitter(
-  commands: WorldCommandApi,
-  emitter: Readonly<EntityInstance>,
-  beams: readonly Readonly<EntityInstance>[],
-  ray: readonly LaserRaySegment[],
-): void {
-  commands.emit({
-    type: "laser-emitter-destroyed",
-    entityId: emitter.id,
-    x: emitter.anchor.x,
-    y: emitter.anchor.y,
-    direction: emitter.direction ?? "right",
-    data: {
-      segments: ray.map((segment) => ({
-        x: segment.cell.x - emitter.anchor.x,
-        y: segment.cell.y - emitter.anchor.y,
-        direction: segment.direction,
-        terminal: segment.terminal,
-        ...(segment.outgoingDirection
-          ? { outgoingDirection: segment.outgoingDirection }
-          : {}),
-      })),
-    },
-  });
-  for (const beam of beams) commands.destroy(beam.id);
-  commands.destroy(emitter.id);
 }
 
 function replaceOwnedBeam(
@@ -473,15 +428,6 @@ function downActorsInRay(
   for (const actorId of [...actorIds].sort((left, right) => left - right)) {
     commands.downActor(actorId, "laser-beam");
   }
-}
-
-function laserBeamEntities(
-  query: WorldQueryApi,
-): readonly Readonly<EntityInstance>[] {
-  return query.entitiesMatching({
-    kind: "type",
-    value: RuntimeEntityTypeId.LASER_BEAM,
-  });
 }
 
 function compareEntityIds(left: EntityId, right: EntityId): number {

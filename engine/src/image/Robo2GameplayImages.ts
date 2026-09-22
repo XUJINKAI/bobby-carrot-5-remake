@@ -12,6 +12,8 @@ export const ROBO2_GAMEPLAY_IMAGE_IDS = {
     backslash: "robo2-mirror-backslash",
   },
   bomb: "robo2-bomb",
+  bombExplosion: "robo2-bomb-explosion",
+  explosion: "robo2-explosion",
   stone: "robo2-stone",
 } as const;
 
@@ -23,6 +25,8 @@ export const ROBO2_GAMEPLAY_IMAGE_FILES = {
   [ROBO2_GAMEPLAY_IMAGE_IDS.mirror.slash]: "mirrorR.png",
   [ROBO2_GAMEPLAY_IMAGE_IDS.mirror.backslash]: "mirrorL.png",
   [ROBO2_GAMEPLAY_IMAGE_IDS.bomb]: "bombTickTick.png",
+  [ROBO2_GAMEPLAY_IMAGE_IDS.bombExplosion]: "bombExplode.png",
+  [ROBO2_GAMEPLAY_IMAGE_IDS.explosion]: "explosion.png",
   [ROBO2_GAMEPLAY_IMAGE_IDS.stone]: "stone.png",
 } as const;
 
