@@ -8,9 +8,15 @@ import {
 import {
   createBuiltinBehaviorRegistry,
   createBuiltinEntityRegistry,
+  createBuiltinVisualRegistry,
 } from "../../engine/dist/entities/registry.js";
+import {
+  LASER_EMITTER_FLASH_DURATION_MS,
+  LASER_EMITTER_FLASH_PHASE_MS,
+} from "../../engine/dist/entities/custom/laser-emitter.js";
 import { RuntimeEntityTypeId } from "../../engine/dist/entities/runtime-types.js";
 import { resolveLevelEntityVisualPreview } from "../../engine/dist/visual/preview.js";
+import { VisualRuntime } from "../../engine/dist/visual/VisualRuntime.js";
 import { World } from "../support/engine/World.mjs";
 
 const ground = (x, y) => ({
@@ -331,6 +337,89 @@ test("激光从背面命中同向发生器时只摧毁目标", () => {
       { x: 5, y: 0 },
     ],
   );
+});
+
+test("发生器与所属光束在销毁后同步闪烁三次", () => {
+  const entities = [];
+  for (let y = 0; y < 2; y += 1) {
+    for (let x = 0; x < 6; x += 1) entities.push(ground(x, y));
+  }
+  entities.push(
+    { type: MapEntityTypeId.LASER_EMITTER, direction: "right", x: 0, y: 0 },
+    { type: MapEntityTypeId.LASER_EMITTER, direction: "right", x: 3, y: 0 },
+    { type: MapEntityTypeId.BOBBY, x: 0, y: 1 },
+  );
+  const world = new World({
+    schemaVersion: 1,
+    width: 6,
+    height: 2,
+    entities,
+  });
+  const target = emitterEntities(world)[1];
+  const result = world.update({ tick: 0, stepMs: 16 });
+  const event = result.events.find((candidate) =>
+    candidate.type === "laser-emitter-destroyed" &&
+    candidate.entityId === target.id
+  );
+  assert.ok(event);
+  assert.equal(event.direction, "right");
+  assert.equal(event.data?.segments.length, 2);
+  assert.equal(world.entity(target.id), undefined);
+  assert.equal(
+    beamEntities(world).some((beam) => beam.state?.sourceId === target.id),
+    false,
+  );
+
+  const visual = new VisualRuntime(createBuiltinVisualRegistry(), 48);
+  const options = {
+    motionDuration: () => 0,
+    stationaryDeathDurationMs: 0,
+  };
+  const start = { frame: 1, nowMs: 1000, deltaMs: 0 };
+  visual.consumeWorldDeltas(world, result.deltas, start, options);
+
+  function transientAt(offsetMs) {
+    const frame = {
+      frame: 2 + offsetMs,
+      nowMs: start.nowMs + offsetMs,
+      deltaMs: offsetMs,
+    };
+    visual.update(frame, "linear");
+    return visual.scene(world).worldEffect.find(
+      (item) => item.presence.entityId < 0,
+    );
+  }
+
+  const first = transientAt(0);
+  assert.ok(first);
+  assert.deepEqual(first.composition.layers[0], {
+    kind: "image",
+    asset: ROBO2_GAMEPLAY_IMAGE_IDS.emitter.right,
+    sourceTileSize: 12,
+    anchor: "top-left",
+  });
+  const strokes = [];
+  first.composition.layers[1].draw({
+    strokeStyle: "",
+    lineWidth: 0,
+    save() {},
+    restore() {},
+    beginPath() {},
+    moveTo() {},
+    lineTo() {},
+    stroke() {
+      strokes.push(this.strokeStyle);
+    },
+  }, 0, 0, 12);
+  assert.deepEqual(strokes, ["#ff0000", "#ff0000"]);
+
+  assert.equal(transientAt(LASER_EMITTER_FLASH_PHASE_MS), undefined);
+  assert.ok(transientAt(LASER_EMITTER_FLASH_PHASE_MS * 2));
+  assert.equal(transientAt(LASER_EMITTER_FLASH_PHASE_MS * 3), undefined);
+  assert.ok(transientAt(LASER_EMITTER_FLASH_PHASE_MS * 4));
+  assert.equal(transientAt(LASER_EMITTER_FLASH_PHASE_MS * 5), undefined);
+  assert.equal(transientAt(LASER_EMITTER_FLASH_DURATION_MS), undefined);
+  assert.equal(visual.isAnimating, false);
 });
 
 test("把相向发生器推入同一直线后两者同时摧毁", () => {

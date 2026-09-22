@@ -1,5 +1,6 @@
 import { MapEntityTypeId, type Direction } from "@bobby/model";
 import { ROBO2_GAMEPLAY_IMAGE_IDS } from "../../image/Robo2GameplayImages.js";
+import type { TransientVisualDefinition } from "../../visual/VisualDefinition.js";
 import type { Behavior } from "../../world/behavior/Behavior.js";
 import type { WorldCommandApi } from "../../world/behavior/CommandQueue.js";
 import type { WorldQueryApi } from "../../world/behavior/WorldQueryApi.js";
@@ -29,6 +30,11 @@ interface LaserRaySegment {
   outgoingDirection?: Direction;
   terminal: boolean;
 }
+
+const LASER_EMITTER_FLASH_COUNT = 3;
+export const LASER_EMITTER_FLASH_PHASE_MS = 100;
+export const LASER_EMITTER_FLASH_DURATION_MS =
+  LASER_EMITTER_FLASH_COUNT * 2 * LASER_EMITTER_FLASH_PHASE_MS;
 
 const laserEmitterBehavior: Behavior = {
   id: "laser-emitter",
@@ -91,6 +97,36 @@ export const laserEmitter: EntityModule = defineEntityModule({
       };
     },
   },
+  transientVisuals: [{
+    id: "laser-emitter-destroyed",
+    eventType: "laser-emitter-destroyed",
+    durationMs: LASER_EMITTER_FLASH_DURATION_MS,
+    renderPass: "world-effect",
+    resolve({ event, progress }) {
+      const phase = Math.min(
+        LASER_EMITTER_FLASH_COUNT * 2 - 1,
+        Math.floor(progress * LASER_EMITTER_FLASH_COUNT * 2),
+      );
+      if (phase % 2 === 1) return null;
+      const direction = directionState(event.direction) ?? "right";
+      const segments = laserSegmentsFromEvent(event.data?.segments);
+      return {
+        layers: [
+          {
+            kind: "image",
+            asset: ROBO2_GAMEPLAY_IMAGE_IDS.emitter[direction],
+            sourceTileSize: 12,
+            anchor: "top-left",
+          },
+          {
+            kind: "canvas",
+            draw: (context, x, y, size) =>
+              drawLaserSnapshot(context, x, y, size, segments),
+          },
+        ],
+      };
+    },
+  } satisfies TransientVisualDefinition],
 });
 
 export const laserBeam: EntityModule = defineEntityModule({
@@ -231,7 +267,14 @@ function updateLaserSystem(
     commands.destroy(entityId);
   }
   for (const emitterId of [...destroyedEmitters].sort(compareEntityIds)) {
-    destroyLaserEmitter(commands, emitterId, beamsBySource.get(emitterId) ?? []);
+    const emitter = emitters.find((candidate) => candidate.id === emitterId);
+    if (!emitter) continue;
+    destroyLaserEmitter(
+      commands,
+      emitter,
+      beamsBySource.get(emitterId) ?? [],
+      rays.get(emitterId) ?? [],
+    );
   }
 
   for (const emitter of emitters) {
@@ -328,11 +371,30 @@ function groupBeamEntities(
 
 function destroyLaserEmitter(
   commands: WorldCommandApi,
-  emitterId: EntityId,
+  emitter: Readonly<EntityInstance>,
   beams: readonly Readonly<EntityInstance>[],
+  ray: readonly LaserRaySegment[],
 ): void {
+  commands.emit({
+    type: "laser-emitter-destroyed",
+    entityId: emitter.id,
+    x: emitter.anchor.x,
+    y: emitter.anchor.y,
+    direction: emitter.direction ?? "right",
+    data: {
+      segments: ray.map((segment) => ({
+        x: segment.cell.x - emitter.anchor.x,
+        y: segment.cell.y - emitter.anchor.y,
+        direction: segment.direction,
+        terminal: segment.terminal,
+        ...(segment.outgoingDirection
+          ? { outgoingDirection: segment.outgoingDirection }
+          : {}),
+      })),
+    },
+  });
   for (const beam of beams) commands.destroy(beam.id);
-  commands.destroy(emitterId);
+  commands.destroy(emitter.id);
 }
 
 function replaceOwnedBeam(
@@ -484,6 +546,63 @@ function directionState(value: unknown): Direction | null {
     return value;
   }
   return null;
+}
+
+interface LaserFlashSegment {
+  x: number;
+  y: number;
+  direction: Direction;
+  terminal: boolean;
+  outgoingDirection?: Direction;
+}
+
+function laserSegmentsFromEvent(value: unknown): readonly LaserFlashSegment[] {
+  if (!Array.isArray(value)) return [];
+  const segments: LaserFlashSegment[] = [];
+  for (const candidate of value) {
+    if (!candidate || typeof candidate !== "object" || Array.isArray(candidate)) {
+      continue;
+    }
+    const segment = candidate as Record<string, unknown>;
+    const direction = directionState(segment.direction);
+    if (
+      !Number.isInteger(segment.x) ||
+      !Number.isInteger(segment.y) ||
+      !direction ||
+      typeof segment.terminal !== "boolean"
+    ) {
+      continue;
+    }
+    const outgoingDirection = directionState(segment.outgoingDirection);
+    segments.push({
+      x: segment.x as number,
+      y: segment.y as number,
+      direction,
+      terminal: segment.terminal,
+      ...(outgoingDirection ? { outgoingDirection } : {}),
+    });
+  }
+  return segments;
+}
+
+function drawLaserSnapshot(
+  context: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  size: number,
+  segments: readonly LaserFlashSegment[],
+): void {
+  for (const segment of segments) {
+    if (segment.terminal) continue;
+    drawLaserLine(
+      context,
+      x + segment.x * size,
+      y + segment.y * size,
+      size,
+      segment.direction,
+      segment.outgoingDirection ?? null,
+    );
+  }
 }
 
 function drawLaserLine(
