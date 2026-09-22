@@ -94,6 +94,12 @@ export {
   type OriginalGameplayImageFile,
 } from "./image/OriginalGameplayImages.js";
 export {
+  registerRobo2GameplayImages,
+  ROBO2_GAMEPLAY_IMAGE_FILES,
+  ROBO2_GAMEPLAY_IMAGE_IDS,
+  type Robo2GameplayImageFile,
+} from "./image/Robo2GameplayImages.js";
+export {
   prepareCanvas,
   resolveDevicePixelRatio,
   snapRectToDevicePixels,

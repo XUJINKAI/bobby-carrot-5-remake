@@ -1,6 +1,7 @@
 import {
   createOriginalGameplayImageManager,
   createGameplayRuntime,
+  registerRobo2GameplayImages,
   type CameraOptions,
   type GameplayRuntime,
   type ImageManager,
@@ -562,7 +563,11 @@ function embedArtUrl(path: string): string {
 }
 
 function createEmbedImageManager(): ImageManager {
-  return createOriginalGameplayImageManager(embedArtUrl);
+  const images = createOriginalGameplayImageManager(embedArtUrl);
+  registerRobo2GameplayImages(images, (file) =>
+    embedAssetUrl(`assets/art/robo2/${file}`).href
+  );
+  return images;
 }
 
 function styleElement(): HTMLStyleElement {

@@ -102,16 +102,16 @@ function objectEntity(code, x, y) {
   }
   if (code === ROBO2_TILE_CODE.EXIT) return { type: "exit", ...base };
   if (code === ROBO2_TILE_CODE.STONE) {
-    return { type: "pushable-stone", ...base };
+    return { type: "laser-stone", ...base };
   }
   if (code === ROBO2_TILE_CODE.BOMB) {
     return { type: "laser-bomb", ...base };
   }
   if (code === ROBO2_TILE_CODE.MIRROR_LEFT) {
-    return { type: "laser-mirror", variant: "slash", ...base };
+    return { type: "laser-mirror", variant: "backslash", ...base };
   }
   if (code === ROBO2_TILE_CODE.MIRROR_RIGHT) {
-    return { type: "laser-mirror", variant: "backslash", ...base };
+    return { type: "laser-mirror", variant: "slash", ...base };
   }
   if (LASER_DIRECTIONS.has(code)) {
     return {

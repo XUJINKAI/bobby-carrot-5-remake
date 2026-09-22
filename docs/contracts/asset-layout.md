@@ -185,6 +185,9 @@ Robo 2 使用受 Git 管理的原始 J2ME 包作为唯一地图源：
 
 ```text
 tools/custom/robo2/robo2.jar
+  ├─ tools/custom/robo2/extract.mjs
+  │    ↓
+  │  assets/art/robo2/*.png          # ignored / generated
   ↓ tools/custom/robo2/generate.mjs
 custom-maps/robo2/*.json              # ignored / generated
   ↓ tools/custom/prepare.mjs
@@ -192,7 +195,7 @@ assets/maps/robo2/index.json
 assets/maps/robo2/<map-id>.json
 ```
 
-生成器在读取 25 条 `data/<index>` 记录前校验固定 SHA-256，并只在来源工具边界处理 JAR byte、列优先格子和半字节 tile code。Robo 2 JAR、关卡及转换结果的版权边界见根目录 `THIRD_PARTY_ASSETS.md`。
+地图生成器与图片提取器都校验固定 SHA-256。来源工具边界负责 JAR byte、列优先格子、半字节 tile code 和原始图片 entry；Engine 只消费语义地图与已注册的图片资源 ID。Robo 2 JAR、关卡、美术及转换结果的版权边界见根目录 `THIRD_PARTY_ASSETS.md`。
 
 LOMA 与 Novoban 的 XSB 字符转换由 `tools/custom/sokoban-xsb.mjs` 统一负责。每张地图从
 `PUSHBOX_TERRAIN_TABLE` 稳定选择一个主题，并按 `ground / boundary / obstacle` 类别与坐标

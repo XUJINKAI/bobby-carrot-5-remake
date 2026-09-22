@@ -2,10 +2,14 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { MapEntityTypeId } from "@bobby/model";
 import {
+  ROBO2_GAMEPLAY_IMAGE_IDS,
+} from "../../engine/dist/public.js";
+import {
   createBuiltinBehaviorRegistry,
   createBuiltinEntityRegistry,
 } from "../../engine/dist/entities/registry.js";
 import { RuntimeEntityTypeId } from "../../engine/dist/entities/runtime-types.js";
+import { resolveLevelEntityVisualPreview } from "../../engine/dist/visual/preview.js";
 import { World } from "../support/engine/World.mjs";
 
 const ground = (x, y) => ({
@@ -29,13 +33,29 @@ function emitterEntities(world) {
   });
 }
 
+test("四向激光发生器使用对应的 Robo 2 原图", () => {
+  for (const direction of ["up", "right", "down", "left"]) {
+    const visual = resolveLevelEntityVisualPreview({
+      type: MapEntityTypeId.LASER_EMITTER,
+      direction,
+    });
+    assert.deepEqual(visual?.layers[0], {
+      kind: "image",
+      asset: ROBO2_GAMEPLAY_IMAGE_IDS.emitter[direction],
+      sourceTileSize: 12,
+      anchor: "top-left",
+    });
+    assert.equal(visual?.layers[1]?.kind, "canvas");
+  }
+});
+
 test("激光从发生器沿固定方向延伸，并停在首个阻挡格", () => {
   const entities = [];
   for (let y = 0; y < 2; y += 1)
     for (let x = 0; x < 6; x += 1) entities.push(ground(x, y));
   entities.push(
     { type: MapEntityTypeId.LASER_EMITTER, direction: "right", x: 0, y: 0 },
-    { type: MapEntityTypeId.PUSHABLE_STONE, x: 3, y: 0 },
+    { type: MapEntityTypeId.LASER_STONE, x: 3, y: 0 },
     { type: MapEntityTypeId.BOBBY, x: 0, y: 1 },
   );
   const world = new World({
@@ -255,7 +275,7 @@ test("多发生器地图由单个激光调度器统一更新", () => {
   for (let x = 0; x < 12; x += 1) {
     entities.push(
       { type: MapEntityTypeId.LASER_EMITTER, direction: "down", x, y: 0 },
-      { type: MapEntityTypeId.PUSHABLE_STONE, x, y: 2 },
+      { type: MapEntityTypeId.LASER_STONE, x, y: 2 },
     );
   }
   entities.push({ type: MapEntityTypeId.BOBBY, x: 0, y: 4 });

@@ -4,8 +4,8 @@ import { fileURLToPath } from "node:url";
 import { serializeMapDocument } from "@bobby/model";
 import { root } from "../../lib/fs.mjs";
 import {
+  assertRobo2A1Archive,
   decodeRobo2Archive,
-  ROBO2_A1_SHA256,
   ROBO2_SOURCE_FILE,
 } from "./archive.mjs";
 import { convertRobo2Level } from "./convert.mjs";
@@ -14,12 +14,7 @@ const outputDirectory = path.join(root, "custom-maps/robo2");
 export { ROBO2_SOURCE_FILE } from "./archive.mjs";
 
 export function buildRobo2Maps(input) {
-  const archive = decodeRobo2Archive(input);
-  if (archive.sha256 !== ROBO2_A1_SHA256) {
-    throw new Error(
-      `Robo 2 JAR SHA-256 不匹配：应为 ${ROBO2_A1_SHA256}，实际 ${archive.sha256}`,
-    );
-  }
+  const archive = assertRobo2A1Archive(decodeRobo2Archive(input));
 
   return archive.levels.map((level) => {
     const id = String(level.index + 1).padStart(2, "0");

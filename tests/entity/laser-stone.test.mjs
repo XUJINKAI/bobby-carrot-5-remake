@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { MapEntityTypeId } from "@bobby/model";
+import {
+  ROBO2_GAMEPLAY_IMAGE_IDS,
+} from "../../engine/dist/public.js";
 import { createBuiltinEntityRegistry } from "../../engine/dist/entities/registry.js";
 import { resolveLevelEntityVisualPreview } from "../../engine/dist/visual/preview.js";
 import { World } from "../support/engine/World.mjs";
@@ -22,7 +25,7 @@ function createWorld() {
       ground(1),
       ground(2),
       { type: MapEntityTypeId.BOBBY, x: 0, y: 0 },
-      { type: MapEntityTypeId.PUSHABLE_STONE, x: 1, y: 0 },
+      { type: MapEntityTypeId.LASER_STONE, x: 1, y: 0 },
     ],
   });
 }
@@ -44,11 +47,11 @@ function moveRight(world) {
 function stone(world) {
   return world.query.entitiesMatching({
     kind: "type",
-    value: MapEntityTypeId.PUSHABLE_STONE,
+    value: MapEntityTypeId.LASER_STONE,
   })[0];
 }
 
-test("可推动石头使用通用推动规则，边界会阻止连续推动", () => {
+test("Laser Stone 使用通用推动规则，边界会阻止连续推动", () => {
   const world = createWorld();
 
   assert.equal(moveRight(world).moved, true);
@@ -62,13 +65,20 @@ test("可推动石头使用通用推动规则，边界会阻止连续推动", ()
   assert.deepEqual(stone(world).anchor, { x: 2, y: 0 });
 });
 
-test("可推动石头注册为阻挡、可推动对象，并复用碎石视觉", () => {
+test("Laser Stone 注册为阻挡、可推动对象，并使用 Robo 2 原图", () => {
   const definition = createBuiltinEntityRegistry().require(
-    MapEntityTypeId.PUSHABLE_STONE,
+    MapEntityTypeId.LASER_STONE,
   );
   assert.deepEqual(definition.presenceFacts, ["blocking", "pushable"]);
   assert.deepEqual(
-    resolveLevelEntityVisualPreview({ type: MapEntityTypeId.PUSHABLE_STONE }),
-    resolveLevelEntityVisualPreview({ type: MapEntityTypeId.CRUMBLY_ROCK }),
+    resolveLevelEntityVisualPreview({ type: MapEntityTypeId.LASER_STONE }),
+    {
+      layers: [{
+        kind: "image",
+        asset: ROBO2_GAMEPLAY_IMAGE_IDS.stone,
+        sourceTileSize: 12,
+        anchor: "top-left",
+      }],
+    },
   );
 });

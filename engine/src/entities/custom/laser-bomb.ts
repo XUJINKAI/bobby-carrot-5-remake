@@ -1,4 +1,5 @@
 import { MapEntityTypeId, type EntityType } from "@bobby/model";
+import { ROBO2_GAMEPLAY_IMAGE_IDS } from "../../image/Robo2GameplayImages.js";
 import type { WorldQueryApi } from "../../world/behavior/WorldQueryApi.js";
 import type {
   CellPosition,
@@ -7,7 +8,7 @@ import type {
 import { defineEntityModule, type EntityModule } from "../EntityModule.js";
 
 const destructibleTypes: ReadonlySet<EntityType> = new Set([
-  MapEntityTypeId.PUSHABLE_STONE,
+  MapEntityTypeId.LASER_STONE,
   MapEntityTypeId.LASER_MIRROR,
   MapEntityTypeId.LASER_EMITTER,
   MapEntityTypeId.LASER_BOMB,
@@ -22,7 +23,12 @@ export const laserBomb: EntityModule = defineEntityModule({
   visual: {
     id: MapEntityTypeId.LASER_BOMB,
     resolve: () => ({
-      layers: [{ kind: "canvas", draw: drawLaserBomb }],
+      layers: [{
+        kind: "image",
+        asset: ROBO2_GAMEPLAY_IMAGE_IDS.bomb,
+        sourceTileSize: 12,
+        anchor: "top-left",
+      }],
     }),
   },
 });
@@ -66,39 +72,4 @@ function explosionCells(center: CellPosition): readonly CellPosition[] {
     { x: center.x, y: center.y + 1 },
     { x: center.x - 1, y: center.y },
   ];
-}
-
-function drawLaserBomb(
-  context: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  size: number,
-): void {
-  const centerX = x + size / 2;
-  const centerY = y + size * 0.57;
-  const radius = size * 0.28;
-  context.save();
-  context.fillStyle = "#24282c";
-  context.strokeStyle = "#0e1114";
-  context.lineWidth = Math.max(1, size * 0.05);
-  context.beginPath();
-  context.arc(centerX, centerY, radius, 0, Math.PI * 2);
-  context.fill();
-  context.stroke();
-  context.strokeStyle = "#d6a85e";
-  context.lineWidth = Math.max(2, size * 0.055);
-  context.beginPath();
-  context.moveTo(centerX + size * 0.1, centerY - radius * 0.8);
-  context.quadraticCurveTo(
-    centerX + size * 0.2,
-    y + size * 0.12,
-    centerX + size * 0.32,
-    y + size * 0.17,
-  );
-  context.stroke();
-  context.fillStyle = "#ff7043";
-  context.beginPath();
-  context.arc(centerX + size * 0.34, y + size * 0.16, size * 0.055, 0, Math.PI * 2);
-  context.fill();
-  context.restore();
 }

@@ -109,7 +109,7 @@ if (
 if (
   engineLab.maps[0]?.id !== "00-intro" ||
   engineLab.maps[1]?.id !== "01-control2" ||
-  engineLab.maps[2]?.id !== "02-pushable-stone" ||
+  engineLab.maps[2]?.id !== "02-laser-stone" ||
   engineLab.maps[3]?.id !== "03-laser-emitter" ||
   engineLab.maps[4]?.id !== "04-laser-mirror" ||
   engineLab.maps[5]?.id !== "05-laser-collision" ||
@@ -123,7 +123,7 @@ if (
   engineLab.maps[6]?.chapter !== "test"
 ) {
   throw new Error(
-    "Engine Lab 地图顺序必须为 intro、control2、pushable-stone、laser-emitter、laser-mirror、laser-collision、laser-bomb",
+    "Engine Lab 地图顺序必须为 intro、control2、laser-stone、laser-emitter、laser-mirror、laser-collision、laser-bomb",
   );
 }
 assertLomaCollection(collectionIndexes);
@@ -344,7 +344,7 @@ function assertRobo2Collection(collections) {
   }
 
   for (const type of [
-    "pushable-stone",
+    "laser-stone",
     "laser-bomb",
     "laser-mirror",
     "laser-emitter",

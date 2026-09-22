@@ -74,12 +74,13 @@ test("Robo 2 tile 转换为可校验的语义 Entity", () => {
   });
   assert.deepEqual(entityAt(document, "laser-mirror", 1, 1), {
     type: "laser-mirror",
-    variant: "slash",
+    variant: "backslash",
     x: 1,
     y: 1,
     stackOrder: 1,
   });
-  assert.equal(entityAt(document, "laser-mirror", 2, 1).variant, "backslash");
+  assert.equal(entityAt(document, "laser-stone", 3, 0).type, "laser-stone");
+  assert.equal(entityAt(document, "laser-mirror", 2, 1).variant, "slash");
   assert.equal(entityAt(document, "laser-emitter", 3, 1).direction, "down");
   assert.equal(entityAt(document, "laser-emitter", 0, 2).direction, "right");
   assert.equal(entityAt(document, "laser-emitter", 1, 2).direction, "up");

@@ -3,13 +3,13 @@ import {
   type Direction,
   type JsonValue,
 } from "@bobby/model";
+import { ROBO2_GAMEPLAY_IMAGE_IDS } from "../../image/Robo2GameplayImages.js";
 import type { EntityInstance } from "../../world/entity/EntityInstance.js";
 import {
   defineEntityModule,
   type EntityModule,
   type EntityModuleDefinition,
 } from "../EntityModule.js";
-import { atlasVisual, tileCell } from "../original/module.js";
 
 export type LaserMirrorVariant = "slash" | "backslash";
 
@@ -48,17 +48,20 @@ const definition: EntityModuleDefinition = {
 
 export const laserMirror: EntityModule = defineEntityModule({
   definition,
-  visual: atlasVisual(
-    definition,
-    (context) =>
-      tileCell(MapEntityTypeId.MIRROR, {
-        fields: {
-          variant: laserMirrorVariant(context.entity.state?.variant) === "slash"
-            ? "left-top"
-            : "right-top",
-        },
-      }),
-  ),
+  visual: {
+    id: definition.type,
+    resolve(context) {
+      const variant = laserMirrorVariant(context.entity.state?.variant);
+      return {
+        layers: [{
+          kind: "image",
+          asset: ROBO2_GAMEPLAY_IMAGE_IDS.mirror[variant],
+          sourceTileSize: 12,
+          anchor: "top-left",
+        }],
+      };
+    },
+  },
 });
 
 export function reflectedLaserDirection(

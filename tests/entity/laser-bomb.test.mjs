@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { MapEntityTypeId } from "@bobby/model";
+import {
+  ROBO2_GAMEPLAY_IMAGE_IDS,
+} from "../../engine/dist/public.js";
 import { createBuiltinEntityRegistry } from "../../engine/dist/entities/registry.js";
 import { RuntimeEntityTypeId } from "../../engine/dist/entities/runtime-types.js";
 import { resolveLevelEntityVisualPreview } from "../../engine/dist/visual/preview.js";
@@ -57,8 +60,16 @@ test("激光炸弹使用通用推动规则并提供独立视觉", () => {
       .presenceFacts,
     ["blocking", "pushable"],
   );
-  assert.ok(
+  assert.deepEqual(
     resolveLevelEntityVisualPreview({ type: MapEntityTypeId.LASER_BOMB }),
+    {
+      layers: [{
+        kind: "image",
+        asset: ROBO2_GAMEPLAY_IMAGE_IDS.bomb,
+        sourceTileSize: 12,
+        anchor: "top-left",
+      }],
+    },
   );
 });
 
@@ -67,10 +78,10 @@ test("激光引爆炸弹后摧毁十字范围内的石头、镜面与发生器",
   entities.push(
     { type: MapEntityTypeId.LASER_EMITTER, direction: "down", x: 2, y: 0 },
     { type: MapEntityTypeId.LASER_BOMB, x: 2, y: 2 },
-    { type: MapEntityTypeId.PUSHABLE_STONE, x: 1, y: 2 },
+    { type: MapEntityTypeId.LASER_STONE, x: 1, y: 2 },
     { type: MapEntityTypeId.LASER_MIRROR, variant: "slash", x: 3, y: 2 },
     { type: MapEntityTypeId.LASER_EMITTER, direction: "down", x: 2, y: 3 },
-    { type: MapEntityTypeId.PUSHABLE_STONE, x: 3, y: 1 },
+    { type: MapEntityTypeId.LASER_STONE, x: 3, y: 1 },
     { type: MapEntityTypeId.BOBBY, x: 4, y: 4 },
   );
   const world = new World({
@@ -85,7 +96,7 @@ test("激光引爆炸弹后摧毁十字范围内的石头、镜面与发生器",
   );
   const diagonalStone = entitiesOfType(
     world,
-    MapEntityTypeId.PUSHABLE_STONE,
+    MapEntityTypeId.LASER_STONE,
   ).find((stone) => stone.anchor.x === 3 && stone.anchor.y === 1);
   assert.ok(diagonalStone);
 
@@ -99,7 +110,7 @@ test("激光引爆炸弹后摧毁十字范围内的石头、镜面与发生器",
   assert.equal(world.entity(target.id), undefined);
   assert.equal(entitiesOfType(world, MapEntityTypeId.LASER_MIRROR).length, 0);
   assert.deepEqual(
-    entitiesOfType(world, MapEntityTypeId.PUSHABLE_STONE).map(({ id }) => id),
+    entitiesOfType(world, MapEntityTypeId.LASER_STONE).map(({ id }) => id),
     [diagonalStone.id],
   );
   assert.equal(
@@ -116,7 +127,7 @@ test("相邻炸弹连锁扩展十字范围，并保留 Exit", () => {
     { type: MapEntityTypeId.LASER_EMITTER, direction: "down", x: 2, y: 0 },
     { type: MapEntityTypeId.LASER_BOMB, x: 2, y: 2 },
     { type: MapEntityTypeId.LASER_BOMB, x: 3, y: 2 },
-    { type: MapEntityTypeId.PUSHABLE_STONE, x: 4, y: 2 },
+    { type: MapEntityTypeId.LASER_STONE, x: 4, y: 2 },
     { type: MapEntityTypeId.LASER_MIRROR, variant: "backslash", x: 3, y: 1 },
     { type: MapEntityTypeId.EXIT, x: 3, y: 3 },
     { type: MapEntityTypeId.BOBBY, x: 4, y: 4 },
@@ -132,7 +143,7 @@ test("相邻炸弹连锁扩展十字范围，并保留 Exit", () => {
   world.update({ tick: 0, stepMs: 16 });
 
   assert.equal(entitiesOfType(world, MapEntityTypeId.LASER_BOMB).length, 0);
-  assert.equal(entitiesOfType(world, MapEntityTypeId.PUSHABLE_STONE).length, 0);
+  assert.equal(entitiesOfType(world, MapEntityTypeId.LASER_STONE).length, 0);
   assert.equal(entitiesOfType(world, MapEntityTypeId.LASER_MIRROR).length, 0);
   assert.ok(world.entity(exit.id));
 });

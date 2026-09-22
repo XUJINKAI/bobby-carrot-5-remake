@@ -56,13 +56,17 @@ export function entityVisualStyle(
     }
     const frameWidth = image.width / columns;
     const frameHeight = image.height / rows;
-    const scale = Math.min(size / frameWidth, size / frameHeight);
+    const scale = layer.sourceTileSize
+      ? size / layer.sourceTileSize
+      : Math.min(size / frameWidth, size / frameHeight);
     const drawWidth = frameWidth * scale;
     const drawHeight = frameHeight * scale;
     const backgroundWidth = image.width * scale;
     const backgroundHeight = image.height * scale;
-    const left = (size - drawWidth) / 2 - column * drawWidth;
-    const top = (size - drawHeight) / 2 - row * drawHeight;
+    const left = (layer.anchor === "top-left" ? 0 : (size - drawWidth) / 2) -
+      column * drawWidth;
+    const top = (layer.anchor === "top-left" ? 0 : (size - drawHeight) / 2) -
+      row * drawHeight;
     return {
       width: `${size}px`,
       height: `${size}px`,

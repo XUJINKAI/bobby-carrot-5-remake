@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "meta": {
-    "name": "Pushable Stone"
+    "name": "Laser Stone"
   },
   "rules": {
     "win": {
@@ -32,7 +32,7 @@
     { "type": "grass", "variant": "ts-10-1", "x": 4, "y": 3 },
     { "type": "grass", "variant": "ts-10-1", "x": 5, "y": 3 },
     { "type": "exit", "x": 5, "y": 2, "stackOrder": 1 },
-    { "type": "pushable-stone", "x": 2, "y": 2, "stackOrder": 1 },
+    { "type": "laser-stone", "x": 2, "y": 2, "stackOrder": 1 },
     { "type": "bobby", "x": 1, "y": 2, "stackOrder": 1 }
   ]
 }

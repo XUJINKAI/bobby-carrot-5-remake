@@ -55,7 +55,7 @@ Novoban 原始文本及由它生成的 `custom-maps/novoban-pushbox/`、runtime 
 
 Robo 2: Saving Eny 是 HeroCraft 于 2004 年发布的 J2ME 游戏。`tools/custom/robo2/robo2.jar` 保存用于研究和可重复构建的 v1.0 a1 原始 J2ME 包；构建工具把其中的关卡布局转换为 Bobby Carrot 5 Remake 的语义地图。
 
-Robo 2 的 JAR、程序、美术、音频、名称、角色、关卡数据，以及由关卡数据转换而来的 `custom-maps/robo2/` 与 runtime MapDocument 均属于第三方内容，**不属于本项目 `LICENSE` 的授权范围**。本项目的格式读取、语义转换与 Engine 实现代码本身仍按根目录 `LICENSE` 授权。
+Robo 2 的 JAR、程序、美术、音频、名称、角色、关卡数据，以及从 JAR 提取的 `assets/art/robo2/`、由关卡数据转换而来的 `custom-maps/robo2/` 与 runtime MapDocument 均属于第三方内容，**不属于本项目 `LICENSE` 的授权范围**。本项目的格式读取、语义转换与 Engine 实现代码本身仍按根目录 `LICENSE` 授权。
 
 仓库不以项目许可证授予 Robo 2 内容的使用或分发权。任何人分发相应关卡或其它派生内容时，应自行确认 HeroCraft 及相关权利人的授权条件。
 
@@ -107,6 +107,7 @@ Jersey 10 字体文件继续适用其随附的 `OFL.txt`，不属于本项目根
 assets/original/
 assets/extracted/
 assets/generated/
+assets/art/robo2/
 custom-maps/loma-pushbox/
 custom-maps/novoban-pushbox/
 custom-maps/robo2/

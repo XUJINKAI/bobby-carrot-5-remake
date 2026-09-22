@@ -56,11 +56,13 @@ export interface ImageVisualLayer {
   frameColumns?: number;
   /** sprite sheet 的行数。用于不应在 Entity 中硬编码源图像素尺寸的规则网格。 */
   frameRows?: number;
+  /** 当前图片中一个地图格对应的源像素尺寸；省略时使用 ImageManager 的默认值。 */
+  sourceTileSize?: number;
   /** 规则网格中的绝对帧序号，按从左到右、从上到下计算。 */
   frameIndex?: number;
   /** 0..1 的 strip / sheet 进度；frameIndex 存在时优先使用 frameIndex。 */
   frameProgress?: number;
-  anchor?: "center" | "bottom" | "fill";
+  anchor?: "top-left" | "center" | "bottom" | "fill";
   /** 相对锚点的原始素材像素偏移；Renderer 会随 tile 缩放。 */
   offsetX?: number;
   /** 相对锚点的原始素材像素偏移；Renderer 会随 tile 缩放。 */

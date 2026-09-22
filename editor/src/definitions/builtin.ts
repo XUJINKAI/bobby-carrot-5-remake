@@ -113,7 +113,7 @@ const paletteOccupantTypes: readonly EntityType[] = [
   MapEntityTypeId.BEAN_FIELD,
   MapEntityTypeId.WHIRLWIND,
   MapEntityTypeId.PUSHABLE_BOX,
-  MapEntityTypeId.PUSHABLE_STONE,
+  MapEntityTypeId.LASER_STONE,
   MapEntityTypeId.LASER_EMITTER,
   MapEntityTypeId.LASER_MIRROR,
   MapEntityTypeId.LASER_BOMB,

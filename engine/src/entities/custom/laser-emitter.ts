@@ -1,4 +1,5 @@
 import { MapEntityTypeId, type Direction } from "@bobby/model";
+import { ROBO2_GAMEPLAY_IMAGE_IDS } from "../../image/Robo2GameplayImages.js";
 import type { Behavior } from "../../world/behavior/Behavior.js";
 import type { WorldCommandApi } from "../../world/behavior/CommandQueue.js";
 import type { WorldQueryApi } from "../../world/behavior/WorldQueryApi.js";
@@ -80,9 +81,10 @@ export const laserEmitter: EntityModule = defineEntityModule({
       return {
         layers: [
           {
-            kind: "canvas",
-            draw: (context, x, y, size) =>
-              drawLaserEmitter(context, x, y, size, direction),
+            kind: "image",
+            asset: ROBO2_GAMEPLAY_IMAGE_IDS.emitter[direction],
+            sourceTileSize: 12,
+            anchor: "top-left",
           },
           {
             kind: "canvas",
@@ -467,36 +469,6 @@ function directionState(value: unknown): Direction | null {
     return value;
   }
   return null;
-}
-
-function drawLaserEmitter(
-  context: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  size: number,
-  direction: Direction,
-): void {
-  const centerX = x + size / 2;
-  const centerY = y + size / 2;
-  const vector = directionVector(direction);
-  context.save();
-  context.fillStyle = "#26313b";
-  context.strokeStyle = "#0c1116";
-  context.lineWidth = Math.max(1, size * 0.05);
-  context.beginPath();
-  context.arc(centerX, centerY, size * 0.3, 0, Math.PI * 2);
-  context.fill();
-  context.stroke();
-  context.strokeStyle = "#e84a4a";
-  context.lineWidth = Math.max(3, size * 0.16);
-  context.beginPath();
-  context.moveTo(centerX, centerY);
-  context.lineTo(
-    centerX + vector.x * size * 0.32,
-    centerY + vector.y * size * 0.32,
-  );
-  context.stroke();
-  context.restore();
 }
 
 function drawLaserLine(

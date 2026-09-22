@@ -24,13 +24,13 @@ Portal 由 Engine 和 Editor 共用 Canvas 绘制入口生成三帧循环的发�
 
 Novoban 和 LOMA 的 XSB 地图由 `tools/custom/sokoban-xsb.mjs` 转换。地形素材填写在 `tools/custom/pushbox-terrain-table.mjs`：顶层键各定义一个主题，名称仅用于辨认主题，不参与随机选材；每个主题分别填写 `ground`、`boundary`、`obstacle` 素材数组。`ground` 是普通可行走格，`boundary` 填充地图最外一圈的矩形边框，`obstacle` 填充其余墙格和原本连通地图外部的空格。外部空格保持阻挡语义，箱子、目标和 Bobby 的原始坐标保持不变。单一形态的 Surface 可以填写语义名称，如 `sand`、`stump`、`rock`；`snow` 是可用于边框和阻挡的单格对象；有多个形态的 Surface 填写具体 `ts-行-列` 坐标。地图使用固定种子和 collection/map ID 选定一个主题，再按格子坐标从该主题的各类素材中选材；同一地图重新生成时结果保持一致。素材应在 Model 视觉目录登记，并保持所属类别的通行语义。
 
-## 可推动石头
+## 激光石头
 
-`pushable-stone` 是单格阻挡 Entity，并通过 Engine 的通用 `pushable` 语义参与推动。当前视觉复用 `crumbly-rock`；两者保持独立身份，后续爆炸等机关可以只作用于可推动石头而不改变 Bobby Carrot 原有关卡中的碎石规则。
+`laser-stone` 是 Robo 2 激光机关中的单格阻挡 Entity，通过 Engine 的通用 `pushable` 语义参与推动，并使用 JAR 中的 `stone.png` 原图。它与 Bobby Carrot 5 的 `crumbly-rock` 保持独立身份，炸弹只把 `laser-stone` 视为爆破目标。
 
 ## 激光发生器
 
-`laser-emitter` 使用必填 `direction` 字段声明固定发射方向。Engine 从发生器相邻格开始投影激光，遇到首个阻挡对象、Exit 或 Bobby Carrot 5 Mirror 时终止；Bobby 进入激光格会在移动交互点死亡。发生器是单格可推动阻挡对象，从侧面或背面推动后保持发射方向，并从新位置重新投影光束。光束格由 Engine 作为 Runtime Entity 派生，不写回 `LevelMap`。
+`laser-emitter` 使用必填 `direction` 字段声明固定发射方向。Engine 从发生器相邻格开始投影激光，遇到首个阻挡对象、Exit 或 Bobby Carrot 5 Mirror 时终止；Bobby 进入激光格会在移动交互点死亡。发生器是单格可推动阻挡对象，从侧面或背面推动后保持发射方向，并从新位置重新投影光束。四个方向分别使用 Robo 2 JAR 中的 `laserUp/Right/Down/Left.png`，光束格由 Engine 作为 Runtime Entity 派生，不写回 `LevelMap`。
 
 地图加载时已经覆盖 Bobby 起点的既有光路提供一次离开机会；Bobby 主动进入光路，或机关变化后光路重新投影到 Bobby 所在格，都会触发死亡。这个边界允许 Robo 2 来源地图保留原始起点，同时不削弱运行中的激光危险。
 
@@ -38,7 +38,7 @@ Novoban 和 LOMA 的 XSB 地图由 `tools/custom/sokoban-xsb.mjs` 转换。地�
 
 激光命中另一个 `laser-emitter` 时摧毁目标发生器及其光束。若两个发生器互相照射，它们在同一个 World tick 中一起摧毁；其它发生器随后按更新后的阻挡布局重新投影。
 
-`laser-bomb` 是可推动的阻挡对象。激光命中后，炸弹摧毁自身以及上、右、下、左相邻格中的 `pushable-stone`、`laser-mirror`、`laser-emitter` 和 `laser-bomb`；相邻炸弹继续以各自位置扩展十字范围。对角格、其它 Entity 与 Surface 保持不变。
+`laser-bomb` 是使用 Robo 2 `bombTickTick.png` 原图的可推动阻挡对象。激光命中后，炸弹摧毁自身以及上、右、下、左相邻格中的 `laser-stone`、`laser-mirror`、`laser-emitter` 和 `laser-bomb`；相邻炸弹继续以各自位置扩展十字范围。对角格、其它 Entity 与 Surface 保持不变。
 
 同一 World 的全部发生器和炸弹由单个 Runtime 激光调度器统一更新。每个 World tick 中，每个发生器只追踪一次光路；命中发生器、引爆炸弹、同步光束 Entity 与机关变化后的伤害都复用该次追踪结果。
 
@@ -63,7 +63,7 @@ Novoban 和 LOMA 的 XSB 地图由 `tools/custom/sokoban-xsb.mjs` 转换。地�
 - `custom-maps/engine-lab/portal/portal.json`
 - `custom-maps/engine-lab/pushbox/pushable.json`
 - `custom-maps/engine-lab/max-moves.json`
-- `custom-maps/engine-lab/test/02-pushable-stone.json`
+- `custom-maps/engine-lab/test/02-laser-stone.json`
 - `custom-maps/engine-lab/test/03-laser-emitter.json`
 
 `npm run verify` 校验这些地图的 Editor JSON round-trip、Definition 注册、实例属性和规则格式。

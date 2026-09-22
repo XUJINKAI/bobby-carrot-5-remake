@@ -30,22 +30,26 @@ u4 cells[width * height]
 
 `theme` 取值为 `0..3`，分别选择 JAR 中四套 `level1`～`level4` 地貌。它属于来源格式的视觉主题，转换到 `LevelMap` 时应映射为语义 Surface，不进入 Engine gameplay 字段。
 
-| code | 来源含义 | 当前语义计划 |
+| code | 来源含义 | 语义映射 |
 | --- | --- | --- |
 | `0x0` | 可通行地面 | Surface |
 | `0x1` | 墙 | 阻挡 Surface |
 | `0x2` | 终点 | `exit` |
-| `0x3` | Stone | `pushable-stone` |
+| `0x3` | Stone | `laser-stone` |
 | `0x4` | Bomb | `laser-bomb` |
-| `0x5` | `mirrorL` | `laser-mirror` / `slash` |
-| `0x6` | `mirrorR` | `laser-mirror` / `backslash` |
+| `0x5` | `mirrorL` | `laser-mirror` / `backslash` |
+| `0x6` | `mirrorR` | `laser-mirror` / `slash` |
 | `0x7` | `laserDown` | `laser-emitter` / `down` |
 | `0x8` | `laserRight` | `laser-emitter` / `right` |
 | `0x9` | `laserUp` | `laser-emitter` / `up` |
 | `0xA` | `laserLeft` | `laser-emitter` / `left` |
 | `0xB` | Robo 起点 | `bobby` |
 
-方向映射以实际 gameplay 字节码为准：`b.<init>(byte,int,int)` 把 `0x7..0xA` 保存为方向索引 `0..3`；`c.try()` 将这四个索引依次转换为 `(0,+1)`、`(+1,0)`、`(0,-1)`、`(-1,0)`，即下、右、上、左。JAR 的静态素材数组顺序也按这个方向索引重排，不能直接按常量池中的文件名出现顺序解释 tile code。`mirrorL.png` 的镜面为 `/`，`mirrorR.png` 的镜面为 `\`。记录解码位于 `tools/custom/robo2/format.mjs`，语义转换位于 `tools/custom/robo2/convert.mjs`；Robo 2 byte 与语义 Entity 的转换只能位于该来源工具边界。
+方向映射以实际 gameplay 字节码为准：`b.<init>(byte,int,int)` 把 `0x7..0xA` 保存为方向索引 `0..3`；`c.try()` 将这四个索引依次转换为 `(0,+1)`、`(+1,0)`、`(0,-1)`、`(-1,0)`，即下、右、上、左。JAR 的静态素材数组顺序也按这个方向索引重排，不能直接按常量池中的文件名出现顺序解释 tile code。
+
+镜面映射由 `b.<init>(byte,int,int)` 与 `c.a(int,int,int,int)` 共同确认。`0x5` 使用 `mirrorL.png` 并保存镜面索引 `0`，把入射向量 `(dx,dy)` 变为 `(dy,dx)`，对应左上/右下的 `backslash`（`\`）；`0x6` 使用 `mirrorR.png` 并保存索引 `1`，把入射向量变为 `(-dy,-dx)`，对应左下/右上的 `slash`（`/`）。两条分支都接受四种入射方向，因此两种镜面都是双面反射。
+
+记录解码位于 `tools/custom/robo2/format.mjs`，语义转换位于 `tools/custom/robo2/convert.mjs`；Robo 2 byte 与语义 Entity 的转换只能位于该来源工具边界。
 
 来源主题按 `0..3` 对应太空、冰雪、遗迹、森林。当前转换分别复用 Sand / Stone Wall、Snow Cloud / Snowy Rock、Sand / Stone Wall、Grass / Hedge；这些 Surface 只负责保持可通行地面与阻挡墙的语义，并为四组关卡提供基础视觉区分。
 
@@ -54,6 +58,14 @@ u4 cells[width * height]
 ```sh
 node tools/custom/robo2/generate.mjs
 ```
+
+同一 JAR 中的激光机关原图可以独立提取：
+
+```sh
+node tools/custom/robo2/extract.mjs
+```
+
+提取器发布 Engine 使用的八张机关原图：四张炮台图、两张 8×12 双面镜、12×12 的待机炸弹和 10×12 的 Stone。它们以 Robo 2 的 12px 原始格尺寸等比放大，并保留原版左上角绘制锚点；14px 炮台素材因此可以越出所在格。构建结果写入被 Git 忽略的 `assets/art/robo2/`。
 
 生成器校验 JAR SHA-256，输出固定为被 Git 忽略的 `custom-maps/robo2/01.json`～`25.json`。`npm run assets`、`npm test` 与 `npm run verify` 都会先从该 JAR 重建地图，再进入统一的 custom collection 构建流程。输出只包含 `LevelMap` 语义、展示 metadata 与终点胜利规则，不携带 JAR 路径、record 编号或 archive hash。
 

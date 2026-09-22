@@ -9,6 +9,15 @@ export const ROBO2_SOURCE_FILE = fileURLToPath(
 export const ROBO2_A1_SHA256 =
   "089499b7d5bbd3438ec970ac4ec42ff9e71b92a79824881bb2583b608b042be3";
 
+export function assertRobo2A1Archive(archive) {
+  if (archive.sha256 !== ROBO2_A1_SHA256) {
+    throw new Error(
+      `Robo 2 JAR SHA-256 不匹配：应为 ${ROBO2_A1_SHA256}，实际 ${archive.sha256}`,
+    );
+  }
+  return archive;
+}
+
 export const ROBO2_LEVEL_TITLES = Object.freeze([
   "The beggining!",
   "Some mirrors",

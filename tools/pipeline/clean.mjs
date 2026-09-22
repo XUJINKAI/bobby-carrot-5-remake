@@ -10,6 +10,7 @@ const generatedDirectories = [
   "custom-maps/novoban-pushbox",
   "custom-maps/robo2",
   "assets/art/hd",
+  "assets/art/robo2",
   "assets/audio/midi",
   "assets/maps",
   "assets/adventure",

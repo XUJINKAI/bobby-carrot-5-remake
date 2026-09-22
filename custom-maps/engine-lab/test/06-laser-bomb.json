@@ -44,7 +44,7 @@
     { "type": "laser-emitter", "direction": "right", "x": 1, "y": 2, "stackOrder": 1 },
     { "type": "laser-emitter", "direction": "down", "x": 2, "y": 1, "stackOrder": 1 },
     { "type": "laser-bomb", "x": 3, "y": 1, "stackOrder": 1 },
-    { "type": "pushable-stone", "x": 4, "y": 1, "stackOrder": 1 },
+    { "type": "laser-stone", "x": 4, "y": 1, "stackOrder": 1 },
     { "type": "laser-mirror", "variant": "slash", "x": 4, "y": 2, "stackOrder": 1 },
     { "type": "laser-bomb", "x": 3, "y": 3, "stackOrder": 1 },
     { "type": "bobby", "x": 3, "y": 4, "stackOrder": 1 },

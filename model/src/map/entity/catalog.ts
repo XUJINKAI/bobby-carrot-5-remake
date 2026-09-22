@@ -197,9 +197,9 @@ const CORE_ENTITY_DEFINITIONS: readonly EntityMapDefinition[] = [
   defineEntity(MapEntityTypeId.LEAF),
   defineEntity(MapEntityTypeId.CRUMBLY_ROCK),
   defineEntity(
-    MapEntityTypeId.PUSHABLE_STONE,
+    MapEntityTypeId.LASER_STONE,
     [],
-    "可推动石头；推动语义由 Entity 类型定义。",
+    "Robo 2 激光机关中的可推动、可爆破石头。",
   ),
   defineEntity(
     MapEntityTypeId.PUSHABLE_BOX,

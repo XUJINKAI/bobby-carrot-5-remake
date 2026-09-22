@@ -3,6 +3,9 @@ import test from "node:test";
 import { MapEntityTypeId } from "@bobby/model";
 import { createBuiltinEntityRegistry } from "../../engine/dist/entities/registry.js";
 import { RuntimeEntityTypeId } from "../../engine/dist/entities/runtime-types.js";
+import {
+  ROBO2_GAMEPLAY_IMAGE_IDS,
+} from "../../engine/dist/public.js";
 import { resolveLevelEntityVisualPreview } from "../../engine/dist/visual/preview.js";
 import { World } from "../support/engine/World.mjs";
 
@@ -153,29 +156,25 @@ test("镜面移动后重新投影的光路会击中静止 Bobby", () => {
   assert.equal(world.actorLifecycle(target.id).reason, "laser-beam");
 });
 
-test("激光镜注册为阻挡、可推动对象，并复用 Mirror 视觉", () => {
+test("激光镜注册为阻挡、可推动对象，并使用 Robo 2 双面镜视觉", () => {
   const definition = createBuiltinEntityRegistry().require(
     MapEntityTypeId.LASER_MIRROR,
   );
   assert.deepEqual(definition.presenceFacts, ["blocking", "pushable"]);
-  assert.deepEqual(
-    resolveLevelEntityVisualPreview({
-      type: MapEntityTypeId.LASER_MIRROR,
-      variant: "slash",
-    }),
-    resolveLevelEntityVisualPreview({
-      type: MapEntityTypeId.MIRROR,
-      variant: "left-top",
-    }),
-  );
-  assert.deepEqual(
-    resolveLevelEntityVisualPreview({
-      type: MapEntityTypeId.LASER_MIRROR,
-      variant: "backslash",
-    }),
-    resolveLevelEntityVisualPreview({
-      type: MapEntityTypeId.MIRROR,
-      variant: "right-top",
-    }),
-  );
+  for (const variant of ["slash", "backslash"]) {
+    assert.deepEqual(
+      resolveLevelEntityVisualPreview({
+        type: MapEntityTypeId.LASER_MIRROR,
+        variant,
+      }),
+      {
+        layers: [{
+          kind: "image",
+          asset: ROBO2_GAMEPLAY_IMAGE_IDS.mirror[variant],
+          sourceTileSize: 12,
+          anchor: "top-left",
+        }],
+      },
+    );
+  }
 });

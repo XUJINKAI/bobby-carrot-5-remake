@@ -238,12 +238,13 @@ function checkRepositoryStructure() {
     "custom-maps/loma-pushbox/01/01-01.json",
     "custom-maps/novoban-pushbox/01.json",
     "custom-maps/robo2/01.json",
+    "assets/art/robo2/mirrorL.png",
   ]) {
     const ignored = spawnSync("git", ["check-ignore", "--quiet", file], {
       cwd: root,
     });
     if (ignored.status !== 0) {
-      errors.push(`${file}: 生成的自定义地图必须被 Git 忽略`);
+      errors.push(`${file}: 可重建生成内容必须被 Git 忽略`);
     }
   }
 }

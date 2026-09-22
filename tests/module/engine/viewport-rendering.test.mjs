@@ -160,6 +160,22 @@ test("Image layer 按显式源矩形裁切非等宽人物图", () => {
   assert.deepEqual(draws[0].slice(1, 5), [120, 83, 48, 83]);
 });
 
+test("Image layer 可以按素材原始格尺寸缩放低分辨率图片", () => {
+  const { draws, context, images } = fixture();
+  images.image = () => ({ width: 8, height: 12 });
+  drawVisualComposition(context, images, {
+    layers: [{
+      kind: "image",
+      asset: "robo2-mirror",
+      sourceTileSize: 12,
+      anchor: "top-left",
+    }],
+  }, 0, 0, 48);
+
+  assert.deepEqual(draws[0].slice(1, 5), [0, 0, 8, 12]);
+  assert.deepEqual(draws[0].slice(5), [0, 0, 32, 48]);
+});
+
 test("连续双格 atlas 先组合为一个源矩形再整体缩放", () => {
   const { draws, context, images } = fixture();
   drawVisualComposition(context, images, {
