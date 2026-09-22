@@ -2,66 +2,88 @@ import fs from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import { defineConfig, type ViteDevServer } from "vite";
+import {
+  defineConfig,
+  type ConfigEnv,
+  type UserConfig,
+  type ViteDevServer,
+} from "vite";
 import vue from "@vitejs/plugin-vue";
+import { markdownPlugin } from "../i18n/build/markdownPlugin.js";
 import { replaySaveMiddleware } from "./dev/replaySaveMiddleware.js";
 
 const webRoot = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.resolve(webRoot, "..");
 
-export default defineConfig({
-  root: webRoot,
-  base: process.env.BC5R_BASE_PATH ?? "/",
-  publicDir: false,
-  resolve: {
-    alias: [
-      {
-        find: "@bobby/embed",
-        replacement: path.join(projectRoot, "embed/src/public.ts"),
-      },
-      {
-        find: "@bobby/engine/authoring",
-        replacement: path.join(projectRoot, "engine/src/authoring.ts"),
-      },
-      {
-        find: /^@bobby\/engine$/,
-        replacement: path.join(projectRoot, "engine/src/public.ts"),
-      },
-      {
-        find: "@bobby/model",
-        replacement: path.join(projectRoot, "model/src/index.ts"),
-      },
-      {
-        find: "@bobby/exchange",
-        replacement: path.join(projectRoot, "exchange/src/index.ts"),
-      },
-      {
-        find: "@bobby/adventure",
-        replacement: path.join(projectRoot, "adventure/src/index.ts"),
-      },
-      {
-        find: "@bobby/editor",
-        replacement: path.join(projectRoot, "editor/src/index.ts"),
-      },
-    ],
-  },
-  server: {
-    fs: {
-      allow: [projectRoot],
+export function createWebViteConfig(
+  command: ConfigEnv["command"],
+): UserConfig {
+  const isDevelopmentServer = command === "serve";
+  return {
+    root: webRoot,
+    base: process.env.BC5R_BASE_PATH ?? "/",
+    publicDir: false,
+    resolve: {
+      alias: [
+        ...(isDevelopmentServer
+          ? [
+              {
+                find: "@bobby/i18n",
+                replacement: path.join(projectRoot, "i18n/src/index.ts"),
+              },
+            ]
+          : []),
+        {
+          find: "@bobby/embed",
+          replacement: path.join(projectRoot, "embed/src/public.ts"),
+        },
+        {
+          find: "@bobby/engine/authoring",
+          replacement: path.join(projectRoot, "engine/src/authoring.ts"),
+        },
+        {
+          find: /^@bobby\/engine$/,
+          replacement: path.join(projectRoot, "engine/src/public.ts"),
+        },
+        {
+          find: "@bobby/model",
+          replacement: path.join(projectRoot, "model/src/index.ts"),
+        },
+        {
+          find: "@bobby/exchange",
+          replacement: path.join(projectRoot, "exchange/src/index.ts"),
+        },
+        {
+          find: "@bobby/adventure",
+          replacement: path.join(projectRoot, "adventure/src/index.ts"),
+        },
+        {
+          find: "@bobby/editor",
+          replacement: path.join(projectRoot, "editor/src/index.ts"),
+        },
+      ],
     },
-  },
-  plugins: [
-    vue(),
-    developmentReplaySave(),
-    developmentDirectory("/assets", path.join(projectRoot, "assets")),
-    replayVerificationWatcher(),
-  ],
-  build: {
-    outDir: "../dist",
-    assetsDir: "app",
-    emptyOutDir: true,
-  },
-});
+    server: {
+      fs: {
+        allow: [projectRoot],
+      },
+    },
+    plugins: [
+      vue(),
+      ...(isDevelopmentServer ? [markdownPlugin()] : []),
+      developmentReplaySave(),
+      developmentDirectory("/assets", path.join(projectRoot, "assets")),
+      replayVerificationWatcher(),
+    ],
+    build: {
+      outDir: "../dist",
+      assetsDir: "app",
+      emptyOutDir: true,
+    },
+  };
+}
+
+export default defineConfig(({ command }) => createWebViteConfig(command));
 
 function developmentReplaySave() {
   return {
