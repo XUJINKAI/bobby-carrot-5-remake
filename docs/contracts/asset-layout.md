@@ -152,6 +152,20 @@ manifest。BC5、Robo 2、LOMA 与 Novoban 分别由 `tools/assets/bc5/`、`robo
 `loma/` 与 `novoban/` 生产；directory Producer 读取 `custom-maps/` 中人工维护的语义地图。
 `custom-maps/` 不保存批量来源生成物。
 
+```text
+tools/assets/
+├── collection/          # manifest、directory source 与统一 Publisher
+├── bc5/                 # BC5 Producer
+├── robo2/               # JAR、格式、转换、美术覆盖与 Producer
+├── pushbox/             # LOMA 与 Novoban 共享的 XSB 和地形转换
+├── loma/                # LOMA.txt、专属 parser 与 Producer
+├── novoban/             # NOVOBAN.txt、专属 parser 与 Producer
+└── orchestrator/        # 任务缓存、原子发布与开发 watcher
+```
+
+资产来源和转换代码按领域归入 `tools/assets/`。`tools/assets/pushbox/` 只持有两个
+Pushbox Producer 的共享规则；来源文本、来源格式 parser 与 Producer 仍由各自目录持有。
+
 统一任务图为每个任务声明输入、依赖和独占输出。缓存位于 `tmp/assets/cache/`，保存输入
 摘要、依赖结果摘要与输出清单；输入变化只运行受影响任务及其下游。Collection Publisher
 统一调用 Model parser 规范化 MapDocument，在临时目录完成全部写入后替换对应的
@@ -175,33 +189,40 @@ tmp/assets/bc5/adapted/
 Robo 2 使用受 Git 管理的 J2ME 包和明确登记的美术覆盖文件：
 
 ```text
-tools/custom/robo2/robo2.jar
+tools/assets/robo2/robo2.jar
   ↓ robo2.extract
 tmp/assets/robo2/extracted/
+  ├── META-INF/
+  ├── data/0 ... data/24
+  ├── data/*.png / *.mid
+  └── *.class
   ↓ robo2.decode + encode round-trip
 tmp/assets/robo2/decoded/
   ↓ robo2.adapt
 tmp/assets/robo2/adapted/
   └─→ assets/maps/robo2/
 
-robo2.jar + overrides/*.png
+tmp/assets/robo2/extracted/data/*.png
+  + tools/assets/robo2/overrides/*.png
   └─→ assets/art/robo2/
 ```
 
-decoded 地图保留来源 entry、record SHA-256、theme 与 tile code。来源工具边界负责 JAR
-byte、列优先格子、半字节 tile code、原始图片 entry 与覆盖文件；Engine 只消费语义地图
-与已注册的图片资源 ID。
+`robo2.extract` 校验来源 JAR SHA-256 并完整、安全地展开所有 entry；解包器拒绝绝对路径
+与 `..` 路径。`robo2.decode` 和美术 Publisher 只读取 extracted 阶段，不再次打开 JAR。
+decoded 地图保留来源 entry、record SHA-256、theme 与 tile code。来源工具边界负责 JAR byte、
+列优先格子、半字节 tile code、原始图片 entry 与覆盖文件；Engine 只消费语义地图与已注册
+的图片资源 ID。
 
 LOMA 与 Novoban 不增加没有格式意义的阶段目录：
 
 ```text
-tools/custom/LOMA.txt
+tools/assets/loma/LOMA.txt
   ↓ LOMA Producer + Pushbox converter
 PreparedCollection
   ↓ Collection Publisher
 assets/maps/loma-pushbox/
 
-tools/custom/NOVOBAN.txt
+tools/assets/novoban/NOVOBAN.txt
   ↓ Novoban Producer + Pushbox converter
 PreparedCollection
   ↓ Collection Publisher
@@ -213,7 +234,8 @@ assets/maps/novoban-pushbox/
 `01` ～ `50`，原注释标题成为地图展示名，作者统一保留为 François Marques。版权与来源
 边界见根目录 `THIRD_PARTY_ASSETS.md`。
 
-LOMA 与 Novoban 的 XSB 字符转换由 `tools/custom/sokoban-xsb.mjs` 统一负责。每张地图从
+LOMA 与 Novoban 的 XSB 字符转换由 `tools/assets/pushbox/xsb.mjs` 统一负责，主题地形转换
+位于 `tools/assets/pushbox/terrain.mjs`。每张地图从
 `PUSHBOX_TERRAIN_TABLE` 稳定选择一个主题，并按 `ground / boundary / obstacle` 类别与坐标
 选择具体素材。矩形外框使用 `boundary`，内部墙与外部空白填充使用 `obstacle`；所有可行走
 单元先生成第 `0` 层 `ground`，目标在第 `1` 层生成 `push-goal`，箱子与 Bobby 位于第 `2`

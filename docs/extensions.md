@@ -22,7 +22,7 @@ Portal 由 Engine 和 Editor 共用 Canvas 绘制入口生成三帧循环的发�
 
 `push-goal` 是可步行目标 Entity，使用正上方视角的方形标记。`pushable-box` 的 Engine Definition 提供 `pushable` Trait；所有 Push Goal 都被这类对象占据后，该完成条件成立。它与其它目标可通过 `all` 条件组合。推动要求后方可通行且没有冲突占用，通用推动流程位于 Engine movement pipeline。
 
-Novoban 和 LOMA 的 XSB 地图由 `tools/custom/sokoban-xsb.mjs` 转换。地形素材填写在 `tools/custom/pushbox-terrain-table.mjs`：顶层键各定义一个主题，名称仅用于辨认主题，不参与随机选材；每个主题分别填写 `ground`、`boundary`、`obstacle` 素材数组。`ground` 是普通可行走格，`boundary` 填充地图最外一圈的矩形边框，`obstacle` 填充其余墙格和原本连通地图外部的空格。外部空格保持阻挡语义，箱子、目标和 Bobby 的原始坐标保持不变。单一形态的 Surface 可以填写语义名称，如 `sand`、`stump`、`rock`；`snow` 是可用于边框和阻挡的单格对象；有多个形态的 Surface 填写具体 `ts-行-列` 坐标。地图使用固定种子和 collection/map ID 选定一个主题，再按格子坐标从该主题的各类素材中选材；同一地图重新生成时结果保持一致。素材应在 Model 视觉目录登记，并保持所属类别的通行语义。
+Novoban 和 LOMA 的 XSB 地图由 `tools/assets/pushbox/xsb.mjs` 转换。地形素材填写在 `tools/assets/pushbox/terrain-table.mjs`：顶层键各定义一个主题，名称仅用于辨认主题，不参与随机选材；每个主题分别填写 `ground`、`boundary`、`obstacle` 素材数组。`ground` 是普通可行走格，`boundary` 填充地图最外一圈的矩形边框，`obstacle` 填充其余墙格和原本连通地图外部的空格。外部空格保持阻挡语义，箱子、目标和 Bobby 的原始坐标保持不变。单一形态的 Surface 可以填写语义名称，如 `sand`、`stump`、`rock`；`snow` 是可用于边框和阻挡的单格对象；有多个形态的 Surface 填写具体 `ts-行-列` 坐标。地图使用固定种子和 collection/map ID 选定一个主题，再按格子坐标从该主题的各类素材中选材；同一地图重新生成时结果保持一致。素材应在 Model 视觉目录登记，并保持所属类别的通行语义。
 
 ## 激光石头
 

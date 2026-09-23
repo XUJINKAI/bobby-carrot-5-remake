@@ -411,6 +411,10 @@ collection 使用 directory Producer 读取 `custom-maps/`。统一 Collection P
 `assets/maps/index.json`。discovery index 只保存 `id` 与 `name`，collection description
 只保存在各自的详细索引。
 
+LOMA 与 Novoban 的来源文本、parser 和 Producer 分别归入自身目录，共用的 XSB 与主题
+地形转换归入 `tools/assets/pushbox/`。Robo 2 的 JAR、格式、转换、美术覆盖和 Producer
+统一归入 `tools/assets/robo2/`。
+
 每章 1～3 星难度直接读取原版 DAT chapter metadata `packType`。
 
 ## Editor

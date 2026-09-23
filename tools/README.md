@@ -53,5 +53,9 @@
 不手工修改；
 `original/official/` 与 `original/official-hd/` 中的原版 JAR 始终只读。
 
+Asset Producer、第三方构建输入与格式转换统一位于 `tools/assets/`：Robo 2 归入
+`robo2/`，LOMA 与 Novoban 分别归入自身目录，共用的 XSB 与主题地形转换归入
+`pushbox/`。Robo 2 的 extracted 阶段完整展开 JAR，decode 与美术发布只读取该阶段目录。
+
 测试实现、辅助代码与夹具统一位于根 `tests/`，目录职责与过滤示例见
 [`tests/README.md`](../tests/README.md)。
