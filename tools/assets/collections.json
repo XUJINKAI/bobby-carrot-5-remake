@@ -40,7 +40,7 @@
     {
       "id": "original-patch",
       "name": "Original Patch",
-      "description": "Patch 到原版 JAR 包的验证地图",
+      "description": "Patch 到原版 jar 包的验证地图",
       "cardSize": "small",
       "producer": "directory",
       "source": "custom-maps/original-patch",

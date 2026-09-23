@@ -58,7 +58,9 @@ function collectionIndex(collection, prepared, maps) {
     maps: maps.map((entry) => ({
       id: entry.id,
       name: entry.document.meta?.name ?? "",
-      ...(entry.description ? { description: entry.description } : {}),
+      ...(entry.description !== undefined
+        ? { description: entry.description }
+        : {}),
       ...(entry.chapter ? { chapter: entry.chapter } : {}),
       ...(entry.filters ? { filters: entry.filters } : {}),
     })),

@@ -35,6 +35,7 @@ export function prepareBc5Collection(repositoryRoot) {
     const document = readJson(path.join(adaptedRoot, entry.path));
     return {
       id: entry.id,
+      description: "",
       chapter: entry.chapter,
       filters: originalExploreMapFilters(document),
       document,
@@ -44,6 +45,7 @@ export function prepareBc5Collection(repositoryRoot) {
     const document = readJson(path.join(adaptedRoot, scene.path));
     maps.push({
       id: scene.id,
+      description: "",
       chapter: "special-scenes",
       filters: originalExploreMapFilters(document),
       document,
