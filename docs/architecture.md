@@ -605,7 +605,8 @@ Patch 默认使用 `original/official/` 普通版 JAR。传入 `--hd` 时使用
 `original/official/` 与 `original/official-hd/` 是不可变原始输入。统一资产任务图把 BC5 和
 Robo 2 的可审阅阶段产物保存到 `tmp/assets/<producer>/`，把地图、Adventure index 与美术
 原子发布到 `assets/`。任务缓存保存输入摘要、依赖结果和输出清单；`npm run dev` 使用同一
-任务图按 Producer 分组监听和增量重建。
+任务图的 `inputs` 按 Producer 分组监听和增量重建；完整重建在隔离目录成功后整体提交
+`assets/`。
 
 DAT 只在这些工具/验证路径需要时编译；正常产品输出不复制 `dat/dist`。
 

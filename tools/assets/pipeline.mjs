@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { root } from "../lib/fs.mjs";
 import { createAssetRegistry } from "./registry.mjs";
+import { commitStagedDirectoryAtomically } from "./orchestrator/atomic-output.mjs";
 import { executeAssetTasks } from "./orchestrator/task-runner.mjs";
 
 const generatedOutputs = [
@@ -9,6 +10,12 @@ const generatedOutputs = [
   "assets/adventure",
   "assets/art/hd",
   "assets/art/robo2",
+];
+const transactionSourceDirectories = [
+  "custom-maps",
+  "model",
+  "original",
+  "tools",
 ];
 
 export function prepareAssets({
@@ -57,6 +64,40 @@ export function rebuildAssets(options = {}) {
   return prepareAssets({ ...options, repositoryRoot, force: true });
 }
 
+export function rebuildAssetsTransactionally(options = {}) {
+  const repositoryRoot = options.repositoryRoot ?? root;
+  const runRebuild = options.runRebuild ?? rebuildAssets;
+  const transactionParent = path.join(repositoryRoot, "tmp");
+  fs.mkdirSync(transactionParent, { recursive: true });
+  const transactionRoot = fs.mkdtempSync(
+    path.join(transactionParent, "assets-rebuild-"),
+  );
+
+  try {
+    prepareTransactionRoot(repositoryRoot, transactionRoot);
+    const {
+      repositoryRoot: _repositoryRoot,
+      runRebuild: _runRebuild,
+      ...rebuildOptions
+    } = options;
+    const result = runRebuild({
+      ...rebuildOptions,
+      repositoryRoot: transactionRoot,
+    });
+    commitStagedDirectoryAtomically({
+      staged: path.join(transactionRoot, "assets"),
+      target: path.join(repositoryRoot, "assets"),
+    });
+    commitStagedDirectoryAtomically({
+      staged: path.join(transactionRoot, "tmp/assets"),
+      target: path.join(repositoryRoot, "tmp/assets"),
+    });
+    return result;
+  } finally {
+    fs.rmSync(transactionRoot, { recursive: true, force: true });
+  }
+}
+
 export function cleanGeneratedAssets(repositoryRoot = root) {
   fs.rmSync(path.join(repositoryRoot, "tmp/assets"), {
     recursive: true,
@@ -67,5 +108,27 @@ export function cleanGeneratedAssets(repositoryRoot = root) {
       recursive: true,
       force: true,
     });
+  }
+}
+
+function prepareTransactionRoot(repositoryRoot, transactionRoot) {
+  for (const relative of transactionSourceDirectories) {
+    const source = path.join(repositoryRoot, relative);
+    if (!fs.existsSync(source)) {
+      continue;
+    }
+    fs.symlinkSync(
+      source,
+      path.join(transactionRoot, relative),
+      process.platform === "win32" ? "junction" : "dir",
+    );
+  }
+  const assets = path.join(repositoryRoot, "assets");
+  if (fs.existsSync(assets)) {
+    fs.cpSync(assets, path.join(transactionRoot, "assets"), {
+      recursive: true,
+    });
+  } else {
+    fs.mkdirSync(path.join(transactionRoot, "assets"), { recursive: true });
   }
 }

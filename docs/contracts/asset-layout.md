@@ -179,8 +179,9 @@ Pushbox Producer 的共享规则；来源文本、来源格式 parser 与 Produc
 
 统一任务图为每个任务声明输入、依赖和独占输出。缓存位于 `tmp/assets/cache/`，保存输入
 摘要、依赖结果摘要与输出清单；输入变化只运行受影响任务及其下游。Collection Publisher
-统一调用 Model parser 规范化 MapDocument，在临时目录完成全部写入后替换对应的
-`assets/maps/<collection>/`，最后按 manifest 汇总 `assets/maps/index.json`。
+统一声明 `model/src` 输入并调用 Model parser 规范化 MapDocument，在临时目录完成全部写入
+后替换对应的 `assets/maps/<collection>/`，最后按 manifest 汇总
+`assets/maps/index.json`。
 
 BC5 使用三阶段产物：
 
@@ -266,6 +267,8 @@ Explore 只读取统一生成的 collection index，不知道该 collection 的�
 
 `npm run assets` 清理 `tmp/assets/` 与已登记的最终生成目录，再通过同一任务图完整重建。
 `assets prepare` 复用逐任务缓存；`npm run dev` 复用同一任务图和 Vite watcher，把连续事件
-按 Producer 合并并串行重建。任务成功后刷新页面；失败时保留上一份完整输出。
+按 Producer 合并并串行重建。watcher 直接从任务 `inputs` 推导监听范围和受影响任务。单任务
+使用各自的原子发布边界；manifest 变化触发的完整重建先在隔离目录生成，全部成功后整体
+提交 `assets/`。任务成功后刷新页面；失败时保留上一份完整输出。
 
 Original 生产过程可以保留 archive provenance；runtime 地图与 collection 合同统一使用产品语义 ID。

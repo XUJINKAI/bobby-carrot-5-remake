@@ -42,3 +42,37 @@ export function publishFileAtomically({ target, content }) {
     fs.rmSync(temporary, { force: true });
   }
 }
+
+export function commitStagedDirectoryAtomically({ staged, target }) {
+  const resolvedStaged = path.resolve(staged);
+  const resolvedTarget = path.resolve(target);
+  if (
+    resolvedStaged === resolvedTarget ||
+    resolvedStaged.startsWith(`${resolvedTarget}${path.sep}`) ||
+    resolvedTarget.startsWith(`${resolvedStaged}${path.sep}`)
+  ) {
+    throw new Error("原子提交的暂存目录与目标目录不能互相包含");
+  }
+  if (!fs.existsSync(resolvedStaged) || !fs.statSync(resolvedStaged).isDirectory()) {
+    throw new Error(`原子提交暂存目录不存在：${resolvedStaged}`);
+  }
+
+  const backup = path.join(
+    path.dirname(resolvedTarget),
+    `.${path.basename(resolvedTarget)}.previous-${process.pid}`,
+  );
+  fs.rmSync(backup, { recursive: true, force: true });
+  fs.mkdirSync(path.dirname(resolvedTarget), { recursive: true });
+  if (fs.existsSync(resolvedTarget)) {
+    fs.renameSync(resolvedTarget, backup);
+  }
+  try {
+    fs.renameSync(resolvedStaged, resolvedTarget);
+  } catch (error) {
+    if (fs.existsSync(backup) && !fs.existsSync(resolvedTarget)) {
+      fs.renameSync(backup, resolvedTarget);
+    }
+    throw error;
+  }
+  fs.rmSync(backup, { recursive: true, force: true });
+}

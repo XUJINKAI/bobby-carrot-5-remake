@@ -62,14 +62,20 @@ export function createAssetRegistry({
     {
       id: "publish.adventure",
       dependencies: ["bc5.adapt"],
-      inputs: ["tools/assets/bc5/producer.mjs"],
+      inputs: [
+        "tools/assets/bc5/producer.mjs",
+        "tools/assets/orchestrator/atomic-output.mjs",
+      ],
       outputs: ["assets/adventure/index.json"],
       run: () => publishBc5Adventure({ repositoryRoot, stagingRoot }),
     },
     {
       id: "publish.art.bc5",
       dependencies: ["bc5.adapt"],
-      inputs: ["tools/assets/bc5/producer.mjs"],
+      inputs: [
+        "tools/assets/bc5/producer.mjs",
+        "tools/assets/orchestrator/atomic-output.mjs",
+      ],
       outputs: ["assets/art/hd"],
       run: () => publishBc5Art({ repositoryRoot, stagingRoot }),
     },
@@ -96,7 +102,6 @@ export function createAssetRegistry({
         ...collectionPublisherInputs(),
         "tools/assets/loma",
         "tools/assets/pushbox",
-        "model/src",
       ],
       collection: requiredCollection(collectionByProducer, "loma"),
       prepare: () => prepareLomaCollection(repositoryRoot),
@@ -111,7 +116,6 @@ export function createAssetRegistry({
         ...collectionPublisherInputs(),
         "tools/assets/novoban",
         "tools/assets/pushbox",
-        "model/src",
       ],
       collection: requiredCollection(collectionByProducer, "novoban"),
       prepare: () => prepareNovobanCollection(repositoryRoot),
@@ -136,7 +140,6 @@ export function createAssetRegistry({
         "tools/assets/collection/directory-producer.mjs",
         "tools/assets/collection/directory-source.mjs",
         collection.source,
-        "model/src",
       ],
       collection,
       prepare: () => prepareDirectoryCollection(collection, repositoryRoot),
@@ -174,6 +177,7 @@ function createBc5ExtractTask(repositoryRoot) {
     dependencies: [],
     inputs: [
       "original/official-hd",
+      "tools/assets/bc5/producer.mjs",
       "tools/original/archive/extract.mjs",
       "tools/original/archive/source-definitions.mjs",
       "tools/lib/zip.mjs",
@@ -192,6 +196,7 @@ function createBc5DecodeTask(repositoryRoot) {
       "tools/original/archive/source-definitions.mjs",
       "tools/original/dat/level-format.mjs",
       "tools/original/dat",
+      "tools/assets/bc5/producer.mjs",
     ],
     outputs: ["tmp/assets/bc5/decoded"],
     run: () => decodeBc5(repositoryRoot),
@@ -207,6 +212,7 @@ function createBc5AdaptTask(repositoryRoot) {
       "tools/original/adapter",
       "tools/original/archive/source-definitions.mjs",
       "tools/original/catalog",
+      "tools/assets/bc5/producer.mjs",
     ],
     outputs: ["tmp/assets/bc5/adapted"],
     run: () => adaptBc5(repositoryRoot),
@@ -274,6 +280,7 @@ function createRobo2ArtTask(repositoryRoot, stagingRoot) {
     inputs: [
       "tools/assets/robo2/art.mjs",
       "tools/assets/robo2/overrides",
+      "tools/assets/orchestrator/atomic-output.mjs",
     ],
     outputs: ["assets/art/robo2"],
     run() {
@@ -330,8 +337,10 @@ function collectionPublisherInputs() {
   return [
     "tools/assets/collections.json",
     "tools/assets/collection/manifest.mjs",
+    "tools/assets/collection/visibility.mjs",
     "tools/assets/collection/publisher.mjs",
     "tools/assets/orchestrator/atomic-output.mjs",
+    "model/src",
   ];
 }
 

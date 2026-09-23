@@ -1,14 +1,15 @@
 import path from "node:path";
 import { root } from "../../lib/fs.mjs";
 import { createAssetRegistry } from "../registry.mjs";
-import { prepareAssets, rebuildAssets } from "../pipeline.mjs";
+import {
+  prepareAssets,
+  rebuildAssetsTransactionally,
+} from "../pipeline.mjs";
 
-const watchedRoots = [
-  "model/src",
-  "original/official-hd",
-  "tools/original",
-  "tools/assets",
-  "custom-maps",
+const fullRebuildInputs = [
+  "tools/assets/collections.json",
+  "tools/assets/collection/manifest.mjs",
+  "tools/assets/collection/visibility.mjs",
 ];
 
 export function attachAssetWatcher({
@@ -20,11 +21,10 @@ export function attachAssetWatcher({
     repositoryRoot,
     development: true,
   });
-  const taskIds = tasks.map((task) => task.id);
   const coordinator = createAssetWatchCoordinator({
     rebuild(selectedTaskIds) {
       if (selectedTaskIds.includes("assets.all")) {
-        rebuildAssets({
+        rebuildAssetsTransactionally({
           includeDevCollections: true,
           repositoryRoot,
         });
@@ -49,14 +49,16 @@ export function attachAssetWatcher({
   });
 
   server.watcher.add(
-    watchedRoots.map((relative) => path.join(repositoryRoot, relative)),
+    watchedAssetInputs(tasks).map((relative) =>
+      path.join(repositoryRoot, relative),
+    ),
   );
   const onFileEvent = (event, file) => {
     if (!new Set(["add", "change", "unlink", "addDir", "unlinkDir"]).has(event)) {
       return;
     }
     const relative = normalizePath(path.relative(repositoryRoot, file));
-    const affected = affectedAssetTasks(relative, taskIds);
+    const affected = affectedAssetTasks(relative, tasks);
     if (affected.length > 0) {
       coordinator.schedule(affected);
     }
@@ -71,86 +73,23 @@ export function attachAssetWatcher({
   };
 }
 
-export function affectedAssetTasks(relativePath, taskIds) {
+export function watchedAssetInputs(tasks) {
+  return [
+    ...new Set(tasks.flatMap((task) => task.inputs.map(normalizePath))),
+  ].sort();
+}
+
+export function affectedAssetTasks(relativePath, tasks) {
   const relative = normalizePath(relativePath);
-  const existing = new Set(taskIds);
-  const selected = new Set();
-  const add = (...ids) => {
-    for (const id of ids) {
-      if (existing.has(id)) {
-        selected.add(id);
-      }
-    }
-  };
-  const addCollections = (predicate = () => true) => {
-    for (const id of taskIds) {
-      if (id.startsWith("publish.collection.") && predicate(id)) {
-        selected.add(id);
-      }
-    }
-  };
-
-  if (
-    relative === "tools/assets/collections.json" ||
-    relative === "tools/assets/collection/manifest.mjs" ||
-    relative === "tools/assets/collection/visibility.mjs"
-  ) {
-    selected.add("assets.all");
-  } else if (
-    relative.startsWith("original/official-hd/") ||
-    relative === "tools/original/archive/extract.mjs" ||
-    relative === "tools/original/archive/source-definitions.mjs" ||
-    relative === "tools/lib/zip.mjs" ||
-    relative.startsWith("tools/assets/bc5/")
-  ) {
-    add("bc5.extract");
-  } else if (
-    relative === "tools/original/archive/decode.mjs" ||
-    relative.startsWith("tools/original/dat/")
-  ) {
-    add("bc5.decode");
-  } else if (
-    relative.startsWith("tools/original/adapter/") ||
-    relative.startsWith("tools/original/catalog/")
-  ) {
-    add("bc5.adapt");
-  } else if (relative.startsWith("model/src/")) {
-    add("bc5.adapt", "robo2.adapt");
-    addCollections((id) =>
-      !id.endsWith(".original") && !id.endsWith(".robo2"),
-    );
-  } else if (
-    relative === "tools/assets/robo2/robo2.jar" ||
-    relative === "tools/assets/robo2/source.mjs" ||
-    relative === "tools/assets/robo2/producer.mjs"
-  ) {
-    add("robo2.extract");
-  } else if (relative === "tools/assets/robo2/format.mjs") {
-    add("robo2.decode");
-  } else if (relative === "tools/assets/robo2/convert.mjs") {
-    add("robo2.adapt");
-  } else if (
-    relative === "tools/assets/robo2/art.mjs" ||
-    relative.startsWith("tools/assets/robo2/overrides/")
-  ) {
-    add("publish.art.robo2");
-  } else if (relative.startsWith("tools/assets/loma/")) {
-    add("publish.collection.loma-pushbox");
-  } else if (relative.startsWith("tools/assets/novoban/")) {
-    add("publish.collection.novoban-pushbox");
-  } else if (relative.startsWith("tools/assets/pushbox/")) {
-    add(
-      "publish.collection.loma-pushbox",
-      "publish.collection.novoban-pushbox",
-    );
-  } else if (relative.startsWith("tools/assets/collection/")) {
-    addCollections();
-  } else if (relative.startsWith("custom-maps/")) {
-    const collectionId = relative.split("/")[1];
-    add(`publish.collection.${collectionId}`);
+  if (fullRebuildInputs.some((input) => matchesInput(relative, input))) {
+    return ["assets.all"];
   }
-
-  return [...selected].sort();
+  return tasks
+    .filter((task) =>
+      task.inputs.some((input) => matchesInput(relative, input)),
+    )
+    .map((task) => task.id)
+    .sort();
 }
 
 export function createAssetWatchCoordinator({
@@ -211,4 +150,9 @@ export function createAssetWatchCoordinator({
 
 function normalizePath(file) {
   return file.split(path.sep).join("/");
+}
+
+function matchesInput(relative, input) {
+  const normalized = normalizePath(input).replace(/\/$/, "");
+  return relative === normalized || relative.startsWith(`${normalized}/`);
 }

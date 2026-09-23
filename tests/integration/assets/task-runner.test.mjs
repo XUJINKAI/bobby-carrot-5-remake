@@ -4,6 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 import { publishDirectoryAtomically } from "../../../tools/assets/orchestrator/atomic-output.mjs";
+import { rebuildAssetsTransactionally } from "../../../tools/assets/pipeline.mjs";
 import {
   executeAssetTasks,
   validateTaskGraph,
@@ -66,6 +67,70 @@ test("原子目录发布失败时保留上一份完整输出", (t) => {
   assert.equal(
     fs.readFileSync(path.join(target, "value.txt"), "utf8"),
     "previous",
+  );
+});
+
+test("完整资产重建失败时继续使用上一份 assets", (t) => {
+  const repositoryRoot = fixture(t);
+  write(repositoryRoot, "assets/maps/value.txt", "previous");
+  write(repositoryRoot, "assets/ui/value.txt", "stable");
+
+  assert.throws(() => {
+    rebuildAssetsTransactionally({
+      repositoryRoot,
+      runRebuild({ repositoryRoot: transactionRoot }) {
+        replaceDirectory(
+          path.join(transactionRoot, "assets/maps"),
+          "incomplete",
+        );
+        throw new Error("模拟完整重建失败");
+      },
+    });
+  }, /模拟完整重建失败/);
+
+  assert.equal(
+    fs.readFileSync(path.join(repositoryRoot, "assets/maps/value.txt"), "utf8"),
+    "previous",
+  );
+  assert.equal(
+    fs.readFileSync(path.join(repositoryRoot, "assets/ui/value.txt"), "utf8"),
+    "stable",
+  );
+});
+
+test("完整资产重建成功后整体提交 assets 与任务缓存", (t) => {
+  const repositoryRoot = fixture(t);
+  write(repositoryRoot, "assets/maps/value.txt", "previous");
+  write(repositoryRoot, "assets/ui/value.txt", "stable");
+  write(repositoryRoot, "tmp/assets/cache/value.txt", "previous-cache");
+
+  const result = rebuildAssetsTransactionally({
+    repositoryRoot,
+    runRebuild({ repositoryRoot: transactionRoot }) {
+      replaceDirectory(path.join(transactionRoot, "assets/maps"), "next");
+      replaceDirectory(
+        path.join(transactionRoot, "tmp/assets/cache"),
+        "next-cache",
+      );
+      return "rebuilt";
+    },
+  });
+
+  assert.equal(result, "rebuilt");
+  assert.equal(
+    fs.readFileSync(path.join(repositoryRoot, "assets/maps/value.txt"), "utf8"),
+    "next",
+  );
+  assert.equal(
+    fs.readFileSync(path.join(repositoryRoot, "assets/ui/value.txt"), "utf8"),
+    "stable",
+  );
+  assert.equal(
+    fs.readFileSync(
+      path.join(repositoryRoot, "tmp/assets/cache/value.txt"),
+      "utf8",
+    ),
+    "next-cache",
   );
 });
 
