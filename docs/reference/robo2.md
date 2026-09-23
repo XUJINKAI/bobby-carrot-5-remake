@@ -74,7 +74,7 @@ node tools/custom/robo2/generate.mjs
 node tools/custom/robo2/extract.mjs
 ```
 
-提取器发布 Engine 使用的十张机关原图：四张炮台图、两张 8×12 双面镜、12×12 的待机炸弹、10×12 的 Stone，以及 `bombExplode.png` 与 `explosion.png` 两张六帧爆炸序列。普通机关以 Robo 2 的 12px 原始格尺寸等比放大，并保留原版左上角绘制锚点；14px 炮台素材因此可以越出所在格。爆炸序列按中心和相邻格分别居中绘制。构建结果写入被 Git 忽略的 `assets/art/robo2/`。
+提取器发布 Engine 使用的十张机关原图：四张炮台图、两张 8×12 双面镜、12×12 的待机炸弹、10×12 的 Stone，以及 `bombExplode.png` 与 `explosion.png` 两张六帧爆炸序列。双面镜、炸弹与 Stone 以 Robo 2 的 12px 原始格尺寸和左上角锚点缩放；四张 14px 炮台图以 14px 为基准居中缩放到单格范围。爆炸序列按中心和相邻格分别居中绘制。构建结果写入被 Git 忽略的 `assets/art/robo2/`。
 
 生成器校验 JAR SHA-256，输出固定为被 Git 忽略的 `custom-maps/robo2/01.json`～`25.json`。`npm run assets`、`npm test` 与 `npm run verify` 都会先从该 JAR 重建地图，再进入统一的 custom collection 构建流程。输出只包含 `LevelMap` 语义、展示 metadata 与终点胜利规则，不携带 JAR 路径、record 编号或 archive hash。
 
