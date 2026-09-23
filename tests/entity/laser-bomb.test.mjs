@@ -279,6 +279,17 @@ test("相邻炸弹逐颗连锁引爆，期间 Bobby 仍可移动", () => {
     0,
   );
   assert.equal(world.inputBlocked, false);
+  assert.deepEqual(
+    entitiesOfType(world, MapEntityTypeId.LASER_BOMB)
+      .map((bomb) => ({
+        x: bomb.anchor.x,
+        armed: bomb.state?.armed === true,
+      })),
+    [
+      { x: 2, armed: true },
+      { x: 3, armed: false },
+    ],
+  );
   const actor = world.query.entitiesWithFact("player")[0];
   const moved = world.step({
     intents: [{
@@ -324,6 +335,179 @@ test("相邻炸弹逐颗连锁引爆，期间 Bobby 仍可移动", () => {
     ).length,
     1,
   );
+});
+
+test("分别被不同光路直接命中的炸弹同时开始起爆", () => {
+  const entities = filledGround(5, 3);
+  entities.push(
+    { type: MapEntityTypeId.LASER_EMITTER, direction: "right", x: 0, y: 0 },
+    { type: MapEntityTypeId.LASER_BOMB, x: 2, y: 0 },
+    { type: MapEntityTypeId.LASER_EMITTER, direction: "right", x: 0, y: 2 },
+    { type: MapEntityTypeId.LASER_BOMB, x: 2, y: 2 },
+    { type: MapEntityTypeId.BOBBY, x: 4, y: 1 },
+  );
+  const world = new World({
+    schemaVersion: 1,
+    width: 5,
+    height: 3,
+    entities,
+  });
+
+  const ignition = world.update({ tick: 0, stepMs: 16 });
+  assert.equal(
+    ignition.events.filter((event) =>
+      event.type === "laser-bomb-ignition-started"
+    ).length,
+    2,
+  );
+  assert.ok(
+    entitiesOfType(world, MapEntityTypeId.LASER_BOMB).every(
+      (bomb) => bomb.state?.armed === true,
+    ),
+  );
+
+  world.update({
+    tick: 1,
+    stepMs: LASER_BOMB_IGNITION_DURATION_MS - 1,
+  });
+  const explosions = world.update({ tick: 2, stepMs: 1 });
+
+  assert.equal(
+    explosions.events.filter((event) => event.type === "laser-bomb-exploded")
+      .length,
+    2,
+  );
+  assert.equal(entitiesOfType(world, MapEntityTypeId.LASER_BOMB).length, 0);
+});
+
+test("同一直线的炸弹由第一颗遮挡并在爆炸后启动第二颗", () => {
+  const entities = filledGround(5, 2);
+  entities.push(
+    { type: MapEntityTypeId.LASER_EMITTER, direction: "right", x: 0, y: 0 },
+    { type: MapEntityTypeId.LASER_BOMB, x: 2, y: 0 },
+    { type: MapEntityTypeId.LASER_BOMB, x: 3, y: 0 },
+    { type: MapEntityTypeId.BOBBY, x: 4, y: 1 },
+  );
+  const world = new World({
+    schemaVersion: 1,
+    width: 5,
+    height: 2,
+    entities,
+  });
+
+  world.update({ tick: 0, stepMs: 16 });
+  assert.deepEqual(
+    entitiesOfType(world, MapEntityTypeId.LASER_BOMB).map((bomb) => ({
+      x: bomb.anchor.x,
+      armed: bomb.state?.armed === true,
+    })),
+    [
+      { x: 2, armed: true },
+      { x: 3, armed: false },
+    ],
+  );
+
+  const firstExplosion = world.update({
+    tick: 1,
+    stepMs: LASER_BOMB_IGNITION_DURATION_MS,
+  });
+  assert.equal(
+    firstExplosion.events.filter((event) =>
+      event.type === "laser-bomb-ignition-started"
+    ).length,
+    1,
+  );
+  const remainingBomb = entitiesOfType(world, MapEntityTypeId.LASER_BOMB)[0];
+  assert.deepEqual(remainingBomb.anchor, { x: 3, y: 0 });
+  assert.equal(remainingBomb.state?.armed, true);
+});
+
+test("前方炸弹清除后由重新投影的激光启动远处炸弹", () => {
+  const entities = filledGround(6, 2);
+  entities.push(
+    { type: MapEntityTypeId.LASER_EMITTER, direction: "right", x: 0, y: 0 },
+    { type: MapEntityTypeId.LASER_BOMB, x: 2, y: 0 },
+    { type: MapEntityTypeId.LASER_BOMB, x: 4, y: 0 },
+    { type: MapEntityTypeId.BOBBY, x: 5, y: 1 },
+  );
+  const world = new World({
+    schemaVersion: 1,
+    width: 6,
+    height: 2,
+    entities,
+  });
+
+  world.update({ tick: 0, stepMs: 16 });
+  const firstExplosion = world.update({
+    tick: 1,
+    stepMs: LASER_BOMB_IGNITION_DURATION_MS,
+  });
+
+  assert.equal(
+    firstExplosion.events.filter((event) => event.type === "laser-bomb-exploded")
+      .length,
+    1,
+  );
+  assert.equal(
+    firstExplosion.events.filter((event) =>
+      event.type === "laser-bomb-ignition-started"
+    ).length,
+    1,
+  );
+  const remainingBomb = entitiesOfType(world, MapEntityTypeId.LASER_BOMB)[0];
+  assert.deepEqual(remainingBomb.anchor, { x: 4, y: 0 });
+  assert.equal(remainingBomb.state?.armed, true);
+});
+
+test("同时爆炸的两条前沿只登记一次共同相邻炸弹", () => {
+  const entities = filledGround(5, 4);
+  entities.push(
+    { type: MapEntityTypeId.LASER_EMITTER, direction: "down", x: 1, y: 0 },
+    { type: MapEntityTypeId.LASER_BOMB, x: 1, y: 1 },
+    { type: MapEntityTypeId.LASER_EMITTER, direction: "down", x: 3, y: 0 },
+    { type: MapEntityTypeId.LASER_BOMB, x: 3, y: 1 },
+    { type: MapEntityTypeId.LASER_BOMB, x: 2, y: 1 },
+    { type: MapEntityTypeId.BOBBY, x: 4, y: 3 },
+  );
+  const world = new World({
+    schemaVersion: 1,
+    width: 5,
+    height: 4,
+    entities,
+  });
+
+  world.update({ tick: 0, stepMs: 16 });
+  const firstWave = world.update({
+    tick: 1,
+    stepMs: LASER_BOMB_IGNITION_DURATION_MS,
+  });
+
+  assert.equal(
+    firstWave.events.filter((event) => event.type === "laser-bomb-exploded")
+      .length,
+    2,
+  );
+  assert.equal(
+    firstWave.events.filter((event) =>
+      event.type === "laser-bomb-ignition-started"
+    ).length,
+    1,
+  );
+  const remainingBombs = entitiesOfType(world, MapEntityTypeId.LASER_BOMB);
+  assert.equal(remainingBombs.length, 1);
+  assert.deepEqual(remainingBombs[0].anchor, { x: 2, y: 1 });
+  assert.equal(remainingBombs[0].state?.armed, true);
+
+  const secondWave = world.update({
+    tick: 2,
+    stepMs: LASER_BOMB_IGNITION_DURATION_MS,
+  });
+  assert.equal(
+    secondWave.events.filter((event) => event.type === "laser-bomb-exploded")
+      .length,
+    1,
+  );
+  assert.equal(entitiesOfType(world, MapEntityTypeId.LASER_BOMB).length, 0);
 });
 
 test("不可摧毁的障碍会截去对应方向的爆炸画面", () => {

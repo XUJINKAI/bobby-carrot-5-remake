@@ -15,7 +15,7 @@ import type {
 import type { EntityPresence } from "../../world/spatial/EntityPresence.js";
 import { defineEntityModule, type EntityModule } from "../EntityModule.js";
 import { RuntimeEntityTypeId } from "../runtime-types.js";
-import { armLaserBombChain } from "./laser-bomb.js";
+import { armLaserBombs, startLaserBombScheduler } from "./laser-bomb.js";
 import { resolveLaserAppearance } from "./laser-appearance.js";
 import {
   destroyLaserEmitter,
@@ -68,6 +68,7 @@ const laserEmitterBehavior: Behavior = {
       x: self.entity.anchor.x,
       y: self.entity.anchor.y,
     });
+    startLaserBombScheduler(commands);
   },
 };
 
@@ -376,7 +377,7 @@ function updateLaserSystem(
       rays.get(emitterId) ?? [],
     );
   }
-  armLaserBombChain(query, commands, system.id, [...hitBombs]);
+  armLaserBombs(query, commands, [...hitBombs]);
 
   for (const emitter of emitters) {
     if (destroyedEmitters.has(emitter.id)) continue;

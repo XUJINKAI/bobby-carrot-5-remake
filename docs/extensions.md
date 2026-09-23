@@ -46,7 +46,7 @@ Novoban 和 LOMA 的 XSB 地图由 `tools/custom/sokoban-xsb.mjs` 转换。地�
 
 `laser-bomb` 是使用 Robo 2 `bombTickTick.png` 原图的可推动阻挡对象。激光命中后先播放六帧 `bombExplode.png` 起爆动画；这个 `600ms` 阶段不销毁炸弹或周围对象。起爆完成时才结算中心以及上、右、下、左相邻格中的 `laser-stone`、`laser-mirror` 和 `laser-emitter`，并在十字范围播放六帧 `explosion.png`。对角格、其它 Entity 与 Surface 保持不变，不可摧毁的阻挡对象会在边界截去对应方向的爆炸范围。
 
-相邻炸弹加入非阻塞 RuntimeAction 队列；前一颗结算十字爆炸时，下一颗开始自己的 `600ms` 起爆阶段。连锁期间 Bobby、WorldMotion 与其它机关继续推进；队列、当前炸弹与起爆计时进入 World Snapshot、Undo 和 Replay。
+炸弹在格子边界阻断激光，同一条光路只会直接命中第一颗。一次光路更新中分别被不同光路命中的炸弹各自开始并行的 `600ms` 起爆计时；直线串联的相邻炸弹仍在前一颗结算十字爆炸后逐颗起爆。World 级调度器在多条爆炸前沿汇合时只登记一次目标炸弹。连锁期间 Bobby、WorldMotion 与其它机关继续推进；每颗炸弹的起爆状态与计时进入 World Snapshot、Undo 和 Replay。
 
 同一 World 的全部发生器由单个 Runtime 激光调度器统一更新。每个 World tick 中，每个发生器只追踪一次光路；命中发生器、启动炸弹链、同步光束 Entity 与机关变化后的伤害复用该次追踪结果。
 

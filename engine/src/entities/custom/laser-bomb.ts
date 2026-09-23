@@ -3,7 +3,6 @@ import { ROBO2_GAMEPLAY_IMAGE_IDS } from "../../image/Robo2GameplayImages.js";
 import type { TransientVisualDefinition } from "../../visual/VisualDefinition.js";
 import type {
   RuntimeActionDefinition,
-  RuntimeActionSpec,
 } from "../../world/action/RuntimeAction.js";
 import type { WorldCommandApi } from "../../world/behavior/CommandQueue.js";
 import type { WorldQueryApi } from "../../world/behavior/WorldQueryApi.js";
@@ -24,7 +23,7 @@ const destructibleTypes: ReadonlySet<EntityType> = new Set([
   MapEntityTypeId.LASER_EMITTER,
   MapEntityTypeId.LASER_BOMB,
 ]);
-const LASER_BOMB_CHAIN_ACTION = "laser-bomb-chain";
+const LASER_BOMB_SCHEDULER_ACTION = "laser-bomb-scheduler";
 
 export const LASER_BOMB_EXPLOSION_FRAME_MS = 100;
 export const LASER_BOMB_EXPLOSION_DURATION_MS =
@@ -85,56 +84,51 @@ const laserBombExplosionVisual: TransientVisualDefinition = {
   },
 };
 
-const laserBombChainAction: RuntimeActionDefinition = {
-  kind: LASER_BOMB_CHAIN_ACTION,
-  update({ action, time, query, commands }) {
-    const queue = entityIdList(action.state.queue);
-    const seen = new Set(entityIdList(action.state.seen));
-    let currentBombId = positiveEntityId(action.state.currentBombId);
-    if (currentBombId === null || !query.entity(currentBombId)) {
-      currentBombId = takeNextBomb(query, queue);
-      if (currentBombId === null) return "complete";
-      emitLaserBombIgnition(query, commands, currentBombId);
-      action.state.currentBombId = currentBombId;
-      action.state.queue = queue;
-      action.state.elapsedMs = 0;
-      return "running";
-    }
-
-    const elapsedMs = finiteNumber(action.state.elapsedMs) + time.stepMs;
-    if (elapsedMs < LASER_BOMB_IGNITION_DURATION_MS) {
-      action.state.elapsedMs = elapsedMs;
-      return "running";
-    }
-
-    const chainedBombIds = detonateLaserBomb(
-      query,
-      commands,
-      currentBombId,
-    ) ?? [];
-    for (const chainedBombId of chainedBombIds) {
-      if (seen.has(chainedBombId)) continue;
-      const chainedBomb = query.entity(chainedBombId);
-      if (
-        chainedBomb?.type !== MapEntityTypeId.LASER_BOMB ||
-        chainedBomb.state?.armed === true
-      ) {
-        continue;
+const laserBombSchedulerAction: RuntimeActionDefinition = {
+  kind: LASER_BOMB_SCHEDULER_ACTION,
+  update({ time, query, commands }) {
+    const armedBombs = query.entitiesMatching({
+      kind: "type",
+      value: MapEntityTypeId.LASER_BOMB,
+    })
+      .filter((bomb) => bomb.state?.armed === true)
+      .sort((left, right) => compareEntityIds(left.id, right.id));
+    const detonatingBombIds: EntityId[] = [];
+    for (const bomb of armedBombs) {
+      const elapsedMs = finiteNumber(bomb.state?.ignitionElapsedMs) +
+        time.stepMs;
+      if (elapsedMs < LASER_BOMB_IGNITION_DURATION_MS) {
+        commands.setState(bomb.id, {
+          ...bomb.state,
+          ignitionElapsedMs: elapsedMs,
+        });
+      } else {
+        detonatingBombIds.push(bomb.id);
       }
-      seen.add(chainedBombId);
-      queue.push(chainedBombId);
-      commands.setState(chainedBombId, {
-        ...chainedBomb.state,
-        armed: true,
-      });
     }
-    const nextBombId = takeNextBomb(query, queue);
-    action.state.queue = queue;
-    action.state.seen = [...seen].sort(compareEntityIds);
-    action.state.elapsedMs = 0;
-    action.state.currentBombId = nextBombId ?? 0;
-    if (nextBombId === null) return "complete";
-    emitLaserBombIgnition(query, commands, nextBombId);
+
+    const claimedBombIds = new Set(armedBombs.map((bomb) => bomb.id));
+    const destroyedTargetIds = new Set<EntityId>();
+    for (const bombId of detonatingBombIds.sort(compareEntityIds)) {
+      const chainedBombIds = detonateLaserBomb(
+        query,
+        commands,
+        bombId,
+        destroyedTargetIds,
+      ) ?? [];
+      for (const chainedBombId of chainedBombIds) {
+        if (claimedBombIds.has(chainedBombId)) continue;
+        const chainedBomb = query.entity(chainedBombId);
+        if (chainedBomb?.type !== MapEntityTypeId.LASER_BOMB) continue;
+        claimedBombIds.add(chainedBombId);
+        commands.setState(chainedBombId, {
+          ...chainedBomb.state,
+          armed: true,
+          ignitionElapsedMs: 0,
+        });
+        emitLaserBombIgnition(query, commands, chainedBombId);
+      }
+    }
     return "running";
   },
 };
@@ -149,6 +143,12 @@ export const laserBomb: EntityModule = defineEntityModule({
         kind: "boolean",
         label: "等待连锁引爆",
         default: false,
+      },
+      {
+        key: "ignitionElapsedMs",
+        kind: "number",
+        label: "起爆计时",
+        default: 0,
       },
     ],
     presentation: { name: "Laser Bomb" },
@@ -165,16 +165,18 @@ export const laserBomb: EntityModule = defineEntityModule({
     }),
   },
   transientVisuals: [laserBombIgnitionVisual, laserBombExplosionVisual],
-  runtimeActions: [laserBombChainAction],
+  runtimeActions: [laserBombSchedulerAction],
 });
 
-export function armLaserBombChain(
+export function startLaserBombScheduler(commands: WorldCommandApi): void {
+  commands.startAction({ kind: LASER_BOMB_SCHEDULER_ACTION });
+}
+
+export function armLaserBombs(
   query: WorldQueryApi,
   commands: WorldCommandApi,
-  systemId: EntityId,
   bombIds: readonly EntityId[],
 ): void {
-  const armedBombIds: EntityId[] = [];
   for (const bombId of [...bombIds].sort(compareEntityIds)) {
     const bomb = query.entity(bombId);
     if (
@@ -183,12 +185,12 @@ export function armLaserBombChain(
     ) {
       continue;
     }
-    armedBombIds.push(bomb.id);
-    commands.setState(bomb.id, { ...bomb.state, armed: true });
-  }
-  if (armedBombIds.length > 0) {
-    emitLaserBombIgnition(query, commands, armedBombIds[0]!);
-    commands.startAction(createLaserBombChainAction(systemId, armedBombIds));
+    commands.setState(bomb.id, {
+      ...bomb.state,
+      armed: true,
+      ignitionElapsedMs: 0,
+    });
+    emitLaserBombIgnition(query, commands, bomb.id);
   }
 }
 
@@ -268,6 +270,7 @@ function detonateLaserBomb(
   query: WorldQueryApi,
   commands: WorldCommandApi,
   bombId: EntityId,
+  destroyedTargetIds: Set<EntityId>,
 ): readonly EntityId[] | null {
   const explosion = resolveLaserExplosion(query, bombId);
   if (!explosion) return null;
@@ -286,8 +289,10 @@ function detonateLaserBomb(
   commands.destroy(explosion.bombId);
   const beamsBySource = groupLaserBeamsBySource(query);
   for (const targetId of [...explosion.targetIds].sort(compareEntityIds)) {
+    if (destroyedTargetIds.has(targetId)) continue;
     const target = query.entity(targetId);
     if (!target) continue;
+    destroyedTargetIds.add(targetId);
     if (target.type === MapEntityTypeId.LASER_EMITTER) {
       const beams = beamsBySource.get(target.id) ?? [];
       destroyLaserEmitter(
@@ -301,22 +306,6 @@ function detonateLaserBomb(
     }
   }
   return explosion.chainedBombIds;
-}
-
-function createLaserBombChainAction(
-  systemId: EntityId,
-  bombIds: readonly EntityId[],
-): RuntimeActionSpec {
-  return {
-    kind: LASER_BOMB_CHAIN_ACTION,
-    ownerEntityId: systemId,
-    state: {
-      currentBombId: bombIds[0] ?? 0,
-      queue: bombIds.slice(1),
-      seen: [...bombIds],
-      elapsedMs: 0,
-    },
-  };
 }
 
 function emitLaserBombIgnition(
@@ -334,34 +323,8 @@ function emitLaserBombIgnition(
   });
 }
 
-function takeNextBomb(
-  query: WorldQueryApi,
-  queue: EntityId[],
-): EntityId | null {
-  while (queue.length > 0) {
-    const bombId = queue.shift()!;
-    if (query.entity(bombId)?.type === MapEntityTypeId.LASER_BOMB) {
-      return bombId;
-    }
-  }
-  return null;
-}
-
-function entityIdList(value: unknown): EntityId[] {
-  if (!Array.isArray(value)) return [];
-  return value.filter((item): item is EntityId =>
-    typeof item === "number" && Number.isInteger(item) && item > 0
-  );
-}
-
 function finiteNumber(value: unknown): number {
   return typeof value === "number" && Number.isFinite(value) ? value : 0;
-}
-
-function positiveEntityId(value: unknown): EntityId | null {
-  return typeof value === "number" && Number.isInteger(value) && value > 0
-    ? value
-    : null;
 }
 
 function compareEntityIds(left: EntityId, right: EntityId): number {
