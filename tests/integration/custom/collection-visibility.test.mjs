@@ -5,8 +5,8 @@ import {
   normalizeCollectionVisibility,
 } from "../../../tools/custom/collection-visibility.mjs";
 import {
-  visibleCollectionsInDisplayOrder,
-} from "../../../tools/custom/prepare.mjs";
+  visibleCollectionSummaries,
+} from "../../../tools/assets/collection/manifest.mjs";
 
 test("collection visible 缺省为公开展示", () => {
   assert.equal(normalizeCollectionVisibility(undefined, "sample"), true);
@@ -38,11 +38,11 @@ test("开发集合保持内部顺序并统一排在普通集合之后", () => {
   ];
 
   assert.deepEqual(
-    visibleCollectionsInDisplayOrder(collections, false).map(({ id }) => id),
+    visibleCollectionSummaries({ collections }, false).map(({ id }) => id),
     ["public-a", "public-b"],
   );
   assert.deepEqual(
-    visibleCollectionsInDisplayOrder(collections, true).map(({ id }) => id),
+    visibleCollectionSummaries({ collections }, true).map(({ id }) => id),
     ["public-a", "public-b", "dev-a", "dev-b"],
   );
 });

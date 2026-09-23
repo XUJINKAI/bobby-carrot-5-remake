@@ -6,7 +6,10 @@ import { encodeDatTerrain, encodeDatObject } from "./dat/index.mjs";
 const showAll = process.argv.includes("--all");
 const previewLimit = 2;
 const catalog = JSON.parse(
-  fs.readFileSync(path.join(root, "original/adapted/catalog.json"), "utf8"),
+  fs.readFileSync(
+    path.join(root, "tmp/assets/bc5/adapted/catalog.json"),
+    "utf8",
+  ),
 );
 if (catalog.schemaVersion !== 1)
   throw new Error("Original adapted catalog schemaVersion 必须为 1");
@@ -31,7 +34,10 @@ function add(kind, type, map, x, y) {
 
 for (const meta of catalog.maps) {
   const document = JSON.parse(
-    fs.readFileSync(path.join(root, "original/adapted", meta.path), "utf8"),
+    fs.readFileSync(
+      path.join(root, "tmp/assets/bc5/adapted", meta.path),
+      "utf8",
+    ),
   );
   for (let y = 0; y < document.height; y += 1) {
     for (let x = 0; x < document.width; x += 1)

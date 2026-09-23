@@ -45,7 +45,7 @@ export function executeAssetTasks({
     if (
       !force &&
       previous?.inputDigest === inputDigest &&
-      outputsMatch(repositoryRoot, previous.outputs)
+      outputsMatch(repositoryRoot, task.outputs, previous.outputs)
     ) {
       results.set(id, previous.resultDigest);
       logger.log(`资产任务缓存命中：${id}`);
@@ -251,17 +251,15 @@ function collectPathRecords(repositoryRoot, relative, requireInput) {
   return records;
 }
 
-function outputsMatch(repositoryRoot, outputs) {
-  if (!Array.isArray(outputs)) {
+function outputsMatch(repositoryRoot, outputRoots, expectedOutputs) {
+  if (!Array.isArray(expectedOutputs)) {
     return false;
   }
-  return outputs.every((record) => {
-    if (record.sha256 === "directory") {
-      return fs.existsSync(path.join(repositoryRoot, record.path));
-    }
-    const file = path.join(repositoryRoot, record.path);
-    return fs.existsSync(file) && hashFile(file) === record.sha256;
-  });
+  const current = outputRoots.flatMap((output) =>
+    collectPathRecords(repositoryRoot, output, false),
+  );
+  return current.map((record) => record.path).sort().join("\0") ===
+    expectedOutputs.map((record) => record.path).sort().join("\0");
 }
 
 function readTaskState(repositoryRoot, id) {

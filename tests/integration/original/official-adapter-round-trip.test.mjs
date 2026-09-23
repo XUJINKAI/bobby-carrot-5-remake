@@ -8,7 +8,7 @@ import { adaptDecodedMap } from "../../../tools/original/entity-adapter.mjs";
 import { reverseEntityMap } from "../../../tools/original/entity-reverse-adapter.mjs";
 
 test("全部官方 DAT source 经 Adapter 与反向 Adapter 后保持玩法语义", () => {
-  const decodedRoot = path.join(root, "original/decoded");
+  const decodedRoot = path.join(root, "tmp/assets/bc5/decoded");
   const files = levelJsonFiles(decodedRoot);
   assert.equal(files.length, 530, "官方 source record 数量应保持为 530");
 

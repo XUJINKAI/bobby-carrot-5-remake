@@ -16,7 +16,7 @@ import {
 } from "../../../tools/original/dat/index.mjs";
 
 test("DAT record round-trips byte-for-byte through semantic LevelMap", () => {
-  const dat = fs.readFileSync("original/extracted/base/00.dat");
+  const dat = fs.readFileSync("tmp/assets/bc5/extracted/base/00.dat");
   const parts = splitDatPackage(dat);
   const record = parts.levelRecords[0];
   assert.ok(record);
@@ -33,7 +33,7 @@ test("DAT record round-trips byte-for-byte through semantic LevelMap", () => {
 });
 
 test("DAT package replacement preserves metadata and untouched records", () => {
-  const dat = fs.readFileSync("original/extracted/base/00.dat");
+  const dat = fs.readFileSync("tmp/assets/bc5/extracted/base/00.dat");
   const before = splitDatPackage(dat);
   const replacement = before.levelRecords[0];
   assert.ok(replacement);

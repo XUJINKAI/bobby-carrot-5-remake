@@ -17,10 +17,11 @@ export function prepareAssets({
   selectedTaskIds,
   repositoryRoot = root,
 } = {}) {
-  const { tasks } = createAssetRegistry({
+  const { manifest, tasks } = createAssetRegistry({
     repositoryRoot,
     development: includeDevCollections,
   });
+  removeOrphanedMapOutputs(repositoryRoot, manifest);
   console.log(
     force
       ? "资产准备：请求完整重建。"
@@ -32,6 +33,22 @@ export function prepareAssets({
     force,
     selectedTaskIds,
   });
+}
+
+function removeOrphanedMapOutputs(repositoryRoot, manifest) {
+  const mapsRoot = path.join(repositoryRoot, "assets/maps");
+  if (!fs.existsSync(mapsRoot)) {
+    return;
+  }
+  const expected = new Set(manifest.collections.map((entry) => entry.id));
+  for (const entry of fs.readdirSync(mapsRoot, { withFileTypes: true })) {
+    if (entry.isDirectory() && !expected.has(entry.name)) {
+      fs.rmSync(path.join(mapsRoot, entry.name), {
+        recursive: true,
+        force: true,
+      });
+    }
+  }
 }
 
 export function rebuildAssets(options = {}) {

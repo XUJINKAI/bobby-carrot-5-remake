@@ -1,12 +1,5 @@
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
-import { parseMapDocument } from "@bobby/model";
-import { root } from "../lib/fs.mjs";
 import { convertXsbBoard, isXsbBoardLine } from "./sokoban-xsb.mjs";
 
-const sourceFile = path.join(root, "tools/custom/LOMA.txt");
-const outputDirectory = path.join(root, "custom-maps/loma-pushbox");
 const expectedAuthorCounts = new Map([
   ["Aymeric du Peloux", 11], ["François Marques", 10], ["David Skinner", 30],
   ["Sven Egevad", 10], ["Victor Kindermans", 10], ["Michael Steins", 10],
@@ -57,26 +50,6 @@ export function parseLoma(text) {
   return levels;
 }
 
-export function writeLomaMaps(text) {
-  const levels = parseLoma(text);
-  fs.rmSync(outputDirectory, { recursive: true, force: true });
-  for (const entry of levels) {
-    const directory = path.join(outputDirectory, entry.chapter);
-    fs.mkdirSync(directory, { recursive: true });
-    const document = parseMapDocument({
-      schemaVersion: 1,
-      meta: {
-        name: entry.id,
-        author: entry.author,
-        ...(entry.comment ? { note: entry.comment } : {}),
-      },
-      ...entry.level,
-    });
-    fs.writeFileSync(path.join(directory, `${entry.id}.json`), `${JSON.stringify(document, null, 2)}\n`);
-  }
-  return levels;
-}
-
 function validateCollection(levels) {
   if (levels.length !== 137) throw new Error(`LOMA 必须包含 137 张地图，实际 ${levels.length}`);
   const ids = new Set();
@@ -96,13 +69,4 @@ function validateCollection(levels) {
     if (actual !== expected) throw new Error(`LOMA 作者 ${author} 应有 ${expected} 张，实际 ${actual}`);
   }
   if (authorCounts.size !== expectedAuthorCounts.size) throw new Error(`LOMA 出现未知作者：${[...authorCounts.keys()].join(", ")}`);
-}
-
-function isMainModule() {
-  return process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
-}
-
-if (isMainModule()) {
-  const levels = writeLomaMaps(fs.readFileSync(sourceFile, "utf8"));
-  console.log(`构建 LOMA Pushbox：${levels.length} 张地图 / 10 个 Pattern。`);
 }

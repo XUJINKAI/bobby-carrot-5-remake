@@ -26,7 +26,9 @@ const jarDirectory = path.join(
 );
 validateDirectories(inputDir, outputDir);
 
-const catalog = readJson(path.join(root, "original/adapted/catalog.json"));
+const catalog = readJson(
+  path.join(root, "tmp/assets/bc5/adapted/catalog.json"),
+);
 if (catalog.schemaVersion !== 1)
   throw new Error("Original adapted catalog schemaVersion 必须为 1");
 const maps = readPatchMaps(inputDir, catalog);
@@ -72,7 +74,10 @@ function writeEncodedMaps(sourceMaps, directory) {
     seen.add(output);
 
     const originalDecoded = readJson(
-      resolveChildPath(path.join(root, "original/decoded"), relativePath),
+      resolveChildPath(
+        path.join(root, "tmp/assets/bc5/decoded"),
+        relativePath,
+      ),
     );
     const record = Buffer.from(
       encodeDatLevelRecord(reverseEntityMap(item.map)),

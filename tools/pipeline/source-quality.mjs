@@ -235,9 +235,9 @@ function checkRepositoryStructure() {
   }
 
   for (const file of [
-    "custom-maps/loma-pushbox/01/01-01.json",
-    "custom-maps/novoban-pushbox/01.json",
-    "custom-maps/robo2/01.json",
+    "assets/maps/loma-pushbox/01-01.json",
+    "assets/maps/novoban-pushbox/01.json",
+    "assets/maps/robo2/01.json",
     "assets/art/robo2/mirrorL.png",
   ]) {
     const ignored = spawnSync("git", ["check-ignore", "--quiet", file], {
@@ -247,6 +247,38 @@ function checkRepositoryStructure() {
       errors.push(`${file}: 可重建生成内容必须被 Git 忽略`);
     }
   }
+
+  checkAssetProducerImports();
+}
+
+function checkAssetProducerImports() {
+  const bc5Directory = path.join(root, "tools/assets/bc5");
+  walk(bc5Directory, (file) => {
+    if (!SCRIPT_EXTENSIONS.has(path.extname(file))) return;
+    const text = fs.readFileSync(file, "utf8");
+    const imports = [...text.matchAll(/from\s+["']([^"']+)["']/g)];
+    for (const match of imports) {
+      if (
+        match[1].includes("/original/") &&
+        !match[1].includes("/original/lib/")
+      ) {
+        errors.push(
+          `${path.relative(root, file)}: BC5 Producer 只能依赖 tools/original/lib/`,
+        );
+      }
+    }
+  });
+
+  const originalLibrary = path.join(root, "tools/original/lib");
+  walk(originalLibrary, (file) => {
+    if (!SCRIPT_EXTENSIONS.has(path.extname(file))) return;
+    const text = fs.readFileSync(file, "utf8");
+    if (/tools\/assets|\.\.\/\.\.\/assets\//.test(text)) {
+      errors.push(
+        `${path.relative(root, file)}: Original library 不得依赖 tools/assets/`,
+      );
+    }
+  });
 }
 
 function checkCompactCode(file, text, relative) {

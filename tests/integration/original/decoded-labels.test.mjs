@@ -15,9 +15,9 @@ test("每个 DAT terrain 与 object byte 都解码为坐标前缀标签", () => 
 });
 
 test("所有 decoded 地图的 terrain 与 object 都带坐标前缀", () => {
-  const decodedRoot = path.join(root, "original/decoded");
+  const decodedRoot = path.join(root, "tmp/assets/bc5/decoded");
   const files = jsonFiles(decodedRoot);
-  assert.ok(files.length > 0, "original/decoded 中应存在地图");
+  assert.ok(files.length > 0, "tmp/assets/bc5/decoded 中应存在地图");
   for (const file of files) {
     const level = JSON.parse(fs.readFileSync(file, "utf8"));
     for (const row of level.terrain ?? [])

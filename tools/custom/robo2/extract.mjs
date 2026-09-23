@@ -1,15 +1,12 @@
 import fs from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { root } from "../../lib/fs.mjs";
 import { readZipEntry } from "../../lib/zip-patch.mjs";
 import {
   assertRobo2A1Archive,
   decodeRobo2Archive,
-  ROBO2_SOURCE_FILE,
 } from "./archive.mjs";
 
-const outputDirectory = path.join(root, "assets/art/robo2");
 const PNG_SIGNATURE = Buffer.from("89504e470d0a1a0a", "hex");
 const artDefinitions = Object.freeze([
   archiveArt("data/laserUp.png", "laserUp.png", 11, 14),
@@ -56,16 +53,6 @@ function overrideArt(file, width, height) {
   });
 }
 
-export function writeRobo2Art(input) {
-  const art = buildRobo2Art(input);
-  fs.rmSync(outputDirectory, { recursive: true, force: true });
-  fs.mkdirSync(outputDirectory, { recursive: true });
-  for (const asset of art) {
-    fs.writeFileSync(path.join(outputDirectory, asset.file), asset.content);
-  }
-  return art;
-}
-
 function pngDimensions(content, source) {
   if (
     content.length < 24 ||
@@ -78,17 +65,4 @@ function pngDimensions(content, source) {
     width: content.readUInt32BE(16),
     height: content.readUInt32BE(20),
   };
-}
-
-function isMainModule() {
-  return process.argv[1] &&
-    path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
-}
-
-if (isMainModule()) {
-  const source = process.argv[2]
-    ? path.resolve(process.argv[2])
-    : ROBO2_SOURCE_FILE;
-  const art = writeRobo2Art(fs.readFileSync(source));
-  console.log(`提取 Robo 2：${art.length} 个 gameplay 图片。`);
 }

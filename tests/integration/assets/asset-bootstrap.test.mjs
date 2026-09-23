@@ -14,9 +14,6 @@ for (const action of ["prepare", "rebuild"]) {
     for (const relative of [
       "tools/cli.mjs",
       "tools/lib/fs.mjs",
-      "tools/custom/prepare.mjs",
-      "tools/custom/collection-source.mjs",
-      "tools/custom/collection-visibility.mjs",
       "tsconfig.base.json",
       "model/package.json",
       "model/tsconfig.json",
@@ -30,18 +27,22 @@ for (const action of ["prepare", "rebuild"]) {
     fs.mkdirSync(scope, { recursive: true });
     fs.symlinkSync(path.join(directory, "model"), path.join(scope, "model"), "junction");
     fs.mkdirSync(path.join(directory, "tools/pipeline"), { recursive: true });
-    // 固定测试边界为 CLI bootstrap 与真实 collection parser，避免重复生成原版资产。
+    // 固定测试边界为 CLI bootstrap 与 Model parser，避免重复生成完整资产。
     fs.writeFileSync(path.join(directory, "tools/pipeline/assets.mjs"), `
-import { prepareCustomCollections } from "../custom/prepare.mjs";
-export const prepareAssets = prepareCustomCollections;
-export const rebuildAssets = prepareCustomCollections;
+import fs from "node:fs";
+import path from "node:path";
+import { parseMapDocument } from "@bobby/model";
+function build() {
+  const source = JSON.parse(fs.readFileSync("custom-maps/sample/map.json", "utf8"));
+  const target = "assets/maps/sample/map.json";
+  fs.mkdirSync(path.dirname(target), { recursive: true });
+  fs.writeFileSync(target, JSON.stringify(parseMapDocument(source)));
+}
+export const prepareAssets = build;
+export const rebuildAssets = build;
 `);
     const source = path.join(directory, "custom-maps/sample");
     fs.mkdirSync(source, { recursive: true });
-    fs.writeFileSync(path.join(directory, "custom-maps/collections.json"), JSON.stringify({
-      schemaVersion: 1,
-      collections: [{ id: "sample", name: "冷启动测试" }],
-    }));
     const level = {
       schemaVersion: 1,
       width: 1,

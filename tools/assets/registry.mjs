@@ -212,6 +212,7 @@ function createBc5AdaptTask(repositoryRoot) {
       "tools/original/adventure-catalog.mjs",
       "tools/original/entity-adapter.mjs",
       "tools/original/explore-filter-tags.mjs",
+      "tools/original/lib/explore.mjs",
       "tools/original/public-ids.mjs",
       "tools/original/win-condition.mjs",
       "tools/original/lib/pipeline.mjs",

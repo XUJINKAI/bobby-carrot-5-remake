@@ -9,7 +9,7 @@ import {
 import {
   originalExploreFilters,
   originalExploreMapFilters,
-} from "../../original/explore-filter-tags.mjs";
+} from "../../original/lib/explore.mjs";
 import {
   publishDirectoryAtomically,
   publishFileAtomically,
