@@ -37,6 +37,43 @@ function canvas() {
   };
 }
 
+function laserCanvas() {
+  const strokes = [];
+  let path = [];
+  const context = {
+    strokeStyle: "",
+    lineWidth: 0,
+    setTransform() {},
+    fillRect() {},
+    clearRect() {},
+    strokeRect() {},
+    save() {},
+    restore() {},
+    translate() {},
+    rotate() {},
+    scale() {},
+    drawImage() {},
+    fillText() {},
+    beginPath() {
+      path = [];
+    },
+    moveTo(x, y) {
+      path.push([x, y]);
+    },
+    lineTo(x, y) {
+      path.push([x, y]);
+    },
+    stroke() {
+      strokes.push({ color: this.strokeStyle, width: this.lineWidth, path });
+    },
+  };
+  return {
+    style: {},
+    getContext: () => context,
+    strokes: () => strokes,
+  };
+}
+
 test("Canvas 为两个以上 Palette 层显示数量角标", () => {
   const level = {
     schemaVersion: 1,
@@ -126,6 +163,100 @@ test("同一不可变关卡 revision 复用空间投影", () => {
   assert.notEqual(
     editorPreviewFor(structuredClone(level), builtinEngineEnvironment),
     editorPreviewFor(level, builtinEngineEnvironment),
+  );
+});
+
+test("Editor Canvas 复用 Engine 光路投影且不污染可编辑空间", () => {
+  const level = {
+    schemaVersion: 1,
+    meta: { name: "激光预览" },
+    width: 5,
+    height: 1,
+    entities: [
+      { type: "grass", variant: "ts-10-1", x: 0, y: 0 },
+      { type: "grass", variant: "ts-10-1", x: 1, y: 0 },
+      { type: "grass", variant: "ts-10-1", x: 2, y: 0 },
+      { type: "laser-cannon", direction: "right", x: 0, y: 0 },
+      { type: "stump", x: 3, y: 0 },
+    ],
+  };
+  const preview = new EditorPreview(level, builtinEngineEnvironment);
+  assert.equal(
+    preview.entities.all().some((entity) => entity.type === "laser-beam"),
+    false,
+  );
+  assert.deepEqual(
+    preview.renderEntities.all()
+      .filter((entity) => entity.type === "laser-beam")
+      .map((entity) => ({ x: entity.anchor.x, terminal: entity.state?.terminal })),
+    [
+      { x: 1, terminal: false },
+      { x: 2, terminal: false },
+      { x: 3, terminal: true },
+    ],
+  );
+
+  const target = laserCanvas();
+  const renderer = new EditorCanvasRenderer(target, {
+    sourceTileSize: 48,
+    atlasId: "atlas",
+    image: () => ({ width: 768, height: 768 }),
+  });
+  const state = {
+    level,
+    tool: "select",
+    placement: null,
+    selection: null,
+    hover: null,
+    viewport: { zoom: 1, panX: 0, panY: 0 },
+  };
+  renderer.render(state, 0);
+
+  assert.equal(target.strokes().length, 2);
+  assert.equal(new Set(target.strokes().map((stroke) => stroke.color)).size, 1);
+  assert.equal(new Set(target.strokes().map((stroke) => stroke.width)).size, 1);
+  assert.deepEqual(target.strokes().map((stroke) => stroke.path), [
+    [[38, 19], [76, 19]],
+    [[76, 19], [114, 19]],
+  ]);
+});
+
+test("Editor 光路按 Energy 规则穿过覆盖物并由原版 Mirror 反射", () => {
+  const entities = [];
+  for (let y = 0; y < 3; y += 1) {
+    for (let x = 0; x < 5; x += 1) {
+      entities.push({ type: "grass", variant: "ts-10-1", x, y });
+    }
+  }
+  entities.push(
+    { type: "laser-cannon", direction: "right", x: 0, y: 1 },
+    { type: "high-grass", x: 1, y: 1, stackOrder: 1 },
+    { type: "fence", x: 2, y: 1, stackOrder: 1 },
+    { type: "mirror", variant: "left-bottom", x: 3, y: 1 },
+  );
+  const preview = new EditorPreview({
+    schemaVersion: 1,
+    meta: { name: "Energy 光路预览" },
+    width: 5,
+    height: 3,
+    entities,
+  }, builtinEngineEnvironment);
+
+  assert.deepEqual(
+    preview.renderEntities.all()
+      .filter((entity) => entity.type === "laser-beam")
+      .map((entity) => ({
+        x: entity.anchor.x,
+        y: entity.anchor.y,
+        direction: entity.direction,
+        outgoingDirection: entity.state?.outgoingDirection,
+      })),
+    [
+      { x: 1, y: 1, direction: "right", outgoingDirection: undefined },
+      { x: 2, y: 1, direction: "right", outgoingDirection: undefined },
+      { x: 3, y: 1, direction: "right", outgoingDirection: "down" },
+      { x: 3, y: 2, direction: "down", outgoingDirection: undefined },
+    ],
   );
 });
 

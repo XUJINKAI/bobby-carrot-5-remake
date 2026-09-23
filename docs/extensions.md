@@ -24,6 +24,32 @@ Portal 由 Engine 和 Editor 共用 Canvas 绘制入口生成三帧循环的发�
 
 Novoban 和 LOMA 的 XSB 地图由 `tools/custom/sokoban-xsb.mjs` 转换。地形素材填写在 `tools/custom/pushbox-terrain-table.mjs`：顶层键各定义一个主题，名称仅用于辨认主题，不参与随机选材；每个主题分别填写 `ground`、`boundary`、`obstacle` 素材数组。`ground` 是普通可行走格，`boundary` 填充地图最外一圈的矩形边框，`obstacle` 填充其余墙格和原本连通地图外部的空格。外部空格保持阻挡语义，箱子、目标和 Bobby 的原始坐标保持不变。单一形态的 Surface 可以填写语义名称，如 `sand`、`stump`、`rock`；`snow` 是可用于边框和阻挡的单格对象；有多个形态的 Surface 填写具体 `ts-行-列` 坐标。地图使用固定种子和 collection/map ID 选定一个主题，再按格子坐标从该主题的各类素材中选材；同一地图重新生成时结果保持一致。素材应在 Model 视觉目录登记，并保持所属类别的通行语义。
 
+## 激光石头
+
+`laser-stone` 是 Robo 2 激光机关中的单格阻挡 Entity，通过 Engine 的通用 `pushable` 语义参与推动，并使用 JAR 中的 `stone.png` 原图。它与 Bobby Carrot 5 的 `crumbly-rock` 保持独立身份，炸弹只把 `laser-stone` 视为爆破目标。
+
+## 激光炮
+
+`laser-cannon` 使用必填 `direction` 字段声明固定发射方向。Engine 从炮口相邻格开始投影激光，遇到首个阻挡对象、Exit 或 Bobby Carrot 5 Mirror 时终止；Bobby 进入激光格约八成时死亡。激光炮是单格可推动阻挡对象，从侧面或背面推动后保持发射方向，并从新位置重新投影光束。四个方向分别使用 Robo 2 JAR 中的 `laserUp/Right/Down/Left.png`，按原图 `14px` 基准居中缩放到单格范围；光束格由 Engine 作为 Runtime Entity 派生，不写回 `LevelMap`。
+
+光束在红、蓝、紫三色之间连续循环，并同步改变线宽。每门激光炮以稳定 `sourceId` 派生自己的相位、周期和粗细节奏，同一门激光炮经过镜面反射后的全部线段始终保持一致；这组参数只属于 Presentation，不进入地图格式、World 状态或伤害判定。Editor 复用 Engine Visual 的固定相位显示光路，地图 revision 改变时才重画底图；动态渐变只在 Play Test 和正式 gameplay 中播放。
+
+地图加载时已经覆盖 Bobby 起点的既有光路提供一次离开机会；Bobby 主动进入光路，或机关变化后光路重新投影到 Bobby 所在格，都会触发死亡。重新投影按来源炮与语义线段增量同步 Runtime Entity，未变化的线段保留 Entity identity；新出现的线段覆盖静止 Bobby 时立即结算，覆盖正在进入该格的 Bobby 时仍在移动进度 `0.8` 结算。这个边界允许 Robo 2 来源地图保留原始起点，同时不削弱运行中的激光危险。
+
+`laser-mirror` 是可推动的双面反射镜，使用必填 `variant` 区分两种对角线。`slash`（`/`）按 `up ↔ right`、`down ↔ left` 反射；`backslash`（`\`）按 `up ↔ left`、`down ↔ right` 反射。光路通过镜面后继续投影，循环光路在相同格子和入射方向再次出现时终止追踪。
+
+镜面位于带脚点深度排序的 `standing` pass：反光面可以覆盖指定方向的入射光，Bobby 与镜面相邻时则按双方脚点决定前后关系。
+
+激光命中另一个 `laser-cannon` 时摧毁目标激光炮及其光束。若两门激光炮互相照射，它们在同一个 World tick 中一起摧毁；其它激光炮随后按更新后的阻挡布局重新投影。
+
+激光炮和所属光束在 gameplay 中立即销毁，并把销毁前的完整光路快照交给 Presentation。表现层以 `100ms` 为一相位，按亮、灭、亮完成三次明暗切换后消失，总时长 `300ms`。激光炮与光束始终使用同一相位；进入光束格后由非阻塞 RuntimeAction 等待到移动进度 `0.8`，Action 归属来源炮，结算时再次确认当前语义光路仍包含接触线段，因此光束 Entity 同步和遗留表现都不会改变伤害时点。
+
+`laser-bomb` 是使用 Robo 2 `bombTickTick.png` 原图的可推动阻挡对象。激光命中后先播放六帧 `bombExplode.png` 起爆动画；这个 `600ms` 阶段不销毁炸弹或周围对象。起爆完成时才结算中心以及上、右、下、左相邻格中的 `laser-stone`、`laser-mirror` 和 `laser-cannon`，并在十字范围播放六帧 `explosion.png`。对角格、其它 Entity 与 Surface 保持不变，不可摧毁的阻挡对象会在边界截去对应方向的爆炸范围。
+
+炸弹在格子边界阻断激光，同一条光路只会直接命中第一颗。一次光路更新中分别被不同光路命中的炸弹各自开始并行的 `600ms` 起爆计时；直线串联的相邻炸弹仍在前一颗结算十字爆炸后逐颗起爆。World 级调度器在多条爆炸前沿汇合时只登记一次目标炸弹。连锁期间 Bobby、WorldMotion 与其它机关继续推进；每颗炸弹的起爆状态与计时进入 World Snapshot、Undo 和 Replay。
+
+同一 World 的全部激光炮由单个 Runtime 激光调度器统一更新。每个 World tick 中，每门激光炮只追踪一次光路；命中激光炮、启动炸弹链、同步光束 Entity 与机关变化后的伤害复用该次追踪结果。
+
 ## 最大步数
 
 地图可在 `LevelMap.rules` 声明最大步数：

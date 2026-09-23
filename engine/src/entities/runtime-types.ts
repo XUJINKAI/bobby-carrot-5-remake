@@ -8,4 +8,6 @@ export const RuntimeEntityTypeId = {
   BEANSTALK_BASE: "beanstalk-base",
   BEAN_SPROUT: "bean-sprout",
   TIMED_CHALLENGE: "timed-challenge",
+  LASER_BEAM: "laser-beam",
+  LASER_SYSTEM: "laser-system",
 } as const satisfies Record<string, EntityType>;

@@ -176,8 +176,13 @@ const crumblyRockDefinition: EntityModuleDefinition = {
   presentation: { name: "Crumbly Rock" },
 };
 
+export const crumblyRockVisual = atlasVisual(
+  crumblyRockDefinition,
+  tileCell(MapEntityTypeId.CRUMBLY_ROCK),
+);
+
 export const crumblyRock: EntityModule = originalModule(
   crumblyRockDefinition,
-  atlasVisual(crumblyRockDefinition, tileCell(MapEntityTypeId.CRUMBLY_ROCK)),
+  crumblyRockVisual,
   [{ behavior: smashCrumblyRock }],
 );

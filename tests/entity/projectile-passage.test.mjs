@@ -61,21 +61,25 @@ test("Fireball stops when the target terrain is outside its propagation domain",
   assert.ok(result.events.some((event) => event.type === "fireball-impact"));
 });
 
-test("Fireball 可经过完整原版地形域中的商店格、Shovel 和独立 High Grass", () => {
+test("Fireball 可经过原版传播域中的商店格、Shovel、High Grass 和 Fence", () => {
   const targets = [
-    MapEntityTypeId.SHOP_EMPTY,
-    MapEntityTypeId.SHOVEL_PICKUP,
-    MapEntityTypeId.SHOP_DREAM_MACHINE_TICKET,
-    MapEntityTypeId.LOCK_KEY,
-    MapEntityTypeId.HIGH_GRASS,
+    { type: MapEntityTypeId.SHOP_EMPTY },
+    { type: MapEntityTypeId.SHOVEL_PICKUP },
+    { type: MapEntityTypeId.SHOP_DREAM_MACHINE_TICKET },
+    { type: MapEntityTypeId.LOCK_KEY },
+    { type: MapEntityTypeId.HIGH_GRASS },
+    { type: MapEntityTypeId.FENCE, needsGround: true },
   ];
-  for (const type of targets) {
+  for (const { type, needsGround = false } of targets) {
     const world = new World({
       schemaVersion: 1,
       width: 2,
       height: 1,
       entities: [
         { type: "grass", variant: "ts-10-1", x: 0, y: 0 },
+        ...(needsGround
+          ? [{ type: "grass", variant: "ts-10-1", x: 1, y: 0 }]
+          : []),
         { type, x: 1, y: 0 },
         { type: RuntimeEntityTypeId.FIREBALL, x: 0, y: 0, direction: "right" },
       ],

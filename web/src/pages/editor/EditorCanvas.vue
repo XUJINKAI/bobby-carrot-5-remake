@@ -67,7 +67,7 @@ function render(): void {
     stage.value.style.width = `${props.level.width * EDITOR_TILE_SIZE}px`;
     stage.value.style.height = `${props.level.height * EDITOR_TILE_SIZE}px`;
   }
-  renderer?.render(renderState());
+  renderer?.render(renderState(), 0);
 }
 
 function scheduleRender(base: boolean): void {

@@ -29,6 +29,13 @@ if (
   )
 )
   throw new Error("生产 collection index 不应展示开发集合 original-patch");
+if (collectionsIndex.collections.at(-1)?.id !== "engine-lab")
+  throw new Error("Engine Lab 必须位于 collection discovery index 末尾");
+const robo2Summary = collectionsIndex.collections.find(
+  (collection) => collection.id === "robo2",
+);
+if (robo2Summary?.name !== "Robo2")
+  throw new Error("Robo2 collection 必须使用固定展示名称");
 
 const cardSizes = new Set(["small", "medium", "big"]);
 const collectionIndexes = collectionsIndex.collections.map((summary) => {
@@ -99,16 +106,18 @@ if (!engineLab) throw new Error("缺少 Engine Lab collection");
 if (engineLab.cardSize !== "medium")
   throw new Error("Engine Lab collection cardSize 必须为 medium");
 if (engineLab.chapters.length !== 0 || engineLab.maps.length !== 2)
-  throw new Error("Engine Lab 必须包含两张根目录地图");
+  throw new Error("Engine Lab 必须包含两张根目录地图且不声明 chapter");
 if (
   engineLab.maps[0]?.id !== "00-intro" ||
   engineLab.maps[1]?.id !== "01-control2" ||
-  engineLab.maps.some((map) => map.chapter)
+  engineLab.maps[0]?.chapter !== undefined ||
+  engineLab.maps[1]?.chapter !== undefined
 ) {
   throw new Error("Engine Lab 地图顺序必须为 intro、control2");
 }
 assertLomaCollection(collectionIndexes);
 assertNovobanCollection(collectionIndexes);
+assertRobo2Collection(collectionIndexes);
 
 const expectedFirstChapter = [
   "1-1",
@@ -270,6 +279,82 @@ function assertNovobanCollection(collections) {
     )
   )
     throw new Error("Novoban 07 必须把 XSB + 保留为 Bobby 位于 push-goal 上");
+}
+
+function assertRobo2Collection(collections) {
+  const robo2 = collections.find((collection) => collection.id === "robo2");
+  if (!robo2) throw new Error("缺少 Robo 2 collection");
+  if (robo2.name !== "Robo2") {
+    throw new Error("Robo2 collection index 必须使用固定展示名称");
+  }
+  if (robo2.cardSize !== "medium") {
+    throw new Error("Robo 2 collection cardSize 必须为 medium");
+  }
+  if (robo2.chapters.length !== 0 || robo2.maps.length !== 25) {
+    throw new Error("Robo 2 必须是无章节的 25 张地图 collection");
+  }
+  if (robo2.maps[0]?.id !== "01" || robo2.maps.at(-1)?.id !== "25") {
+    throw new Error("Robo 2 map 顺序必须保持来源关卡 01~25");
+  }
+
+  const objectTypes = new Set();
+  const mirrorVariants = new Set();
+  const cannonDirections = new Set();
+  for (const map of robo2.maps) {
+    const relative = `assets/maps/robo2/${map.id}.json`;
+    const document = readJson(relative);
+    if (
+      Object.hasOwn(document.meta, "author") ||
+      Object.hasOwn(document.meta, "note")
+    ) {
+      throw new Error(`${relative}: 不应生成作者或注记`);
+    }
+    if (document.music !== "robo2/menu") {
+      throw new Error(`${relative}: 必须显式使用 Robo 2 菜单音乐`);
+    }
+    const bobbies = document.entities.filter((entity) => entity.type === "bobby");
+    const exits = document.entities.filter((entity) => entity.type === "exit");
+    const surfaces = document.entities.filter((entity) =>
+      entity.stackOrder !== 1
+    );
+    if (bobbies.length !== 1 || exits.length !== 1) {
+      throw new Error(`${relative}: 必须恰好包含一个 Bobby 和一个 Exit`);
+    }
+    if (surfaces.length !== document.width * document.height) {
+      throw new Error(`${relative}: 每格必须恰好包含一个基础 Surface`);
+    }
+    if (
+      JSON.stringify(document.rules?.win) !==
+      JSON.stringify({
+        type: "all",
+        conditions: [{ type: "exit" }],
+      })
+    ) {
+      throw new Error(`${relative}: 获胜条件必须是到达 Exit`);
+    }
+    for (const entity of document.entities) {
+      objectTypes.add(entity.type);
+      if (entity.type === "laser-mirror") mirrorVariants.add(entity.variant);
+      if (entity.type === "laser-cannon") {
+        cannonDirections.add(entity.direction);
+      }
+    }
+  }
+
+  for (const type of [
+    "laser-stone",
+    "laser-bomb",
+    "laser-mirror",
+    "laser-cannon",
+  ]) {
+    if (!objectTypes.has(type)) throw new Error(`Robo 2 缺少机关 ${type}`);
+  }
+  if ([...mirrorVariants].sort().join(",") !== "backslash,slash") {
+    throw new Error("Robo 2 必须包含 slash 与 backslash 两种镜面");
+  }
+  if ([...cannonDirections].sort().join(",") !== "down,left,right,up") {
+    throw new Error("Robo 2 必须包含四个方向的激光炮");
+  }
 }
 
 function assertOriginalMapName(map, document, relative) {

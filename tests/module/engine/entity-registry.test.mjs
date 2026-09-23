@@ -100,6 +100,7 @@ test("合并类型的稳定 Map 字段由 Model contract 声明", () => {
   assert.deepEqual(fieldKeys("wind-switch"), ["direction", "active"]);
   assert.deepEqual(fieldKeys("trap"), ["active"]);
   assert.deepEqual(fieldKeys("mirror"), ["variant"]);
+  assert.deepEqual(fieldKeys("laser-mirror"), ["variant"]);
   assert.deepEqual(fieldKeys("carousel"), ["variant"]);
   assert.deepEqual(fieldKeys("color-block"), ["color", "raised"]);
 });

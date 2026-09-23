@@ -26,11 +26,13 @@ stackOrder ASC
 
 ## Presentation：固定 render pass
 
-视觉层序属于 Presentation。Entity 的 `VisualDefinition.renderPass` 只有 `world / standing /
-effect` 三种；Renderer 在三个 Entity pass 后追加 Callout，再由 Canvas 外的 DOM 显示 HUD：
+视觉层序属于 Presentation。Entity 的 `VisualDefinition.renderPass` 只有 `world /
+world-effect / standing / effect` 四种；Renderer 在四个 Entity pass 后追加 Callout，再由
+Canvas 外的 DOM 显示 HUD：
 
 ```text
 world
+→ world-effect
 → standing
 → effect
 → callout（Canvas 地图提示）
@@ -38,12 +40,13 @@ world
 ```
 
 - `world`：所有正常世界 Entity，包括地面、目标、道具、机关、障碍、冰块、高草、雪等；这是默认 pass；
+- `world-effect`：位于世界 Entity 之上、直立 Entity 之下的地图内效果，例如激光、爆炸和木板入水动画；
 - `standing`：Bobby 与具有直立遮挡关系的 Entity，按共享脚底锚点进行纵深排序；
 - `effect`：明确属于表现层、需要最后覆盖的环境或视觉效果，不代表任何 gameplay Entity 分类；
 - `callout`：由语义 WorldEvent 产生、锚定 Entity 或格子的纯表现提示；
 - HUD 由 `GameplayHud` 在 DOM 中呈现，不进入 World/Spatial/RenderScene。
 
-`world` 与 `effect` pass 内按完整空间栈的 `stackOrder` 排序。`standing` 先按独立的
+`world`、`world-effect` 与 `effect` pass 内按完整空间栈的 `stackOrder` 排序。`standing` 先按独立的
 `depthY / depthX` 脚底锚点排序，同一锚点才回落到 `stackOrder`。`visualX / visualY` 只决定
 各 Presence 的绘制位置；多格直立 Entity 的所有部位共用 Entity body anchor 的 depth。
 
@@ -70,7 +73,7 @@ Callout 不是 `VisualDefinition.renderPass` 的第四个 Entity pass。它在 E
 ## Editor
 
 Runtime 与 Editor Canvas 都通过纯 `SpatialSceneBuilder` 把 `EntityStore + SpatialIndex`
-投影为 `RenderScene`，共用 VisualRegistry、`world → standing → effect` 分桶、body anchor
-与排序实现。两侧只提供各自的 source/context；Editor 的选择框、堆叠角标与放置 ghost
+投影为 `RenderScene`，共用 VisualRegistry、`world → world-effect → standing → effect`
+分桶、body anchor 与排序实现。两侧只提供各自的 source/context；Editor 的选择框、堆叠角标与放置 ghost
 仍属于 authoring overlay。Editor 的删除、Inspector 与重排读取完整空间栈；Engine gameplay
 统一从同一 `stackOrder` 派生接触栈。

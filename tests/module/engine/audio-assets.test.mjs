@@ -22,6 +22,13 @@ const expectedTracks = [
   "train.ogg",
   "universe.ogg",
 ];
+const expectedRobo2Tracks = [
+  "begin.ogg",
+  "die.ogg",
+  "end.ogg",
+  "intro.ogg",
+  "menu.ogg",
+];
 
 test("modern and 8bit banks expose the same OGG track set", () => {
   for (const style of ["modern", "8bit"]) {
@@ -30,6 +37,16 @@ test("modern and 8bit banks expose the same OGG track set", () => {
       .filter((name) => name.endsWith(".ogg"))
       .sort();
     assert.deepEqual(actual, expectedTracks);
+  }
+});
+
+test("Robo 2 modern and 8bit banks expose the same OGG track set", () => {
+  for (const style of ["modern", "8bit"]) {
+    const actual = fs
+      .readdirSync(path.join(audioRoot, "robo2", style))
+      .filter((name) => name.endsWith(".ogg"))
+      .sort();
+    assert.deepEqual(actual, expectedRobo2Tracks);
   }
 });
 

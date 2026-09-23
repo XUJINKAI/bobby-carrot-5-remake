@@ -23,11 +23,18 @@ const inputDirectories = [
   { path: "model/src", extensions: new Set([".json", ".ts"]) },
   { path: "original/official-hd", extensions: new Set([".jar"]) },
   { path: "tools/original", extensions: new Set([".mjs"]) },
-  { path: "tools/custom", extensions: new Set([".mjs", ".txt"]) },
+  {
+    path: "tools/custom",
+    extensions: new Set([".jar", ".mjs", ".png", ".txt"]),
+  },
   {
     path: "custom-maps",
     extensions: new Set([".json"]),
-    excludedDirectories: new Set(["loma-pushbox", "novoban-pushbox"]),
+    excludedDirectories: new Set([
+      "loma-pushbox",
+      "novoban-pushbox",
+      "robo2",
+    ]),
   },
 ];
 const assetGeneratedDirectories = [
@@ -36,9 +43,11 @@ const assetGeneratedDirectories = [
   "original/adapted",
   "custom-maps/loma-pushbox",
   "custom-maps/novoban-pushbox",
+  "custom-maps/robo2",
   "assets/maps",
   "assets/adventure",
   "assets/art/hd",
+  "assets/art/robo2",
 ];
 
 export function inspectAssetsPrepareCache({

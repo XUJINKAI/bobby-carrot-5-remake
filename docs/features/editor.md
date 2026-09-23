@@ -218,6 +218,8 @@ Camera、Gameplay HUD、Engine Input 与地图音乐选曲。BottomBar 切换为
 
 地图内容与 hover、选区、放置预览使用独立画布。文档更新时重建地图预览；交互更新复用该空间视图，放置预览只实例化待放置对象，并查询叠加替换结果后的邻格。平移与缩放通过共同父层的 CSS transform 更新视口。
 
+Editor 底图通过 Engine 的纯语义光路投影器派生激光 beam，仅把结果加入只读绘制空间。选择、Inspector、放置和 JSON 仍使用原始地图空间，因此 beam 不会成为可编辑 Entity，也不会进入 Draft 或堆叠角标；Play Test Runtime 与 Editor Canvas 共用同一套直线、反射和遮挡计算。
+
 - Bottom Bar 的 Palette / Surface 在两种 authoring UX 之间即时切换；
 - Tab：Palette / Surface 快速切换；
 - Select：单选或矩形多选，不直接绘制；

@@ -74,6 +74,8 @@ Original Bonus 地图显式保存 `music: "shop"`，Lock 打开后的 `bonus` �
 根据地图状态选择；普通关卡省略 `music`，由播放页面在 `ingame0..2` 中随机选择。
 5 个 Special Scene 按原版固定保存地图音乐：Beaver Shop 与 Dream Machine 使用
 `shop`，Cloud 9、Dreamland Reward 与 Campaign Intro 使用 `sandman`。
+Robo 2 的 25 张地图显式保存 `music: "robo2/menu"`；默认随机池继续只包含 Original
+的 `ingame0..2`。
 
 filter option 的 Gameplay 图标使用统一 Entity preview descriptor，不区分 Original/Custom，也不区分 Terrain/Object。每个 option 通过 `icons` 数组按顺序提供一个或多个图标：
 
@@ -150,8 +152,9 @@ Adventure 不拥有地图内容；它引用 `assets/maps/` 下的 MapDocument。
 生成型 custom map 目录必须加入 `.gitignore`，不能手工修改生成文件。`assets prepare`
 根据生成器、Model 合同、手写地图与运行模式的 SHA-256 复用完整生成结果；输入变化、
 生成文件缺失或执行 `assets rebuild` 时，先清理明确登记的生成目录，再从唯一源重新生成。
-10 个只读原版高清 JAR 作为 extract 的源输入参与缓存指纹；生成物文件清单只用于完整性
-检查，不把 Replay 写入的 `verified` 当作输入变化。
+10 个只读原版高清 JAR 与 Robo2 源 JAR 作为 extract 的源输入参与缓存指纹；
+`custom-maps/robo2/` 与 `assets/art/robo2/` 作为生成目录参与完整性检查。
+生成物内容本身不作为输入，因此地图重新生成或 Replay 写入 `verified` 不会造成缓存失效。
 
 LOMA Pushbox 使用：
 
@@ -180,6 +183,23 @@ assets/maps/novoban-pushbox/<map-id>.json
 ```
 
 Novoban 的 50 张地图按源文件顺序生成 `01` ～ `50`；原注释标题成为地图展示名，作者统一保留为 François Marques。版权与来源边界见根目录 `THIRD_PARTY_ASSETS.md`。
+
+Robo 2 使用受 Git 管理的原始 J2ME 包作为唯一地图源，并允许明确登记的美术覆盖文件进入同一个生成流程：
+
+```text
+tools/custom/robo2/
+  ├─ robo2.jar ───────────┬─→ extract.mjs
+  └─ overrides/*.png ─────┘       ↓
+  │                     assets/art/robo2/*.png  # ignored / generated
+  └─ robo2.jar ─────────────→ generate.mjs
+                                ↓
+                     custom-maps/robo2/*.json   # ignored / generated
+                                ↓ tools/custom/prepare.mjs
+                     assets/maps/robo2/index.json
+                     assets/maps/robo2/<map-id>.json
+```
+
+地图生成器与图片提取器都校验固定 JAR SHA-256。来源工具边界负责 JAR byte、列优先格子、半字节 tile code、原始图片 entry 与登记的美术覆盖文件；Engine 只消费语义地图与已注册的图片资源 ID。Robo 2 JAR、关卡、美术及转换结果的版权边界见根目录 `THIRD_PARTY_ASSETS.md`。
 
 LOMA 与 Novoban 的 XSB 字符转换由 `tools/custom/sokoban-xsb.mjs` 统一负责。每张地图从
 `PUSHBOX_TERRAIN_TABLE` 稳定选择一个主题，并按 `ground / boundary / obstacle` 类别与坐标

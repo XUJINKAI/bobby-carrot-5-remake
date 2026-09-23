@@ -65,6 +65,7 @@ export {
 } from "./time/WorldClock.js";
 export {
   AudioRuntime,
+  resolveMusicUrl,
   resolveOriginalMusicUrl,
   type MusicInteractionRequiredListener,
   type AudioRuntimeOptions,
@@ -93,6 +94,20 @@ export {
   ORIGINAL_GAMEPLAY_IMAGE_SLICES,
   type OriginalGameplayImageFile,
 } from "./image/OriginalGameplayImages.js";
+export {
+  registerRobo2GameplayImages,
+  ROBO2_GAMEPLAY_IMAGE_FILES,
+  ROBO2_GAMEPLAY_IMAGE_IDS,
+  type Robo2GameplayImageFile,
+} from "./image/Robo2GameplayImages.js";
+export {
+  laserBeamSpawnSpecs,
+  projectLaserRays,
+  traceLaserRay,
+  type LaserRayProjection,
+  type LaserRayQuery,
+  type LaserRaySegment,
+} from "./entities/robo2/laser-cannon.js";
 export {
   prepareCanvas,
   resolveDevicePixelRatio,

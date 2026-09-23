@@ -168,6 +168,8 @@ test("Editor 合并高频持久化与 Canvas 重绘", () => {
   assert.match(pageState, /onUnmounted\([\s\S]*flushAutosave\(\)/);
   assert.match(canvas, /requestAnimationFrame\(flushRender\)/);
   assert.match(canvas, /if \(baseRenderPending\) render\(\)/);
+  assert.match(canvas, /renderer\?\.render\(renderState\(\), 0\)/);
+  assert.doesNotMatch(canvas, /animateLasers|hasAnimatedLasers/);
   assert.match(canvas, /cancelAnimationFrame\(renderFrame\)/);
 });
 

@@ -87,6 +87,18 @@ export const BUILTIN_PALETTE_DEFINITION: EditorPaletteDefinition = {
           { type: MapEntityTypeId.LOCK_KEY },
         ],
         [
+          { type: MapEntityTypeId.LASER_STONE },
+          {
+            type: MapEntityTypeId.LASER_CANNON,
+            fields: { direction: "right" },
+          },
+          {
+            type: MapEntityTypeId.LASER_MIRROR,
+            fields: { variant: "slash" },
+          },
+          { type: MapEntityTypeId.LASER_BOMB },
+        ],
+        [
           {
             type: MapEntityTypeId.PORTAL,
             fields: { channel: "blue", color: "#54e8ff" },

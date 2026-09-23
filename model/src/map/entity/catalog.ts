@@ -197,6 +197,11 @@ const CORE_ENTITY_DEFINITIONS: readonly EntityMapDefinition[] = [
   defineEntity(MapEntityTypeId.LEAF),
   defineEntity(MapEntityTypeId.CRUMBLY_ROCK),
   defineEntity(
+    MapEntityTypeId.LASER_STONE,
+    [],
+    "Robo 2 激光机关中的可推动、可爆破石头。",
+  ),
+  defineEntity(
     MapEntityTypeId.PUSHABLE_BOX,
     [],
     "Sokoban box with pushability defined by its type rather than per-map traits.",
@@ -223,6 +228,29 @@ const CORE_ENTITY_DEFINITIONS: readonly EntityMapDefinition[] = [
     ),
   ]),
   defineEntity(MapEntityTypeId.PUSH_GOAL),
+  defineEntity(
+    MapEntityTypeId.LASER_CANNON,
+    [enumField("direction", DIRECTIONS, undefined, true, "激光发射方向。")],
+    "沿固定方向持续发射激光的单格机关。",
+  ),
+  defineEntity(
+    MapEntityTypeId.LASER_MIRROR,
+    [
+      enumField(
+        "variant",
+        ["slash", "backslash"],
+        "slash",
+        true,
+        "双面激光镜的对角线方向。",
+      ),
+    ],
+    "沿两种对角线双面反射激光的可推动单格机关。",
+  ),
+  defineEntity(
+    MapEntityTypeId.LASER_BOMB,
+    [],
+    "被激光引爆并按十字范围摧毁对象的可推动单格机关。",
+  ),
 ];
 
 const definitions = [...SURFACE_ENTITY_DEFINITIONS, ...CORE_ENTITY_DEFINITIONS];

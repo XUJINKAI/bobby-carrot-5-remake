@@ -5,18 +5,18 @@
 运行时音乐只使用预转换 OGG，不保留 MIDI 播放链：
 
 ```text
-assets/audio/original/
-├── modern/
-│   ├── title.ogg
-│   ├── ingame0.ogg
-│   └── ...
-└── 8bit/
-    ├── title.ogg
-    ├── ingame0.ogg
-    └── ...
+assets/audio/
+├── original/
+│   ├── modern/
+│   └── 8bit/
+└── robo2/
+    ├── modern/
+    └── 8bit/
 ```
 
-`modern` 与 `8bit` 必须具有完全相同的曲目 ID。地图只保存语义音乐 ID，例如 `title`、`ingame1`、`bonus`，不知道文件格式和音乐风格。
+每个音乐库的 `modern` 与 `8bit` 必须具有完全相同的曲目 ID。地图只保存语义音乐 ID，
+例如 `title`、`ingame1`、`bonus` 与 `robo2/menu`，不知道文件格式和音乐风格。未带来源
+命名空间的 ID 属于 Original 音乐库；`robo2/` ID 从相邻的 Robo 2 音乐库解析。
 
 ## Engine ownership
 
@@ -34,6 +34,8 @@ assets/audio/original/
 `LevelMusicController` 负责一局地图的基础曲目、机关覆盖与终局曲目。`won / dead` 分别选择
 一次性 `cleared / death`；Restart、Undo 与 Replay 恢复游玩状态时重新选择当前地图音乐。
 `runtime.outcomeMusic` 可以按 `won / dead` 关闭终局曲目，适合完成后直接进入产品导航的场景。
+默认随机音乐池固定为 Original 的 `ingame0..2`；Robo 2 地图显式使用循环播放的
+`robo2/menu`，其它地图不会因 Robo 2 音乐库存在而改变选曲。
 
 ## 产品层职责
 

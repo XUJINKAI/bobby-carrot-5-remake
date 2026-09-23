@@ -30,7 +30,9 @@ const LOOPING_TRACKS = new Set([
   "sandman",
   "train",
   "universe",
+  "robo2/menu",
 ]);
+const ROBO2_MUSIC_PREFIX = "robo2/";
 
 /** Engine-owned browser audio runtime for original OGG music and lightweight SFX. */
 export class AudioRuntime implements AudioBackend {
@@ -327,7 +329,7 @@ export class AudioRuntime implements AudioBackend {
     if (cached) return cached;
     const promise = this.ensureContext().then(async (context) => {
       const response = await fetch(
-        resolveOriginalMusicUrl(this.baseUrl, style, id),
+        resolveMusicUrl(this.baseUrl, style, id),
       );
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       return context.decodeAudioData(await response.arrayBuffer());
@@ -377,6 +379,25 @@ export class AudioRuntime implements AudioBackend {
     if (!this.musicGainNode) throw new Error("Audio runtime not initialized");
     return this.musicGainNode;
   }
+}
+
+/**
+ * `baseUrl` 指向 Original 音乐库；带来源命名空间的曲目从其相邻音乐库解析。
+ * 地图只保存语义 ID，不接触发布目录结构。
+ */
+export function resolveMusicUrl(
+  baseUrl: string | URL,
+  style: MusicStyle,
+  id: string,
+): string {
+  if (id.startsWith(ROBO2_MUSIC_PREFIX)) {
+    const track = id.slice(ROBO2_MUSIC_PREFIX.length);
+    return new URL(
+      `../robo2/${style}/${encodeURIComponent(track)}.ogg`,
+      normalizeBaseUrl(baseUrl),
+    ).href;
+  }
+  return resolveOriginalMusicUrl(baseUrl, style, id);
 }
 
 export function resolveOriginalMusicUrl(

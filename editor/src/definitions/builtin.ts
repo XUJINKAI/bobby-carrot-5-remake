@@ -29,6 +29,10 @@ const horizontalDirections: readonly EditorEntityVariant[] = [
   { fields: { direction: "right" }, label: "right" },
   { fields: { direction: "left" }, label: "left" },
 ];
+const laserMirrorVariants: readonly EditorEntityVariant[] = [
+  { fields: { variant: "slash" }, label: "/" },
+  { fields: { variant: "backslash" }, label: "\\" },
+];
 const cornerVariants: readonly EditorEntityVariant[] = [
   { fields: { variant: "right-top" }, label: "rt" },
   { fields: { variant: "right-bottom" }, label: "rb" },
@@ -109,6 +113,10 @@ const paletteOccupantTypes: readonly EntityType[] = [
   MapEntityTypeId.BEAN_FIELD,
   MapEntityTypeId.WHIRLWIND,
   MapEntityTypeId.PUSHABLE_BOX,
+  MapEntityTypeId.LASER_STONE,
+  MapEntityTypeId.LASER_CANNON,
+  MapEntityTypeId.LASER_MIRROR,
+  MapEntityTypeId.LASER_BOMB,
   MapEntityTypeId.DRAGON,
   MapEntityTypeId.WINDMILL,
   MapEntityTypeId.BEAVER,
@@ -201,6 +209,16 @@ export const builtinEditorDefinition: EditorDefinition = {
       ...occupant,
       defaultFields: { direction: "right" },
       variants: directions,
+    },
+    [MapEntityTypeId.LASER_CANNON]: {
+      ...occupant,
+      defaultFields: { direction: "right" },
+      variants: directions,
+    },
+    [MapEntityTypeId.LASER_MIRROR]: {
+      ...occupant,
+      defaultFields: { variant: "slash" },
+      variants: laserMirrorVariants,
     },
     [MapEntityTypeId.TIDE_SWITCH]: {
       ...floorFeature,

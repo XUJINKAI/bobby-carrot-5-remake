@@ -73,6 +73,7 @@ export const MapEntityTypeId = {
   BEAVER: "beaver",
   LEAF: "leaf",
   CRUMBLY_ROCK: "crumbly-rock",
+  LASER_STONE: "laser-stone",
   PUSHABLE_BOX: "pushable-box",
   KITE: "kite",
   WHIRLWIND: "whirlwind",
@@ -81,6 +82,9 @@ export const MapEntityTypeId = {
   BONUS_COIN: "bonus-coin",
   PORTAL: "portal",
   PUSH_GOAL: "push-goal",
+  LASER_CANNON: "laser-cannon",
+  LASER_MIRROR: "laser-mirror",
+  LASER_BOMB: "laser-bomb",
 } as const satisfies Record<string, EntityType>;
 
 export type NamedMapEntityType =

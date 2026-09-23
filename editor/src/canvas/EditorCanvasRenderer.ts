@@ -65,7 +65,7 @@ export class EditorCanvasRenderer {
     await this.images.preload();
   }
 
-  render(state: EditorCanvasRenderState): void {
+  render(state: EditorCanvasRenderState, nowMs = 0): void {
     const { level } = state;
     const cssWidth = level.width * EDITOR_TILE_SIZE;
     const cssHeight = level.height * EDITOR_TILE_SIZE;
@@ -93,13 +93,20 @@ export class EditorCanvasRenderer {
     const preview = editorPreviewFor(level, this.environment);
     this.preview = preview;
     const source = createIndexedSpatialSceneSource(
-      preview.entities,
-      preview.spatial,
+      preview.renderEntities,
+      preview.renderSpatial,
       this.environment.catalog.entities,
     );
     const scene = buildSpatialScene({
       source,
       visuals: this.environment.visuals,
+      context: {
+        time: {
+          frame: Math.floor(nowMs / (1000 / 60)),
+          nowMs,
+          deltaMs: 0,
+        },
+      },
       resolveVisual: (definition, resolveContext) => {
         const editorVisual = definition.placeholder === "unknown"
           ? undefined
@@ -120,7 +127,12 @@ export class EditorCanvasRenderer {
         if (paletteCount >= 2) stackBadges.push({ x, y, count: paletteCount });
       }
     }
-    for (const pass of ["world", "standing", "effect"] as const) {
+    for (const pass of [
+      "world",
+      "worldEffect",
+      "standing",
+      "effect",
+    ] as const) {
       const items = scene[pass];
       for (const item of items)
         drawVisualComposition(

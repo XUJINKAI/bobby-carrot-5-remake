@@ -5,6 +5,8 @@ import {
   ORIGINAL_GAMEPLAY_HUD_SLICE_IDS,
   ORIGINAL_GAMEPLAY_IMAGE_FILES,
   ORIGINAL_GAMEPLAY_IMAGE_IDS,
+  registerRobo2GameplayImages,
+  ROBO2_GAMEPLAY_IMAGE_FILES,
 } from "../../../engine/dist/public.js";
 
 test("原版 Gameplay 图片工厂提供完整语义资源合同", () => {
@@ -41,4 +43,18 @@ test("原版 Gameplay 图片工厂提供完整语义资源合同", () => {
       images.sliceDefinition(sliceId).source,
       ORIGINAL_GAMEPLAY_IMAGE_IDS.hudAtlas,
     );
+});
+
+test("Robo 2 Gameplay 图片按独立资源根注册", () => {
+  const images = createOriginalGameplayImageManager(
+    (file) => `/assets/art/hd/${file}`,
+  );
+  registerRobo2GameplayImages(
+    images,
+    (file) => `/assets/art/robo2/${file}`,
+  );
+
+  for (const [id, file] of Object.entries(ROBO2_GAMEPLAY_IMAGE_FILES)) {
+    assert.equal(images.source(id), `/assets/art/robo2/${file}`);
+  }
 });

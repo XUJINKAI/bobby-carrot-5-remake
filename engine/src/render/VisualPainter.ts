@@ -103,13 +103,19 @@ function drawImageLayer(
     return;
   }
 
-  const scale = tileSize / images.sourceTileSize;
+  const scale = tileSize / (
+    positiveInteger(layer.sourceTileSize) ?? images.sourceTileSize
+  );
   const drawWidth = frameWidth * scale;
   const drawHeight = frameHeight * scale;
-  const drawX =
-    cell.x + cell.width / 2 - drawWidth / 2 + (layer.offsetX ?? 0) * scale;
+  const drawX = (layer.anchor === "top-left"
+    ? cell.x
+    : cell.x + cell.width / 2 - drawWidth / 2) +
+    (layer.offsetX ?? 0) * scale;
   const drawY =
-    (layer.anchor === "center"
+    (layer.anchor === "top-left"
+      ? cell.y
+      : layer.anchor === "center"
       ? cell.y + cell.height / 2 - drawHeight / 2
       : cell.y + cell.height - drawHeight) +
     (layer.offsetY ?? 0) * scale;

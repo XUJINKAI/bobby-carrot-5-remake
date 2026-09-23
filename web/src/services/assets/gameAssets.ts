@@ -1,5 +1,6 @@
 import {
   createOriginalGameplayImageManager,
+  registerRobo2GameplayImages,
   type ImageManager,
 } from "@bobby/engine";
 
@@ -18,5 +19,8 @@ export function createImageManager(): ImageManager {
   images.registerSource("original-title", siteUrl("assets/art/hd/title.png"));
   images.registerSource("original-train", siteUrl("assets/art/hd/train.png"));
   images.registerSource("original-misc", siteUrl("assets/art/hd/misc.png"));
+  registerRobo2GameplayImages(images, (file) =>
+    siteUrl(`assets/art/robo2/${file}`)
+  );
   return images;
 }
