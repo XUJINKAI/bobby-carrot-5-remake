@@ -31,7 +31,7 @@ test("Explore collection 文案按 ID 本地化并支持可选 tag", () => {
   assert.match(exploreTabs, /tag: collectionTag\(collection\.id\)/);
   assert.match(exploreTabs, /v-if="collection\.tag"/);
   assert.match(exploreTabs, /justify-content:\s*center/);
-  assert.match(exploreTabs, /min-height:\s*70px/);
+  assert.match(exploreTabs, /min-height:\s*65px/);
   assert.match(
     exploreTabs,
     /\.explore-tab-name\s*\{[^}]*font-size:\s*1\.1rem[^}]*font-weight:\s*800/s,
