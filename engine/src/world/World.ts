@@ -525,8 +525,19 @@ export class World {
     requests: readonly EntityMotionRequest[],
     result: WorldStepResult,
   ): void {
+    const sourceDurations = new Map<EntityId, number>();
     for (const request of requests) {
-      const durationMs = this.durationForMotion(request);
+      if (request.cause.type === "push") continue;
+      sourceDurations.set(request.entityId, this.durationForMotion(request));
+    }
+    for (const request of requests) {
+      // 同一事务中的被推动对象必须跟随推动者的实际 cadence；否则调整
+      // Bobby locomotion 后，两条 motion 会在不同时间结束并持续阻塞输入。
+      const durationMs = request.cause.type === "push"
+        ? sourceDurations.get(request.cause.sourceEntityId) ??
+          this.durationForMotion(request)
+        : sourceDurations.get(request.entityId) ??
+          this.durationForMotion(request);
       const motion = this.movement.start(
         request,
         durationMs,
