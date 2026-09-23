@@ -250,6 +250,47 @@ test("激光引爆炸弹后摧毁十字范围内的石头、镜面与激光炮",
   );
 });
 
+test("炸弹十字爆炸覆盖 Bobby 所在格并将其击倒", () => {
+  const entities = filledGround(5, 5);
+  entities.push(
+    { type: MapEntityTypeId.LASER_CANNON, direction: "down", x: 2, y: 0 },
+    { type: MapEntityTypeId.LASER_BOMB, x: 2, y: 2 },
+    { type: MapEntityTypeId.BOBBY, x: 3, y: 2 },
+  );
+  const world = new World({
+    schemaVersion: 1,
+    width: 5,
+    height: 5,
+    entities,
+  });
+  const actor = world.query.entitiesWithFact("player")[0];
+
+  world.update({ tick: 0, stepMs: 16 });
+
+  assert.equal(world.actorLifecycle(actor.id).phase, "active");
+
+  const result = world.update({
+    tick: 1,
+    stepMs: LASER_BOMB_IGNITION_DURATION_MS,
+  });
+  const explosion = result.events.find((event) =>
+    event.type === "laser-bomb-exploded"
+  );
+
+  assert.equal(world.actorLifecycle(actor.id).phase, "downed");
+  assert.equal(
+    world.actorLifecycle(actor.id).reason,
+    "laser-bomb-explosion",
+  );
+  assert.deepEqual(explosion?.data?.cells, [
+    { x: 0, y: 0 },
+    { x: 0, y: -1 },
+    { x: 1, y: 0 },
+    { x: 0, y: 1 },
+    { x: -1, y: 0 },
+  ]);
+});
+
 test("相邻炸弹逐颗连锁引爆，期间 Bobby 仍可移动", () => {
   const entities = filledGround(5, 5);
   entities.push(

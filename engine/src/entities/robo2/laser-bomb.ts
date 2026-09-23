@@ -35,6 +35,7 @@ export interface LaserExplosion {
   bombId: EntityId;
   center: CellPosition;
   cells: readonly CellPosition[];
+  actorIds: readonly EntityId[];
   targetIds: ReadonlySet<EntityId>;
   chainedBombIds: readonly EntityId[];
 }
@@ -108,6 +109,7 @@ const laserBombSchedulerAction: RuntimeActionDefinition = {
     }
 
     const claimedBombIds = new Set(armedBombs.map((bomb) => bomb.id));
+    const downedActorIds = new Set<EntityId>();
     const destroyedTargetIds = new Set<EntityId>();
     for (const bombId of detonatingBombIds.sort(compareEntityIds)) {
       const chainedBombIds = detonateLaserBomb(
@@ -115,6 +117,7 @@ const laserBombSchedulerAction: RuntimeActionDefinition = {
         commands,
         bombId,
         destroyedTargetIds,
+        downedActorIds,
       ) ?? [];
       for (const chainedBombId of chainedBombIds) {
         if (claimedBombIds.has(chainedBombId)) continue;
@@ -207,14 +210,17 @@ export function resolveLaserExplosion(
   const cells = explosionCells(bomb.anchor).filter((cell) =>
     query.inBounds(cell) && !explosionBlockedAt(query, cell, bomb.id)
   );
+  const actors = new Set<EntityId>();
   const destroyed = new Set<EntityId>();
   const chainedBombs = new Set<EntityId>();
   for (const cell of cells) {
     for (const presence of query.presencesAt(cell)) {
       const entity = query.entity(presence.entityId);
-      if (!entity || entity.id === bomb.id || !destructibleTypes.has(entity.type)) {
+      if (!entity || entity.id === bomb.id) {
         continue;
       }
+      if (query.entityHasFact(entity.id, "player")) actors.add(entity.id);
+      if (!destructibleTypes.has(entity.type)) continue;
       if (entity.type === MapEntityTypeId.LASER_BOMB) {
         chainedBombs.add(entity.id);
       } else {
@@ -226,6 +232,7 @@ export function resolveLaserExplosion(
     bombId: bomb.id,
     center: bomb.anchor,
     cells,
+    actorIds: [...actors].sort(compareEntityIds),
     targetIds: destroyed,
     chainedBombIds: [...chainedBombs].sort((left, right) => left - right),
   };
@@ -250,6 +257,7 @@ function explosionBlockedAt(
     const entity = query.entity(presence.entityId);
     if (!entity || entity.id === sourceBombId) return false;
     if (destructibleTypes.has(entity.type)) return false;
+    if (query.entityHasFact(entity.id, "player")) return false;
     return entity.type === MapEntityTypeId.STUMP ||
       presence.facts.includes("blocking");
   });
@@ -271,6 +279,7 @@ function detonateLaserBomb(
   commands: WorldCommandApi,
   bombId: EntityId,
   destroyedTargetIds: Set<EntityId>,
+  downedActorIds: Set<EntityId>,
 ): readonly EntityId[] | null {
   const explosion = resolveLaserExplosion(query, bombId);
   if (!explosion) return null;
@@ -287,6 +296,11 @@ function detonateLaserBomb(
     },
   });
   commands.destroy(explosion.bombId);
+  for (const actorId of explosion.actorIds) {
+    if (downedActorIds.has(actorId)) continue;
+    downedActorIds.add(actorId);
+    commands.downActor(actorId, "laser-bomb-explosion");
+  }
   const beamsBySource = groupLaserBeamsBySource(query);
   for (const targetId of [...explosion.targetIds].sort(compareEntityIds)) {
     if (destroyedTargetIds.has(targetId)) continue;
