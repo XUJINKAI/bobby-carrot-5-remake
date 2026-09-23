@@ -266,9 +266,11 @@ Explore 只读取统一生成的 collection index，不知道该 collection 的�
 ## 生成规则
 
 `npm run assets` 清理 `tmp/assets/` 与已登记的最终生成目录，再通过同一任务图完整重建。
-`assets prepare` 复用逐任务缓存；`npm run dev` 复用同一任务图和 Vite watcher，把连续事件
-按 Producer 合并并串行重建。watcher 直接从任务 `inputs` 推导监听范围和受影响任务。单任务
-使用各自的原子发布边界；manifest 变化触发的完整重建先在隔离目录生成，全部成功后整体
-提交 `assets/`。任务成功后刷新页面；失败时保留上一份完整输出。
+`assets prepare` 复用逐任务缓存；正式 `npm run build` 在隔离目录完整重建，并在同一事务内
+复跑 Replay、写入正式 `verified` 标记，全部成功后才整体提交 `assets/` 与任务缓存。
+`npm run dev` 复用同一任务图和 Vite watcher，把连续事件按 Producer 合并并串行重建。
+watcher 直接从任务 `inputs` 推导监听范围和受影响任务。单任务使用各自的原子发布边界；
+manifest 变化触发的完整重建先在隔离目录生成，并在提交前按 Replay 文件存在性写入开发标记。
+任务成功后刷新页面；失败时保留上一份完整输出。
 
 Original 生产过程可以保留 archive provenance；runtime 地图与 collection 合同统一使用产品语义 ID。

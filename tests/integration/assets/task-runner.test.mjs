@@ -70,12 +70,12 @@ test("原子目录发布失败时保留上一份完整输出", (t) => {
   );
 });
 
-test("完整资产重建失败时继续使用上一份 assets", (t) => {
+test("完整资产重建失败时继续使用上一份 assets", async (t) => {
   const repositoryRoot = fixture(t);
   write(repositoryRoot, "assets/maps/value.txt", "previous");
   write(repositoryRoot, "assets/ui/value.txt", "stable");
 
-  assert.throws(() => {
+  await assert.rejects(
     rebuildAssetsTransactionally({
       repositoryRoot,
       runRebuild({ repositoryRoot: transactionRoot }) {
@@ -85,8 +85,9 @@ test("完整资产重建失败时继续使用上一份 assets", (t) => {
         );
         throw new Error("模拟完整重建失败");
       },
-    });
-  }, /模拟完整重建失败/);
+    }),
+    /模拟完整重建失败/,
+  );
 
   assert.equal(
     fs.readFileSync(path.join(repositoryRoot, "assets/maps/value.txt"), "utf8"),
@@ -98,13 +99,13 @@ test("完整资产重建失败时继续使用上一份 assets", (t) => {
   );
 });
 
-test("完整资产重建成功后整体提交 assets 与任务缓存", (t) => {
+test("完整资产重建成功后整体提交 assets 与任务缓存", async (t) => {
   const repositoryRoot = fixture(t);
   write(repositoryRoot, "assets/maps/value.txt", "previous");
   write(repositoryRoot, "assets/ui/value.txt", "stable");
   write(repositoryRoot, "tmp/assets/cache/value.txt", "previous-cache");
 
-  const result = rebuildAssetsTransactionally({
+  const result = await rebuildAssetsTransactionally({
     repositoryRoot,
     runRebuild({ repositoryRoot: transactionRoot }) {
       replaceDirectory(path.join(transactionRoot, "assets/maps"), "next");
@@ -131,6 +132,41 @@ test("完整资产重建成功后整体提交 assets 与任务缓存", (t) => {
       "utf8",
     ),
     "next-cache",
+  );
+});
+
+test("完整资产重建的提交前检查失败时保留上一份输出", async (t) => {
+  const repositoryRoot = fixture(t);
+  write(repositoryRoot, "assets/maps/value.txt", "previous");
+  write(repositoryRoot, "tmp/assets/cache/value.txt", "previous-cache");
+
+  await assert.rejects(
+    rebuildAssetsTransactionally({
+      repositoryRoot,
+      runRebuild({ repositoryRoot: transactionRoot }) {
+        replaceDirectory(path.join(transactionRoot, "assets/maps"), "next");
+        replaceDirectory(
+          path.join(transactionRoot, "tmp/assets/cache"),
+          "next-cache",
+        );
+      },
+      beforeCommit() {
+        throw new Error("模拟 Replay 验真失败");
+      },
+    }),
+    /模拟 Replay 验真失败/,
+  );
+
+  assert.equal(
+    fs.readFileSync(path.join(repositoryRoot, "assets/maps/value.txt"), "utf8"),
+    "previous",
+  );
+  assert.equal(
+    fs.readFileSync(
+      path.join(repositoryRoot, "tmp/assets/cache/value.txt"),
+      "utf8",
+    ),
+    "previous-cache",
   );
 });
 

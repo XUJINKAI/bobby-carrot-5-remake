@@ -64,9 +64,10 @@ export function rebuildAssets(options = {}) {
   return prepareAssets({ ...options, repositoryRoot, force: true });
 }
 
-export function rebuildAssetsTransactionally(options = {}) {
+export async function rebuildAssetsTransactionally(options = {}) {
   const repositoryRoot = options.repositoryRoot ?? root;
   const runRebuild = options.runRebuild ?? rebuildAssets;
+  const beforeCommit = options.beforeCommit ?? (() => {});
   const transactionParent = path.join(repositoryRoot, "tmp");
   fs.mkdirSync(transactionParent, { recursive: true });
   const transactionRoot = fs.mkdtempSync(
@@ -78,12 +79,14 @@ export function rebuildAssetsTransactionally(options = {}) {
     const {
       repositoryRoot: _repositoryRoot,
       runRebuild: _runRebuild,
+      beforeCommit: _beforeCommit,
       ...rebuildOptions
     } = options;
     const result = runRebuild({
       ...rebuildOptions,
       repositoryRoot: transactionRoot,
     });
+    await beforeCommit({ repositoryRoot: transactionRoot });
     commitStagedDirectoryAtomically({
       staged: path.join(transactionRoot, "assets"),
       target: path.join(repositoryRoot, "assets"),

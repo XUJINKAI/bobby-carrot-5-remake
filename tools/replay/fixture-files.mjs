@@ -4,8 +4,8 @@ import { root } from "../lib/fs.mjs";
 
 export const replayRoot = path.join(root, "assets/replays");
 
-export function replayFixtureFiles() {
-  return listFiles(replayRoot);
+export function replayFixtureFiles(repositoryRoot = root) {
+  return listFiles(path.join(repositoryRoot, "assets/replays"));
 }
 
 function listFiles(directory) {
