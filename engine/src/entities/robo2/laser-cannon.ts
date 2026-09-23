@@ -18,8 +18,11 @@ import { RuntimeEntityTypeId } from "../runtime-types.js";
 import { armLaserBombs, startLaserBombScheduler } from "./laser-bomb.js";
 import { resolveLaserAppearance } from "./laser-appearance.js";
 import {
-  destroyLaserCannon,
+  beginLaserCannonDestruction,
   groupLaserBeamsBySource,
+  LASER_CANNON_FLASH_COUNT,
+  LASER_CANNON_FLASH_DURATION_MS,
+  laserCannonDestructionAction,
 } from "./laser-cannon-destruction.js";
 import {
   laserMirrorCoversIncoming,
@@ -43,13 +46,14 @@ export interface LaserRayProjection {
   segments: readonly LaserRaySegment[];
 }
 
-const LASER_CANNON_FLASH_PHASE_COUNT = 3;
 const LASER_BEAM_CONTACT_ACTION = "laser-beam-contact";
 const LASER_CANNON_SOURCE_TILE_SIZE = 14;
 export const LASER_BEAM_DAMAGE_PROGRESS = 0.8;
-export const LASER_CANNON_FLASH_PHASE_MS = 100;
-export const LASER_CANNON_FLASH_DURATION_MS =
-  LASER_CANNON_FLASH_PHASE_COUNT * LASER_CANNON_FLASH_PHASE_MS;
+export {
+  LASER_CANNON_FLASH_COUNT,
+  LASER_CANNON_FLASH_DURATION_MS,
+  LASER_CANNON_FLASH_INTERVAL_MS,
+} from "./laser-cannon-destruction.js";
 
 const laserCannonBehavior: Behavior = {
   id: "laser-cannon",
@@ -141,7 +145,10 @@ const laserBeamContactAction: RuntimeActionDefinition = {
 export const laserCannon: EntityModule = defineEntityModule({
   definition: {
     type: MapEntityTypeId.LASER_CANNON,
-    presenceFacts: ["blocking", "pushable"],
+    presenceFacts: ["blocking"],
+    resolvePresenceFacts({ entity }) {
+      return entity.state?.destroying === true ? [] : ["pushable"];
+    },
     properties: [
       {
         key: "direction",
@@ -151,12 +158,22 @@ export const laserCannon: EntityModule = defineEntityModule({
         options: ["up", "right", "down", "left"].map((value) => ({ value })),
       },
     ],
+    state: [
+      {
+        key: "destroying",
+        kind: "boolean",
+        label: "损毁中",
+        default: false,
+      },
+    ],
     presentation: { name: "Laser Cannon" },
   },
   behaviorBindings: [{ behavior: laserCannonBehavior }],
+  runtimeActions: [laserCannonDestructionAction],
   visual: {
     id: MapEntityTypeId.LASER_CANNON,
     resolve: ({ entity }) => {
+      if (entity.state?.destroying === true) return null;
       const direction = entity.direction ?? "right";
       return {
         layers: [{
@@ -174,11 +191,11 @@ export const laserCannon: EntityModule = defineEntityModule({
     durationMs: LASER_CANNON_FLASH_DURATION_MS,
     renderPass: "world-effect",
     resolve({ event, progress, time }) {
-      const phase = Math.min(
-        LASER_CANNON_FLASH_PHASE_COUNT - 1,
-        Math.floor(progress * LASER_CANNON_FLASH_PHASE_COUNT),
+      const interval = Math.min(
+        LASER_CANNON_FLASH_COUNT * 2 - 1,
+        Math.floor(progress * LASER_CANNON_FLASH_COUNT * 2),
       );
-      if (phase % 2 === 1) return null;
+      if (interval % 2 === 1) return null;
       const direction = directionState(event.direction) ?? "right";
       const segments = laserSegmentsFromEvent(event.data?.segments);
       return {
@@ -375,7 +392,7 @@ function updateLaserSystem(
   for (const cannonId of [...destroyedCannons].sort(compareEntityIds)) {
     const cannon = cannons.find((candidate) => candidate.id === cannonId);
     if (!cannon) continue;
-    destroyLaserCannon(
+    beginLaserCannonDestruction(
       commands,
       cannon,
       beamsBySource.get(cannonId) ?? [],
@@ -424,6 +441,9 @@ function laserTopologySignature(query: WorldQueryApi): string {
         entity.type === MapEntityTypeId.DRAGON
         ? entity.direction ?? "right"
         : "",
+      entity.type === MapEntityTypeId.LASER_CANNON
+        ? entity.state?.destroying === true
+        : "",
       entity.type === MapEntityTypeId.LASER_MIRROR ||
         entity.type === MapEntityTypeId.MIRROR
         ? entity.state?.variant ?? ""
@@ -441,7 +461,7 @@ function laserCannons(
   return query.entitiesMatching({
     kind: "type",
     value: MapEntityTypeId.LASER_CANNON,
-  });
+  }).filter((cannon) => cannon.state?.destroying !== true);
 }
 
 function traceCannonRay(
@@ -464,7 +484,10 @@ function collectLaserTargets(
   for (const segment of ray) {
     for (const presence of query.presencesAt(segment.cell)) {
       const entity = query.entity(presence.entityId);
-      if (entity?.type === MapEntityTypeId.LASER_CANNON) {
+      if (
+        entity?.type === MapEntityTypeId.LASER_CANNON &&
+        entity.state?.destroying !== true
+      ) {
         hitCannons.add(entity.id);
       } else if (
         entity?.type === MapEntityTypeId.LASER_BOMB &&

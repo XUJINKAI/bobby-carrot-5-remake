@@ -11,8 +11,9 @@ import {
   createBuiltinVisualRegistry,
 } from "../../engine/dist/entities/registry.js";
 import {
+  LASER_CANNON_FLASH_COUNT,
   LASER_CANNON_FLASH_DURATION_MS,
-  LASER_CANNON_FLASH_PHASE_MS,
+  LASER_CANNON_FLASH_INTERVAL_MS,
 } from "../../engine/dist/entities/robo2/laser-cannon.js";
 import { resolveLaserAppearance } from "../../engine/dist/entities/robo2/laser-appearance.js";
 import { RuntimeEntityTypeId } from "../../engine/dist/entities/runtime-types.js";
@@ -448,15 +449,16 @@ test("激光从背面命中同向激光炮时只摧毁目标", () => {
 
   assert.deepEqual(
     cannonEntities(world).map((cannon) => cannon.id),
-    [source.id],
+    [source.id, target.id],
   );
-  assert.equal(world.entity(target.id), undefined);
+  assert.equal(world.entity(target.id)?.state?.destroying, true);
   assert.equal(
     beamEntities(world).some((beam) => beam.state?.sourceId === target.id),
     false,
   );
 
-  world.update({ tick: 1, stepMs: 16 });
+  world.update({ tick: 1, stepMs: LASER_CANNON_FLASH_DURATION_MS });
+  assert.equal(world.entity(target.id), undefined);
   assert.deepEqual(
     beamEntities(world).map((beam) => beam.anchor),
     [
@@ -469,7 +471,7 @@ test("激光从背面命中同向激光炮时只摧毁目标", () => {
   );
 });
 
-test("激光炮遮挡后方炸弹，销毁后的下一次投影才会命中", () => {
+test("激光炮遮挡后方炸弹，闪烁结束后的重投影才会命中", () => {
   const entities = [];
   for (let y = 0; y < 2; y += 1) {
     for (let x = 0; x < 7; x += 1) entities.push(ground(x, y));
@@ -508,7 +510,7 @@ test("激光炮遮挡后方炸弹，销毁后的下一次投影才会命中", ()
 
   const destruction = world.update({ tick: 0, stepMs: 16 });
 
-  assert.equal(world.entity(target.id), undefined);
+  assert.equal(world.entity(target.id)?.state?.destroying, true);
   assert.notEqual(world.entity(bomb.id)?.state?.armed, true);
   assert.equal(
     destruction.events.some((event) =>
@@ -517,8 +519,16 @@ test("激光炮遮挡后方炸弹，销毁后的下一次投影才会命中", ()
     false,
   );
 
-  const reprojection = world.update({ tick: 1, stepMs: 16 });
+  world.update({
+    tick: 1,
+    stepMs: LASER_CANNON_FLASH_DURATION_MS - 1,
+  });
+  assert.equal(world.entity(target.id)?.state?.destroying, true);
+  assert.notEqual(world.entity(bomb.id)?.state?.armed, true);
 
+  const reprojection = world.update({ tick: 2, stepMs: 1 });
+
+  assert.equal(world.entity(target.id), undefined);
   assert.equal(world.entity(bomb.id)?.state?.armed, true);
   assert.equal(
     reprojection.events.filter((event) =>
@@ -528,7 +538,45 @@ test("激光炮遮挡后方炸弹，销毁后的下一次投影才会命中", ()
   );
 });
 
-test("激光炮与所属光束在销毁后同步闪烁三次", () => {
+test("同一直线的激光炮按前方炮台的完整损毁周期逐台命中", () => {
+  const entities = [];
+  for (let y = 0; y < 2; y += 1) {
+    for (let x = 0; x < 7; x += 1) entities.push(ground(x, y));
+  }
+  entities.push(
+    { type: MapEntityTypeId.LASER_CANNON, direction: "right", x: 0, y: 0 },
+    { type: MapEntityTypeId.LASER_CANNON, direction: "up", x: 3, y: 0 },
+    { type: MapEntityTypeId.LASER_CANNON, direction: "up", x: 5, y: 0 },
+    { type: MapEntityTypeId.BOBBY, x: 0, y: 1 },
+  );
+  const world = new World({
+    schemaVersion: 1,
+    width: 7,
+    height: 2,
+    entities,
+  });
+  const [, front, rear] = cannonEntities(world);
+
+  world.update({ tick: 0, stepMs: 16 });
+
+  assert.equal(world.entity(front.id)?.state?.destroying, true);
+  assert.notEqual(world.entity(rear.id)?.state?.destroying, true);
+
+  world.update({
+    tick: 1,
+    stepMs: LASER_CANNON_FLASH_DURATION_MS - 1,
+  });
+
+  assert.equal(world.entity(front.id)?.state?.destroying, true);
+  assert.notEqual(world.entity(rear.id)?.state?.destroying, true);
+
+  world.update({ tick: 2, stepMs: 1 });
+
+  assert.equal(world.entity(front.id), undefined);
+  assert.equal(world.entity(rear.id)?.state?.destroying, true);
+});
+
+test("激光炮与所属光束在销毁后按配置次数同步快速闪烁", () => {
   const entities = [];
   for (let y = 0; y < 2; y += 1) {
     for (let x = 0; x < 6; x += 1) entities.push(ground(x, y));
@@ -553,7 +601,7 @@ test("激光炮与所属光束在销毁后同步闪烁三次", () => {
   assert.ok(event);
   assert.equal(event.direction, "right");
   assert.equal(event.data?.segments.length, 2);
-  assert.equal(world.entity(target.id), undefined);
+  assert.equal(world.entity(target.id)?.state?.destroying, true);
   assert.equal(
     beamEntities(world).some((beam) => beam.state?.sourceId === target.id),
     false,
@@ -603,10 +651,22 @@ test("激光炮与所属光束在销毁后同步闪烁三次", () => {
   const expectedColor = resolveLaserAppearance(target.id, start.nowMs).color;
   assert.deepEqual(strokes, [expectedColor, expectedColor]);
 
-  assert.equal(transientAt(LASER_CANNON_FLASH_PHASE_MS), undefined);
-  assert.ok(transientAt(LASER_CANNON_FLASH_PHASE_MS * 2));
+  for (let flash = 0; flash < LASER_CANNON_FLASH_COUNT; flash += 1) {
+    const visibleAt = flash * LASER_CANNON_FLASH_INTERVAL_MS * 2;
+    assert.ok(transientAt(visibleAt));
+    assert.equal(
+      transientAt(visibleAt + LASER_CANNON_FLASH_INTERVAL_MS),
+      undefined,
+    );
+  }
   assert.equal(transientAt(LASER_CANNON_FLASH_DURATION_MS), undefined);
   assert.equal(visual.isAnimating, false);
+
+  world.update({
+    tick: 1,
+    stepMs: LASER_CANNON_FLASH_DURATION_MS,
+  });
+  assert.equal(world.entity(target.id), undefined);
 });
 
 test("移动途中已经销毁的光束不会在交互点造成伤害", () => {
@@ -681,8 +741,18 @@ test("把相向激光炮推入同一直线后两者同时摧毁", () => {
 
   world.update({ tick: 0, stepMs: 16 });
 
-  assert.deepEqual(cannonEntities(world), []);
+  assert.ok(
+    cannonEntities(world).every((cannon) =>
+      cannon.state?.destroying === true
+    ),
+  );
   assert.deepEqual(beamEntities(world), []);
+
+  world.update({
+    tick: 1,
+    stepMs: LASER_CANNON_FLASH_DURATION_MS,
+  });
+  assert.deepEqual(cannonEntities(world), []);
 });
 
 test("多激光炮地图由单个激光调度器统一更新", () => {

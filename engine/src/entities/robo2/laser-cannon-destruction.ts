@@ -1,4 +1,5 @@
-import type { Direction } from "@bobby/model";
+import { MapEntityTypeId, type Direction } from "@bobby/model";
+import type { RuntimeActionDefinition } from "../../world/action/RuntimeAction.js";
 import type { WorldCommandApi } from "../../world/behavior/CommandQueue.js";
 import type { WorldQueryApi } from "../../world/behavior/WorldQueryApi.js";
 import type {
@@ -6,6 +7,32 @@ import type {
   EntityInstance,
 } from "../../world/entity/EntityInstance.js";
 import { RuntimeEntityTypeId } from "../runtime-types.js";
+
+const LASER_CANNON_DESTRUCTION_ACTION = "laser-cannon-destruction";
+
+export const LASER_CANNON_FLASH_COUNT = 6;
+export const LASER_CANNON_FLASH_INTERVAL_MS = 60;
+export const LASER_CANNON_FLASH_DURATION_MS =
+  LASER_CANNON_FLASH_COUNT * 2 * LASER_CANNON_FLASH_INTERVAL_MS;
+
+export const laserCannonDestructionAction: RuntimeActionDefinition = {
+  kind: LASER_CANNON_DESTRUCTION_ACTION,
+  update({ action, time, query, commands }) {
+    const cannonId = action.ownerEntityId;
+    const cannon = cannonId === undefined ? undefined : query.entity(cannonId);
+    if (
+      cannon?.type !== MapEntityTypeId.LASER_CANNON ||
+      cannon.state?.destroying !== true
+    ) {
+      return "complete";
+    }
+    const elapsedMs = finiteNumber(action.state.elapsedMs) + time.stepMs;
+    action.state.elapsedMs = elapsedMs;
+    if (elapsedMs < LASER_CANNON_FLASH_DURATION_MS) return "running";
+    commands.destroy(cannon.id);
+    return "complete";
+  },
+};
 
 export interface LaserCannonFlashSegment {
   cell: { x: number; y: number };
@@ -47,12 +74,13 @@ export function flashSegmentsFromBeams(
     }));
 }
 
-export function destroyLaserCannon(
+export function beginLaserCannonDestruction(
   commands: WorldCommandApi,
   cannon: Readonly<EntityInstance>,
   beams: readonly Readonly<EntityInstance>[],
   ray: readonly LaserCannonFlashSegment[],
 ): void {
+  if (cannon.state?.destroying === true) return;
   commands.emit({
     type: "laser-cannon-destroyed",
     entityId: cannon.id,
@@ -72,10 +100,23 @@ export function destroyLaserCannon(
     },
   });
   for (const beam of beams) commands.destroy(beam.id);
-  commands.destroy(cannon.id);
+  // 损毁阶段仍占据原格并截断光路，完整时序见 docs/reference/robo2.md。
+  commands.setState(cannon.id, {
+    ...cannon.state,
+    destroying: true,
+  });
+  commands.startAction({
+    kind: LASER_CANNON_DESTRUCTION_ACTION,
+    ownerEntityId: cannon.id,
+    state: { elapsedMs: 0 },
+  });
 }
 
 function isDirection(value: unknown): value is Direction {
   return value === "up" || value === "right" ||
     value === "down" || value === "left";
+}
+
+function finiteNumber(value: unknown): number {
+  return typeof value === "number" && Number.isFinite(value) ? value : 0;
 }
