@@ -184,21 +184,22 @@ assets/maps/novoban-pushbox/<map-id>.json
 
 Novoban 的 50 张地图按源文件顺序生成 `01` ～ `50`；原注释标题成为地图展示名，作者统一保留为 François Marques。版权与来源边界见根目录 `THIRD_PARTY_ASSETS.md`。
 
-Robo 2 使用受 Git 管理的原始 J2ME 包作为唯一地图源：
+Robo 2 使用受 Git 管理的原始 J2ME 包作为唯一地图源，并允许明确登记的美术覆盖文件进入同一个生成流程：
 
 ```text
-tools/custom/robo2/robo2.jar
-  ├─ tools/custom/robo2/extract.mjs
-  │    ↓
-  │  assets/art/robo2/*.png          # ignored / generated
-  ↓ tools/custom/robo2/generate.mjs
-custom-maps/robo2/*.json              # ignored / generated
-  ↓ tools/custom/prepare.mjs
-assets/maps/robo2/index.json
-assets/maps/robo2/<map-id>.json
+tools/custom/robo2/
+  ├─ robo2.jar ───────────┬─→ extract.mjs
+  └─ overrides/*.png ─────┘       ↓
+  │                     assets/art/robo2/*.png  # ignored / generated
+  └─ robo2.jar ─────────────→ generate.mjs
+                                ↓
+                     custom-maps/robo2/*.json   # ignored / generated
+                                ↓ tools/custom/prepare.mjs
+                     assets/maps/robo2/index.json
+                     assets/maps/robo2/<map-id>.json
 ```
 
-地图生成器与图片提取器都校验固定 SHA-256。来源工具边界负责 JAR byte、列优先格子、半字节 tile code 和原始图片 entry；Engine 只消费语义地图与已注册的图片资源 ID。Robo 2 JAR、关卡、美术及转换结果的版权边界见根目录 `THIRD_PARTY_ASSETS.md`。
+地图生成器与图片提取器都校验固定 JAR SHA-256。来源工具边界负责 JAR byte、列优先格子、半字节 tile code、原始图片 entry 与登记的美术覆盖文件；Engine 只消费语义地图与已注册的图片资源 ID。Robo 2 JAR、关卡、美术及转换结果的版权边界见根目录 `THIRD_PARTY_ASSETS.md`。
 
 LOMA 与 Novoban 的 XSB 字符转换由 `tools/custom/sokoban-xsb.mjs` 统一负责。每张地图从
 `PUSHBOX_TERRAIN_TABLE` 稳定选择一个主题，并按 `ground / boundary / obstacle` 类别与坐标

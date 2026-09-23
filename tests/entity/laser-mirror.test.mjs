@@ -335,8 +335,8 @@ test("激光镜注册为阻挡、可推动对象，并使用 Robo 2 双面镜视
           kind: "image",
           renderPass: "standing",
           asset: ROBO2_GAMEPLAY_IMAGE_IDS.mirror[variant],
-          sourceTileSize: 12,
-          anchor: "top-left",
+          sourceTileSize: 48,
+          anchor: "center",
         }],
       },
     );

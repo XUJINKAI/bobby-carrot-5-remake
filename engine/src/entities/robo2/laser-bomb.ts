@@ -160,7 +160,7 @@ export const laserBomb: EntityModule = defineEntityModule({
         kind: "image",
         asset: ROBO2_GAMEPLAY_IMAGE_IDS.bomb,
         sourceTileSize: 12,
-        anchor: "top-left",
+        anchor: "center",
       }],
     }),
   },

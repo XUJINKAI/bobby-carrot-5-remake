@@ -113,7 +113,7 @@ test("Laser Stone 注册为阻挡、可推动对象，并使用 Robo 2 原图", 
         kind: "image",
         asset: ROBO2_GAMEPLAY_IMAGE_IDS.stone,
         sourceTileSize: 12,
-        anchor: "top-left",
+        anchor: "center",
       }],
     },
   );

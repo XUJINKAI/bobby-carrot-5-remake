@@ -79,6 +79,24 @@ test("assets prepare 缓存跟踪 Robo 2 JAR 而非生成地图", (t) => {
   );
 });
 
+test("assets prepare 缓存跟踪 Robo 2 美术覆盖文件", (t) => {
+  const repositoryRoot = createRepositoryFixture(t);
+  const initial = inspectAssetsPrepareCache({ repositoryRoot });
+  writeAssetsPrepareCache(initial.snapshot, { repositoryRoot });
+
+  write(
+    repositoryRoot,
+    "tools/custom/robo2/overrides/mirrorL.png",
+    "变化后的镜面覆盖图",
+  );
+  const changedOverride = inspectAssetsPrepareCache({ repositoryRoot });
+  assert.equal(changedOverride.hit, false);
+  assert.equal(
+    changedOverride.reason,
+    "输入变化：tools/custom/robo2/overrides/mirrorL.png",
+  );
+});
+
 test("assets prepare 缓存在模式或生成文件清单变化时失效", (t) => {
   const repositoryRoot = createRepositoryFixture(t);
   const initial = inspectAssetsPrepareCache({ repositoryRoot });
@@ -166,6 +184,7 @@ function createRepositoryFixture(t) {
     "tools/custom/prepare.mjs",
     "tools/custom/LOMA.txt",
     "tools/custom/robo2/robo2.jar",
+    "tools/custom/robo2/overrides/mirrorL.png",
     "custom-maps/sample/map.json",
   ]) {
     write(repositoryRoot, relative, `输入：${relative}`);

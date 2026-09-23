@@ -15,7 +15,7 @@ export const laserStone: EntityModule = defineEntityModule({
         kind: "image",
         asset: ROBO2_GAMEPLAY_IMAGE_IDS.stone,
         sourceTileSize: 12,
-        anchor: "top-left",
+        anchor: "center",
       }],
     }),
   },

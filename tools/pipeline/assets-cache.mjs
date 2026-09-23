@@ -23,7 +23,10 @@ const inputDirectories = [
   { path: "model/src", extensions: new Set([".json", ".ts"]) },
   { path: "original/official-hd", extensions: new Set([".jar"]) },
   { path: "tools/original", extensions: new Set([".mjs"]) },
-  { path: "tools/custom", extensions: new Set([".jar", ".mjs", ".txt"]) },
+  {
+    path: "tools/custom",
+    extensions: new Set([".jar", ".mjs", ".png", ".txt"]),
+  },
   {
     path: "custom-maps",
     extensions: new Set([".json"]),

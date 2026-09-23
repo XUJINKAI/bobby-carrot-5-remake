@@ -74,7 +74,7 @@ test("激光炸弹使用通用推动规则并提供独立视觉", () => {
         kind: "image",
         asset: ROBO2_GAMEPLAY_IMAGE_IDS.bomb,
         sourceTileSize: 12,
-        anchor: "top-left",
+        anchor: "center",
       }],
     },
   );
