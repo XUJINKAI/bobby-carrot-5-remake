@@ -220,10 +220,9 @@ function createRobo2ExtractTask(repositoryRoot) {
     dependencies: [],
     inputs: [
       "tools/assets/robo2/robo2.jar",
-      "tools/assets/robo2/archive.mjs",
-      "tools/assets/robo2/format.mjs",
+      "tools/assets/robo2/source.mjs",
       "tools/assets/robo2/producer.mjs",
-      "tools/lib/zip-patch.mjs",
+      "tools/lib/zip.mjs",
     ],
     outputs: ["tmp/assets/robo2/extracted"],
     run: () => extractRobo2({
@@ -243,7 +242,10 @@ function createRobo2DecodeTask(repositoryRoot) {
     ],
     outputs: ["tmp/assets/robo2/decoded"],
     run: () => decodeRobo2({
-      repositoryRoot,
+      extractedDirectory: path.join(
+        repositoryRoot,
+        "tmp/assets/robo2/extracted",
+      ),
       outputDirectory: path.join(repositoryRoot, "tmp/assets/robo2/decoded"),
     }),
   };
@@ -276,10 +278,16 @@ function createRobo2ArtTask(repositoryRoot, stagingRoot) {
     ],
     outputs: ["assets/art/robo2"],
     run() {
-      const jar = fs.readFileSync(
-        path.join(repositoryRoot, "tools/assets/robo2/robo2.jar"),
-      );
-      const art = buildRobo2Art(jar);
+      const art = buildRobo2Art({
+        extractedDirectory: path.join(
+          repositoryRoot,
+          "tmp/assets/robo2/extracted",
+        ),
+        overridesDirectory: path.join(
+          repositoryRoot,
+          "tools/assets/robo2/overrides",
+        ),
+      });
       publishDirectoryAtomically({
         stagingRoot,
         target: path.join(repositoryRoot, "assets/art/robo2"),

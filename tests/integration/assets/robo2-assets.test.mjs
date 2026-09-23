@@ -1,15 +1,22 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import test from "node:test";
 import {
   ROBO2_GAMEPLAY_IMAGE_FILES,
   ROBO2_GAMEPLAY_IMAGE_IDS,
 } from "../../../engine/dist/public.js";
-import { ROBO2_SOURCE_FILE } from "../../../tools/assets/robo2/archive.mjs";
 import { buildRobo2Art } from "../../../tools/assets/robo2/art.mjs";
+import { extractRobo2 } from "../../../tools/assets/robo2/producer.mjs";
+import { root } from "../../../tools/lib/fs.mjs";
 
-test("Robo 2 素材源提供十张激光机关 gameplay 图片", () => {
-  const art = buildRobo2Art(fs.readFileSync(ROBO2_SOURCE_FILE));
+test("Robo 2 素材源提供十张激光机关 gameplay 图片", (t) => {
+  const temporaryRoot = fs.mkdtempSync(path.join(os.tmpdir(), "bc5r-robo2-art-"));
+  t.after(() => fs.rmSync(temporaryRoot, { recursive: true, force: true }));
+  const extractedDirectory = path.join(temporaryRoot, "extracted");
+  extractRobo2({ repositoryRoot: root, outputDirectory: extractedDirectory });
+  const art = buildRobo2Art({ extractedDirectory });
 
   assert.deepEqual(
     art.map(({ source, file, width, height }) => ({

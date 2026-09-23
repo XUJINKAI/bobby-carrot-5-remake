@@ -1,11 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
 import { root } from "../../lib/fs.mjs";
-import { readZipEntry } from "../../lib/zip-patch.mjs";
-import {
-  assertRobo2A1Archive,
-  decodeRobo2Archive,
-} from "./archive.mjs";
 
 const PNG_SIGNATURE = Buffer.from("89504e470d0a1a0a", "hex");
 const artDefinitions = Object.freeze([
@@ -21,14 +16,15 @@ const artDefinitions = Object.freeze([
   archiveArt("data/stone.png", "stone.png", 10, 12),
 ]);
 
-/** 从已登记的 JAR 条目与覆盖文件构建 Engine 使用的 Robo 2 gameplay 图片。 */
-export function buildRobo2Art(input) {
-  const jar = Buffer.from(input);
-  assertRobo2A1Archive(decodeRobo2Archive(jar));
+/** 从完整解包目录与已登记覆盖文件构建 Engine 使用的 Robo 2 gameplay 图片。 */
+export function buildRobo2Art({
+  extractedDirectory,
+  overridesDirectory = path.join(root, "tools/assets/robo2/overrides"),
+}) {
   return artDefinitions.map(({ kind, source, file, width, height }) => {
     const content = kind === "archive"
-      ? readZipEntry(jar, source)
-      : fs.readFileSync(path.join(root, source));
+      ? fs.readFileSync(path.join(extractedDirectory, source))
+      : fs.readFileSync(path.join(overridesDirectory, file));
     const dimensions = pngDimensions(content, source);
     if (dimensions.width !== width || dimensions.height !== height) {
       throw new Error(

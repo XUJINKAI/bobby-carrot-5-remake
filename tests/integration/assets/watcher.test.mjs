@@ -43,6 +43,18 @@ test("资产 watcher 把来源变化映射到独立 Producer 分组", () => {
     ["publish.art.robo2"],
   );
   assert.deepEqual(
+    affectedAssetTasks("tools/assets/robo2/robo2.jar", taskIds),
+    ["robo2.extract"],
+  );
+  assert.deepEqual(
+    affectedAssetTasks("tools/assets/robo2/format.mjs", taskIds),
+    ["robo2.decode"],
+  );
+  assert.deepEqual(
+    affectedAssetTasks("tools/assets/robo2/convert.mjs", taskIds),
+    ["robo2.adapt"],
+  );
+  assert.deepEqual(
     affectedAssetTasks("web/src/app.ts", taskIds),
     [],
   );

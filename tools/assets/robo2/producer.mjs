@@ -2,39 +2,31 @@ import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { serializeMapDocument } from "@bobby/model";
-import { readZipEntry } from "../../lib/zip-patch.mjs";
-import {
-  assertRobo2A1Archive,
-  decodeRobo2Archive,
-  ROBO2_LEVEL_TITLES,
-} from "./archive.mjs";
+import { extractZip } from "../../lib/zip.mjs";
 import { convertRobo2Level } from "./convert.mjs";
 import {
   decodeRobo2LevelRecord,
   encodeRobo2LevelRecord,
 } from "./format.mjs";
+import {
+  assertRobo2A1Source,
+  ROBO2_LEVEL_TITLES,
+} from "./source.mjs";
 
 export function extractRobo2({ repositoryRoot, outputDirectory }) {
   const source = robo2SourceFile(repositoryRoot);
   const jar = fs.readFileSync(source);
-  const archive = assertRobo2A1Archive(decodeRobo2Archive(jar));
+  assertRobo2A1Source(jar);
   replaceDirectory(outputDirectory, (directory) => {
-    writeJson(path.join(directory, "archive.json"), {
-      schemaVersion: 1,
-      source: "tools/assets/robo2/robo2.jar",
-      sha256: archive.sha256,
-      entries: archive.levels.map((level) => `data/${level.index}`),
-    });
+    extractZip(source, directory);
   });
 }
 
-export function decodeRobo2({ repositoryRoot, outputDirectory }) {
-  const jar = fs.readFileSync(robo2SourceFile(repositoryRoot));
-  assertRobo2A1Archive(decodeRobo2Archive(jar));
+export function decodeRobo2({ extractedDirectory, outputDirectory }) {
   replaceDirectory(outputDirectory, (directory) => {
     for (let index = 0; index < ROBO2_LEVEL_TITLES.length; index += 1) {
       const entry = `data/${index}`;
-      const record = readZipEntry(jar, entry);
+      const record = fs.readFileSync(path.join(extractedDirectory, entry));
       const decoded = decodeRobo2LevelRecord(record, entry);
       const encoded = encodeRobo2LevelRecord(decoded, entry);
       if (!Buffer.from(encoded).equals(record)) {
@@ -90,7 +82,7 @@ export function prepareAdaptedRobo2Collection(adaptedDirectory) {
   };
 }
 
-function robo2SourceFile(repositoryRoot) {
+export function robo2SourceFile(repositoryRoot) {
   return path.join(repositoryRoot, "tools/assets/robo2/robo2.jar");
 }
 

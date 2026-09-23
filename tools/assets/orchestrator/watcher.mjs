@@ -119,7 +119,7 @@ export function affectedAssetTasks(relativePath, taskIds) {
     );
   } else if (
     relative === "tools/assets/robo2/robo2.jar" ||
-    relative === "tools/assets/robo2/archive.mjs" ||
+    relative === "tools/assets/robo2/source.mjs" ||
     relative === "tools/assets/robo2/producer.mjs"
   ) {
     add("robo2.extract");

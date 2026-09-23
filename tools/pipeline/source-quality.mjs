@@ -201,6 +201,9 @@ function obsoleteSiteReferences() {
 }
 
 function checkRepositoryStructure() {
+  if (fs.existsSync(path.join(root, "tools/custom"))) {
+    errors.push("tools/custom/: 资产工具必须归入 tools/assets 的领域目录");
+  }
   const packageJson = JSON.parse(
     fs.readFileSync(path.join(root, "package.json"), "utf8"),
   );
