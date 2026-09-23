@@ -1,6 +1,6 @@
 # 自定义地图
 
-这里保存 Bobby Carrot 5 Remake 内置的语义 JSON 地图。`collections.json` 定义 Explore 展示的集合名称、顺序和说明；`collections[]` 的数组顺序就是展示顺序，目录名与 collection ID 对应。
+这里保存 Bobby Carrot 5 Remake 内置的语义 JSON 地图。`collections.json` 定义 Explore 展示的集合名称、顺序和说明；普通集合按 `collections[]` 的数组顺序展示，开发模式再按数组顺序把 `visible: "dev"` 集合追加到末尾。目录名与 collection ID 对应。
 
 没有章节的地图直接放在 `custom-maps/<collection>/<map>.json`。章节地图放在 `custom-maps/<collection>/<chapter>/<map>.json`，例如 `custom-maps/loma-pushbox/01/01-01.json`。构建工具始终扫描 collection 根目录与一级 chapter 目录；混合使用两种布局时，根目录地图先按无章节网格展示，后面再按 chapter 顺序展示章节地图。chapter 目录内禁止继续嵌套目录。
 

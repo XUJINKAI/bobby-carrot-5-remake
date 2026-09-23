@@ -29,6 +29,13 @@ if (
   )
 )
   throw new Error("生产 collection index 不应展示开发集合 original-patch");
+if (collectionsIndex.collections.at(-1)?.id !== "engine-lab")
+  throw new Error("Engine Lab 必须位于 collection discovery index 末尾");
+const robo2Summary = collectionsIndex.collections.find(
+  (collection) => collection.id === "robo2",
+);
+if (robo2Summary?.name !== "Robo2")
+  throw new Error("Robo2 collection 必须使用固定展示名称");
 
 const cardSizes = new Set(["small", "medium", "big"]);
 const collectionIndexes = collectionsIndex.collections.map((summary) => {
@@ -277,6 +284,9 @@ function assertNovobanCollection(collections) {
 function assertRobo2Collection(collections) {
   const robo2 = collections.find((collection) => collection.id === "robo2");
   if (!robo2) throw new Error("缺少 Robo 2 collection");
+  if (robo2.name !== "Robo2") {
+    throw new Error("Robo2 collection index 必须使用固定展示名称");
+  }
   if (robo2.cardSize !== "medium") {
     throw new Error("Robo 2 collection cardSize 必须为 medium");
   }
@@ -293,8 +303,11 @@ function assertRobo2Collection(collections) {
   for (const map of robo2.maps) {
     const relative = `assets/maps/robo2/${map.id}.json`;
     const document = readJson(relative);
-    if (document.meta.author !== "HeroCraft") {
-      throw new Error(`${relative}: 必须保留 HeroCraft 来源信息`);
+    if (
+      Object.hasOwn(document.meta, "author") ||
+      Object.hasOwn(document.meta, "note")
+    ) {
+      throw new Error(`${relative}: 不应生成作者或注记`);
     }
     const bobbies = document.entities.filter((entity) => entity.type === "bobby");
     const exits = document.entities.filter((entity) => entity.type === "exit");

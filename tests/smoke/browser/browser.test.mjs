@@ -159,7 +159,7 @@ try {
     'class="explore-tabs"',
     'class="explore-ungrouped-maps"',
     'data-card-size="medium"',
-    "Robo 2: Saving Eny",
+    "Robo2",
     "01 · The beggining!",
     "25 · Saving Eny!",
     'href="/explore/play/robo2/01"',

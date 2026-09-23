@@ -58,8 +58,6 @@ export function convertRobo2Level(level, metadata) {
     schemaVersion: 1,
     meta: {
       name: `${id} · ${title}`,
-      author: "HeroCraft",
-      note: "Robo 2: Saving Eny（2004）内置关卡；第三方内容。",
     },
     rules: {
       win: {

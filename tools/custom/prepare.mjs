@@ -32,8 +32,9 @@ export function prepareCustomCollections({ development = false } = {}) {
   const collections = manifest.collections.map((entry) =>
     buildCollection(entry, ids),
   );
-  const visibleCollections = collections.filter((collection) =>
-    isCollectionVisible(collection.visible, development),
+  const visibleCollections = visibleCollectionsInDisplayOrder(
+    collections,
+    development,
   );
 
   for (const collection of collections) writeCollection(collection);
@@ -42,6 +43,16 @@ export function prepareCustomCollections({ development = false } = {}) {
   );
 
   return visibleCollections.map(({ id, name }) => ({ id, name }));
+}
+
+export function visibleCollectionsInDisplayOrder(collections, development) {
+  const visible = collections.filter((collection) =>
+    isCollectionVisible(collection.visible, development),
+  );
+  return [
+    ...visible.filter((collection) => collection.visible !== "dev"),
+    ...visible.filter((collection) => collection.visible === "dev"),
+  ];
 }
 
 function buildCollection(entry, ids) {

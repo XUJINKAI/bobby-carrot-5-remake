@@ -4,6 +4,9 @@ import {
   isCollectionVisible,
   normalizeCollectionVisibility,
 } from "../../../tools/custom/collection-visibility.mjs";
+import {
+  visibleCollectionsInDisplayOrder,
+} from "../../../tools/custom/prepare.mjs";
 
 test("collection visible 缺省为公开展示", () => {
   assert.equal(normalizeCollectionVisibility(undefined, "sample"), true);
@@ -22,5 +25,24 @@ test("collection visible 拒绝其它值", () => {
   assert.throws(
     () => normalizeCollectionVisibility("preview", "sample"),
     /visible 必须是 true \/ false \/ "dev"/,
+  );
+});
+
+test("开发集合保持内部顺序并统一排在普通集合之后", () => {
+  const collections = [
+    { id: "dev-a", visible: "dev" },
+    { id: "public-a", visible: true },
+    { id: "hidden", visible: false },
+    { id: "public-b", visible: true },
+    { id: "dev-b", visible: "dev" },
+  ];
+
+  assert.deepEqual(
+    visibleCollectionsInDisplayOrder(collections, false).map(({ id }) => id),
+    ["public-a", "public-b"],
+  );
+  assert.deepEqual(
+    visibleCollectionsInDisplayOrder(collections, true).map(({ id }) => id),
+    ["public-a", "public-b", "dev-a", "dev-b"],
   );
 });
