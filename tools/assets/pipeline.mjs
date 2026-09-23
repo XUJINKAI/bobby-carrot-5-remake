@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { root } from "../lib/fs.mjs";
 import { createAssetRegistry } from "./registry.mjs";
-import { commitStagedDirectoryAtomically } from "./orchestrator/atomic-output.mjs";
+import { commitStagedDirectoriesAtomically } from "./orchestrator/atomic-output.mjs";
 import { executeAssetTasks } from "./orchestrator/task-runner.mjs";
 
 const generatedOutputs = [
@@ -87,14 +87,16 @@ export async function rebuildAssetsTransactionally(options = {}) {
       repositoryRoot: transactionRoot,
     });
     await beforeCommit({ repositoryRoot: transactionRoot });
-    commitStagedDirectoryAtomically({
-      staged: path.join(transactionRoot, "assets"),
-      target: path.join(repositoryRoot, "assets"),
-    });
-    commitStagedDirectoryAtomically({
-      staged: path.join(transactionRoot, "tmp/assets"),
-      target: path.join(repositoryRoot, "tmp/assets"),
-    });
+    commitStagedDirectoriesAtomically([
+      ...generatedOutputs.map((relative) => ({
+        staged: path.join(transactionRoot, relative),
+        target: path.join(repositoryRoot, relative),
+      })),
+      {
+        staged: path.join(transactionRoot, "tmp/assets"),
+        target: path.join(repositoryRoot, "tmp/assets"),
+      },
+    ]);
     return result;
   } finally {
     fs.rmSync(transactionRoot, { recursive: true, force: true });
@@ -126,12 +128,13 @@ function prepareTransactionRoot(repositoryRoot, transactionRoot) {
       process.platform === "win32" ? "junction" : "dir",
     );
   }
-  const assets = path.join(repositoryRoot, "assets");
-  if (fs.existsSync(assets)) {
-    fs.cpSync(assets, path.join(transactionRoot, "assets"), {
-      recursive: true,
-    });
-  } else {
-    fs.mkdirSync(path.join(transactionRoot, "assets"), { recursive: true });
+  fs.mkdirSync(path.join(transactionRoot, "assets"), { recursive: true });
+  const replays = path.join(repositoryRoot, "assets/replays");
+  if (fs.existsSync(replays)) {
+    fs.symlinkSync(
+      replays,
+      path.join(transactionRoot, "assets/replays"),
+      process.platform === "win32" ? "junction" : "dir",
+    );
   }
 }

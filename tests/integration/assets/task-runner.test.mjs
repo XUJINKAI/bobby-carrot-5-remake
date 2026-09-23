@@ -99,19 +99,26 @@ test("完整资产重建失败时继续使用上一份 assets", async (t) => {
   );
 });
 
-test("完整资产重建成功后整体提交 assets 与任务缓存", async (t) => {
+test("完整资产重建只提交生成目录与任务缓存", async (t) => {
   const repositoryRoot = fixture(t);
   write(repositoryRoot, "assets/maps/value.txt", "previous");
   write(repositoryRoot, "assets/ui/value.txt", "stable");
+  write(repositoryRoot, "assets/audio/value.txt", "stable-audio");
+  write(repositoryRoot, "assets/replays/value.json", "before-rebuild");
   write(repositoryRoot, "tmp/assets/cache/value.txt", "previous-cache");
 
   const result = await rebuildAssetsTransactionally({
     repositoryRoot,
     runRebuild({ repositoryRoot: transactionRoot }) {
-      replaceDirectory(path.join(transactionRoot, "assets/maps"), "next");
+      writeGeneratedOutputs(transactionRoot, "next");
       replaceDirectory(
         path.join(transactionRoot, "tmp/assets/cache"),
         "next-cache",
+      );
+      write(
+        repositoryRoot,
+        "assets/replays/value.json",
+        "saved-during-rebuild",
       );
       return "rebuilt";
     },
@@ -125,6 +132,17 @@ test("完整资产重建成功后整体提交 assets 与任务缓存", async (t)
   assert.equal(
     fs.readFileSync(path.join(repositoryRoot, "assets/ui/value.txt"), "utf8"),
     "stable",
+  );
+  assert.equal(
+    fs.readFileSync(path.join(repositoryRoot, "assets/audio/value.txt"), "utf8"),
+    "stable-audio",
+  );
+  assert.equal(
+    fs.readFileSync(
+      path.join(repositoryRoot, "assets/replays/value.json"),
+      "utf8",
+    ),
+    "saved-during-rebuild",
   );
   assert.equal(
     fs.readFileSync(
@@ -215,6 +233,17 @@ function replaceDirectory(directory, content) {
   fs.rmSync(directory, { recursive: true, force: true });
   fs.mkdirSync(directory, { recursive: true });
   fs.writeFileSync(path.join(directory, "value.txt"), content);
+}
+
+function writeGeneratedOutputs(repositoryRoot, content) {
+  for (const relative of [
+    "assets/maps",
+    "assets/adventure",
+    "assets/art/hd",
+    "assets/art/robo2",
+  ]) {
+    replaceDirectory(path.join(repositoryRoot, relative), content);
+  }
 }
 
 function fixture(t) {

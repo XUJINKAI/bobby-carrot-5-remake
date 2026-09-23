@@ -44,35 +44,73 @@ export function publishFileAtomically({ target, content }) {
 }
 
 export function commitStagedDirectoryAtomically({ staged, target }) {
-  const resolvedStaged = path.resolve(staged);
-  const resolvedTarget = path.resolve(target);
-  if (
-    resolvedStaged === resolvedTarget ||
-    resolvedStaged.startsWith(`${resolvedTarget}${path.sep}`) ||
-    resolvedTarget.startsWith(`${resolvedStaged}${path.sep}`)
-  ) {
-    throw new Error("原子提交的暂存目录与目标目录不能互相包含");
-  }
-  if (!fs.existsSync(resolvedStaged) || !fs.statSync(resolvedStaged).isDirectory()) {
-    throw new Error(`原子提交暂存目录不存在：${resolvedStaged}`);
-  }
+  commitStagedDirectoriesAtomically([{ staged, target }]);
+}
 
-  const backup = path.join(
-    path.dirname(resolvedTarget),
-    `.${path.basename(resolvedTarget)}.previous-${process.pid}`,
-  );
-  fs.rmSync(backup, { recursive: true, force: true });
-  fs.mkdirSync(path.dirname(resolvedTarget), { recursive: true });
-  if (fs.existsSync(resolvedTarget)) {
-    fs.renameSync(resolvedTarget, backup);
-  }
+export function commitStagedDirectoriesAtomically(entries) {
+  const prepared = entries.map(({ staged, target }, index) => {
+    const resolvedStaged = path.resolve(staged);
+    const resolvedTarget = path.resolve(target);
+    assertSeparateDirectories(resolvedStaged, resolvedTarget);
+    if (
+      !fs.existsSync(resolvedStaged) ||
+      !fs.statSync(resolvedStaged).isDirectory()
+    ) {
+      throw new Error(`原子提交暂存目录不存在：${resolvedStaged}`);
+    }
+    return {
+      staged: resolvedStaged,
+      target: resolvedTarget,
+      hadTarget: fs.existsSync(resolvedTarget),
+      backup: path.join(
+        path.dirname(resolvedTarget),
+        `.${path.basename(resolvedTarget)}.previous-${process.pid}-${index}`,
+      ),
+    };
+  });
+  assertExclusiveTargets(prepared);
+
   try {
-    fs.renameSync(resolvedStaged, resolvedTarget);
+    for (const entry of prepared) {
+      fs.rmSync(entry.backup, { recursive: true, force: true });
+      fs.mkdirSync(path.dirname(entry.target), { recursive: true });
+      if (fs.existsSync(entry.target)) {
+        fs.renameSync(entry.target, entry.backup);
+      }
+    }
+    for (const entry of prepared) {
+      fs.renameSync(entry.staged, entry.target);
+    }
   } catch (error) {
-    if (fs.existsSync(backup) && !fs.existsSync(resolvedTarget)) {
-      fs.renameSync(backup, resolvedTarget);
+    for (const entry of prepared.toReversed()) {
+      if (fs.existsSync(entry.backup)) {
+        fs.rmSync(entry.target, { recursive: true, force: true });
+        fs.renameSync(entry.backup, entry.target);
+      } else if (!entry.hadTarget && !fs.existsSync(entry.staged)) {
+        fs.rmSync(entry.target, { recursive: true, force: true });
+      }
     }
     throw error;
   }
-  fs.rmSync(backup, { recursive: true, force: true });
+  for (const entry of prepared) {
+    fs.rmSync(entry.backup, { recursive: true, force: true });
+  }
+}
+
+function assertSeparateDirectories(left, right) {
+  if (
+    left === right ||
+    left.startsWith(`${right}${path.sep}`) ||
+    right.startsWith(`${left}${path.sep}`)
+  ) {
+    throw new Error("原子提交的暂存目录与目标目录不能互相包含");
+  }
+}
+
+function assertExclusiveTargets(entries) {
+  for (let index = 0; index < entries.length; index += 1) {
+    for (let other = index + 1; other < entries.length; other += 1) {
+      assertSeparateDirectories(entries[index].target, entries[other].target);
+    }
+  }
 }
