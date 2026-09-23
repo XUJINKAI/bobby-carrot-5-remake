@@ -8,12 +8,10 @@ export type SaveManagementTarget =
   | {
       id: "adventure";
       kind: "adventure";
-      label: "Adventure";
     }
   | {
       id: `explore:${string}`;
       kind: "explore";
-      label: string;
       collection: string;
     };
 
@@ -30,7 +28,6 @@ export function listSaveManagementTargets(
     targets.push({
       id: "adventure",
       kind: "adventure",
-      label: "Adventure",
     });
   }
 
@@ -39,7 +36,6 @@ export function listSaveManagementTargets(
     targets.push({
       id: `explore:${collection}`,
       kind: "explore",
-      label: collection,
       collection,
     });
   }

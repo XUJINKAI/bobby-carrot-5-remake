@@ -304,7 +304,10 @@ Explore collection metadata 位于：
 assets/maps/<collection>/index.json
 ```
 
-它只负责浏览 UI：collection 名称、说明、filter 定义、chapter 分组和 map 列表。Explore Play 读取当前 collection 的该文件，以解析上一关、下一关与地图类型；地图内容仍从独立 MapDocument 加载。
+它只负责浏览 UI 的结构数据：cardSize、filter 定义、chapter 分组和 map 列表。Explore Play
+读取当前 collection 的该文件，以解析上一关、下一关与地图类型；Collection 的
+`name / tag / description` 从 `collections.<id>.*` i18n 文案读取，地图内容仍从独立
+MapDocument 加载。
 
 Adventure Campaign topology 位于：
 

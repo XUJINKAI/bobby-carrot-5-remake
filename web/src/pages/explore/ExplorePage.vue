@@ -9,6 +9,10 @@ import ExploreChapterCard from "./ExploreChapterCard.vue";
 import ExploreHeader from "./ExploreHeader.vue";
 import ExploreUngroupedMaps from "./ExploreUngroupedMaps.vue";
 import ExploreTabs from "./ExploreTabs.vue";
+import {
+  collectionDescription,
+  collectionName,
+} from "../../i18n/collectionI18n.js";
 
 const props = defineProps<{
   activeCollection: ResolvedMapCollection;
@@ -37,8 +41,8 @@ const unchapteredMaps = computed(() =>
     />
     <ExploreHeader
       :collection="activeCollection.id"
-      :title="activeCollection.name"
-      :description="activeCollection.description ?? ''"
+      :title="collectionName(activeCollection.id)"
+      :description="collectionDescription(activeCollection.id)"
       :map-count="activeCollection.maps.length"
       :last-map-id="lastMapId"
       :last-map-label="lastMapLabel"

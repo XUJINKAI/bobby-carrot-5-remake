@@ -12,11 +12,14 @@ import type { SettingsTranslationKey } from "./locales/settings/zh-CN.js";
 import type { ImportTranslationKey } from "./locales/import/zh-CN.js";
 import type { EmbedTranslationKey } from "./locales/embed/zh-CN.js";
 import type { HelpTranslationKey } from "./locales/help/zh-CN.js";
+import type { CollectionTranslationKey } from "./locales/collections/zh-CN.js";
+import { COLLECTION_CATALOGS } from "./collectionCatalogs.js";
 
 export type TranslationScope =
   | "shell"
   | "home"
   | "explore"
+  | "collections"
   | "adventure"
   | "game"
   | "editor"
@@ -29,6 +32,7 @@ export type TranslationKey =
   | ShellTranslationKey
   | HomeTranslationKey
   | ExploreTranslationKey
+  | CollectionTranslationKey
   | AdventureTranslationKey
   | GameTranslationKey
   | EditorTranslationKey
@@ -51,6 +55,10 @@ const LOADERS: Record<TranslationScope, Record<Locale, CatalogLoader>> = {
   explore: {
     "zh-CN": () => import("./locales/explore/zh-CN.js").then((m) => m.default),
     en: () => import("./locales/explore/en.js").then((m) => m.default),
+  },
+  collections: {
+    "zh-CN": async () => COLLECTION_CATALOGS["zh-CN"],
+    en: async () => COLLECTION_CATALOGS.en,
   },
   adventure: {
     "zh-CN": () => import("./locales/adventure/zh-CN.js").then((m) => m.default),

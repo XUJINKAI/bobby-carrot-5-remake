@@ -143,6 +143,11 @@ export function webT(
   return translator.t(key, params);
 }
 
+export function webHasTranslation(key: WebTranslationKey): boolean {
+  locale.value;
+  return translator.has(key);
+}
+
 export function localizedText(
   key: WebTranslationKey,
   params?: TranslationParams,

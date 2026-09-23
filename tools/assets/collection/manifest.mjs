@@ -21,11 +21,11 @@ export function readCollectionManifest(repositoryRoot = root) {
   if (
     !manifest ||
     typeof manifest !== "object" ||
-    manifest.schemaVersion !== 1 ||
+    manifest.schemaVersion !== 2 ||
     !Array.isArray(manifest.collections)
   ) {
     throw new Error(
-      "tools/assets/collections.json 必须是 schemaVersion: 1 的 collection manifest",
+      "tools/assets/collections.json 必须是 schemaVersion: 2 的 collection manifest",
     );
   }
 
@@ -33,7 +33,7 @@ export function readCollectionManifest(repositoryRoot = root) {
   const collections = manifest.collections.map((entry) =>
     normalizeCollection(entry, ids),
   );
-  return { schemaVersion: 1, collections };
+  return { schemaVersion: 2, collections };
 }
 
 export function visibleCollectionSummaries(manifest, development = false) {
@@ -43,17 +43,20 @@ export function visibleCollectionSummaries(manifest, development = false) {
   return [
     ...visible.filter((collection) => collection.visible !== "dev"),
     ...visible.filter((collection) => collection.visible === "dev"),
-  ].map(({ id, name }) => ({ id, name }));
+  ].map(({ id }) => ({ id }));
 }
 
 function normalizeCollection(entry, ids) {
   if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
     throw new Error("collection 定义必须是对象");
   }
+  if (Object.hasOwn(entry, "name") || Object.hasOwn(entry, "description")) {
+    throw new Error(
+      "Collection name / tag / description 必须定义在 i18n collections catalog",
+    );
+  }
   const {
     id,
-    name,
-    description = "",
     cardSize = "medium",
     producer,
     source,
@@ -66,12 +69,6 @@ function normalizeCollection(entry, ids) {
     throw new Error(`重复 collection ID：${id}`);
   }
   ids.add(id);
-  if (typeof name !== "string" || !name.trim()) {
-    throw new Error(`${id}: name 不能为空`);
-  }
-  if (typeof description !== "string") {
-    throw new Error(`${id}: description 必须是字符串`);
-  }
   if (!cardSizes.has(cardSize)) {
     throw new Error(`${id}: cardSize 必须是 small / medium / big`);
   }
@@ -83,8 +80,6 @@ function normalizeCollection(entry, ids) {
   }
   return {
     id,
-    name: name.trim(),
-    description,
     cardSize,
     producer,
     ...(source ? { source } : {}),

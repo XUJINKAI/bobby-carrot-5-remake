@@ -9,16 +9,15 @@ import {
 
 test("生成资产保持 collection、Original 与 Adventure 内容合同", () => {
 const collectionsIndex = readJson("assets/maps/index.json");
-assertSchemaV1(collectionsIndex, "assets/maps/index.json");
+assertSchemaVersion(collectionsIndex, 2, "assets/maps/index.json");
 for (const collection of collectionsIndex.collections) {
   if (
     !collection ||
     typeof collection.id !== "string" || !collection.id ||
-    typeof collection.name !== "string" || !collection.name ||
-    Object.keys(collection).sort().join(",") !== "id,name"
+    Object.keys(collection).join(",") !== "id"
   )
     throw new Error(
-      "Runtime collection discovery 项只能包含非空的 id 与 name",
+      "Runtime collection discovery 项只能包含非空的 id",
     );
 }
 if (!collectionsIndex.collections.some((collection) => collection.id === "original"))
@@ -31,19 +30,15 @@ if (
   throw new Error("生产 collection index 不应展示开发集合 original-patch");
 if (collectionsIndex.collections.at(-1)?.id !== "engine-lab")
   throw new Error("Engine Lab 必须位于 collection discovery index 末尾");
-const robo2Summary = collectionsIndex.collections.find(
-  (collection) => collection.id === "robo2",
-);
-if (robo2Summary?.name !== "Robo2")
-  throw new Error("Robo2 collection 必须使用固定展示名称");
-
 const cardSizes = new Set(["small", "medium", "big"]);
 const collectionIndexes = collectionsIndex.collections.map((summary) => {
   const relative = `assets/maps/${summary.id}/index.json`;
   const collection = readJson(relative);
-  assertSchemaV1(collection, relative);
+  assertSchemaVersion(collection, 2, relative);
   if (
     Object.hasOwn(collection, "id") ||
+    Object.hasOwn(collection, "name") ||
+    Object.hasOwn(collection, "description") ||
     !cardSizes.has(collection.cardSize) ||
     !Array.isArray(collection.filters) ||
     !Array.isArray(collection.chapters) ||
@@ -284,9 +279,6 @@ function assertNovobanCollection(collections) {
 function assertRobo2Collection(collections) {
   const robo2 = collections.find((collection) => collection.id === "robo2");
   if (!robo2) throw new Error("缺少 Robo 2 collection");
-  if (robo2.name !== "Robo2") {
-    throw new Error("Robo2 collection index 必须使用固定展示名称");
-  }
   if (robo2.cardSize !== "medium") {
     throw new Error("Robo 2 collection cardSize 必须为 medium");
   }
@@ -384,8 +376,12 @@ function assertPushboxWinRule(document, relative) {
 }
 
 function assertSchemaV1(value, relative) {
-  if (!value || typeof value !== "object" || value.schemaVersion !== 1)
-    throw new Error(`${relative}: schemaVersion 必须严格为 1`);
+  assertSchemaVersion(value, 1, relative);
+}
+
+function assertSchemaVersion(value, version, relative) {
+  if (!value || typeof value !== "object" || value.schemaVersion !== version)
+    throw new Error(`${relative}: schemaVersion 必须严格为 ${version}`);
 }
 
 function assertMapDocument(document, relative) {

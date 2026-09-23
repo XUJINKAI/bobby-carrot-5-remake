@@ -11,6 +11,7 @@ import {
   webT,
   type WebDisplayText,
 } from "../../i18n/webI18n.js";
+import { collectionName } from "../../i18n/collectionI18n.js";
 import DataExchangePanel from "../../shared/data-exchange/DataExchangePanel.vue";
 import { publicBaseUrl } from "../../services/assets/gameAssets.js";
 import {
@@ -93,7 +94,9 @@ function importSelected(value: unknown): void {
     tab.collection,
     value as ExploreCollectionStorage,
   );
-  tab.feedback = localizedText("settings.exploreImported", { label: tab.label });
+  tab.feedback = localizedText("settings.exploreImported", {
+    label: collectionName(tab.collection),
+  });
 }
 
 function summary(tab: SaveManagementTab): string {
@@ -109,6 +112,12 @@ function summary(tab: SaveManagementTab): string {
   const completed = webT("settings.completed", { count: save.completedMaps.length });
   const recent = save.lastMap ? ` · ${webT("settings.recent", { map: save.lastMap })}` : "";
   return `${completed}${recent}`;
+}
+
+function tabLabel(tab: SaveManagementTab): string {
+  return tab.kind === "adventure"
+    ? "Adventure"
+    : collectionName(tab.collection);
 }
 
 function description(tab: SaveManagementTab): string {
@@ -190,7 +199,7 @@ function requireActiveTab(): SaveManagementTab {
           @keydown.left.prevent="selectRelativeTab(tab.id, -1)"
           @keydown.right.prevent="selectRelativeTab(tab.id, 1)"
         >
-          {{ tab.label }}
+          {{ tabLabel(tab) }}
         </button>
       </nav>
 
@@ -203,7 +212,7 @@ function requireActiveTab(): SaveManagementTab {
       >
         <header>
           <div>
-            <h2>{{ activeTab.label }}</h2>
+            <h2>{{ tabLabel(activeTab) }}</h2>
             <p>{{ description(activeTab) }}</p>
           </div>
           <span class="save-summary">{{ summary(activeTab) }}</span>

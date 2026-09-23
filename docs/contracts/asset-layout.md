@@ -33,14 +33,15 @@ assets/
 
 ```json
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "collections": [
-    { "id": "original", "name": "原版关卡" }
+    { "id": "original" }
   ]
 }
 ```
 
-该索引由总资产流水线在 Original 与 custom collection 均生成后统一写入。每个 discovery 项只包含 `id` 与 `name`；description 等完整展示信息只存在于对应 collection 的详细索引。
+该索引由总资产流水线在所有 Collection 均生成后统一写入。每个 discovery 项只包含
+`id`；数组顺序就是 Explore Tab 与 Settings 存档 Tab 的顺序。
 
 ## `maps/<collection>/index.json`
 
@@ -48,9 +49,7 @@ assets/
 
 ```json
 {
-  "schemaVersion": 1,
-  "name": "原版关卡",
-  "description": "...",
+  "schemaVersion": 2,
   "cardSize": "small",
   "filters": [],
   "chapters": [],
@@ -59,6 +58,18 @@ assets/
 ```
 
 它只服务 Explore 的浏览、分组、搜索、筛选、随机选择和列表展示。
+
+Collection 展示文案位于 `i18n/src/locales/collections/<locale>.ts`，按以下 key 组织：
+
+```text
+collections.<id>.name
+collections.<id>.tag          可选
+collections.<id>.description
+```
+
+`name` 与 `description` 是每个可见 Collection 的必需文案；`tag` 是 Explore Tab 的简短玩法
+标签。Tab 按 `name / tag` 显示，省略 `tag` 时名称在同一 Tab 高度内垂直居中。Collection
+页面 Header 使用 `name / description`，静态与运行时 SEO 也读取同一份双语文案。
 
 `cardSize` 控制该 collection 的地图卡片密度，可取 `small / medium / big`。它属于 collection 的展示数据，因此 chapter 只负责分组，不决定地图卡片尺寸。
 
@@ -147,7 +158,7 @@ Adventure 不拥有地图内容；它引用 `assets/maps/` 下的 MapDocument。
 
 ## Asset Producer 与构建源
 
-`tools/assets/collections.json` 是 collection 顺序、展示信息、可见性与 Producer 的单一
+`tools/assets/collections.json` 是 Collection 顺序、可见性与 Producer 的单一结构
 manifest。BC5、Robo 2、LOMA 与 Novoban 分别由 `tools/assets/bc5/`、`robo2/`、
 `loma/` 与 `novoban/` 生产；directory Producer 读取 `custom-maps/` 中人工维护的语义地图。
 `custom-maps/` 不保存批量来源生成物。

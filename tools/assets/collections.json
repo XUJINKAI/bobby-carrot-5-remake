@@ -1,46 +1,34 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "collections": [
     {
       "id": "original",
-      "name": "原版关卡",
-      "description": "原版 400 个关卡、80 个奖励关、及 5 个特殊场景。",
       "cardSize": "small",
       "producer": "bc5"
     },
     {
       "id": "robo2",
-      "name": "Robo2",
-      "description": "HeroCraft 2004 年 J2ME 益智游戏的 25 张内置关卡。",
       "cardSize": "medium",
       "producer": "robo2"
     },
     {
       "id": "novoban-pushbox",
-      "name": "Novoban",
-      "description": "François Marques 的 50 张入门 Sokoban 关卡，难度逐渐增加。",
       "cardSize": "medium",
       "producer": "novoban"
     },
     {
       "id": "loma-pushbox",
-      "name": "LOMA",
-      "description": "Levels Of Many Authors：137 张三箱 Sokoban 地图。",
       "cardSize": "small",
       "producer": "loma"
     },
     {
       "id": "engine-lab",
-      "name": "Engine Lab",
-      "description": "扩展地图，实验引擎的各种新机制",
       "cardSize": "medium",
       "producer": "directory",
       "source": "custom-maps/engine-lab"
     },
     {
       "id": "original-patch",
-      "name": "Original Patch",
-      "description": "Patch 到原版 jar 包的验证地图",
       "cardSize": "small",
       "producer": "directory",
       "source": "custom-maps/original-patch",

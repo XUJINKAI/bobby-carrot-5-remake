@@ -34,17 +34,15 @@ test("存档管理使用 Explore discovery 白名单和顺序", () => {
   ];
 
   assert.deepEqual(listSaveManagementTargets(collections, storage), [
-    { id: "adventure", kind: "adventure", label: "Adventure" },
+    { id: "adventure", kind: "adventure" },
     {
       id: "explore:zeta",
       kind: "explore",
-      label: "zeta",
       collection: "zeta",
     },
     {
       id: "explore:alpha",
       kind: "explore",
-      label: "alpha",
       collection: "alpha",
     },
   ]);

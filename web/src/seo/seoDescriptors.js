@@ -1,4 +1,4 @@
-import { SEO_CATALOGS } from "@bobby/i18n";
+import { COLLECTION_CATALOGS, SEO_CATALOGS } from "@bobby/i18n";
 
 const STATIC_ROUTES = {
   "/": ["seo.home.title", "seo.home.description", true],
@@ -105,12 +105,24 @@ export function collectionSeoDescriptor(canonicalPath, collection) {
       translated("seo.collection.fallbackDescription"),
     );
   }
+  const name = localizedCollectionField(collection.id, "name");
+  const description = localizedCollectionField(collection.id, "description");
+  if (!name || !description) {
+    return descriptor(
+      canonicalPath,
+      true,
+      translated("seo.collection.fallbackTitle"),
+      translated("seo.collection.fallbackDescription"),
+    );
+  }
   const title = collection.id === "original"
     ? translated("seo.collection.originalTitle")
-    : translated("seo.collection.customTitle", { name: collection.name });
-  const description = collection.description
-    ? sameText(collection.description)
-    : translated("seo.collection.description", { name: collection.name });
+    : {
+        "zh-CN": text("zh-CN", "seo.collection.customTitle", {
+          name: name["zh-CN"],
+        }),
+        en: text("en", "seo.collection.customTitle", { name: name.en }),
+      };
   return descriptor(canonicalPath, true, title, description);
 }
 
@@ -196,6 +208,15 @@ function translated(key, params = {}) {
 
 function sameText(value) {
   return { "zh-CN": value, en: value };
+}
+
+function localizedCollectionField(collectionId, field) {
+  const key = `collections.${collectionId}.${field}`;
+  const zh = COLLECTION_CATALOGS["zh-CN"][key];
+  const en = COLLECTION_CATALOGS.en[key];
+  return zh !== undefined && en !== undefined
+    ? { "zh-CN": zh, en }
+    : null;
 }
 
 function text(locale, key, params) {

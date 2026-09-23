@@ -148,13 +148,13 @@ function exampleFieldValue(field) {
 function collectionExamples() {
   return {
     manifest: {
-      schemaVersion: 1,
+      schemaVersion: 2,
       collections: [
         {
           id: "original-patch",
-          name: "Original Patch",
-          description: "用于与原版 JAR 对比机关机制的测试地图。",
           cardSize: "medium",
+          producer: "directory",
+          source: "custom-maps/original-patch",
           visible: "dev",
           chapters: {
             "37": {
@@ -166,19 +166,15 @@ function collectionExamples() {
       ],
     },
     collectionsIndex: {
-      schemaVersion: 1,
+      schemaVersion: 2,
       collections: [
         {
           id: "original-patch",
-          name: "Original Patch",
-          description: "用于与原版 JAR 对比机关机制的测试地图。",
         },
       ],
     },
     collectionIndex: {
-      schemaVersion: 1,
-      name: "Original Patch",
-      description: "用于与原版 JAR 对比机关机制的测试地图。",
+      schemaVersion: 2,
       cardSize: "medium",
       filters: [
         {

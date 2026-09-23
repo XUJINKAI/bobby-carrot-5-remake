@@ -11,7 +11,7 @@ export interface ResolvedMapCollection extends MapCollectionIndex {
 }
 
 const EMPTY_COLLECTIONS_INDEX: MapCollectionsIndex = {
-  schemaVersion: 1,
+  schemaVersion: 2,
   collections: [],
 };
 
@@ -53,8 +53,8 @@ export class CatalogRuntime {
     const request = fetchJson<MapCollectionsIndex>(
       siteUrl("assets/maps/index.json"),
     ).then((index) => {
-      if (index.schemaVersion !== 1)
-        throw new Error("maps/index.json schemaVersion 必须为 1");
+      if (index.schemaVersion !== 2)
+        throw new Error("maps/index.json schemaVersion 必须为 2");
       this.collectionsIndexValue = index;
       return index;
     });
@@ -76,8 +76,8 @@ export class CatalogRuntime {
     const request = fetchJson<MapCollectionIndex>(
       siteUrl(`assets/maps/${normalized}/index.json`),
     ).then((index) => {
-      if (index.schemaVersion !== 1)
-        throw new Error(`${normalized}: collection schemaVersion 必须为 1`);
+      if (index.schemaVersion !== 2)
+        throw new Error(`${normalized}: collection schemaVersion 必须为 2`);
       const collection = { id: normalized, ...index };
       this.collectionValues.set(normalized, collection);
       return collection;

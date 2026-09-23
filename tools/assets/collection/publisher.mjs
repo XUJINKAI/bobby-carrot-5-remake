@@ -41,17 +41,13 @@ export function publishDiscoveryIndex({
 }) {
   publishFileAtomically({
     target: path.join(outputRoot, "index.json"),
-    content: `${JSON.stringify({ schemaVersion: 1, collections }, null, 2)}\n`,
+    content: `${JSON.stringify({ schemaVersion: 2, collections }, null, 2)}\n`,
   });
 }
 
 function collectionIndex(collection, prepared, maps) {
   return {
-    schemaVersion: 1,
-    name: collection.name,
-    ...(collection.description
-      ? { description: collection.description }
-      : {}),
+    schemaVersion: 2,
     cardSize: collection.cardSize,
     filters: prepared.filters ?? [],
     chapters: prepared.chapters ?? [],

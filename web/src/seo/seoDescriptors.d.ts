@@ -27,8 +27,6 @@ export interface AdventureChapterSeoInput {
 
 export interface CollectionSeoInput {
   readonly id: string;
-  readonly name: string;
-  readonly description?: string | undefined;
 }
 
 export interface ExploreMapSeoInput {

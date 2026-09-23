@@ -392,7 +392,9 @@ public identity: 1-1 / 1-bonus-1 / ... / 40-10
 
 ## Explore content / Custom Map Catalog
 
-Explore 使用 collection 组织所有自由游玩内容。`tools/assets/collections.json` 定义 collection 名称、顺序、说明、discovery 可见性与 Producer：
+Explore 使用 collection 组织所有自由游玩内容。`tools/assets/collections.json` 定义 collection
+顺序、discovery 可见性与 Producer；Collection 的 `name / tag / description` 文案由
+`i18n/src/locales/collections/` 按 Collection ID 定义：
 
 ```text
 custom-maps/<collection>/<map>.json
@@ -408,8 +410,9 @@ assets/maps/<collection>/<map>.json
 BC5、Robo 2、LOMA 与 Novoban 使用 `tools/assets/` 中的显式 Producer；人工维护的
 collection 使用 directory Producer 读取 `custom-maps/`。统一 Collection Publisher 校验并
 规范化 MapDocument、原子发布每个 collection 目录，并在全部可见 collection 就绪后生成
-`assets/maps/index.json`。discovery index 只保存 `id` 与 `name`，collection description
-只保存在各自的详细索引。
+`assets/maps/index.json`。discovery index 只保存 `id`；详细索引只保存卡片尺寸、筛选、
+章节与地图列表。Web 在展示边界使用 `collections.<id>.name / tag / description` 解析当前语言，
+SEO 使用同一份双语 Collection catalog 生成路由文案。
 
 LOMA 与 Novoban 的来源文本、parser 和 Producer 分别归入自身目录，共用的 XSB 与主题
 地形转换归入 `tools/assets/pushbox/`。Robo 2 的 JAR、格式、转换、美术覆盖和 Producer

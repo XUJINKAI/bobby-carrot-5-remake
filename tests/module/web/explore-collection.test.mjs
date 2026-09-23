@@ -16,6 +16,23 @@ test("Explore 标题直接显示 collection 地图总数", () => {
   assert.match(exploreHeader, /webT\("explore\.levelCount", \{ count: mapCount \}\)/);
 });
 
+test("Explore collection 文案按 ID 本地化并支持可选 tag", () => {
+  const explorePage = fs.readFileSync(
+    new URL("../../../web/src/pages/explore/ExplorePage.vue", import.meta.url),
+    "utf8",
+  );
+  const exploreTabs = fs.readFileSync(
+    new URL("../../../web/src/pages/explore/ExploreTabs.vue", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(explorePage, /collectionName\(activeCollection\.id\)/);
+  assert.match(explorePage, /collectionDescription\(activeCollection\.id\)/);
+  assert.match(exploreTabs, /tag: collectionTag\(collection\.id\)/);
+  assert.match(exploreTabs, /v-if="collection\.tag"/);
+  assert.match(exploreTabs, /justify-content:\s*center/);
+});
+
 test("Explore chapter 只显示 collection 提供的展示名称", () => {
   const chapterCard = fs.readFileSync(
     new URL("../../../web/src/pages/explore/ExploreChapterCard.vue", import.meta.url),

@@ -60,7 +60,7 @@ export async function verifySettingsPage(cdp, sessionId) {
   );
   if (
     snapshot.tabs.map((tab) => tab.label).join(",") !==
-      "Adventure,original,engine-lab" ||
+      "Adventure,Original Levels,Engine Lab" ||
     snapshot.tabs[0]?.selected !== "true" ||
     snapshot.panels !== 1 ||
     snapshot.draftHeight < 350 ||
