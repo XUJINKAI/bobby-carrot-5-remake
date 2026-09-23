@@ -1,6 +1,6 @@
 const catalog = {
-  "collections.original.name": "原版关卡",
-  "collections.original.tag": "经典解谜",
+  "collections.original.name": "兔子波比5",
+  "collections.original.tag": "原版关卡",
   "collections.original.description":
     "原版 400 个普通关卡、80 个 Bonus 奖励关及 5 个特殊场景。",
 
@@ -20,7 +20,7 @@ const catalog = {
     "Levels Of Many Authors：137 张三箱 Sokoban 地图。",
 
   "collections.engine-lab.name": "Engine Lab",
-  "collections.engine-lab.tag": "机制实验",
+  "collections.engine-lab.tag": "引擎实验室",
   "collections.engine-lab.description": "用于实验 Engine 新机制的扩展地图。",
 
   "collections.original-patch.name": "Original Patch",

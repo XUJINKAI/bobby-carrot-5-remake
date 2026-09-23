@@ -1,8 +1,8 @@
 import type { CollectionTranslationKey } from "./zh-CN.js";
 
 const catalog = {
-  "collections.original.name": "Original Levels",
-  "collections.original.tag": "Classic Puzzles",
+  "collections.original.name": "Bobby Carrot 5",
+  "collections.original.tag": "Original Levels",
   "collections.original.description":
     "400 regular levels, 80 bonus levels, and 5 special scenes from the original game.",
 
