@@ -1,5 +1,56 @@
 import { waitForBrowserState } from "./browser-regression-wait.mjs";
 
+export async function verifyNarrowExploreTabs(cdp, sessionId) {
+  await cdp.send(
+    "Emulation.setDeviceMetricsOverride",
+    { width: 390, height: 760, deviceScaleFactor: 1, mobile: true },
+    sessionId,
+  );
+  await cdp.send("Page.reload", {}, sessionId);
+  await waitForBrowserState(async () =>
+    Boolean(
+      await cdp.evaluate(
+        sessionId,
+        `(() => {
+          const tabs = document.querySelector('.explore-tabs');
+          const active = tabs?.querySelector('[aria-current="page"]');
+          if (!tabs || !active || tabs.scrollLeft <= 0) return false;
+          const tabsRect = tabs.getBoundingClientRect();
+          const activeRect = active.getBoundingClientRect();
+          return activeRect.left >= tabsRect.left && activeRect.right <= tabsRect.right;
+        })()`,
+      ),
+    ),
+  );
+
+  const result = await cdp.evaluate(
+    sessionId,
+    `(() => {
+      const tabs = document.querySelector('.explore-tabs');
+      const active = tabs?.querySelector('[aria-current="page"]');
+      const tabsRect = tabs?.getBoundingClientRect();
+      const activeRect = active?.getBoundingClientRect();
+      return {
+        activeHref: active?.getAttribute('href') ?? '',
+        scrollLeft: tabs?.scrollLeft ?? 0,
+        tabsLeft: tabsRect?.left ?? 0,
+        tabsRight: tabsRect?.right ?? 0,
+        activeLeft: activeRect?.left ?? 0,
+        activeRight: activeRect?.right ?? 0,
+      };
+    })()`,
+  );
+
+  if (
+    result.activeHref !== "/explore/loma-pushbox" ||
+    result.scrollLeft <= 0 ||
+    result.activeLeft < result.tabsLeft ||
+    result.activeRight > result.tabsRight
+  ) {
+    throw new Error(`Explore 窄屏刷新后当前 Tab 不可见：${JSON.stringify(result)}`);
+  }
+}
+
 export async function verifyNarrowExploreGameNavigation(cdp, sessionId) {
   await cdp.send(
     "Emulation.setDeviceMetricsOverride",

@@ -2,7 +2,7 @@
 import type { MapCollectionSummary } from "../../services/catalog/catalog.js";
 import { exploreCollectionPath } from "../../app/routes.js";
 import { webT } from "../../i18n/webI18n.js";
-import { computed } from "vue";
+import { computed, nextTick, onMounted, ref, watch } from "vue";
 import {
   collectionName,
   collectionTag,
@@ -13,6 +13,7 @@ const props = defineProps<{
   collections: MapCollectionSummary[];
 }>();
 const emit = defineEmits<{ navigate: [path: string] }>();
+const tabsElement = ref<HTMLElement | null>(null);
 
 const localizedCollections = computed(() =>
   props.collections.map((collection) => ({
@@ -21,10 +22,47 @@ const localizedCollections = computed(() =>
     tag: collectionTag(collection.id),
   })),
 );
+
+function revealActiveCollection(): void {
+  const tabs = tabsElement.value;
+  const activeTab = tabs?.querySelector<HTMLElement>('[aria-current="page"]');
+  if (!tabs || !activeTab) return;
+
+  const tabsRect = tabs.getBoundingClientRect();
+  const activeRect = activeTab.getBoundingClientRect();
+  const fullyVisible =
+    activeRect.left >= tabsRect.left && activeRect.right <= tabsRect.right;
+  if (fullyVisible) return;
+
+  tabs.scrollLeft +=
+    activeRect.left -
+    tabsRect.left -
+    (tabsRect.width - activeRect.width) / 2;
+}
+
+async function revealActiveCollectionAfterRender(): Promise<void> {
+  await nextTick();
+  revealActiveCollection();
+}
+
+onMounted(() => {
+  void revealActiveCollectionAfterRender();
+});
+
+watch(
+  () => props.activeCollection,
+  () => {
+    void revealActiveCollectionAfterRender();
+  },
+);
 </script>
 
 <template>
-  <nav class="explore-tabs" :aria-label="webT('explore.tabsAria')">
+  <nav
+    ref="tabsElement"
+    class="explore-tabs"
+    :aria-label="webT('explore.tabsAria')"
+  >
     <a
       v-for="collection in localizedCollections"
       :key="collection.id"

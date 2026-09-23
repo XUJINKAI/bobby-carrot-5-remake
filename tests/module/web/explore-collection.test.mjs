@@ -30,6 +30,10 @@ test("Explore collection 文案按 ID 本地化并支持可选 tag", () => {
   assert.match(explorePage, /collectionDescription\(activeCollection\.id\)/);
   assert.match(exploreTabs, /tag: collectionTag\(collection\.id\)/);
   assert.match(exploreTabs, /v-if="collection\.tag"/);
+  assert.match(exploreTabs, /ref="tabsElement"/);
+  assert.match(exploreTabs, /querySelector<HTMLElement>\('\[aria-current="page"\]'\)/);
+  assert.match(exploreTabs, /tabs\.scrollLeft \+=/);
+  assert.match(exploreTabs, /watch\(\s*\(\) => props\.activeCollection/);
   assert.match(exploreTabs, /justify-content:\s*center/);
   assert.match(exploreTabs, /min-height:\s*65px/);
   assert.match(
