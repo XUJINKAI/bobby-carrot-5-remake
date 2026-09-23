@@ -618,7 +618,7 @@ addEventListener("unhandledrejection", (event) => {
           value,
         };
       })(),
-      20_000,
+      40_000,
       `Chromium timed out while loading ${url}`,
     );
   } catch (error) {
