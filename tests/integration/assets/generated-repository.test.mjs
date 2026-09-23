@@ -5,7 +5,7 @@ import { parseMapDocument } from "@bobby/model";
 import { root } from "../../../tools/lib/fs.mjs";
 import {
   originalExploreFilters as buildOriginalExploreFilters,
-} from "../../../tools/original/explore-filter-tags.mjs";
+} from "../../../tools/original/catalog/explore-filters.mjs";
 
 test("生成资产保持 collection、Original 与 Adventure 内容合同", () => {
 const collectionsIndex = readJson("assets/maps/index.json");
@@ -458,8 +458,6 @@ function assertCollectionFilters(collection, relative) {
       !filter ||
       typeof filter.id !== "string" ||
       !filter.id ||
-      typeof filter.name !== "string" ||
-      !filter.name ||
       !["single", "multiple"].includes(filter.selection) ||
       !Array.isArray(filter.options) ||
       filter.options.length === 0 ||
@@ -473,8 +471,6 @@ function assertCollectionFilters(collection, relative) {
         !option ||
         typeof option.id !== "string" ||
         !option.id ||
-        typeof option.name !== "string" ||
-        !option.name ||
         optionIds.has(option.id)
       )
         throw new Error(`${relative}: filter option 定义无效`);

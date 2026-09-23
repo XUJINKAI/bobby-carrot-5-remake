@@ -3,24 +3,23 @@ import { MapEntityTypeId } from "@bobby/model";
 /**
  * Original Explore filter 的人工审阅入口。
  *
- * 每个 option 在同一行声明 UI 信息与 canonical Entity 匹配依据。生成 collection
- * index 时只发布 id/name/icons；生成 map 标签时使用 match。表外 Entity 不参与推断。
+ * 每个 option 在同一行声明图标与 canonical Entity 匹配依据。生成 collection
+ * index 时只发布稳定 ID、选择方式和图标；生成 map 标签时使用 match。展示文案由
+ * Collection i18n 按 ID 解析，表外 Entity 不参与推断。
  * `snow-cloud` 是雪地与星空共用的底板，因此场景分别由 `snow` 和 `starfield`
  * 确认，不能从共用底板猜测。
  */
 export const ORIGINAL_EXPLORE_FILTER_DEFINITIONS = [
   {
     id: "targets",
-    name: "目标",
     selection: "single",
     options: [
-      goalOption("carrot", "萝卜", MapEntityTypeId.CARROT),
-      goalOption("egg", "彩蛋", MapEntityTypeId.EGG),
+      goalOption("carrot", MapEntityTypeId.CARROT),
+      goalOption("egg", MapEntityTypeId.EGG),
     ],
   },
   {
     id: "target-count",
-    name: "目标数",
     selection: "single",
     options: [
       countOption("0-10", 0, 10),
@@ -32,15 +31,13 @@ export const ORIGINAL_EXPLORE_FILTER_DEFINITIONS = [
   },
   {
     id: "scenes",
-    name: "场景",
     selection: "multiple",
     options: [
-      entityOption("grassland", "草地", [MapEntityTypeId.GRASS], [
+      entityOption("grassland", [MapEntityTypeId.GRASS], [
         entityIcon(MapEntityTypeId.GRASS, { variant: "ts-10-1" }),
       ]),
       entityOption(
         "water",
-        "水域",
         [
           MapEntityTypeId.WATER,
           MapEntityTypeId.WATERFALL,
@@ -48,12 +45,11 @@ export const ORIGINAL_EXPLORE_FILTER_DEFINITIONS = [
         ],
         [entityIcon(MapEntityTypeId.WATER, { variant: "ripple" })],
       ),
-      entityOption("snow", "雪地", [MapEntityTypeId.SNOW], [
+      entityOption("snow", [MapEntityTypeId.SNOW], [
         entityIcon(MapEntityTypeId.SNOW),
       ]),
       entityOption(
         "starfield",
-        "星空",
         [MapEntityTypeId.STARFIELD],
         [
           entityIcon(MapEntityTypeId.STARFIELD, {
@@ -61,19 +57,17 @@ export const ORIGINAL_EXPLORE_FILTER_DEFINITIONS = [
           }),
         ],
       ),
-      entityOption("desert", "沙漠", [MapEntityTypeId.SAND], [
+      entityOption("desert", [MapEntityTypeId.SAND], [
         entityIcon(MapEntityTypeId.SAND),
       ]),
     ],
   },
   {
     id: "mechanics",
-    name: "道具与机关",
     selection: "multiple",
     options: [
       entityOption(
         "speed",
-        "加速带",
         [MapEntityTypeId.SPEED, MapEntityTypeId.SPEED_SWITCH],
         [
           entityIcon(MapEntityTypeId.SPEED, { direction: "right" }),
@@ -82,7 +76,6 @@ export const ORIGINAL_EXPLORE_FILTER_DEFINITIONS = [
       ),
       entityOption(
         "mower",
-        "割草机/高草",
         [
           MapEntityTypeId.MOWER,
           MapEntityTypeId.GAS,
@@ -94,7 +87,6 @@ export const ORIGINAL_EXPLORE_FILTER_DEFINITIONS = [
       ),
       entityOption(
         "highgrass",
-        "高草",
         [
           MapEntityTypeId.HIGH_GRASS,
         ],
@@ -104,7 +96,6 @@ export const ORIGINAL_EXPLORE_FILTER_DEFINITIONS = [
       ),
       entityOption(
         "crumblyrock",
-        "易碎岩石",
         [
           MapEntityTypeId.CRUMBLY_ROCK,
         ],
@@ -114,7 +105,6 @@ export const ORIGINAL_EXPLORE_FILTER_DEFINITIONS = [
       ),
       entityOption(
         "bean",
-        "魔豆",
         [MapEntityTypeId.BEAN, MapEntityTypeId.BEAN_FIELD],
         [
           entityIcon(MapEntityTypeId.BEAN),
@@ -123,7 +113,6 @@ export const ORIGINAL_EXPLORE_FILTER_DEFINITIONS = [
       ),
       entityOption(
         "shovel",
-        "雪铲/积雪",
         [MapEntityTypeId.SHOVEL_PICKUP, MapEntityTypeId.SNOW],
         [
           entityIcon(MapEntityTypeId.SHOVEL_PICKUP),
@@ -132,7 +121,6 @@ export const ORIGINAL_EXPLORE_FILTER_DEFINITIONS = [
       ),
       entityOption(
         "kite",
-        "风筝/龙卷风",
         [
           MapEntityTypeId.KITE,
           MapEntityTypeId.WHIRLWIND,
@@ -146,7 +134,6 @@ export const ORIGINAL_EXPLORE_FILTER_DEFINITIONS = [
       ),
       entityOption(
         "tide",
-        "潮汐",
         [
           MapEntityTypeId.TIDE,
           MapEntityTypeId.TIDE_SWITCH,
@@ -158,7 +145,6 @@ export const ORIGINAL_EXPLORE_FILTER_DEFINITIONS = [
       ),
       entityOption(
         "leaf",
-        "叶子",
         [
           MapEntityTypeId.LEAF,
         ],
@@ -168,7 +154,6 @@ export const ORIGINAL_EXPLORE_FILTER_DEFINITIONS = [
       ),
       entityOption(
         "color",
-        "彩色方块",
         [MapEntityTypeId.COLOR_BLOCK, MapEntityTypeId.COLOR_SWITCH],
         [
           entityIcon(MapEntityTypeId.COLOR_BLOCK, {
@@ -183,7 +168,6 @@ export const ORIGINAL_EXPLORE_FILTER_DEFINITIONS = [
       ),
       entityOption(
         "carousel",
-        "旋转通道",
         [MapEntityTypeId.CAROUSEL, MapEntityTypeId.CAROUSEL_SWITCH],
         [
           entityIcon(MapEntityTypeId.CAROUSEL, { variant: "right-top" }),
@@ -192,7 +176,6 @@ export const ORIGINAL_EXPLORE_FILTER_DEFINITIONS = [
       ),
       entityOption(
         "dragon",
-        "龙/镜子/冰块",
         [
           MapEntityTypeId.DRAGON,
           MapEntityTypeId.MIRROR,
@@ -206,7 +189,6 @@ export const ORIGINAL_EXPLORE_FILTER_DEFINITIONS = [
       ),
       entityOption(
         "wind",
-        "风车/云",
         [
           MapEntityTypeId.WINDMILL,
           MapEntityTypeId.WIND_SWITCH,
@@ -221,10 +203,10 @@ export const ORIGINAL_EXPLORE_FILTER_DEFINITIONS = [
           entityIcon(MapEntityTypeId.CLOUD, { color: "red" }),
         ],
       ),
-      entityOption("trap", "陷阱", [MapEntityTypeId.TRAP], [
+      entityOption("trap", [MapEntityTypeId.TRAP], [
         entityIcon(MapEntityTypeId.TRAP, { active: true }),
       ]),
-      entityOption("plank", "木板", [MapEntityTypeId.PLANK], [
+      entityOption("plank", [MapEntityTypeId.PLANK], [
         entityIcon(MapEntityTypeId.PLANK),
       ]),
     ],
@@ -234,7 +216,6 @@ export const ORIGINAL_EXPLORE_FILTER_DEFINITIONS = [
 export function originalExploreFilters() {
   return ORIGINAL_EXPLORE_FILTER_DEFINITIONS.map((filter) => ({
     id: filter.id,
-    name: filter.name,
     selection: filter.selection,
     options: filter.options.map(({ match: _match, ...option }) => option),
   }));
@@ -260,7 +241,6 @@ export function originalExploreMapFilters(level) {
 function countOption(id, min, max) {
   return {
     id,
-    name: id,
     icons: [
       entityIcon(MapEntityTypeId.EGG),
     ],
@@ -273,19 +253,17 @@ function countOption(id, min, max) {
   };
 }
 
-function goalOption(id, name, goalType) {
+function goalOption(id, goalType) {
   return {
     id,
-    name,
     icons: [entityIcon(goalType)],
     match: { type: "win-goal", goalType },
   };
 }
 
-function entityOption(id, name, entityTypes, icons) {
+function entityOption(id, entityTypes, icons) {
   return {
     id,
-    name,
     icons,
     match: { type: "entity-any", entityTypes },
   };

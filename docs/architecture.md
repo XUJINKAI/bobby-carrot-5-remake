@@ -60,6 +60,12 @@ DAT package <-> metadata + level records
 
 `tools/original/dat/mapping.mjs` 是唯一 DAT byte 与 atlas 坐标换算边界。原版 hex ID、record provenance 等信息只用于 tools、逆向研究、官方地图解码、原版 JAR patch 和相关测试，不进入 Web/Editor 产品功能。
 
+Original 工具按单向依赖组织：`tools/original/cli.mjs` 是唯一根层命令入口；
+`archive/` 负责 JAR/source 提取与解码，`adapter/` 负责 decoded 与 semantic Map 转换，
+`catalog/` 负责 Campaign identity 和发布 metadata，`commands/` 承载 inspect / patch /
+research 命令实现，`dat/` 持有 DAT codec 与 package/record 格式。CLI 和 BC5 Asset
+Producer 调用这些职责模块，职责模块不依赖 CLI 或 `tools/assets/`。
+
 `dynamic_slots` 属于原版 record 的序列化字段，由 `deriveDatDynamicSlots(LevelMap)` 派生。`verify` 对全部 530 条官方 source record 检查派生值与原值一致。
 
 ### DAT package 精确 patch
@@ -393,8 +399,8 @@ public identity: 1-1 / 1-bonus-1 / ... / 40-10
 ## Explore content / Custom Map Catalog
 
 Explore 使用 collection 组织所有自由游玩内容。`tools/assets/collections.json` 定义 collection
-顺序、discovery 可见性与 Producer；Collection 的 `name / tag / description` 文案由
-`i18n/src/locales/collections/` 按 Collection ID 定义：
+顺序、discovery 可见性与 Producer；Collection 的 `name / tag / description` 以及筛选器与
+筛选项文案由 `i18n/src/locales/collections/` 按 Collection ID 和稳定 filter/option ID 定义：
 
 ```text
 custom-maps/<collection>/<map>.json
@@ -411,8 +417,8 @@ BC5、Robo 2、LOMA 与 Novoban 使用 `tools/assets/` 中的显式 Producer；�
 collection 使用 directory Producer 读取 `custom-maps/`。统一 Collection Publisher 校验并
 规范化 MapDocument、原子发布每个 collection 目录，并在全部可见 collection 就绪后生成
 `assets/maps/index.json`。discovery index 只保存 `id`；详细索引只保存卡片尺寸、筛选、
-章节与地图列表。Web 在展示边界使用 `collections.<id>.name / tag / description` 解析当前语言，
-SEO 使用同一份双语 Collection catalog 生成路由文案。
+章节与地图列表。筛选定义只保存稳定 ID、选择方式和图标，Web 在展示边界使用
+`collections.<id>.*` 解析当前语言；SEO 使用同一份双语 Collection catalog 生成路由文案。
 
 LOMA 与 Novoban 的来源文本、parser 和 Producer 分别归入自身目录，共用的 XSB 与主题
 地形转换归入 `tools/assets/pushbox/`。Robo 2 的 JAR、格式、转换、美术覆盖和 Producer

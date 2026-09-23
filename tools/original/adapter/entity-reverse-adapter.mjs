@@ -7,7 +7,7 @@ import {
 import {
   decodedTileLabel,
   decodedTileVisual,
-} from "./dat/mapping.mjs";
+} from "../dat/mapping.mjs";
 
 /**
  * canonical LevelMap → 原版 DAT decoded record 的人工审阅入口。

@@ -98,19 +98,21 @@ export function affectedAssetTasks(relativePath, taskIds) {
     selected.add("assets.all");
   } else if (
     relative.startsWith("original/official-hd/") ||
-    relative === "tools/original/extract.mjs" ||
-    relative === "tools/original/source-definitions.mjs" ||
+    relative === "tools/original/archive/extract.mjs" ||
+    relative === "tools/original/archive/source-definitions.mjs" ||
     relative === "tools/lib/zip.mjs" ||
     relative.startsWith("tools/assets/bc5/")
   ) {
     add("bc5.extract");
   } else if (
-    relative === "tools/original/decode.mjs" ||
-    relative === "tools/original/level-format.mjs" ||
+    relative === "tools/original/archive/decode.mjs" ||
     relative.startsWith("tools/original/dat/")
   ) {
     add("bc5.decode");
-  } else if (relative.startsWith("tools/original/")) {
+  } else if (
+    relative.startsWith("tools/original/adapter/") ||
+    relative.startsWith("tools/original/catalog/")
+  ) {
     add("bc5.adapt");
   } else if (relative.startsWith("model/src/")) {
     add("bc5.adapt", "robo2.adapt");

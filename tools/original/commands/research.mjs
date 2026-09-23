@@ -4,17 +4,12 @@ import os from "node:os";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import { extractZip } from "../lib/zip.mjs";
-import { RELEASES } from "./source-definitions.mjs";
+import { extractZip } from "../../lib/zip.mjs";
+import { RELEASES } from "../archive/source-definitions.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-const root = path.resolve(here, "../..");
+const root = path.resolve(here, "../../..");
 const jarRoot = path.join(root, "original/official-hd");
-const outputIndex = process.argv.indexOf("--output");
-const outputRoot = path.resolve(
-  root,
-  outputIndex >= 0 ? process.argv[outputIndex + 1] : "tmp/release-research",
-);
 
 function sha256(buffer) {
   return crypto.createHash("sha256").update(buffer).digest("hex");
@@ -136,13 +131,21 @@ function compareMethodBlocks(beforeText, afterText) {
     .filter(Boolean);
 }
 
-fs.rmSync(outputRoot, { recursive: true, force: true });
-fs.mkdirSync(outputRoot, { recursive: true });
+export function researchOriginal(values = []) {
+  const outputIndex = values.indexOf("--output");
+  const outputRoot = path.resolve(
+    root,
+    outputIndex >= 0 ? values[outputIndex + 1] : "tmp/release-research",
+  );
+  fs.rmSync(outputRoot, { recursive: true, force: true });
+  fs.mkdirSync(outputRoot, { recursive: true });
 
-const extractedRoot = fs.mkdtempSync(path.join(os.tmpdir(), "bc5r-release-research-"));
-const rows = [];
+  const extractedRoot = fs.mkdtempSync(
+    path.join(os.tmpdir(), "bc5r-release-research-"),
+  );
+  const rows = [];
 
-try {
+  try {
   for (const release of RELEASES) {
     const jarPath = path.join(jarRoot, release.jar);
     if (!fs.existsSync(jarPath)) throw new Error(`缺少官方 JAR：${jarPath}`);
@@ -281,6 +284,7 @@ try {
   console.log("Engine revision：", JSON.stringify(engineRevisions));
   console.log("Bytecode diff：", JSON.stringify(bytecodeDiffs));
   console.log(`完整矩阵：${path.relative(root, path.join(outputRoot, "release-matrix.json"))}`);
-} finally {
-  fs.rmSync(extractedRoot, { recursive: true, force: true });
+  } finally {
+    fs.rmSync(extractedRoot, { recursive: true, force: true });
+  }
 }

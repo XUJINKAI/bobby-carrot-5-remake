@@ -7,20 +7,17 @@ import {
   campaignLevelName,
   campaignSequenceForChapter,
   specialSceneIdForSource,
-} from "./public-ids.mjs";
+} from "../catalog/public-ids.mjs";
 import {
   OFFICIAL_RUNTIME_ASSET_SOURCES,
   RELEASES,
   SOURCE_TILE_SIZE,
-} from "./source-definitions.mjs";
+} from "../archive/source-definitions.mjs";
 import { adaptDecodedMap } from "./entity-adapter.mjs";
 import { deriveOriginalWinCondition } from "./win-condition.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-const root = path.resolve(here, "../..");
-const decoded = path.join(root, "tmp/assets/bc5/decoded");
-const adapted = path.join(root, "tmp/assets/bc5/adapted");
-const mapsRoot = path.join(adapted, "maps");
+const root = path.resolve(here, "../../..");
 const releaseOrder = new Map(
   RELEASES.map((release) => [release.id, release.order]),
 );
@@ -46,121 +43,129 @@ function copy(from, to) {
   fs.copyFileSync(from, to);
 }
 
-fs.rmSync(mapsRoot, { recursive: true, force: true });
-fs.mkdirSync(mapsRoot, { recursive: true });
+export function adaptOriginal({ repositoryRoot = root } = {}) {
+  const decoded = path.join(repositoryRoot, "tmp/assets/bc5/decoded");
+  const adapted = path.join(repositoryRoot, "tmp/assets/bc5/adapted");
+  const mapsRoot = path.join(adapted, "maps");
+  fs.rmSync(mapsRoot, { recursive: true, force: true });
+  fs.mkdirSync(mapsRoot, { recursive: true });
 
-const sourceIndex = readJson(path.join(decoded, "source-index.json"));
-if (sourceIndex.schemaVersion !== 1)
-  throw new Error("Original decoded source-index.json schemaVersion 必须为 1");
+  const sourceIndex = readJson(path.join(decoded, "source-index.json"));
+  if (sourceIndex.schemaVersion !== 1)
+    throw new Error("Original decoded source-index.json schemaVersion 必须为 1");
 
-const chapters = [];
-const maps = [];
-const documents = new Map();
+  const chapters = [];
+  const maps = [];
+  const documents = new Map();
 
-for (const release of sourceIndex.releases) {
-  const order = releaseOrder.get(release.id);
-  if (order === undefined) throw new Error(`未知 Original release：${release.id}`);
-  for (const pack of release.packs) {
-    if (String(pack.packFile) === "00") continue;
-    if (![1, 2, 3].includes(pack.packType))
-      throw new Error(
-        `${release.id}/${pack.packFile}: packType 必须为 1~3`,
-      );
-    const chapter = sourceChapterNumber(order, pack.packFile);
-    const mapIds = campaignSequenceForChapter(chapter);
-    chapters.push({
-      id: String(chapter),
-      number: chapter,
-      name: pack.title,
-      description: pack.description ?? "",
-      difficulty: pack.packType,
-      maps: mapIds,
-    });
-
-    for (
-      let sourceLevelIndex = 1;
-      sourceLevelIndex <= 12;
-      sourceLevelIndex += 1
-    ) {
-      const sourceName = `${pack.packFile}-${String(sourceLevelIndex).padStart(2, "0")}.json`;
-      const source = readJson(
-        path.join(decoded, release.id, "levels", sourceName),
-      );
-      if (
-        source.schemaVersion !== 1 ||
-        source.terrainEncoding !== "semantic-row-major"
-      )
-        throw new Error(`${release.id}/${sourceName}: decoded map 合同无效`);
-      const id = campaignLevelId(chapter, sourceLevelIndex);
-      const bonusOrdinal =
-        sourceLevelIndex === 11 ? 1 : sourceLevelIndex === 12 ? 2 : null;
-      const kind = bonusOrdinal === null ? "level" : "bonus";
-      const sourceRef = sourceReference(release, source, sourceName);
-      const document = createMapDocument(
-        source,
-        {
-          name: campaignLevelName(sourceLevelIndex),
-        },
-        bonusOrdinal === null
-          ? {}
-          : { music: "shop", lockDeathCountdownSeconds: 60 },
-      );
-      documents.set(id, document);
-      maps.push({
-        id,
-        chapter: String(chapter),
-        kind,
-        bonusOrdinal,
-        sourceLevelIndex,
-        source: sourceRef,
-        path: `maps/${id}.json`,
+  for (const release of sourceIndex.releases) {
+    const order = releaseOrder.get(release.id);
+    if (order === undefined)
+      throw new Error(`未知 Original release：${release.id}`);
+    for (const pack of release.packs) {
+      if (String(pack.packFile) === "00") continue;
+      if (![1, 2, 3].includes(pack.packType))
+        throw new Error(
+          `${release.id}/${pack.packFile}: packType 必须为 1~3`,
+        );
+      const chapter = sourceChapterNumber(order, pack.packFile);
+      const mapIds = campaignSequenceForChapter(chapter);
+      chapters.push({
+        id: String(chapter),
+        number: chapter,
+        name: pack.title,
+        description: pack.description ?? "",
+        difficulty: pack.packType,
+        maps: mapIds,
       });
+
+      for (
+        let sourceLevelIndex = 1;
+        sourceLevelIndex <= 12;
+        sourceLevelIndex += 1
+      ) {
+        const sourceName = `${pack.packFile}-${String(sourceLevelIndex).padStart(2, "0")}.json`;
+        const source = readJson(
+          path.join(decoded, release.id, "levels", sourceName),
+        );
+        if (
+          source.schemaVersion !== 1 ||
+          source.terrainEncoding !== "semantic-row-major"
+        )
+          throw new Error(`${release.id}/${sourceName}: decoded map 合同无效`);
+        const id = campaignLevelId(chapter, sourceLevelIndex);
+        const bonusOrdinal =
+          sourceLevelIndex === 11 ? 1 : sourceLevelIndex === 12 ? 2 : null;
+        const kind = bonusOrdinal === null ? "level" : "bonus";
+        const sourceRef = sourceReference(release, source, sourceName);
+        const document = createMapDocument(
+          source,
+          {
+            name: campaignLevelName(sourceLevelIndex),
+          },
+          bonusOrdinal === null
+            ? {}
+            : { music: "shop", lockDeathCountdownSeconds: 60 },
+        );
+        documents.set(id, document);
+        maps.push({
+          id,
+          chapter: String(chapter),
+          kind,
+          bonusOrdinal,
+          sourceLevelIndex,
+          source: sourceRef,
+          path: `maps/${id}.json`,
+        });
+      }
     }
   }
-}
 
-chapters.sort((left, right) => left.number - right.number);
-if (chapters.length !== 40)
-  throw new Error(`Original 应包含 40 章，实际 ${chapters.length}`);
+  chapters.sort((left, right) => left.number - right.number);
+  if (chapters.length !== 40)
+    throw new Error(`Original 应包含 40 章，实际 ${chapters.length}`);
 
-const playerOrder = chapters.flatMap((chapter) => chapter.maps);
-if (playerOrder.length !== 480)
-  throw new Error(
-    `Original 应包含 480 张 Campaign map，实际 ${playerOrder.length}`,
+  const playerOrder = chapters.flatMap((chapter) => chapter.maps);
+  if (playerOrder.length !== 480)
+    throw new Error(
+      `Original 应包含 480 张 Campaign map，实际 ${playerOrder.length}`,
+    );
+  const mapById = new Map(maps.map((map) => [map.id, map]));
+  const orderedMaps = playerOrder.map((id) => {
+    const map = mapById.get(id);
+    if (!map) throw new Error(`缺少 Original map metadata：${id}`);
+    return map;
+  });
+  for (const id of playerOrder) {
+    const document = documents.get(id);
+    if (!document) throw new Error(`缺少 adapted map：${id}`);
+    writeJson(path.join(mapsRoot, `${id}.json`), document);
+  }
+
+  const specialScenes = buildSpecialScenes(sourceIndex, documents, decoded);
+  for (const scene of specialScenes) {
+    const document = documents.get(scene.id);
+    if (!document) throw new Error(`缺少 Special Scene：${scene.id}`);
+    writeJson(path.join(mapsRoot, `${scene.id}.json`), document);
+  }
+
+  copyRuntimeAssets(repositoryRoot, adapted);
+  writeJson(path.join(adapted, "catalog.json"), {
+    schemaVersion: 1,
+    chapters,
+    maps: orderedMaps,
+    specialScenes,
+    art: {
+      tileSize: SOURCE_TILE_SIZE,
+      basePath: "art/hd",
+    },
+  });
+  console.log(
+    "构建 Original Adapter：40 章 / 480 Campaign map / 5 Special Scene。",
   );
-const mapById = new Map(maps.map((map) => [map.id, map]));
-const orderedMaps = playerOrder.map((id) => {
-  const map = mapById.get(id);
-  if (!map) throw new Error(`缺少 Original map metadata：${id}`);
-  return map;
-});
-for (const id of playerOrder) {
-  const document = documents.get(id);
-  if (!document) throw new Error(`缺少 adapted map：${id}`);
-  writeJson(path.join(mapsRoot, `${id}.json`), document);
 }
 
-const specialScenes = buildSpecialScenes(sourceIndex, documents);
-for (const scene of specialScenes) {
-  const document = documents.get(scene.id);
-  if (!document) throw new Error(`缺少 Special Scene：${scene.id}`);
-  writeJson(path.join(mapsRoot, `${scene.id}.json`), document);
-}
-
-copyRuntimeAssets();
-writeJson(path.join(adapted, "catalog.json"), {
-  schemaVersion: 1,
-  chapters,
-  maps: orderedMaps,
-  specialScenes,
-  art: {
-    tileSize: SOURCE_TILE_SIZE,
-    basePath: "art/hd",
-  },
-});
-console.log("构建 Original Adapter：40 章 / 480 Campaign map / 5 Special Scene。");
-
-function buildSpecialScenes(index, target) {
+function buildSpecialScenes(index, target, decoded) {
   const base = index.releases.find((release) => release.id === "base");
   const pack = base?.packs.find((item) => String(item.packFile) === "00");
   if (!base || !pack || pack.levelCount !== 5)
@@ -244,16 +249,20 @@ function sourceChapterNumber(order, packFile) {
   return chapter;
 }
 
-function copyRuntimeAssets() {
+function copyRuntimeAssets(repositoryRoot, adapted) {
   const artOut = path.join(adapted, "art", "hd");
   fs.rmSync(artOut, { recursive: true, force: true });
   fs.mkdirSync(artOut, { recursive: true });
-  copyRuntimeAssetCategory(OFFICIAL_RUNTIME_ASSET_SOURCES.artwork, artOut);
+  copyRuntimeAssetCategory(
+    repositoryRoot,
+    OFFICIAL_RUNTIME_ASSET_SOURCES.artwork,
+    artOut,
+  );
 }
 
-function copyRuntimeAssetCategory(rule, outputDir) {
+function copyRuntimeAssetCategory(repositoryRoot, rule, outputDir) {
   const sourceRoot = path.join(
-    root,
+    repositoryRoot,
     "tmp/assets/bc5/extracted",
     rule.defaultRelease,
   );
@@ -264,7 +273,7 @@ function copyRuntimeAssetCategory(rule, outputDir) {
   for (const name of names) {
     const release = rule.overrides[name] ?? rule.defaultRelease;
     const source = path.join(
-      root,
+      repositoryRoot,
       "tmp/assets/bc5/extracted",
       release,
       name,

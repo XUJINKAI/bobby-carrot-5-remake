@@ -6,54 +6,62 @@ import {
   encodeDatLevelRecord,
   replaceDatLevelRecord,
   splitDatPackage,
-} from "./dat/index.mjs";
-import { reverseEntityMap } from "./entity-reverse-adapter.mjs";
-import { parseLevelRecord } from "./level-format.mjs";
-import { RELEASES } from "./source-definitions.mjs";
-import { patchZipEntries, readZipEntry } from "../lib/zip-patch.mjs";
+} from "../dat/index.mjs";
+import { parseLevelRecord } from "../dat/level-format.mjs";
+import { reverseEntityMap } from "../adapter/entity-reverse-adapter.mjs";
+import { RELEASES } from "../archive/source-definitions.mjs";
+import { patchZipEntries, readZipEntry } from "../../lib/zip-patch.mjs";
 
-const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
-const args = parseArgs(process.argv.slice(2));
-const inputDir = path.resolve(
-  args.in ?? path.join(root, "custom-maps/original-patch"),
+const root = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "../../..",
 );
-const outputDir = path.resolve(
-  args.out ?? path.join(root, "tmp/original-patch"),
-);
-const jarDirectory = path.join(
-  root,
-  args.hd ? "original/official-hd" : "original/official",
-);
-validateDirectories(inputDir, outputDir);
-
-const catalog = readJson(
-  path.join(root, "tmp/assets/bc5/adapted/catalog.json"),
-);
-if (catalog.schemaVersion !== 1)
-  throw new Error("Original adapted catalog schemaVersion 必须为 1");
-const maps = readPatchMaps(inputDir, catalog);
-
-fs.rmSync(outputDir, { recursive: true, force: true });
-fs.mkdirSync(outputDir, { recursive: true });
-const encodedMaps = writeEncodedMaps(maps, path.join(outputDir, "encoded"));
-const patchTimestamp = formatPatchTimestamp(new Date());
-for (const [releaseId, replacements] of groupByRelease(encodedMaps)) {
-  const release = RELEASES.find((item) => item.id === releaseId);
-  if (!release) throw new Error(`未知原版 release：${releaseId}`);
-  const original = path.join(jarDirectory, release.jar);
-  const replacementEntries = patchDatEntries(original, replacements);
-  const patched = patchZipEntries(fs.readFileSync(original), replacementEntries, {
-    removeSignatures: true,
-  });
-  const out = path.join(
-    outputDir,
-    `${releaseId}-patched-${patchTimestamp}${args.hd ? "-hd" : ""}.jar`,
+export function patchOriginal(values = []) {
+  const args = parseArgs(values);
+  const inputDir = path.resolve(
+    args.in ?? path.join(root, "custom-maps/original-patch"),
   );
-  fs.writeFileSync(out, patched.buffer);
-  verifyPatchedJar(out, replacements);
-  console.log(
-    `${path.relative(root, out)}: ${replacements.map((item) => item.id).join(", ")} · DAT record 写入校验：OK${patched.removedSignatures.length ? ` · 已移除失效签名：${patched.removedSignatures.join(", ")}` : ""}`,
+  const outputDir = path.resolve(
+    args.out ?? path.join(root, "tmp/original-patch"),
   );
+  const jarDirectory = path.join(
+    root,
+    args.hd ? "original/official-hd" : "original/official",
+  );
+  validateDirectories(inputDir, outputDir);
+
+  const catalog = readJson(
+    path.join(root, "tmp/assets/bc5/adapted/catalog.json"),
+  );
+  if (catalog.schemaVersion !== 1) {
+    throw new Error("Original adapted catalog schemaVersion 必须为 1");
+  }
+  const maps = readPatchMaps(inputDir, catalog);
+
+  fs.rmSync(outputDir, { recursive: true, force: true });
+  fs.mkdirSync(outputDir, { recursive: true });
+  const encodedMaps = writeEncodedMaps(maps, path.join(outputDir, "encoded"));
+  const patchTimestamp = formatPatchTimestamp(new Date());
+  for (const [releaseId, replacements] of groupByRelease(encodedMaps)) {
+    const release = RELEASES.find((item) => item.id === releaseId);
+    if (!release) throw new Error(`未知原版 release：${releaseId}`);
+    const original = path.join(jarDirectory, release.jar);
+    const replacementEntries = patchDatEntries(original, replacements);
+    const patched = patchZipEntries(
+      fs.readFileSync(original),
+      replacementEntries,
+      { removeSignatures: true },
+    );
+    const out = path.join(
+      outputDir,
+      `${releaseId}-patched-${patchTimestamp}${args.hd ? "-hd" : ""}.jar`,
+    );
+    fs.writeFileSync(out, patched.buffer);
+    verifyPatchedJar(out, replacements);
+    console.log(
+      `${path.relative(root, out)}: ${replacements.map((item) => item.id).join(", ")} · DAT record 写入校验：OK${patched.removedSignatures.length ? ` · 已移除失效签名：${patched.removedSignatures.join(", ")}` : ""}`,
+    );
+  }
 }
 
 /**

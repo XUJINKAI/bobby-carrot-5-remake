@@ -2,7 +2,10 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
+const root = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "../../..",
+);
 
 export function buildOriginalAdventure({
   repositoryRoot = root,
@@ -43,11 +46,4 @@ export function buildOriginalAdventure({
     "构建 Adventure Index：40 章 / 480 个 Campaign node / 5 Special Scene。",
   );
   return adventure;
-}
-
-if (
-  process.argv[1] &&
-  path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)
-) {
-  buildOriginalAdventure();
 }

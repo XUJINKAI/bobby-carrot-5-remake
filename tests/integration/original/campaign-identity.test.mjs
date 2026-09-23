@@ -3,7 +3,7 @@ import test from "node:test";
 import {
   campaignLevelId,
   campaignLevelName,
-} from "../../../tools/original/public-ids.mjs";
+} from "../../../tools/original/catalog/public-ids.mjs";
 
 test("Original Campaign 的路径 ID 与章节内展示名称分别生成", () => {
   assert.deepEqual(

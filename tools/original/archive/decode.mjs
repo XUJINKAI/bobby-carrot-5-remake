@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { parseDatPackage } from "./level-format.mjs";
+import { parseDatPackage } from "../dat/level-format.mjs";
 import {
   DAT_FILES,
   RELEASES,
@@ -9,7 +9,7 @@ import {
 } from "./source-definitions.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-const root = path.resolve(here, "../..");
+const root = path.resolve(here, "../../..");
 
 function writeJson(file, value) {
   fs.mkdirSync(path.dirname(file), { recursive: true });
@@ -96,11 +96,4 @@ export function decodeOriginal({
 
   writeJson(path.join(outputRoot, "source-index.json"), sourceIndex);
   console.log(`共解码 ${sourceIndex.totalSourceLevels} 条 source level 记录。`);
-}
-
-if (
-  process.argv[1] &&
-  path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)
-) {
-  decodeOriginal();
 }

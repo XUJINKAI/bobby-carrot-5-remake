@@ -1,15 +1,13 @@
 import fs from "node:fs";
 import path from "node:path";
-import {
-  adaptOriginal,
-  buildOriginalAdventure,
-  decodeOriginal,
-  extractOriginal,
-} from "../../original/lib/pipeline.mjs";
+import { adaptOriginal } from "../../original/adapter/adapt.mjs";
+import { decodeOriginal } from "../../original/archive/decode.mjs";
+import { extractOriginal } from "../../original/archive/extract.mjs";
+import { buildOriginalAdventure } from "../../original/catalog/adventure.mjs";
 import {
   originalExploreFilters,
   originalExploreMapFilters,
-} from "../../original/lib/explore.mjs";
+} from "../../original/catalog/explore-filters.mjs";
 import {
   publishDirectoryAtomically,
   publishFileAtomically,

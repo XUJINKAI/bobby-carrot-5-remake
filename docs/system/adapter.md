@@ -12,9 +12,9 @@ DAT byte
 ts-<row>-<column>:<name>
   ↓ model/src/map/entity/original-tile-visuals.json
 type / fields / role / phase
-  ↓ tools/original/entity-adapter.mjs
+  ↓ tools/original/adapter/entity-adapter.mjs
 canonical LevelMap
-  ↓ tools/original/entity-reverse-adapter.mjs
+  ↓ tools/original/adapter/entity-reverse-adapter.mjs
 decoded terrain / objects
   ↓ tools/original/dat/record.mjs
 DAT level record
@@ -32,9 +32,9 @@ DAT level record
 
 原版 `terrain/objects` 与 canonical Entity 之间的特例以代码和就地注释为规范性说明：
 
-- `tools/original/entity-adapter.mjs`：正向转换，包括整图推断、terrain 堆叠展开、
+- `tools/original/adapter/entity-adapter.mjs`：正向转换，包括整图推断、terrain 堆叠展开、
   object phase/part 合并和 multi-cell anchor 换算。
-- `tools/original/entity-reverse-adapter.mjs`：JAR Patch 反向转换，包括每格 terrain
+- `tools/original/adapter/entity-reverse-adapter.mjs`：JAR Patch 反向转换，包括每格 terrain
   选择、cover 优先级、base Visual 选择、object 写回和不可表达地图的拒绝条件。
 
 修改特例时直接修改对应文件并补充相邻测试。人类审阅入口与检查重点见

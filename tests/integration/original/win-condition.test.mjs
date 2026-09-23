@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { MapEntityTypeId } from "@bobby/model";
-import { deriveOriginalWinCondition } from "../../../tools/original/win-condition.mjs";
+import { deriveOriginalWinCondition } from "../../../tools/original/adapter/win-condition.mjs";
 
 const level = (...types) => ({ entities: types.map((type) => ({ type })) });
 

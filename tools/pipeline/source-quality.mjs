@@ -256,29 +256,44 @@ function checkRepositoryStructure() {
 
 function checkAssetProducerImports() {
   const bc5Directory = path.join(root, "tools/assets/bc5");
+  const originalDirectory = path.join(root, "tools/original");
+  const producerRoots = ["adapter", "archive", "catalog", "dat"].map(
+    (directory) => path.join(originalDirectory, directory),
+  );
   walk(bc5Directory, (file) => {
     if (!SCRIPT_EXTENSIONS.has(path.extname(file))) return;
     const text = fs.readFileSync(file, "utf8");
     const imports = [...text.matchAll(/from\s+["']([^"']+)["']/g)];
     for (const match of imports) {
+      const target = path.resolve(path.dirname(file), match[1]);
       if (
-        match[1].includes("/original/") &&
-        !match[1].includes("/original/lib/")
+        target.startsWith(`${originalDirectory}${path.sep}`) &&
+        !producerRoots.some(
+          (directory) =>
+            target === directory || target.startsWith(`${directory}${path.sep}`),
+        )
       ) {
         errors.push(
-          `${path.relative(root, file)}: BC5 Producer 只能依赖 tools/original/lib/`,
+          `${path.relative(root, file)}: BC5 Producer 只能依赖 Original archive/adapter/catalog/dat 模块`,
         );
       }
     }
   });
 
-  const originalLibrary = path.join(root, "tools/original/lib");
-  walk(originalLibrary, (file) => {
+  const rootScripts = fs
+    .readdirSync(originalDirectory, { withFileTypes: true })
+    .filter((entry) => entry.isFile() && SCRIPT_EXTENSIONS.has(path.extname(entry.name)))
+    .map((entry) => entry.name);
+  if (rootScripts.length !== 1 || rootScripts[0] !== "cli.mjs") {
+    errors.push("tools/original/: 根目录只允许保留 cli.mjs 入口");
+  }
+
+  walk(originalDirectory, (file) => {
     if (!SCRIPT_EXTENSIONS.has(path.extname(file))) return;
     const text = fs.readFileSync(file, "utf8");
     if (/tools\/assets|\.\.\/\.\.\/assets\//.test(text)) {
       errors.push(
-        `${path.relative(root, file)}: Original library 不得依赖 tools/assets/`,
+        `${path.relative(root, file)}: Original 模块不得依赖 tools/assets/`,
       );
     }
   });

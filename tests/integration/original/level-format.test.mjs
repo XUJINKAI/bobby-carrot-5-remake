@@ -5,7 +5,7 @@ import path from "node:path";
 import {
   encodeLevelRecord,
   parseDatPackage,
-} from "../../../tools/original/level-format.mjs";
+} from "../../../tools/original/dat/level-format.mjs";
 
 function decodeEdition(edition) {
   const levels = [];

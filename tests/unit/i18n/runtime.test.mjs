@@ -64,13 +64,9 @@ test("collection catalogs use manifest IDs and keep optional tag parity", async 
     const hasZhTag = zhKeys.includes(`${prefix}tag`);
     const hasEnTag = enKeys.includes(`${prefix}tag`);
     assert.equal(hasZhTag, hasEnTag);
-    const expected = hasZhTag
-      ? [`${prefix}name`, `${prefix}tag`, `${prefix}description`]
-      : [`${prefix}name`, `${prefix}description`];
     const required = [`${prefix}name`, `${prefix}description`];
 
-    assert.deepEqual(zhKeys, expected);
-    assert.deepEqual(enKeys, expected);
+    assert.deepEqual(zhKeys, enKeys);
     for (const key of required) {
       assert.ok(COLLECTION_CATALOGS["zh-CN"][key]);
       assert.ok(COLLECTION_CATALOGS.en[key]);
@@ -79,6 +75,14 @@ test("collection catalogs use manifest IDs and keep optional tag parity", async 
   assert.equal(
     loaded["collections.loma-pushbox.tag"],
     "推箱子",
+  );
+  assert.equal(
+    COLLECTION_CATALOGS["zh-CN"]["collections.original.filters.mechanics.options.bean"],
+    "魔豆",
+  );
+  assert.equal(
+    COLLECTION_CATALOGS.en["collections.original.filters.mechanics.options.bean"],
+    "Magic Bean",
   );
 });
 

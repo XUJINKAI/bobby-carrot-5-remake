@@ -1,6 +1,4 @@
 import { spawnSync } from "node:child_process";
-import { fileURLToPath } from "node:url";
-import path from "node:path";
 import { root, tscCommand } from "./lib/fs.mjs";
 
 const [group, action] = process.argv.slice(2);
@@ -11,20 +9,7 @@ function run(command, args) {
 }
 
 if (group === "original") {
-  if (action === "extract") run(process.execPath, ["tools/original/extract.mjs"]);
-  else if (action === "decode") run(process.execPath, ["tools/original/decode.mjs"]);
-  else if (action === "adapt") {
-    run(process.execPath, ["tools/original/adapt.mjs"]);
-    run(process.execPath, ["tools/original/adventure-catalog.mjs"]);
-  } else if (action === "prepare") {
-    run(tscCommand(), ["-b", "model"]);
-    run(process.execPath, [fileURLToPath(import.meta.url), "original", "extract"]);
-    run(process.execPath, [fileURLToPath(import.meta.url), "original", "decode"]);
-    run(process.execPath, [fileURLToPath(import.meta.url), "original", "adapt"]);
-  } else if (action === "inspect") run(process.execPath, ["tools/original/inspect.mjs", ...process.argv.slice(3)]);
-  else if (action === "patch") run(process.execPath, ["tools/original/patch-cli.mjs", ...process.argv.slice(3)]);
-  else if (action === "research") run(process.execPath, ["tools/original/research.mjs", ...process.argv.slice(3)]);
-  else throw new Error("用法：node tools/cli.mjs original extract|decode|adapt|prepare|inspect|patch|research");
+  run(process.execPath, ["tools/original/cli.mjs", ...process.argv.slice(3)]);
 } else if (group === "schema") {
   if (action === "examples") {
     // Storage 示例通过 Adventure 的正式 parser 生成，避免手写镜像漂移。

@@ -7,7 +7,7 @@ import {
   decodedAtlasCoordinate,
   decodedTileVisual,
   isDatObjectTile,
-} from "./dat/mapping.mjs";
+} from "../dat/mapping.mjs";
 
 /**
  * 原版 DAT → canonical LevelMap 的人工审阅入口。

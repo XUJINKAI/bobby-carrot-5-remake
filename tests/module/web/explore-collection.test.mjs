@@ -138,6 +138,11 @@ test("Explore imperative filters follow page locale lifecycle", () => {
   );
 
   assert.match(filters, /export interface LevelFilterController/);
+  assert.match(filters, /collectionFilterName\(currentCollectionId, filter\.id\)/);
+  assert.match(
+    filters,
+    /collectionFilterOptionName\(currentCollectionId, filter\.id, option\.id\)/,
+  );
   assert.match(
     filters,
     /localeChanged\(\): void \{[\s\S]*renderFilterShell\(shell\);[\s\S]*applyFilters\(\);/,
@@ -148,7 +153,7 @@ test("Explore imperative filters follow page locale lifecycle", () => {
   );
   assert.match(
     mount,
-    /const filters = collection\.filters\.length > 0[\s\S]*mountLevelFilters\(collection, images\)/,
+    /const filters = collection\.filters\.length > 0[\s\S]*mountLevelFilters\(collection\.id, collection, images\)/,
   );
   assert.match(
     mount,

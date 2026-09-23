@@ -29,6 +29,13 @@ test("schema examples 生成的地图与全部 Entity 示例符合 Model 合同"
       `${type} 示例应符合 Model Definition`,
     );
   }
+
+  const collectionExamples = readJson(
+    path.join(schemaRoot, "collections.json"),
+  );
+  const [filter] = collectionExamples.collectionIndex.filters;
+  assert.equal("name" in filter, false);
+  assert.equal("name" in filter.options[0], false);
 });
 
 test("schema examples 可以输出指定 Entity type", async () => {

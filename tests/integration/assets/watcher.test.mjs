@@ -62,6 +62,22 @@ test("资产 watcher 把来源变化映射到独立 Producer 分组", () => {
     affectedAssetTasks("tools/assets/collections.json", taskIds),
     ["assets.all"],
   );
+  assert.deepEqual(
+    affectedAssetTasks("tools/original/archive/extract.mjs", taskIds),
+    ["bc5.extract"],
+  );
+  assert.deepEqual(
+    affectedAssetTasks("tools/original/dat/record.mjs", taskIds),
+    ["bc5.decode"],
+  );
+  assert.deepEqual(
+    affectedAssetTasks("tools/original/adapter/adapt.mjs", taskIds),
+    ["bc5.adapt"],
+  );
+  assert.deepEqual(
+    affectedAssetTasks("tools/original/commands/inspect.mjs", taskIds),
+    [],
+  );
 });
 
 test("资产 watcher 合并连续事件并串行处理构建期间的新事件", async () => {

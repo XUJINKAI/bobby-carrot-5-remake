@@ -24,7 +24,7 @@
 | `node tools/cli.mjs original decode` | 将 DAT 解码到 `tmp/assets/bc5/decoded/`。 |
 | `node tools/cli.mjs original adapt` | 将 decoded 数据转换为语义地图，并生成 Adventure Catalog。 |
 | `node tools/cli.mjs original prepare` | 依次构建 Model、extract、decode 和 adapt。 |
-| `node tools/cli.mjs original inspect [--all]` | 将待确认的 atlas/object 类型统计写入 `tmp/unknown-tiles.json`；`--all` 保留全部引用。 |
+| `node tools/cli.mjs original inspect [--all]` | 将语义地图中保留为 `original-tile` 的待确认图块统计写入 `tmp/unknown-tiles.json`；`--all` 保留全部引用。 |
 | `node tools/cli.mjs original patch [--in <dir>] [--out <tmp-dir>] [--hd]` | 构建 Model 后执行原版 JAR patch；默认使用 `original/official/` 普通版，`--hd` 使用 `original/official-hd/` 高清版且输出文件名以 `-hd.jar` 结尾。输入默认是 `custom-maps/original-patch/`，输出默认是 `tmp/original-patch/`，其中 `encoded/` 保存实际送入 DAT encoder 的中间地图。 |
 | `node tools/cli.mjs original research [--output <dir>]` | 比较官方发布包内容，默认写入 `tmp/release-research/`。 |
 
@@ -52,6 +52,10 @@
 `assets/adventure/`、`assets/art/hd/` 与 `assets/art/robo2/`。这些内容由对应命令重建，
 不手工修改；
 `original/official/` 与 `original/official-hd/` 中的原版 JAR 始终只读。
+
+Original 工具由 `tools/original/cli.mjs` 统一接收命令；实现按 `archive/`、
+`adapter/`、`catalog/`、`commands/` 与 `dat/` 分组。CLI 和 Asset Producer 只向内调用这些
+模块，模块不反向依赖 CLI 或 `tools/assets/`。
 
 Asset Producer、第三方构建输入与格式转换统一位于 `tools/assets/`：Robo 2 归入
 `robo2/`，LOMA 与 Novoban 分别归入自身目录，共用的 XSB 与主题地形转换归入

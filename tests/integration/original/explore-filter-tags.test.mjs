@@ -5,9 +5,9 @@ import {
   ORIGINAL_EXPLORE_FILTER_DEFINITIONS,
   originalExploreFilters,
   originalExploreMapFilters,
-} from "../../../tools/original/explore-filter-tags.mjs";
+} from "../../../tools/original/catalog/explore-filters.mjs";
 
-test("Original Explore filter 定义发布 UI 字段并保留扫描依据", () => {
+test("Original Explore filter 定义发布稳定 ID 与图标并保留扫描依据", () => {
   const published = originalExploreFilters();
   assert.equal(published[0].selection, "single");
   assert.equal(published[1].selection, "single");
@@ -17,6 +17,12 @@ test("Original Explore filter 定义发布 UI 字段并保留扫描依据", () =
   );
   assert.equal(
     published.flatMap((filter) => filter.options).some((option) => "match" in option),
+    false,
+  );
+  assert.equal(
+    published.some((filter) =>
+      "name" in filter || filter.options.some((option) => "name" in option)
+    ),
     false,
   );
   assert.equal(
@@ -142,77 +148,63 @@ test("Original Explore 道具与机关发布当前分类与组合图标", () => 
   assert.deepEqual(
     mechanics.options.map((option) => ({
       id: option.id,
-      name: option.name,
       icons: option.icons.map((icon) => icon.entity.type),
     })),
     [
       {
         id: "speed",
-        name: "加速带",
         icons: ["speed", "speed-switch"],
       },
       {
         id: "mower",
-        name: "割草机/高草",
         icons: ["gas", "mower"],
       },
       {
         id: "highgrass",
-        name: "高草",
         icons: ["high-grass"],
       },
       {
         id: "crumblyrock",
-        name: "易碎岩石",
         icons: ["crumbly-rock"],
       },
       {
         id: "bean",
-        name: "魔豆",
         icons: ["bean", "bean-field"],
       },
       {
         id: "shovel",
-        name: "雪铲/积雪",
         icons: ["shovel-pickup", "snow"],
       },
       {
         id: "kite",
-        name: "风筝/龙卷风",
         icons: ["kite", "whirlwind", "landing"],
       },
       {
         id: "tide",
-        name: "潮汐",
         icons: ["tide", "tide-switch"],
       },
       {
         id: "leaf",
-        name: "叶子",
         icons: ["leaf"],
       },
       {
         id: "color",
-        name: "彩色方块",
         icons: ["color-block", "color-switch"],
       },
       {
         id: "carousel",
-        name: "旋转通道",
         icons: ["carousel", "carousel-switch"],
       },
       {
         id: "dragon",
-        name: "龙/镜子/冰块",
         icons: ["dragon", "mirror", "ice-block"],
       },
       {
         id: "wind",
-        name: "风车/云",
         icons: ["windmill", "wind-switch", "cloud"],
       },
-      { id: "trap", name: "陷阱", icons: ["trap"] },
-      { id: "plank", name: "木板", icons: ["plank"] },
+      { id: "trap", icons: ["trap"] },
+      { id: "plank", icons: ["plank"] },
     ],
   );
 });

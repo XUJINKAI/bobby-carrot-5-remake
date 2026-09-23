@@ -4,8 +4,8 @@ import path from "node:path";
 import test from "node:test";
 import { parseLevelMap } from "@bobby/model";
 import { root } from "../../../tools/lib/fs.mjs";
-import { adaptDecodedMap } from "../../../tools/original/entity-adapter.mjs";
-import { reverseEntityMap } from "../../../tools/original/entity-reverse-adapter.mjs";
+import { adaptDecodedMap } from "../../../tools/original/adapter/entity-adapter.mjs";
+import { reverseEntityMap } from "../../../tools/original/adapter/entity-reverse-adapter.mjs";
 
 test("全部官方 DAT source 经 Adapter 与反向 Adapter 后保持玩法语义", () => {
   const decodedRoot = path.join(root, "tmp/assets/bc5/decoded");

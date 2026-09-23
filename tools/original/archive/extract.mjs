@@ -1,11 +1,11 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { extractZip } from "../lib/zip.mjs";
+import { extractZip } from "../../lib/zip.mjs";
 import { RELEASES } from "./source-definitions.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-const root = path.resolve(here, "../..");
+const root = path.resolve(here, "../../..");
 
 export function extractOriginal({
   repositoryRoot = root,
@@ -30,11 +30,4 @@ export function extractOriginal({
 
 function relative(repositoryRoot, target) {
   return path.relative(repositoryRoot, target).split(path.sep).join("/");
-}
-
-if (
-  process.argv[1] &&
-  path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)
-) {
-  extractOriginal();
 }
