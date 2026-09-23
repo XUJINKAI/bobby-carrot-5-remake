@@ -233,7 +233,7 @@ Replay 的内嵌地图、completedConditions、哈希和最终结果一起更新
 - `editor/src/authoring/rules.ts`：检测、勾选、生成和识别具体 Goal。
 - `engine/src/ui/GameplayHudModel.ts`：按具体 Goal type 读取 remaining。
 - 原版 Exit 视觉对目标状态的读取：跟随具体 Goal 结果，保持目标未完成时的门状态。
-- `tools/original/win-condition.mjs`、自定义地图生成器和 pipeline 校验：输出新条件。
+- `tools/original/adapter/win-condition.mjs`、自定义地图生成器和 pipeline 校验：输出新条件。
 - `engine/src/replay/`：条件序列化、解析、最终状态对照及消费目标的成功记录。
 - 地图、Engine、World、Replay 合同与使用示例。
 

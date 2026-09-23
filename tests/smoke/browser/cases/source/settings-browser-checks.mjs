@@ -52,15 +52,15 @@ export async function verifySettingsPage(cdp, sessionId) {
     sessionId,
     `(() => ({
       tabs: [...document.querySelectorAll('.save-management-tabs [role=tab]')]
-        .map((tab) => ({ label: tab.textContent?.trim(), selected: tab.getAttribute('aria-selected') })),
+        .map((tab) => ({ id: tab.id, selected: tab.getAttribute('aria-selected') })),
       panels: document.querySelectorAll('.data-exchange-panel').length,
       draft: document.querySelector('.data-exchange-text')?.value ?? '',
       draftHeight: document.querySelector('.data-exchange-text')?.getBoundingClientRect().height ?? 0
     }))()`,
   );
   if (
-    snapshot.tabs.map((tab) => tab.label).join(",") !==
-      "Adventure,original,engine-lab" ||
+    snapshot.tabs.map((tab) => tab.id).join(",") !==
+      "save-tab-adventure,save-tab-explore:original,save-tab-explore:engine-lab" ||
     snapshot.tabs[0]?.selected !== "true" ||
     snapshot.panels !== 1 ||
     snapshot.draftHeight < 350 ||

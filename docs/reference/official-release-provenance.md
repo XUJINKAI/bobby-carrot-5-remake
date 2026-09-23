@@ -203,9 +203,9 @@ assets/
 ```text
 original/official/     普通版代码、数据与资源证据
 original/official-hd/  高清视觉与兼容构建证据
-original/extracted/    官方 JAR 解包生成物
-original/decoded/      DAT 忠实解码数据
-original/adapted/      Engine-native 适配数据
+tmp/assets/bc5/extracted/    官方 JAR 解包生成物
+tmp/assets/bc5/decoded/      DAT 忠实解码数据
+tmp/assets/bc5/adapted/      Engine-native 适配数据
 ```
 
 保持来源边界。未来 Portal 等 Bobby Carrot 5 Remake 自制美术直接作为 Git 托管资源进入 `assets/`，不得伪装成官方 JAR 派生资产。

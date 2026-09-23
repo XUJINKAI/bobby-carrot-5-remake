@@ -159,7 +159,7 @@ try {
     'class="explore-tabs"',
     'class="explore-ungrouped-maps"',
     'data-card-size="medium"',
-    "Robo2",
+    "Robo 2",
     "01 · The beggining!",
     "25 · Saving Eny!",
     'href="/explore/play/robo2/01"',
@@ -618,7 +618,7 @@ addEventListener("unhandledrejection", (event) => {
           value,
         };
       })(),
-      20_000,
+      40_000,
       `Chromium timed out while loading ${url}`,
     );
   } catch (error) {

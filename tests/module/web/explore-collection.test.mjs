@@ -16,6 +16,36 @@ test("Explore 标题直接显示 collection 地图总数", () => {
   assert.match(exploreHeader, /webT\("explore\.levelCount", \{ count: mapCount \}\)/);
 });
 
+test("Explore collection 文案按 ID 本地化并支持可选 tag", () => {
+  const explorePage = fs.readFileSync(
+    new URL("../../../web/src/pages/explore/ExplorePage.vue", import.meta.url),
+    "utf8",
+  );
+  const exploreTabs = fs.readFileSync(
+    new URL("../../../web/src/pages/explore/ExploreTabs.vue", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(explorePage, /collectionName\(activeCollection\.id\)/);
+  assert.match(explorePage, /collectionDescription\(activeCollection\.id\)/);
+  assert.match(exploreTabs, /tag: collectionTag\(collection\.id\)/);
+  assert.match(exploreTabs, /v-if="collection\.tag"/);
+  assert.match(exploreTabs, /ref="tabsElement"/);
+  assert.match(exploreTabs, /querySelector<HTMLElement>\('\[aria-current="page"\]'\)/);
+  assert.match(exploreTabs, /tabs\.scrollLeft \+=/);
+  assert.match(exploreTabs, /watch\(\s*\(\) => props\.activeCollection/);
+  assert.match(exploreTabs, /justify-content:\s*center/);
+  assert.match(exploreTabs, /min-height:\s*65px/);
+  assert.match(
+    exploreTabs,
+    /\.explore-tab-name\s*\{[^}]*font-size:\s*1\.1rem[^}]*font-weight:\s*800/s,
+  );
+  assert.match(
+    exploreTabs,
+    /\.explore-tab-tag\s*\{[^}]*font-size:\s*0\.74rem[^}]*font-weight:\s*700/s,
+  );
+});
+
 test("Explore chapter 只显示 collection 提供的展示名称", () => {
   const chapterCard = fs.readFileSync(
     new URL("../../../web/src/pages/explore/ExploreChapterCard.vue", import.meta.url),
@@ -108,6 +138,11 @@ test("Explore imperative filters follow page locale lifecycle", () => {
   );
 
   assert.match(filters, /export interface LevelFilterController/);
+  assert.match(filters, /collectionFilterName\(currentCollectionId, filter\.id\)/);
+  assert.match(
+    filters,
+    /collectionFilterOptionName\(currentCollectionId, filter\.id, option\.id\)/,
+  );
   assert.match(
     filters,
     /localeChanged\(\): void \{[\s\S]*renderFilterShell\(shell\);[\s\S]*applyFilters\(\);/,
@@ -118,7 +153,7 @@ test("Explore imperative filters follow page locale lifecycle", () => {
   );
   assert.match(
     mount,
-    /const filters = collection\.filters\.length > 0[\s\S]*mountLevelFilters\(collection, images\)/,
+    /const filters = collection\.filters\.length > 0[\s\S]*mountLevelFilters\(collection\.id, collection, images\)/,
   );
   assert.match(
     mount,

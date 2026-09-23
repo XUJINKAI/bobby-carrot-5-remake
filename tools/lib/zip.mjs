@@ -15,7 +15,16 @@ function findEocd(buffer) {
 }
 
 function safeOutputPath(root, name) {
-  const normalized = name.replaceAll("\\", "/").replace(/^\/+/, "");
+  const normalized = name.replaceAll("\\", "/");
+  const segments = normalized.split("/");
+  if (
+    normalized.startsWith("/") ||
+    /^[a-z]:\//i.test(normalized) ||
+    normalized.includes("\0") ||
+    segments.includes("..")
+  ) {
+    throw new Error(`Unsafe ZIP path: ${name}`);
+  }
   const target = path.resolve(root, normalized);
   const resolvedRoot = path.resolve(root) + path.sep;
   if (target !== path.resolve(root) && !target.startsWith(resolvedRoot)) {
@@ -26,30 +35,17 @@ function safeOutputPath(root, name) {
 
 export function extractZip(zipPath, outputDir) {
   const buffer = fs.readFileSync(zipPath);
-  const eocd = findEocd(buffer);
-  const entryCount = buffer.readUInt16LE(eocd + 10);
-  const centralOffset = buffer.readUInt32LE(eocd + 16);
-  let cursor = centralOffset;
-
   fs.mkdirSync(outputDir, { recursive: true });
+  const extractedFiles = [];
 
-  for (let entry = 0; entry < entryCount; entry += 1) {
-    if (buffer.readUInt32LE(cursor) !== SIG_CENTRAL) {
-      throw new Error(`Invalid central directory entry at ${cursor}`);
-    }
-
-    const method = buffer.readUInt16LE(cursor + 10);
-    const compressedSize = buffer.readUInt32LE(cursor + 20);
-    const uncompressedSize = buffer.readUInt32LE(cursor + 24);
-    const fileNameLength = buffer.readUInt16LE(cursor + 28);
-    const extraLength = buffer.readUInt16LE(cursor + 30);
-    const commentLength = buffer.readUInt16LE(cursor + 32);
-    const localOffset = buffer.readUInt32LE(cursor + 42);
-    const name = buffer
-      .subarray(cursor + 46, cursor + 46 + fileNameLength)
-      .toString("utf8");
-
-    cursor += 46 + fileNameLength + extraLength + commentLength;
+  for (const entry of readCentralDirectory(buffer)) {
+    const {
+      compressedSize,
+      localOffset,
+      method,
+      name,
+      uncompressedSize,
+    } = entry;
     const target = safeOutputPath(outputDir, name);
 
     if (name.endsWith("/")) {
@@ -81,5 +77,42 @@ export function extractZip(zipPath, outputDir) {
 
     fs.mkdirSync(path.dirname(target), { recursive: true });
     fs.writeFileSync(target, data);
+    extractedFiles.push(name.replaceAll("\\", "/"));
   }
+
+  return extractedFiles;
+}
+
+export function listZipEntries(zipPath) {
+  return readCentralDirectory(fs.readFileSync(zipPath)).map((entry) => ({
+    name: entry.name,
+    size: entry.uncompressedSize,
+    directory: entry.name.endsWith("/"),
+  }));
+}
+
+function readCentralDirectory(buffer) {
+  const eocd = findEocd(buffer);
+  const entryCount = buffer.readUInt16LE(eocd + 10);
+  let cursor = buffer.readUInt32LE(eocd + 16);
+  const entries = [];
+  for (let index = 0; index < entryCount; index += 1) {
+    if (buffer.readUInt32LE(cursor) !== SIG_CENTRAL) {
+      throw new Error(`Invalid central directory entry at ${cursor}`);
+    }
+    const fileNameLength = buffer.readUInt16LE(cursor + 28);
+    const extraLength = buffer.readUInt16LE(cursor + 30);
+    const commentLength = buffer.readUInt16LE(cursor + 32);
+    entries.push({
+      method: buffer.readUInt16LE(cursor + 10),
+      compressedSize: buffer.readUInt32LE(cursor + 20),
+      uncompressedSize: buffer.readUInt32LE(cursor + 24),
+      localOffset: buffer.readUInt32LE(cursor + 42),
+      name: buffer
+        .subarray(cursor + 46, cursor + 46 + fileNameLength)
+        .toString("utf8"),
+    });
+    cursor += 46 + fileNameLength + extraLength + commentLength;
+  }
+  return entries;
 }

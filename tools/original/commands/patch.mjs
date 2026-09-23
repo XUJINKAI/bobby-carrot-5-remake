@@ -1,0 +1,254 @@
+import fs from "node:fs";
+import path from "node:path";
+import { isDeepStrictEqual } from "node:util";
+import { fileURLToPath } from "node:url";
+import {
+  encodeDatLevelRecord,
+  replaceDatLevelRecord,
+  splitDatPackage,
+} from "../dat/index.mjs";
+import { parseLevelRecord } from "../dat/level-format.mjs";
+import { reverseEntityMap } from "../adapter/entity-reverse-adapter.mjs";
+import { RELEASES } from "../archive/source-definitions.mjs";
+import { patchZipEntries, readZipEntry } from "../../lib/zip-patch.mjs";
+
+const root = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "../../..",
+);
+export function patchOriginal(values = []) {
+  const args = parseArgs(values);
+  const inputDir = path.resolve(
+    args.in ?? path.join(root, "custom-maps/original-patch"),
+  );
+  const outputDir = path.resolve(
+    args.out ?? path.join(root, "tmp/original-patch"),
+  );
+  const jarDirectory = path.join(
+    root,
+    args.hd ? "original/official-hd" : "original/official",
+  );
+  validateDirectories(inputDir, outputDir);
+
+  const catalog = readJson(
+    path.join(root, "tmp/assets/bc5/adapted/catalog.json"),
+  );
+  if (catalog.schemaVersion !== 1) {
+    throw new Error("Original adapted catalog schemaVersion 必须为 1");
+  }
+  const maps = readPatchMaps(inputDir, catalog);
+
+  fs.rmSync(outputDir, { recursive: true, force: true });
+  fs.mkdirSync(outputDir, { recursive: true });
+  const encodedMaps = writeEncodedMaps(maps, path.join(outputDir, "encoded"));
+  const patchTimestamp = formatPatchTimestamp(new Date());
+  for (const [releaseId, replacements] of groupByRelease(encodedMaps)) {
+    const release = RELEASES.find((item) => item.id === releaseId);
+    if (!release) throw new Error(`未知原版 release：${releaseId}`);
+    const original = path.join(jarDirectory, release.jar);
+    const replacementEntries = patchDatEntries(original, replacements);
+    const patched = patchZipEntries(
+      fs.readFileSync(original),
+      replacementEntries,
+      { removeSignatures: true },
+    );
+    const out = path.join(
+      outputDir,
+      `${releaseId}-patched-${patchTimestamp}${args.hd ? "-hd" : ""}.jar`,
+    );
+    fs.writeFileSync(out, patched.buffer);
+    verifyPatchedJar(out, replacements);
+    console.log(
+      `${path.relative(root, out)}: ${replacements.map((item) => item.id).join(", ")} · DAT record 写入校验：OK${patched.removedSignatures.length ? ` · 已移除失效签名：${patched.removedSignatures.join(", ")}` : ""}`,
+    );
+  }
+}
+
+/**
+ * 先把 Entity Map 固化为与 BC5 decoded 阶段相同的可审阅格式。
+ * 后续编码会重新读取这些文件，确保落盘中间层就是 DAT 的实际输入。
+ */
+function writeEncodedMaps(sourceMaps, directory) {
+  const seen = new Set();
+  const encodedMaps = sourceMaps.map((item) => {
+    const relativePath = item.source.decodedPath;
+    if (typeof relativePath !== "string") {
+      throw new Error(`${item.id} 缺少 decodedPath provenance`);
+    }
+    const output = resolveChildPath(directory, relativePath);
+    if (seen.has(output)) {
+      throw new Error(`Patch 输入映射到重复的 DAT record：${relativePath}`);
+    }
+    seen.add(output);
+
+    const originalDecoded = readJson(
+      resolveChildPath(
+        path.join(root, "tmp/assets/bc5/decoded"),
+        relativePath,
+      ),
+    );
+    const record = Buffer.from(
+      encodeDatLevelRecord(reverseEntityMap(item.map)),
+    );
+    const encoded = parseLevelRecord(record, originalDecoded.source);
+    writeJson(output, encoded);
+    return { ...item, encodedPath: output };
+  });
+  console.log(
+    `${path.relative(root, directory)}: ${encodedMaps.length} 张 DAT 编码中间地图`,
+  );
+  return encodedMaps;
+}
+
+function readPatchMaps(directory, catalog) {
+  if (!fs.statSync(directory).isDirectory())
+    throw new Error(`Patch 输入必须是目录：${directory}`);
+  const targets = new Map(catalog.maps.map((map) => [map.id, map]));
+  const files = listJsonFiles(directory);
+  if (files.length === 0) throw new Error(`Patch 输入目录不含 JSON 地图：${directory}`);
+  const seen = new Set();
+  return files.map((file) => {
+    const id = path.basename(file, ".json").toLowerCase();
+    if (seen.has(id)) throw new Error(`Patch 输入包含重复地图名：${id}`);
+    seen.add(id);
+    const target = targets.get(id);
+    if (!target?.source) throw new Error(`地图名不是可 patch 的 Campaign ID：${id}`);
+    return { id, source: target.source, map: readJson(file) };
+  });
+}
+
+function groupByRelease(maps) {
+  const groups = new Map();
+  for (const map of maps) {
+    const group = groups.get(map.source.release) ?? [];
+    group.push(map);
+    groups.set(map.source.release, group);
+  }
+  return [...groups].sort(([left], [right]) => left.localeCompare(right));
+}
+
+function patchDatEntries(original, maps) {
+  const jar = fs.readFileSync(original);
+  const byEntry = new Map();
+  for (const item of maps) {
+    const entry = `${item.source.packFile}.dat`;
+    const current = byEntry.get(entry) ?? readZipEntry(jar, entry);
+    const replacement = Buffer.from(
+      encodeDatLevelRecord(readEncodedLevel(item.encodedPath)),
+    );
+    byEntry.set(
+      entry,
+      replaceDatLevelRecord(current, item.source.levelIndex, replacement),
+    );
+  }
+  return byEntry;
+}
+
+function verifyPatchedJar(file, maps) {
+  const jar = fs.readFileSync(file);
+  for (const item of maps) {
+    const entry = `${item.source.packFile}.dat`;
+    const record = splitDatPackage(readZipEntry(jar, entry)).levelRecords[
+      item.source.levelIndex - 1
+    ];
+    if (!record) throw new Error(`Patch 后缺少 ${item.id} 的 DAT record`);
+    const expected = readEncodedLevel(item.encodedPath);
+    const actual = parseLevelRecord(Buffer.from(record), expected.source);
+    if (!isDeepStrictEqual(actual, expected)) {
+      throw new Error(`Patch 后 ${item.id} 的 DAT record 写入校验失败`);
+    }
+  }
+}
+
+function readEncodedLevel(file) {
+  const encoded = readJson(file);
+  if (
+    encoded.schemaVersion !== 1 ||
+    encoded.terrainEncoding !== "semantic-row-major"
+  ) {
+    throw new Error(`DAT 编码中间地图合同无效：${file}`);
+  }
+  return encoded;
+}
+
+function listJsonFiles(directory) {
+  return fs.readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+    const target = path.join(directory, entry.name);
+    if (entry.isDirectory()) return listJsonFiles(target);
+    return entry.isFile() && path.extname(entry.name).toLowerCase() === ".json"
+      ? [target]
+      : [];
+  });
+}
+
+function validateDirectories(input, output) {
+  if (!fs.existsSync(input)) throw new Error(`Patch 输入目录不存在：${input}`);
+  if (
+    input === output ||
+    output.startsWith(`${input}${path.sep}`) ||
+    input.startsWith(`${output}${path.sep}`)
+  )
+    throw new Error("Patch 输出目录不能是输入目录或其子目录");
+  const tmp = path.join(root, "tmp");
+  if (output === tmp || !output.startsWith(`${tmp}${path.sep}`))
+    throw new Error("Patch 输出目录必须位于 tmp 的子目录中");
+  const officialDirectories = [
+    path.join(root, "original/official"),
+    path.join(root, "original/official-hd"),
+  ];
+  if (
+    [path.parse(output).root, root, ...officialDirectories].includes(output) ||
+    officialDirectories.some((directory) =>
+      output.startsWith(`${directory}${path.sep}`),
+    )
+  )
+    throw new Error("Patch 输出目录必须是安全的生成目录");
+}
+
+function readJson(file) {
+  return JSON.parse(fs.readFileSync(file, "utf8"));
+}
+
+function writeJson(file, value) {
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  fs.writeFileSync(file, `${JSON.stringify(value, null, 2)}\n`);
+}
+
+function resolveChildPath(parent, relativePath) {
+  const child = path.resolve(parent, relativePath);
+  if (!child.startsWith(`${path.resolve(parent)}${path.sep}`)) {
+    throw new Error(`路径必须位于目标目录内：${relativePath}`);
+  }
+  return child;
+}
+
+function formatPatchTimestamp(date) {
+  const number = (value) => String(value).padStart(2, "0");
+  const day = [
+    date.getFullYear(),
+    number(date.getMonth() + 1),
+    number(date.getDate()),
+  ].join("");
+  const time = [
+    number(date.getHours()),
+    number(date.getMinutes()),
+    number(date.getSeconds()),
+  ].join("");
+  return `${day}-${time}`;
+}
+
+function parseArgs(values) {
+  const result = {};
+  for (let index = 0; index < values.length; index += 1) {
+    const key = values[index];
+    if (!key?.startsWith("--")) continue;
+    if (key === "--hd") {
+      result.hd = true;
+      continue;
+    }
+    const value = values[++index];
+    if (!value || value.startsWith("--")) throw new Error(`${key} 缺少目录参数`);
+    result[key.slice(2)] = value;
+  }
+  return result;
+}

@@ -73,7 +73,7 @@ export async function renderLevels(
   exploreApp.mount(app);
   await nextTick();
   const filters = collection.filters.length > 0
-    ? mountLevelFilters(collection, images)
+    ? mountLevelFilters(collection.id, collection, images)
     : null;
   return {
     localeChanged(): void {

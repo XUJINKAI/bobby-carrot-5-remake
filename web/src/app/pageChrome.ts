@@ -30,14 +30,14 @@ export function pageIdentity(
     menu: [
       { label: webT("nav.home"), href: "/" },
       {
-        label: webT("nav.adventure"),
-        href: "/adventure",
-        active: activeHref === "/adventure",
-      },
-      {
         label: webT("nav.explore"),
         href: "/explore",
         active: activeHref === "/explore",
+      },
+      {
+        label: webT("nav.adventure"),
+        href: "/adventure",
+        active: activeHref === "/adventure",
       },
       {
         label: webT("nav.editor"),

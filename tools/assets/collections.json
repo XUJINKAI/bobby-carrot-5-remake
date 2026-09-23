@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 2,
+  "collections": [
+    {
+      "id": "original",
+      "cardSize": "small",
+      "producer": "bc5"
+    },
+    {
+      "id": "robo2",
+      "cardSize": "medium",
+      "producer": "robo2"
+    },
+    {
+      "id": "novoban-pushbox",
+      "cardSize": "medium",
+      "producer": "novoban"
+    },
+    {
+      "id": "loma-pushbox",
+      "cardSize": "small",
+      "producer": "loma"
+    },
+    {
+      "id": "engine-lab",
+      "cardSize": "medium",
+      "producer": "directory",
+      "source": "custom-maps/engine-lab"
+    },
+    {
+      "id": "original-patch",
+      "cardSize": "small",
+      "producer": "directory",
+      "source": "custom-maps/original-patch",
+      "visible": "dev"
+    }
+  ]
+}

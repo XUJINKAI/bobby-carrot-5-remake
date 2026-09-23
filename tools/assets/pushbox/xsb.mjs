@@ -1,0 +1,139 @@
+import { createPushboxTerrainPicker } from "./terrain.mjs";
+
+export const SOKOBAN_WIN_RULE = {
+  type: "push-goal",
+};
+
+const PUSH_GOAL_STACK_ORDER = 1;
+const OCCUPANT_STACK_ORDER = 2;
+
+export function convertXsbBoard(board, title = "Sokoban", options = {}) {
+  const rows = board.map((row) => row.replace(/\s+$/g, ""));
+  const width = Math.max(...rows.map((row) => row.length));
+  const height = rows.length;
+  if (!Number.isInteger(width) || width <= 0 || height <= 0)
+    throw new Error(`${title}: 空地图`);
+
+  const grid = rows.map((row) => row.padEnd(width, " ").split(""));
+  const exterior = findExteriorSpaces(grid, width, height);
+  const terrain = createPushboxTerrainPicker(options.mapKey ?? title);
+  const entities = [];
+  let player = null;
+  let boxes = 0;
+  let goals = 0;
+
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const symbol = grid[y][x];
+      const outside = symbol === " " && exterior.has(key(x, y));
+      const border = x === 0 || y === 0 || x === width - 1 || y === height - 1;
+      if (border) {
+        if (symbol !== "#" && !outside) {
+          throw new Error(`${title}: 地图外沿 (${x}, ${y}) 必须是墙或外部空格`);
+        }
+        entities.push(terrain("boundary", x, y));
+        continue;
+      }
+      if (symbol === "#" || outside) {
+        entities.push(terrain("obstacle", x, y));
+        continue;
+      }
+
+      // 所有可行走 XSB 单元都保留主题 ground；目标与占用物依次叠在上方。
+      entities.push(terrain("ground", x, y));
+      if (symbol === " ") continue;
+      if (symbol === ".") {
+        entities.push(goal(x, y));
+        goals += 1;
+      } else if (symbol === "@") {
+        player = assignPlayer(player, x, y, title);
+      } else if (symbol === "+") {
+        entities.push(goal(x, y));
+        player = assignPlayer(player, x, y, title);
+        goals += 1;
+      } else if (symbol === "$") {
+        entities.push(pushableBox(x, y));
+        boxes += 1;
+      } else if (symbol === "*") {
+        entities.push(goal(x, y), pushableBox(x, y));
+        boxes += 1;
+        goals += 1;
+      } else {
+        throw new Error(`${title}: 不支持的 XSB 字符 ${JSON.stringify(symbol)}`);
+      }
+    }
+  }
+
+  if (!player) throw new Error(`${title}: 缺少玩家起点`);
+  if (boxes !== goals)
+    throw new Error(`${title}: 箱子与目标数量不一致：${boxes} / ${goals}`);
+  if (boxes <= 0) throw new Error(`${title}: 至少需要 1 个箱子和目标`);
+  if (options.expectedBoxes !== undefined && boxes !== options.expectedBoxes)
+    throw new Error(`${title}: 应有 ${options.expectedBoxes} 个箱子，实际 ${boxes}`);
+
+  entities.push({ type: "bobby", ...player, stackOrder: OCCUPANT_STACK_ORDER });
+
+  return {
+    width,
+    height,
+    entities,
+    rules: { win: { ...SOKOBAN_WIN_RULE } },
+  };
+}
+
+export function isXsbBoardLine(line) {
+  return /^[ #.$@*+]+$/.test(line) && /[#.$@*+]/.test(line);
+}
+
+export function countPushGoals(level) {
+  return level.entities.filter((entity) => entity.type === "push-goal").length;
+}
+
+function assignPlayer(current, x, y, title) {
+  if (current)
+    throw new Error(
+      `${title}: 必须恰好有 1 个玩家起点，至少发现 (${current.x}, ${current.y}) 与 (${x}, ${y})`,
+    );
+  return { x, y };
+}
+
+function findExteriorSpaces(grid, width, height) {
+  const exterior = new Set();
+  const queue = [];
+  const enqueue = (x, y) => {
+    if (x < 0 || y < 0 || x >= width || y >= height) return;
+    if (grid[y][x] !== " ") return;
+    const coordinate = key(x, y);
+    if (exterior.has(coordinate)) return;
+    exterior.add(coordinate);
+    queue.push([x, y]);
+  };
+  for (let x = 0; x < width; x += 1) {
+    enqueue(x, 0);
+    enqueue(x, height - 1);
+  }
+  for (let y = 0; y < height; y += 1) {
+    enqueue(0, y);
+    enqueue(width - 1, y);
+  }
+  for (let index = 0; index < queue.length; index += 1) {
+    const [x, y] = queue[index];
+    enqueue(x - 1, y);
+    enqueue(x + 1, y);
+    enqueue(x, y - 1);
+    enqueue(x, y + 1);
+  }
+  return exterior;
+}
+
+function goal(x, y) {
+  return { type: "push-goal", x, y, stackOrder: PUSH_GOAL_STACK_ORDER };
+}
+
+function pushableBox(x, y) {
+  return { type: "pushable-box", x, y, stackOrder: OCCUPANT_STACK_ORDER };
+}
+
+function key(x, y) {
+  return `${x},${y}`;
+}

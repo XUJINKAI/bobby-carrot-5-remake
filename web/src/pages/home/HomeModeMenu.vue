@@ -90,20 +90,20 @@ onBeforeUnmount(() => {
     <div class="home-mode-grid">
       <a
         class="home-mode-card"
-        href="/adventure"
-        @click.prevent="emit('navigate', '/adventure')"
+        href="/explore"
+        @click.prevent="emit('navigate', '/explore')"
       >
-        <strong>{{ webT("home.adventure") }}</strong>
-        <span>{{ webT("home.adventureDescription") }}</span>
+        <strong>{{ webT("nav.explore") }}</strong>
+        <span>{{ webT("home.exploreDescription") }}</span>
         <AppIcon name="next" />
       </a>
       <a
         class="home-mode-card"
-        href="/explore"
-        @click.prevent="emit('navigate', '/explore')"
+        href="/adventure"
+        @click.prevent="emit('navigate', '/adventure')"
       >
-        <strong>{{ webT("home.explore") }}</strong>
-        <span>{{ webT("home.exploreDescription") }}</span>
+        <strong>{{ webT("nav.adventure") }}</strong>
+        <span>{{ webT("home.adventureDescription") }}</span>
         <AppIcon name="next" />
       </a>
       <a
@@ -111,7 +111,7 @@ onBeforeUnmount(() => {
         href="/edit"
         @click.prevent="emit('navigate', '/edit')"
       >
-        <strong>{{ webT("home.editor") }}</strong>
+        <strong>{{ webT("nav.editor") }}</strong>
         <span>{{ webT("home.editorDescription") }}</span>
         <AppIcon name="next" />
       </a>

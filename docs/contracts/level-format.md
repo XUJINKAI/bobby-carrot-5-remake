@@ -262,10 +262,6 @@ Engine 返回同结构的目标结果树。叶子包含 `completed` 和可选 `r
 HUD 与 Editor 使用 Engine 的结果和可用性定义。关卡最终完成时机仍由 World
 运动与生命周期开关裁决。
 
-现有 schemaVersion 1 开发期地图若保存了标准 `collect-all / fill-all / reach`
-条件，可以运行 `node tools/model/convert-goals.mjs 输入.json 输出.json` 显式转换。
-自定义 selector 条件会报告准确路径，须逐项确定目标语义。
-
 ## MapDocument
 
 网站运行时地图位于：
@@ -308,7 +304,10 @@ Explore collection metadata 位于：
 assets/maps/<collection>/index.json
 ```
 
-它只负责浏览 UI：collection 名称、说明、filter 定义、chapter 分组和 map 列表。Explore Play 读取当前 collection 的该文件，以解析上一关、下一关与地图类型；地图内容仍从独立 MapDocument 加载。
+它只负责浏览 UI 的结构数据：cardSize、filter 定义、chapter 分组和 map 列表。Explore Play
+读取当前 collection 的该文件，以解析上一关、下一关与地图类型；Collection 的
+`name / tag / description` 从 `collections.<id>.*` i18n 文案读取，地图内容仍从独立
+MapDocument 加载。
 
 Adventure Campaign topology 位于：
 
@@ -325,9 +324,9 @@ assets/adventure/index.json
 ```text
 JAR / DAT
   ↓ extract
-original/extracted
+tmp/assets/bc5/extracted
   ↓ decode
-original/decoded        原始 terrain/object 语义
+tmp/assets/bc5/decoded        原始 terrain/object 语义
   ↓ adapt
 Entity Map v1
   ↓
@@ -346,7 +345,7 @@ DAT level record
 patched JAR
 ```
 
-`encoded/` 中间地图与 `original/decoded/` 的单关 JSON 使用同一合同，保留
+`encoded/` 中间地图与 `tmp/assets/bc5/decoded/` 的单关 JSON 使用同一合同，保留
 `terrainEncoding / source / recordLength / recordSha256 / dynamicSlots` 以及
 `width / height / terrain / objects`。Patch 流程从落盘后的中间地图重新读取
 `width / height / terrain / objects`，再生成目标 DAT record。
@@ -368,11 +367,11 @@ Original 工具链继续保留 archive/source identity：
 ```text
 JAR / DAT
   ↓ extract
-original/extracted
+tmp/assets/bc5/extracted
   ↓ decode
-original/decoded         release / packFile / levelIndex
+tmp/assets/bc5/decoded         release / packFile / levelIndex
   ↓ adapt
-original/adapted         产品语义 map id 与 MapDocument
+tmp/assets/bc5/adapted         产品语义 map id 与 MapDocument
 ```
 
 第一次转换到产品语义时直接得到 `1-1`、`1-2`、`1-bonus-1` 等产品 map id。Base/UP、DAT package 与 source record slot 只属于 archive provenance。

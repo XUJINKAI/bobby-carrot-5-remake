@@ -6,6 +6,7 @@ import { verifyButtonFocusPolicy } from "./source/button-focus-browser-checks.mj
 import { waitForBrowserState } from "./source/browser-regression-wait.mjs";
 import { verifyEditorExperience } from "./source/editor-browser-checks.mjs";
 import {
+  verifyNarrowExploreTabs,
   verifyNarrowExploreGameNavigation,
 } from "./source/game-navigation-browser-checks.mjs";
 import { verifyGameplayDialogKeyboard } from "./source/gameplay-dialog-browser-checks.mjs";
@@ -52,6 +53,10 @@ export async function runSourceBrowserRegression(cdp) {
       await verifyImportErrorFollowsLocale(
         cdp,
         await openPage(cdp, `${origin}/import/v1#%`),
+      );
+      await verifyNarrowExploreTabs(
+        cdp,
+        await openPage(cdp, `${origin}/explore/loma-pushbox`),
       );
       await verifyNarrowExploreGameNavigation(
         cdp,

@@ -15,6 +15,7 @@ export interface Translator {
   readonly fallbackLocale: Locale;
   setLocale(locale: Locale): void;
   registerCatalog(locale: Locale, catalog: TranslationCatalog): void;
+  has(key: string): boolean;
   t(key: string, params?: TranslationParams): string;
 }
 
@@ -50,6 +51,12 @@ export function createTranslator(options: TranslatorOptions): Translator {
         ...catalog,
       };
     },
+    has(key: string): boolean {
+      return (
+        catalogs[locale]?.[key] !== undefined ||
+        catalogs[options.fallbackLocale]?.[key] !== undefined
+      );
+    },
     t(key: string, params?: TranslationParams): string {
       const template =
         catalogs[locale]?.[key] ??
@@ -72,6 +79,11 @@ export {
   SEO_CATALOGS,
   type SeoTranslationKey,
 } from "./seoCatalogs.js";
+
+export {
+  COLLECTION_CATALOGS,
+  type CollectionTranslationKey,
+} from "./collectionCatalogs.js";
 
 export {
   EMBED_RUNTIME_CATALOGS,

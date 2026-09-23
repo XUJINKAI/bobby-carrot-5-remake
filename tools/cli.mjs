@@ -1,6 +1,4 @@
 import { spawnSync } from "node:child_process";
-import { fileURLToPath } from "node:url";
-import path from "node:path";
 import { root, tscCommand } from "./lib/fs.mjs";
 
 const [group, action] = process.argv.slice(2);
@@ -11,36 +9,54 @@ function run(command, args) {
 }
 
 if (group === "original") {
-  if (action === "extract") run(process.execPath, ["tools/original/extract.mjs"]);
-  else if (action === "decode") run(process.execPath, ["tools/original/decode.mjs"]);
-  else if (action === "adapt") {
-    run(process.execPath, ["tools/original/adapt.mjs"]);
-    run(process.execPath, ["tools/original/adventure-catalog.mjs"]);
-  } else if (action === "prepare") {
-    run(tscCommand(), ["-b", "model"]);
-    run(process.execPath, [fileURLToPath(import.meta.url), "original", "extract"]);
-    run(process.execPath, [fileURLToPath(import.meta.url), "original", "decode"]);
-    run(process.execPath, [fileURLToPath(import.meta.url), "original", "adapt"]);
-  } else if (action === "inspect") run(process.execPath, ["tools/original/inspect.mjs", ...process.argv.slice(3)]);
-  else if (action === "patch") run(process.execPath, ["tools/original/patch-cli.mjs", ...process.argv.slice(3)]);
-  else if (action === "research") run(process.execPath, ["tools/original/research.mjs", ...process.argv.slice(3)]);
-  else throw new Error("用法：node tools/cli.mjs original extract|decode|adapt|prepare|inspect|patch|research");
+  run(process.execPath, ["tools/original/cli.mjs", ...process.argv.slice(3)]);
 } else if (group === "schema") {
   if (action === "examples") {
     // Storage 示例通过 Adventure 的正式 parser 生成，避免手写镜像漂移。
     run(tscCommand(), ["-b", "model", "adventure", "--force"]);
-    run(process.execPath, ["tools/model/examples.mjs", ...process.argv.slice(4)]);
+    run(process.execPath, ["tools/schema/examples.mjs", ...process.argv.slice(4)]);
   } else throw new Error("用法：node tools/cli.mjs schema examples [entity-type]");
 } else if (group === "assets") {
   // 资产模块在加载时就导入 Model；冷启动必须先生成其包入口。
   run(tscCommand(), ["-b", "model"]);
-  const { rebuildAssets, prepareAssets } = await import("./pipeline/assets.mjs");
+  const {
+    prepareAssets,
+    rebuildAssets,
+    rebuildAssetsTransactionally,
+  } = await import("./pipeline/assets.mjs");
+  const selectedTaskIds = process.argv
+    .filter((argument) => argument.startsWith("--task="))
+    .map((argument) => argument.slice("--task=".length));
   const options = {
     includeDevCollections: process.argv.includes("--dev"),
+    ...(selectedTaskIds.length > 0 ? { selectedTaskIds } : {}),
   };
-  if (action === "rebuild") rebuildAssets(options);
-  else if (action === "prepare") prepareAssets(options);
-  else throw new Error("用法：node tools/cli.mjs assets prepare|rebuild");
+  const markReplayPresence = process.argv.includes("--replay-presence");
+  const transactional = process.argv.includes("--transactional");
+  if (transactional && action !== "rebuild") {
+    throw new Error("只有 assets rebuild 支持 --transactional");
+  }
+  if (action === "rebuild" && transactional) {
+    const beforeCommit = markReplayPresence
+      ? async ({ repositoryRoot }) => {
+        const { markReplayFilesAsVerified } = await import(
+          "./replay/mark-verified-maps.mjs"
+        );
+        markReplayFilesAsVerified({ repositoryRoot });
+      }
+      : undefined;
+    await rebuildAssetsTransactionally({ ...options, beforeCommit });
+  } else if (action === "rebuild") {
+    rebuildAssets(options);
+  } else if (action === "prepare") {
+    prepareAssets(options);
+    if (markReplayPresence) {
+      const { markReplayFilesAsVerified } = await import(
+        "./replay/mark-verified-maps.mjs"
+      );
+      markReplayFilesAsVerified();
+    }
+  } else throw new Error("用法：node tools/cli.mjs assets prepare|rebuild");
 } else if (group === "dev") run(process.execPath, ["tools/pipeline/dev.mjs"]);
 else if (group === "build") run(process.execPath, ["tools/pipeline/build.mjs"]);
 else if (group === "preview") run(process.execPath, ["tools/pipeline/preview.mjs"]);

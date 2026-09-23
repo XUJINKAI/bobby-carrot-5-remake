@@ -19,7 +19,7 @@ Bobby Carrot 5 Remake 是一个非官方的重制、研究与互操作工程。
 
 ## LOMA Sokoban 关卡
 
-`tools/custom/LOMA.txt` 保存 **LOMA (Levels Of Many Authors)** Sokoban 关卡集的源数据。LOMA 于 2004 年开始，由 Aymeric du Peloux 与多位关卡作者共同维护；本仓库采用的 2021 版本包含 137 张关卡，并保留每张地图原文件中的 `Author`、`Title` 与可选 `Comment` 信息。
+`tools/assets/loma/LOMA.txt` 保存 **LOMA (Levels Of Many Authors)** Sokoban 关卡集的源数据。LOMA 于 2004 年开始，由 Aymeric du Peloux 与多位关卡作者共同维护；本仓库采用的 2021 版本包含 137 张关卡，并保留每张地图原文件中的 `Author`、`Title` 与可选 `Comment` 信息。
 
 LOMA 官方页面：
 
@@ -29,11 +29,11 @@ https://aymericdupeloux.wixsite.com/sokoban/post/_loma
 
 该页面明确说明 LOMA collection 可以在任何地方自由发布，不需要另行取得作者许可。本仓库据此保存原始文本，并在生成的语义地图中继续保留对应作者信息。
 
-LOMA 关卡文本及由它生成的 `custom-maps/loma-pushbox/`、runtime MapDocument 均属于第三方关卡内容，**不属于本项目 `LICENSE` 的授权范围**；各关卡的著作权仍归原作者所有。本项目的生成工具代码本身仍按根目录 `LICENSE` 授权。
+LOMA 关卡文本及由它生成的 `assets/maps/loma-pushbox/` runtime MapDocument 均属于第三方关卡内容，**不属于本项目 `LICENSE` 的授权范围**；各关卡的著作权仍归原作者所有。本项目的生成工具代码本身仍按根目录 `LICENSE` 授权。
 
 ## Novoban Sokoban 关卡
 
-`tools/custom/NOVOBAN.txt` 保存 **Novoban** Sokoban 关卡集的源数据。该 collection 由 François Marques 创作，原始文本保留以下版权与联系信息：
+`tools/assets/novoban/NOVOBAN.txt` 保存 **Novoban** Sokoban 关卡集的源数据。该 collection 由 François Marques 创作，原始文本保留以下版权与联系信息：
 
 ```text
 Copyright: François Marques
@@ -49,13 +49,13 @@ http://sokoban.online.fr/levels/novoban/novoban.txt
 
 公开 collection 页面将 Novoban 描述为 50 张面向初学者、难度逐渐增加的关卡，并标明 Copyright 为 François Marques。本仓库未找到像 LOMA 那样明确的额外自由再发布授权文本，因此**不把“公开提供下载”解释为宽松许可证**。
 
-Novoban 原始文本及由它生成的 `custom-maps/novoban-pushbox/`、runtime MapDocument 均属于第三方关卡内容，**不属于本项目 `LICENSE` 的授权范围**。本仓库保留原始 copyright/source 信息；任何进一步分发仍应自行确认 François Marques 对相应关卡内容的授权条件。本项目的生成工具代码本身仍按根目录 `LICENSE` 授权。
+Novoban 原始文本及由它生成的 `assets/maps/novoban-pushbox/` runtime MapDocument 均属于第三方关卡内容，**不属于本项目 `LICENSE` 的授权范围**。本仓库保留原始 copyright/source 信息；任何进一步分发仍应自行确认 François Marques 对相应关卡内容的授权条件。本项目的生成工具代码本身仍按根目录 `LICENSE` 授权。
 
 ## Robo 2: Saving Eny 关卡
 
-Robo 2: Saving Eny 是 HeroCraft 于 2004 年发布的 J2ME 游戏。`tools/custom/robo2/robo2.jar` 保存用于研究和可重复构建的 v1.0 a1 原始 J2ME 包；构建工具把其中的关卡布局转换为 Bobby Carrot 5 Remake 的语义地图。
+Robo 2: Saving Eny 是 HeroCraft 于 2004 年发布的 J2ME 游戏。`tools/assets/robo2/robo2.jar` 保存用于研究和可重复构建的 v1.0 a1 原始 J2ME 包；构建工具把其中的关卡布局转换为 Bobby Carrot 5 Remake 的语义地图。
 
-Robo 2 的 JAR、程序、美术、音频、名称、角色、关卡数据，以及从这些内容加工或转换得到的 `tools/custom/robo2/overrides/`、`assets/art/robo2/`、`assets/audio/robo2/`、`custom-maps/robo2/` 与 runtime MapDocument 均属于第三方内容，**不属于本项目 `LICENSE` 的授权范围**。本项目的格式读取、语义转换与 Engine 实现代码本身仍按根目录 `LICENSE` 授权。
+Robo 2 的 JAR、程序、美术、音频、名称、角色、关卡数据，以及从这些内容加工或转换得到的 `tools/assets/robo2/overrides/`、`assets/art/robo2/`、`assets/audio/robo2/`、`assets/maps/robo2/` 与 runtime MapDocument 均属于第三方内容，**不属于本项目 `LICENSE` 的授权范围**。本项目的格式读取、语义转换与 Engine 实现代码本身仍按根目录 `LICENSE` 授权。
 
 仓库不以项目许可证授予 Robo 2 内容的使用或分发权。任何人分发相应关卡或其它派生内容时，应自行确认 HeroCraft 及相关权利人的授权条件。
 
@@ -104,13 +104,14 @@ Jersey 10 字体文件继续适用其随附的 `OFL.txt`，不属于本项目根
 以下目录中的内容尤其可能包含第三方游戏内容或其派生物：
 
 ```text
-assets/original/
-assets/extracted/
-assets/generated/
+tmp/assets/bc5/
+tmp/assets/robo2/
+assets/maps/original/
+assets/maps/loma-pushbox/
+assets/maps/novoban-pushbox/
+assets/maps/robo2/
+assets/art/hd/
 assets/art/robo2/
-custom-maps/loma-pushbox/
-custom-maps/novoban-pushbox/
-custom-maps/robo2/
 dist/
 tmp/original-validation/
 ```

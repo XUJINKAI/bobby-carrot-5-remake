@@ -7,6 +7,9 @@ run(process.execPath, [
   "tools/replay/mark-verified-maps.mjs",
   "--presence",
 ]);
+const { attachAssetWatcher } = await import(
+  "../assets/orchestrator/watcher.mjs"
+);
 
 const port = Number(process.env.PORT ?? 5173);
 const devHost = process.env.BC5R_DEV_HOST ?? "0.0.0.0";
@@ -17,6 +20,9 @@ const server = await createServer({
     port,
     strictPort: true,
   },
+});
+attachAssetWatcher({
+  server,
 });
 await server.listen();
 

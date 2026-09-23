@@ -14,7 +14,7 @@
 | --- | ---: | --- | --- |
 | `collect-all / carrot` | 357 | `carrotGoal` | `tests/module/engine/selector-count.test.mjs` |
 | `fill-all / egg-nest / filled-egg` | 42 | `eggGoal` | `tests/module/engine/entity-runtime-semantics.test.mjs` |
-| `fill-all / push-goal / pushable` | 187 | `pushGoal` | `tests/integration/custom/loma-pushbox.test.mjs` |
+| `fill-all / push-goal / pushable` | 187 | `pushGoal` | `tests/integration/assets/loma-pushbox.test.mjs` |
 | `reach / exit` | 492 | `exitGoal` | `tests/module/engine/world-runtime.test.mjs` |
 | `reach / golden-carrot` | 80 | `goldenCarrotGoal` | `tests/module/engine/adventure-bonus.test.mjs` |
 

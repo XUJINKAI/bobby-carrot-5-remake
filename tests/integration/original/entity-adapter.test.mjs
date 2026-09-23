@@ -6,8 +6,8 @@ import {
 import {
   adaptDecodedMap,
   mowedGroundAt,
-} from "../../../tools/original/entity-adapter.mjs";
-import { reverseEntityMap } from "../../../tools/original/entity-reverse-adapter.mjs";
+} from "../../../tools/original/adapter/entity-adapter.mjs";
+import { reverseEntityMap } from "../../../tools/original/adapter/entity-reverse-adapter.mjs";
 import {
   decodeDatObject,
   decodeDatTerrain,

@@ -170,12 +170,12 @@ Web 录制面板只按当前关卡的 collection 和 map ID 尝试该固定地�
 可以拥有多个 Replay 测试文件。每新增一个 JSON 都会自动进入这项回归测试，也会随
 `assets/` 原样发布到 `dist/assets/`。
 
-正式构建与完整验证在生成地图并编译当前 Engine 后复跑全部内置 Replay。每条仓库 Replay 都必须声明
+正式构建与完整验证在编译当前 Engine 后，于隔离的完整资产事务中生成地图并复跑全部内置 Replay。每条仓库 Replay 都必须声明
 `finalState.status`，复跑后的实际状态必须与其一致；`playing / won / dead` 都是合法预期。
 只有声明状态与实际状态均为 `won`，且 Replay 的其它终态断言全部通过，才在对应的
 `assets/maps/<collection>/index.json` 地图条目中写入 `verified: true`。同一地图的
 多条获胜 Replay 只产生一个标记；没有获胜验证的条目省略该字段。每次正式构建都重新计算，
-Replay 校验失败会中止构建。开发服务器只按 Replay 文件关联的地图写入临时
+Replay 校验失败会中止构建并丢弃该次临时资产。开发服务器只按 Replay 文件关联的地图写入临时
 `verified: true`，Replay 文件变化时重新标记并刷新页面；录像的确定性与终态正确性仍由
 `npm run build` 和 `npm run verify` 验证。
 

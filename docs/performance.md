@@ -38,7 +38,7 @@
 | 特效活跃、结束与倒帧 | 未受影响列表保持引用复用；结束后返回原场景；倒帧恢复相同特效和层序 | `tests/module/engine/transient-scene-performance.test.mjs`、`tests/entity/plank-runtime.test.mjs` |
 | 目标与奖励计数 | 联合 selector 去重正确；求值走专用计数接口；空间生命周期后与全量查询等价 | `tests/module/engine/selector-count.test.mjs`、`tests/module/engine/entity-selector-index.test.mjs` |
 | Editor 大地图交互 | 选区、擦除与放置预览保持底图绘制次数；ghost 只实例化一个实体 | `tests/module/editor/canvas-performance.test.mjs` |
-| 浏览器真实指针交互 | 中键平移更新 transform，hover 更新交互层，地图底图新增绘制调用为 0 | `tools/custom/editor-performance-browser.mjs`，由 Web 浏览器回归调用 |
+| 浏览器真实指针交互 | 中键平移更新 transform，hover 更新交互层，地图底图新增绘制调用为 0 | `tests/smoke/browser/cases/source/editor-performance-browser.mjs`，由 Web 浏览器回归调用 |
 
 统一门禁为 `npm run verify`，包含上述 Node 回归、Web 测试、浏览器回归、构建与浏览器 smoke。计时采样应单独记录地图、操作、浏览器、设备、DPR、视口和缩放比例。
 

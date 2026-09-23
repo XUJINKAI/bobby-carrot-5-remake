@@ -6,14 +6,16 @@ import { parseMapDocument } from "@bobby/model";
 import { root } from "../lib/fs.mjs";
 import {
   replayFixtureFiles,
-  replayRoot,
 } from "./fixture-files.mjs";
 import { replayMapFile, replayMapRef } from "./replay-fixture.mjs";
 
 export { replayFixtureFiles };
 
-export function verifyReplayFixture(replayFile) {
-  const relative = path.relative(replayRoot, replayFile);
+export function verifyReplayFixture(replayFile, repositoryRoot = root) {
+  const relative = path.relative(
+    path.join(repositoryRoot, "assets/replays"),
+    replayFile,
+  );
   assert.equal(
     path.extname(relative),
     ".json",
@@ -21,7 +23,7 @@ export function verifyReplayFixture(replayFile) {
   );
   const replay = readJson(replayFile);
   const mapRef = replayMapRef(replay);
-  const mapFile = replayMapFile(root, replay);
+  const mapFile = replayMapFile(repositoryRoot, replay);
   assert.ok(
     fs.existsSync(mapFile),
     `${relative} 指向的地图不存在：${mapRef.collection}/${mapRef.id}`,

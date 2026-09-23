@@ -18,13 +18,11 @@ export type MapCollectionFilterSelection = "single" | "multiple";
 
 export interface MapCollectionFilterOption {
   id: string;
-  name: string;
   icons?: MapCollectionIcon[];
 }
 
 export interface MapCollectionFilter {
   id: string;
-  name: string;
   selection: MapCollectionFilterSelection;
   options: MapCollectionFilterOption[];
 }
@@ -47,9 +45,7 @@ export interface MapCollectionMap {
 
 /** assets/maps/<collection>/index.json；collection 身份来自资源路径。 */
 export interface MapCollectionIndex {
-  schemaVersion: 1;
-  name: string;
-  description?: string;
+  schemaVersion: 2;
   cardSize: MapCollectionCardSize;
   filters: MapCollectionFilter[];
   chapters: MapCollectionChapter[];
@@ -59,12 +55,11 @@ export interface MapCollectionIndex {
 export interface MapCollectionSummary {
   /** 用于解析 assets/maps/<id>/index.json 的资源路径 ID。 */
   id: string;
-  name: string;
 }
 
 /** assets/maps/index.json；collections[] 数组顺序即展示与导航顺序。 */
 export interface MapCollectionsIndex {
-  schemaVersion: 1;
+  schemaVersion: 2;
   collections: MapCollectionSummary[];
 }
 
@@ -79,15 +74,13 @@ export interface CollectionManifestChapter {
  */
 export interface CollectionManifestEntry {
   id: string;
-  name: string;
-  description?: string;
   cardSize?: MapCollectionCardSize;
   visible?: CollectionManifestVisibility;
   chapters?: Record<string, CollectionManifestChapter>;
 }
 
-/** custom-maps/collections.json；collections[] 数组顺序即 collection 顺序。 */
+/** tools/assets/collections.json；collections[] 数组顺序即 collection 顺序。 */
 export interface CollectionManifest {
-  schemaVersion: 1;
+  schemaVersion: 2;
   collections: CollectionManifestEntry[];
 }

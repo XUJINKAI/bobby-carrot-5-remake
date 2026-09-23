@@ -3,18 +3,12 @@ import path from "node:path";
 import { root } from "../lib/fs.mjs";
 
 const generatedDirectories = [
-  "original/extracted",
-  "original/decoded",
-  "original/adapted",
-  "custom-maps/loma-pushbox",
-  "custom-maps/novoban-pushbox",
-  "custom-maps/robo2",
   "assets/art/hd",
   "assets/art/robo2",
   "assets/audio/midi",
   "assets/maps",
   "assets/adventure",
-  "tmp/assets-prepare",
+  "tmp/assets",
 ];
 
 for (const target of workspaceDistDirectories()) {

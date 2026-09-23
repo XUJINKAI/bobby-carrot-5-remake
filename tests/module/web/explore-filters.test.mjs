@@ -6,22 +6,22 @@ import {
 } from "../../../web/src/pages/explore/levelFilters.ts";
 
 const options = [
-  { id: "a", name: "A" },
-  { id: "b", name: "B" },
+  { id: "a" },
+  { id: "b" },
 ];
 
 test("single filter 同时只保留一个 option", () => {
   const values = new Set(["a"]);
   toggleLevelFilterOption(
     values,
-    { id: "count", name: "数量", selection: "single", options },
+    { id: "count", selection: "single", options },
     "b",
   );
   assert.deepEqual([...values], ["b"]);
 
   toggleLevelFilterOption(
     values,
-    { id: "count", name: "数量", selection: "single", options },
+    { id: "count", selection: "single", options },
     "b",
   );
   assert.deepEqual([...values], []);
@@ -31,7 +31,7 @@ test("multiple filter 保留多个 option", () => {
   const values = new Set(["a"]);
   toggleLevelFilterOption(
     values,
-    { id: "tags", name: "标签", selection: "multiple", options },
+    { id: "tags", selection: "multiple", options },
     "b",
   );
   assert.deepEqual([...values], ["a", "b"]);

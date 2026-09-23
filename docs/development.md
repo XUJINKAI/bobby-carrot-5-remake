@@ -82,11 +82,11 @@ adventure/dist/
 engine/dist/
 editor/dist/
 embed/dist/
-original/extracted/
-original/decoded/
-original/adapted/
+tmp/assets/
 assets/maps/
+assets/adventure/
 assets/art/hd/
+assets/art/robo2/
 assets/audio/midi/
 tmp/
 ```

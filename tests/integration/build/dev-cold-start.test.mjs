@@ -20,16 +20,12 @@ const workspaces = [
   "tools",
 ];
 const generatedDirectories = [
-  "original/extracted",
-  "original/decoded",
-  "original/adapted",
-  "custom-maps/loma-pushbox",
-  "custom-maps/novoban-pushbox",
+  "tmp/assets",
   "assets/maps",
   "assets/adventure",
   "assets/art/hd",
   "assets/audio/midi",
-  "tmp/assets-prepare",
+  "tmp/assets",
 ];
 
 test("npm run dev 从无 workspace dist 和生成资产的检出启动", async () => {
@@ -69,7 +65,7 @@ test("npm run dev 从无 workspace dist 和生成资产的检出启动", async (
       child,
       `Web UI: http://localhost:${port}`,
     );
-    assert.match(output, /资产准备缓存未命中/);
+    assert.match(output, /执行资产任务：bc5\.extract/);
     assert.match(output, /Replay 文件标记/);
     assert.equal(
       fs.existsSync(path.join(directory, "model/dist/index.js")),

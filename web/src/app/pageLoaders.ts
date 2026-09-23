@@ -24,7 +24,7 @@ export const PAGE_REGISTRY = {
     () => import("../pages/home/mountHomePage.js"),
   ),
   explore: definePage(
-    ["explore"],
+    ["explore", "collections"],
     () => import("../pages/explore/mountExplorePage.js"),
   ),
   adventure: definePage(
@@ -40,7 +40,7 @@ export const PAGE_REGISTRY = {
     () => import("../pages/editor/mountEditorPage.js"),
   ),
   settings: definePage(
-    ["settings"],
+    ["settings", "collections"],
     () => import("../pages/settings/mountSettingsPage.js"),
   ),
   import: definePage(

@@ -7,7 +7,7 @@
 当前研究与构建输入固定保存在：
 
 ```text
-tools/custom/robo2/robo2.jar
+tools/assets/robo2/robo2.jar
 SHA-256 089499b7d5bbd3438ec970ac4ec42ff9e71b92a79824881bb2583b608b042be3
 MIDlet-Version 1.0
 MIDlet-Vendor HeroCraft
@@ -49,7 +49,7 @@ u4 cells[width * height]
 
 镜面映射由 `b.<init>(byte,int,int)` 与 `c.a(int,int,int,int)` 共同确认。`0x5` 使用 `mirrorL.png` 并保存镜面索引 `0`，把入射向量 `(dx,dy)` 变为 `(dy,dx)`，对应左上/右下的 `backslash`（`\`）；`0x6` 使用 `mirrorR.png` 并保存索引 `1`，把入射向量变为 `(-dy,-dx)`，对应左下/右上的 `slash`（`/`）。两条分支都接受四种入射方向，因此两种镜面都是双面反射。
 
-记录解码位于 `tools/custom/robo2/format.mjs`，语义转换位于 `tools/custom/robo2/convert.mjs`；Robo 2 byte 与语义 Entity 的转换只能位于该来源工具边界。
+记录解码位于 `tools/assets/robo2/format.mjs`，语义转换位于 `tools/assets/robo2/convert.mjs`，并由 `tools/assets/robo2/producer.mjs` 编排；Robo 2 byte 与语义 Entity 的转换只能位于该来源工具边界。
 
 来源主题按 `0..3` 对应太空、冰雪、遗迹、森林。转换使用兔子波比5重制版的语义 Surface，并将来源 theme `0/1` 合并为同一套雪地视觉：
 
@@ -62,21 +62,21 @@ u4 cells[width * height]
 
 多形态墙面使用固定 seed、地图 ID、类别和坐标计算确定性结果；同一来源地图每次生成得到相同视觉。四类墙面在对应来源关卡中都保持不可通行。
 
-使用已确认的 JAR 生成 25 张语义地图：
+使用已确认的 JAR 生成 25 张语义地图和机关图片：
 
 ```sh
-node tools/custom/robo2/generate.mjs
+npm run assets
 ```
 
-激光机关图片可以从已登记的 JAR 条目和覆盖文件独立构建：
+美术 Publisher 发布 Engine 使用的十张机关图：四张炮台图、12×12 的待机炸弹、10×12 的 Stone，以及 `bombExplode.png` 与 `explosion.png` 两张六帧爆炸序列来自完整解包目录；两张双面镜使用 `tools/assets/robo2/overrides/` 中受版本管理的 32×48 超采样图。双面镜以 48px 源格尺寸在格内水平居中，炸弹与 Stone 以 Robo 2 的 12px 原始格尺寸在格内居中；四张 14px 炮台图以 14px 为基准居中缩放到单格范围。爆炸序列按中心和相邻格分别居中绘制。构建结果写入被 Git 忽略的 `assets/art/robo2/`。
 
-```sh
-node tools/custom/robo2/extract.mjs
-```
-
-提取器发布 Engine 使用的十张机关图：四张炮台图、12×12 的待机炸弹、10×12 的 Stone，以及 `bombExplode.png` 与 `explosion.png` 两张六帧爆炸序列来自 JAR；两张双面镜使用 `tools/custom/robo2/overrides/` 中受版本管理的 32×48 超采样图。双面镜以 48px 源格尺寸在格内水平居中，炸弹与 Stone 以 Robo 2 的 12px 原始格尺寸在格内居中；四张 14px 炮台图以 14px 为基准居中缩放到单格范围。爆炸序列按中心和相邻格分别居中绘制。构建结果写入被 Git 忽略的 `assets/art/robo2/`。
-
-生成器校验 JAR SHA-256，输出固定为被 Git 忽略的 `custom-maps/robo2/01.json`～`25.json`。`npm run assets`、`npm test` 与 `npm run verify` 都会先从该 JAR 重建地图，再进入统一的 custom collection 构建流程。输出包含 `LevelMap` 语义、展示 metadata、终点胜利规则与显式的 `music: "robo2/menu"`，不携带 JAR 路径、record 编号或 archive hash。
+Producer 校验 JAR SHA-256，把全部 JAR entry 安全展开到 `tmp/assets/robo2/extracted`，再把
+可审阅阶段保存到 `decoded` 与 `adapted`。decode 与美术发布只消费完整解包目录。decoded
+阶段逐关执行 encode round-trip，并保留来源 entry、record SHA、theme
+和 tile code；最终地图原子发布为 `assets/maps/robo2/01.json`～`25.json`。`npm test` 与
+`npm run verify` 使用同一任务图准备这些资产。runtime 输出包含 `LevelMap` 语义、展示
+metadata、终点胜利规则与显式的 `music: "robo2/menu"`，不携带 JAR 路径、record 编号或
+archive hash。
 
 ## 已确认 gameplay
 

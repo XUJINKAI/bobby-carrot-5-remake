@@ -5,18 +5,19 @@ import { root } from "../lib/fs.mjs";
 import { replayFixtureFiles } from "./fixture-files.mjs";
 import { replayMapRef } from "./replay-fixture.mjs";
 
-const mapsRoot = path.join(root, "assets/maps");
-
-export async function markVerifiedMaps() {
+export async function markVerifiedMaps({ repositoryRoot = root } = {}) {
   const { verifyReplayFixture } = await import("./verify-fixtures.mjs");
   const winningMapIds = new Set();
-  const replayFiles = replayFixtureFiles();
+  const replayFiles = replayFixtureFiles(repositoryRoot);
   for (const replayFile of replayFiles) {
-    const { mapRef, winning } = verifyReplayFixture(replayFile);
+    const { mapRef, winning } = verifyReplayFixture(
+      replayFile,
+      repositoryRoot,
+    );
     if (winning) winningMapIds.add(`${mapRef.collection}/${mapRef.id}`);
   }
 
-  const foundMapIds = writeVerifiedMaps(winningMapIds);
+  const foundMapIds = writeVerifiedMaps(winningMapIds, repositoryRoot);
   for (const mapId of winningMapIds) {
     if (!foundMapIds.has(mapId))
       throw new Error(`获胜 Replay 指向的地图不在 collection index 中：${mapId}`);
@@ -27,15 +28,15 @@ export async function markVerifiedMaps() {
   return winningMapIds;
 }
 
-export function markReplayFilesAsVerified() {
-  const replayFiles = replayFixtureFiles();
+export function markReplayFilesAsVerified({ repositoryRoot = root } = {}) {
+  const replayFiles = replayFixtureFiles(repositoryRoot);
   const replayMapIds = new Set();
   for (const replayFile of replayFiles) {
     const replay = readJson(replayFile);
     const mapRef = replayMapRef(replay);
     replayMapIds.add(`${mapRef.collection}/${mapRef.id}`);
   }
-  const foundMapIds = writeVerifiedMaps(replayMapIds);
+  const foundMapIds = writeVerifiedMaps(replayMapIds, repositoryRoot);
   for (const mapId of replayMapIds) {
     if (!foundMapIds.has(mapId)) {
       throw new Error(`Replay 指向的地图不在 collection index 中：${mapId}`);
@@ -47,11 +48,12 @@ export function markReplayFilesAsVerified() {
   return replayMapIds;
 }
 
-export function clearVerifiedMaps() {
-  writeVerifiedMaps(new Set());
+export function clearVerifiedMaps({ repositoryRoot = root } = {}) {
+  writeVerifiedMaps(new Set(), repositoryRoot);
 }
 
-function writeVerifiedMaps(winningMapIds) {
+function writeVerifiedMaps(winningMapIds, repositoryRoot) {
+  const mapsRoot = path.join(repositoryRoot, "assets/maps");
   const foundMapIds = new Set();
   for (const entry of fs.readdirSync(mapsRoot, { withFileTypes: true })) {
     if (!entry.isDirectory()) continue;

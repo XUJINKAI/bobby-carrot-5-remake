@@ -93,20 +93,11 @@ async function resolveAdventureChapterSeo(path: string): Promise<SeoDescriptor> 
   }
 }
 
-async function resolveCollectionSeo(
+function resolveCollectionSeo(
   collectionId: string,
   canonicalPath: string,
-): Promise<SeoDescriptor> {
-  try {
-    const collection = await fetchJson<{
-      id: string;
-      name: string;
-      description: string;
-    }>(siteUrl(`assets/maps/${collectionId}/index.json`));
-    return collectionSeoDescriptor(canonicalPath, collection);
-  } catch {
-    return collectionSeoDescriptor(canonicalPath);
-  }
+): SeoDescriptor {
+  return collectionSeoDescriptor(canonicalPath, { id: collectionId });
 }
 
 async function resolveExploreMapSeo(path: string): Promise<SeoDescriptor> {

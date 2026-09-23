@@ -10,9 +10,14 @@ import {
   styleRecordToText,
 } from "../../services/assets/entityVisual.js";
 import { webT } from "../../i18n/webI18n.js";
+import {
+  collectionFilterName,
+  collectionFilterOptionName,
+} from "../../i18n/collectionI18n.js";
 
 const selected = new Map<string, Set<string>>();
 let activePanel: string | null = null;
+let currentCollectionId: string | null = null;
 let currentCollection: MapCollectionIndex | null = null;
 let currentImages: ImageManager | null = null;
 
@@ -22,9 +27,11 @@ export interface LevelFilterController {
 }
 
 export function mountLevelFilters(
+  collectionId: string,
   collection: MapCollectionIndex,
   images: ImageManager,
 ): LevelFilterController {
+  currentCollectionId = collectionId;
   currentCollection = collection;
   currentImages = images;
   const validGroups = new Set(collection.filters.map((filter) => filter.id));
@@ -39,6 +46,7 @@ export function mountLevelFilters(
   const head = document.querySelector<HTMLElement>(".level-browser-head");
   if (!head) {
     currentCollection = null;
+    currentCollectionId = null;
     currentImages = null;
     return {
       localeChanged() {},
@@ -65,6 +73,7 @@ export function mountLevelFilters(
       shell.remove();
       if (currentCollection === collection) {
         currentCollection = null;
+        currentCollectionId = null;
         currentImages = null;
       }
     },
@@ -105,7 +114,10 @@ function filterTrigger(filter: MapCollectionFilter): string {
   ]
     .filter(Boolean)
     .join(" ");
-  return `<button class="${classes}" data-filter-trigger="${escapeAttribute(filter.id)}" aria-expanded="${activePanel === filter.id}">${escapeHtml(filter.name)}${count ? `<span class="level-filter-count">${count}</span>` : ""}</button>`;
+  const name = currentCollectionId
+    ? collectionFilterName(currentCollectionId, filter.id)
+    : filter.id;
+  return `<button class="${classes}" data-filter-trigger="${escapeAttribute(filter.id)}" aria-expanded="${activePanel === filter.id}">${escapeHtml(name)}${count ? `<span class="level-filter-count">${count}</span>` : ""}</button>`;
 }
 
 function filterPanel(filter: MapCollectionFilter): string {
@@ -117,7 +129,10 @@ function filterPanel(filter: MapCollectionFilter): string {
       const iconGroup = icons
         ? `<span class="level-filter-icons" aria-hidden="true">${icons}</span>`
         : "";
-      return `<button class="level-filter-option${selectedClass}" data-filter-group="${escapeAttribute(filter.id)}" data-filter-option="${escapeAttribute(option.id)}" aria-pressed="${values.has(option.id)}">${iconGroup}<span>${escapeHtml(option.name)}</span></button>`;
+      const name = currentCollectionId
+        ? collectionFilterOptionName(currentCollectionId, filter.id, option.id)
+        : option.id;
+      return `<button class="level-filter-option${selectedClass}" data-filter-group="${escapeAttribute(filter.id)}" data-filter-option="${escapeAttribute(option.id)}" aria-pressed="${values.has(option.id)}">${iconGroup}<span>${escapeHtml(name)}</span></button>`;
     })
     .join("");
   return `<div class="level-filter-panel" data-filter-panel="${escapeAttribute(filter.id)}" ${activePanel === filter.id ? "" : "hidden"}>${options}</div>`;

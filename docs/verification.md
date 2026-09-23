@@ -9,7 +9,7 @@ npm run verify
 它会：
 
 - 执行源码质量与测试目录结构门禁；
-- 建立 Model bootstrap，再完成 Original 解包、DAT 解码、Adapter、Adventure Catalog 与自定义 collection 前处理；
+- 编译当前 Runtime，在隔离事务中完整执行 Original 解包、DAT 解码、Adapter、Adventure Catalog、自定义 collection 前处理与 Replay 验真；
 - 通过 TypeScript project references 增量编译各 Runtime package；
 - 由 `tests/run.mjs` 自动发现并分发 Node Test 与 Vitest 测试，验证 semantic schema、DAT round-trip、Original Adapter、Adventure、Engine、Editor、Web 与 Replay；
 - 执行 production build，将站点组装到唯一的 `dist/`；

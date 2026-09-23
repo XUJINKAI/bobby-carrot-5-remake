@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
+import fs from "node:fs";
 import test from "node:test";
 import {
+  COLLECTION_CATALOGS,
   createTranslator,
   loadTranslationCatalog,
   normalizeLocale,
@@ -28,6 +30,8 @@ test("translator resolves registered catalogs, fallback and interpolation", () =
   assert.equal(translator.t("greeting", { name: "Bobby" }), "Hello Bobby");
   assert.equal(translator.t("fallbackOnly"), "后备文案");
   assert.equal(translator.t("missing.key"), "missing.key");
+  assert.equal(translator.has("greeting"), true);
+  assert.equal(translator.has("missing.key"), false);
 
   translator.setLocale("zh-CN");
   assert.equal(translator.locale, "zh-CN");
@@ -40,6 +44,46 @@ test("scoped catalogs load independently by locale", async () => {
   ]);
   assert.equal(zh["shell.settings"], "设置");
   assert.equal(en["shell.settings"], "Settings");
+});
+
+test("collection catalogs use manifest IDs and keep optional tag parity", async () => {
+  const manifest = JSON.parse(
+    fs.readFileSync(
+      new URL("../../../tools/assets/collections.json", import.meta.url),
+      "utf8",
+    ),
+  );
+  const loaded = await loadTranslationCatalog("collections", "zh-CN");
+
+  for (const { id } of manifest.collections) {
+    const prefix = `collections.${id}.`;
+    const zhKeys = Object.keys(COLLECTION_CATALOGS["zh-CN"])
+      .filter((key) => key.startsWith(prefix));
+    const enKeys = Object.keys(COLLECTION_CATALOGS.en)
+      .filter((key) => key.startsWith(prefix));
+    const hasZhTag = zhKeys.includes(`${prefix}tag`);
+    const hasEnTag = enKeys.includes(`${prefix}tag`);
+    assert.equal(hasZhTag, hasEnTag);
+    const required = [`${prefix}name`, `${prefix}description`];
+
+    assert.deepEqual(zhKeys, enKeys);
+    for (const key of required) {
+      assert.ok(COLLECTION_CATALOGS["zh-CN"][key]);
+      assert.ok(COLLECTION_CATALOGS.en[key]);
+    }
+  }
+  assert.equal(
+    loaded["collections.loma-pushbox.tag"],
+    "推箱子",
+  );
+  assert.equal(
+    COLLECTION_CATALOGS["zh-CN"]["collections.original.filters.mechanics.options.bean"],
+    "魔豆",
+  );
+  assert.equal(
+    COLLECTION_CATALOGS.en["collections.original.filters.mechanics.options.bean"],
+    "Magic Bean",
+  );
 });
 
 test("SEO catalogs are static bilingual resources", () => {

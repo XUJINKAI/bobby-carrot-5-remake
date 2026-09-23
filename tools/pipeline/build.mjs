@@ -27,12 +27,8 @@ for (const target of generatedTargets) {
 
 const tsc = tscCommand();
 
-// 内容生成器通过正式 Model 入口校验结果，因此先建立 bootstrap 产物。
-run(tsc, ["-b", "model", "--force"]);
-run(process.execPath, ["tools/cli.mjs", "assets", "prepare"]);
-
-// 内容前处理完成后再编译全部 Runtime package。i18n 自己用 Vite 编译 TS 与
-// Markdown，并用 tsc 只生成声明。
+// Replay 验真依赖当前 Engine，因此在资产事务开始前建立全部 Runtime package。
+// i18n 自己用 Vite 编译 TS 与 Markdown，并用 tsc 只生成声明。
 run("npm", ["run", "build", "--workspace=@bobby/i18n"]);
 run(tsc, [
   "-b",
@@ -44,7 +40,18 @@ run(tsc, [
   "embed",
   "--force",
 ]);
-run(process.execPath, ["tools/replay/mark-verified-maps.mjs"]);
+
+// 正式构建从来源完整生成资产，并在临时目录内通过 Replay 验真后一次提交。
+const { rebuildAssetsTransactionally } = await import(
+  "../assets/pipeline.mjs"
+);
+const { markVerifiedMaps } = await import(
+  "../replay/mark-verified-maps.mjs"
+);
+await rebuildAssetsTransactionally({
+  beforeCommit: ({ repositoryRoot }) =>
+    markVerifiedMaps({ repositoryRoot }),
+});
 run(binCommand("vue-tsc"), ["-b", "--force"], {
   cwd: path.join(root, "web"),
 });

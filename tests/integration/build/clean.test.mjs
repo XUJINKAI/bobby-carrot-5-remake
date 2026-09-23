@@ -22,8 +22,8 @@ test("clean 清理根目录和全部 workspace dist 与 TypeScript 构建状态"
     "future-package/dist/index.js",
     "future-package/tsconfig.tsbuildinfo",
     "assets/maps/index.json",
-    "original/adapted/catalog.json",
-    "tmp/assets-prepare/state.json",
+    "tmp/assets/bc5/adapted/catalog.json",
+    "tmp/assets/cache/state.json",
     "node_modules/dependency/dist/index.js",
     "examples/fixture/dist/index.js",
   ]) {
@@ -49,11 +49,7 @@ test("clean 清理根目录和全部 workspace dist 与 TypeScript 构建状态"
     false,
   );
   assert.equal(fs.existsSync(path.join(directory, "assets/maps")), false);
-  assert.equal(fs.existsSync(path.join(directory, "original/adapted")), false);
-  assert.equal(
-    fs.existsSync(path.join(directory, "tmp/assets-prepare")),
-    false,
-  );
+  assert.equal(fs.existsSync(path.join(directory, "tmp/assets")), false);
   assert.equal(
     fs.existsSync(path.join(directory, "node_modules/dependency/dist/index.js")),
     true,
