@@ -7,7 +7,7 @@ import type {
 } from "../../world/entity/EntityInstance.js";
 import { RuntimeEntityTypeId } from "../runtime-types.js";
 
-export interface LaserEmitterFlashSegment {
+export interface LaserCannonFlashSegment {
   cell: { x: number; y: number };
   direction: Direction;
   outgoingDirection?: Direction;
@@ -34,7 +34,7 @@ export function groupLaserBeamsBySource(
 
 export function flashSegmentsFromBeams(
   beams: readonly Readonly<EntityInstance>[],
-): readonly LaserEmitterFlashSegment[] {
+): readonly LaserCannonFlashSegment[] {
   return [...beams]
     .sort((left, right) => left.id - right.id)
     .map((beam) => ({
@@ -47,22 +47,22 @@ export function flashSegmentsFromBeams(
     }));
 }
 
-export function destroyLaserEmitter(
+export function destroyLaserCannon(
   commands: WorldCommandApi,
-  emitter: Readonly<EntityInstance>,
+  cannon: Readonly<EntityInstance>,
   beams: readonly Readonly<EntityInstance>[],
-  ray: readonly LaserEmitterFlashSegment[],
+  ray: readonly LaserCannonFlashSegment[],
 ): void {
   commands.emit({
-    type: "laser-emitter-destroyed",
-    entityId: emitter.id,
-    x: emitter.anchor.x,
-    y: emitter.anchor.y,
-    direction: emitter.direction ?? "right",
+    type: "laser-cannon-destroyed",
+    entityId: cannon.id,
+    x: cannon.anchor.x,
+    y: cannon.anchor.y,
+    direction: cannon.direction ?? "right",
     data: {
       segments: ray.map((segment) => ({
-        x: segment.cell.x - emitter.anchor.x,
-        y: segment.cell.y - emitter.anchor.y,
+        x: segment.cell.x - cannon.anchor.x,
+        y: segment.cell.y - cannon.anchor.y,
         direction: segment.direction,
         terminal: segment.terminal,
         ...(segment.outgoingDirection
@@ -72,7 +72,7 @@ export function destroyLaserEmitter(
     },
   });
   for (const beam of beams) commands.destroy(beam.id);
-  commands.destroy(emitter.id);
+  commands.destroy(cannon.id);
 }
 
 function isDirection(value: unknown): value is Direction {

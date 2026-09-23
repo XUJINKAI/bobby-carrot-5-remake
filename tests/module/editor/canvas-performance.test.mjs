@@ -176,7 +176,7 @@ test("Editor Canvas 复用 Engine 光路投影且不污染可编辑空间", () =
       { type: "grass", variant: "ts-10-1", x: 0, y: 0 },
       { type: "grass", variant: "ts-10-1", x: 1, y: 0 },
       { type: "grass", variant: "ts-10-1", x: 2, y: 0 },
-      { type: "laser-emitter", direction: "right", x: 0, y: 0 },
+      { type: "laser-cannon", direction: "right", x: 0, y: 0 },
       { type: "stump", x: 3, y: 0 },
     ],
   };
@@ -229,7 +229,7 @@ test("Editor 光路按 Energy 规则穿过覆盖物并由原版 Mirror 反射", 
     }
   }
   entities.push(
-    { type: "laser-emitter", direction: "right", x: 0, y: 1 },
+    { type: "laser-cannon", direction: "right", x: 0, y: 1 },
     { type: "high-grass", x: 1, y: 1, stackOrder: 1 },
     { type: "fence", x: 2, y: 1, stackOrder: 1 },
     { type: "mirror", variant: "left-bottom", x: 3, y: 1 },

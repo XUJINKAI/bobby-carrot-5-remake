@@ -148,7 +148,7 @@ function objectEntity(code, x, y) {
   }
   if (LASER_DIRECTIONS.has(code)) {
     return {
-      type: "laser-emitter",
+      type: "laser-cannon",
       direction: LASER_DIRECTIONS.get(code),
       ...base,
     };

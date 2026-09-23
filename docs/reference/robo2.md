@@ -39,10 +39,10 @@ u4 cells[width * height]
 | `0x4` | Bomb | `laser-bomb` |
 | `0x5` | `mirrorL` | `laser-mirror` / `backslash` |
 | `0x6` | `mirrorR` | `laser-mirror` / `slash` |
-| `0x7` | `laserDown` | `laser-emitter` / `down` |
-| `0x8` | `laserRight` | `laser-emitter` / `right` |
-| `0x9` | `laserUp` | `laser-emitter` / `up` |
-| `0xA` | `laserLeft` | `laser-emitter` / `left` |
+| `0x7` | `laserDown` | `laser-cannon` / `down` |
+| `0x8` | `laserRight` | `laser-cannon` / `right` |
+| `0x9` | `laserUp` | `laser-cannon` / `up` |
+| `0xA` | `laserLeft` | `laser-cannon` / `left` |
 | `0xB` | Robo 起点 | `bobby` |
 
 方向映射以实际 gameplay 字节码为准：`b.<init>(byte,int,int)` 把 `0x7..0xA` 保存为方向索引 `0..3`；`c.try()` 将这四个索引依次转换为 `(0,+1)`、`(+1,0)`、`(0,-1)`、`(-1,0)`，即下、右、上、左。JAR 的静态素材数组顺序也按这个方向索引重排，不能直接按常量池中的文件名出现顺序解释 tile code。
@@ -87,7 +87,7 @@ node tools/custom/robo2/extract.mjs
 - 四向炮产生持续直线激光；对象移动或爆炸后重新计算光路。
 - 两种 Mirror 都从双面反射，按各自对角线把四种入射方向转成九十度方向。
 - 激光命中 Laser Cannon 时摧毁目标炮；若目标炮正对来源炮，来源炮同时摧毁。
-- Bomb 在格子边界阻断激光，同一直线排列时只有最靠近发生器的一颗会被直接命中。
+- Bomb 在格子边界阻断激光，同一直线排列时只有最靠近激光炮的一颗会被直接命中。
 - 分别被不同光路直接命中的 Bomb 各自开始起爆；后续 Bomb 只能在前一颗爆炸清除光路或触发相邻连锁后开始起爆。
 - Bomb 先播放中心起爆过程；该阶段不产生十字范围伤害，随后才结算并播放十字爆炸。
 - Bomb 摧毁中心及上、下、左、右相邻格中的 Stone、Mirror 与 Laser Cannon；对角格不受影响，不可摧毁的障碍会截断对应方向的爆炸。

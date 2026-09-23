@@ -114,7 +114,7 @@ const paletteOccupantTypes: readonly EntityType[] = [
   MapEntityTypeId.WHIRLWIND,
   MapEntityTypeId.PUSHABLE_BOX,
   MapEntityTypeId.LASER_STONE,
-  MapEntityTypeId.LASER_EMITTER,
+  MapEntityTypeId.LASER_CANNON,
   MapEntityTypeId.LASER_MIRROR,
   MapEntityTypeId.LASER_BOMB,
   MapEntityTypeId.DRAGON,
@@ -210,7 +210,7 @@ export const builtinEditorDefinition: EditorDefinition = {
       defaultFields: { direction: "right" },
       variants: directions,
     },
-    [MapEntityTypeId.LASER_EMITTER]: {
+    [MapEntityTypeId.LASER_CANNON]: {
       ...occupant,
       defaultFields: { direction: "right" },
       variants: directions,

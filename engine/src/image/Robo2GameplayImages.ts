@@ -1,11 +1,11 @@
 import type { ImageManager } from "./ImageManager.js";
 
 export const ROBO2_GAMEPLAY_IMAGE_IDS = {
-  emitter: {
-    up: "robo2-emitter-up",
-    right: "robo2-emitter-right",
-    down: "robo2-emitter-down",
-    left: "robo2-emitter-left",
+  cannon: {
+    up: "robo2-cannon-up",
+    right: "robo2-cannon-right",
+    down: "robo2-cannon-down",
+    left: "robo2-cannon-left",
   },
   mirror: {
     slash: "robo2-mirror-slash",
@@ -18,10 +18,10 @@ export const ROBO2_GAMEPLAY_IMAGE_IDS = {
 } as const;
 
 export const ROBO2_GAMEPLAY_IMAGE_FILES = {
-  [ROBO2_GAMEPLAY_IMAGE_IDS.emitter.up]: "laserUp.png",
-  [ROBO2_GAMEPLAY_IMAGE_IDS.emitter.right]: "laserRight.png",
-  [ROBO2_GAMEPLAY_IMAGE_IDS.emitter.down]: "laserDown.png",
-  [ROBO2_GAMEPLAY_IMAGE_IDS.emitter.left]: "laserLeft.png",
+  [ROBO2_GAMEPLAY_IMAGE_IDS.cannon.up]: "laserUp.png",
+  [ROBO2_GAMEPLAY_IMAGE_IDS.cannon.right]: "laserRight.png",
+  [ROBO2_GAMEPLAY_IMAGE_IDS.cannon.down]: "laserDown.png",
+  [ROBO2_GAMEPLAY_IMAGE_IDS.cannon.left]: "laserLeft.png",
   [ROBO2_GAMEPLAY_IMAGE_IDS.mirror.slash]: "mirrorR.png",
   [ROBO2_GAMEPLAY_IMAGE_IDS.mirror.backslash]: "mirrorL.png",
   [ROBO2_GAMEPLAY_IMAGE_IDS.bomb]: "bombTickTick.png",

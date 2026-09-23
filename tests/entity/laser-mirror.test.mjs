@@ -51,7 +51,7 @@ function createReflectionWorld(variant, direction) {
   }
   entities.push(
     {
-      type: MapEntityTypeId.LASER_EMITTER,
+      type: MapEntityTypeId.LASER_CANNON,
       direction,
       ...origins[direction],
     },
@@ -104,7 +104,7 @@ test("激光按四种原版 Mirror variant 单面反射", () => {
         for (let x = 0; x < 5; x += 1) entities.push(ground(x, y));
       }
       entities.push(
-        { type: MapEntityTypeId.LASER_EMITTER, direction: incoming, ...origin },
+        { type: MapEntityTypeId.LASER_CANNON, direction: incoming, ...origin },
         { type: MapEntityTypeId.MIRROR, variant, x: 2, y: 2 },
       );
       const beams = beamEntities(
@@ -250,7 +250,7 @@ test("镜面移动后重新投影的光路会击中静止 Bobby", () => {
     }
   }
   entities.push(
-    { type: MapEntityTypeId.LASER_EMITTER, direction: "right", x: 0, y: 2 },
+    { type: MapEntityTypeId.LASER_CANNON, direction: "right", x: 0, y: 2 },
     { type: MapEntityTypeId.LASER_MIRROR, variant: "slash", x: 2, y: 3 },
     { type: MapEntityTypeId.BOBBY, x: 2, y: 4 },
     { type: MapEntityTypeId.BOBBY, x: 2, y: 0 },
@@ -283,7 +283,7 @@ test("原版 Mirror 旋转后立即按新朝向重新投影激光", () => {
     for (let x = 0; x < 5; x += 1) entities.push(ground(x, y));
   }
   entities.push(
-    { type: MapEntityTypeId.LASER_EMITTER, direction: "up", x: 2, y: 4 },
+    { type: MapEntityTypeId.LASER_CANNON, direction: "up", x: 2, y: 4 },
     { type: MapEntityTypeId.MIRROR, variant: "right-bottom", x: 2, y: 2 },
     { type: MapEntityTypeId.BOBBY, x: 2, y: 2 },
   );

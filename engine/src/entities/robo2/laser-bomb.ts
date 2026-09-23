@@ -12,15 +12,15 @@ import type {
 } from "../../world/entity/EntityInstance.js";
 import { defineEntityModule, type EntityModule } from "../EntityModule.js";
 import {
-  destroyLaserEmitter,
+  destroyLaserCannon,
   flashSegmentsFromBeams,
   groupLaserBeamsBySource,
-} from "./laser-emitter-destruction.js";
+} from "./laser-cannon-destruction.js";
 
 const destructibleTypes: ReadonlySet<EntityType> = new Set([
   MapEntityTypeId.LASER_STONE,
   MapEntityTypeId.LASER_MIRROR,
-  MapEntityTypeId.LASER_EMITTER,
+  MapEntityTypeId.LASER_CANNON,
   MapEntityTypeId.LASER_BOMB,
 ]);
 const LASER_BOMB_SCHEDULER_ACTION = "laser-bomb-scheduler";
@@ -293,9 +293,9 @@ function detonateLaserBomb(
     const target = query.entity(targetId);
     if (!target) continue;
     destroyedTargetIds.add(targetId);
-    if (target.type === MapEntityTypeId.LASER_EMITTER) {
+    if (target.type === MapEntityTypeId.LASER_CANNON) {
       const beams = beamsBySource.get(target.id) ?? [];
-      destroyLaserEmitter(
+      destroyLaserCannon(
         commands,
         target,
         beams,

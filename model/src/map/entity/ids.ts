@@ -82,7 +82,7 @@ export const MapEntityTypeId = {
   BONUS_COIN: "bonus-coin",
   PORTAL: "portal",
   PUSH_GOAL: "push-goal",
-  LASER_EMITTER: "laser-emitter",
+  LASER_CANNON: "laser-cannon",
   LASER_MIRROR: "laser-mirror",
   LASER_BOMB: "laser-bomb",
 } as const satisfies Record<string, EntityType>;

@@ -89,7 +89,7 @@ export const BUILTIN_PALETTE_DEFINITION: EditorPaletteDefinition = {
         [
           { type: MapEntityTypeId.LASER_STONE },
           {
-            type: MapEntityTypeId.LASER_EMITTER,
+            type: MapEntityTypeId.LASER_CANNON,
             fields: { direction: "right" },
           },
           {

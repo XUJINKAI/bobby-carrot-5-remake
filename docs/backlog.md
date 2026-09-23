@@ -38,11 +38,11 @@
 
 ### 激光对象推动时的光束表现同步
 
-激光发生器或激光镜被推动时，World 会在移动完成后的下一次 Behavior tick 重新投影光束，视觉上会短暂保留原光路。
+激光炮或激光镜被推动时，World 会在移动完成后的下一次 Behavior tick 重新投影光束，视觉上会短暂保留原光路。
 
 目标：
 
-- 在发生器的整数位置提交后立即同步其派生光束，不等待后续 World tick。
+- 在激光炮的整数位置提交后立即同步其派生光束，不等待后续 World tick。
 - 保持推动事务、光束碰撞与 Presentation 的因果顺序一致。
 - 为推动过程中的光束生命周期增加回归测试，避免出现一帧旧光束或新旧光束同时存在。
 
@@ -64,7 +64,7 @@
 - 增加 Presence Fact `energy-blocking`，表示对象即使位于可传播地形上也会截断 Energy；
 - 保持 `contact-cover` 的接触平面语义，使 Snow 遮蔽下层许可、High Grass 自身提供许可、Fence
   继续读取下层地形；
-- 镜面方向变换、Fireball 融冰和 Laser 的 Exit / LaserStone / LaserEmitter / LaserBomb 命中效果
+- 镜面方向变换、Fireball 融冰和 Laser 的 Exit / LaserStone / LaserCannon / LaserBomb 命中效果
   继续由结构化领域规则处理，不压缩成布尔 Fact；
 - 迁移前先用当前允许地形、Crumbly Rock、Dragon 各部位、Color Block 状态与两类镜面矩阵建立
   等价性测试，确保 Fact 化只改变规则声明位置，不改变原版行为或现有 Robo 2 解法。

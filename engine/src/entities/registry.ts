@@ -9,12 +9,14 @@ import type { EntityModule } from "./EntityModule.js";
 import { customEntityModules } from "./custom/modules.js";
 import { originalEntityModules } from "./original/modules.js";
 import { playerEntityModules } from "./player/modules.js";
+import { robo2EntityModules } from "./robo2/modules.js";
 
 /** Source folders只用于维护；运行时通过同一份 EntityModule 列表完成 composition。 */
 export const builtinEntityModules: readonly EntityModule[] = [
   ...playerEntityModules,
   ...originalEntityModules,
   ...customEntityModules,
+  ...robo2EntityModules,
 ];
 
 export const builtinEntityDefinitions = builtinEntityModules.map(

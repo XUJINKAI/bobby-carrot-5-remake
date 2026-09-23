@@ -106,7 +106,7 @@ export {
   type LaserRayProjection,
   type LaserRayQuery,
   type LaserRaySegment,
-} from "./entities/custom/laser-emitter.js";
+} from "./entities/robo2/laser-cannon.js";
 export {
   prepareCanvas,
   resolveDevicePixelRatio,

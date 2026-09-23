@@ -63,7 +63,7 @@ export class EditorPreview {
     const query = new SpatialVisualQuery(this.entities, this.spatial);
     const projections = projectLaserRays(
       query,
-      query.entitiesOfType(MapEntityTypeId.LASER_EMITTER),
+      query.entitiesOfType(MapEntityTypeId.LASER_CANNON),
     );
     if (projections.length === 0) {
       this.renderEntities = this.entities;

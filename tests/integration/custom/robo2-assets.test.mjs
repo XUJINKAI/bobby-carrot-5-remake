@@ -82,7 +82,7 @@ test("Robo 2 JAR 提供十张激光机关 gameplay 图片", () => {
     ],
   );
   assert.equal(
-    ROBO2_GAMEPLAY_IMAGE_FILES[ROBO2_GAMEPLAY_IMAGE_IDS.emitter.down],
+    ROBO2_GAMEPLAY_IMAGE_FILES[ROBO2_GAMEPLAY_IMAGE_IDS.cannon.down],
     "laserDown.png",
   );
   assert.equal(

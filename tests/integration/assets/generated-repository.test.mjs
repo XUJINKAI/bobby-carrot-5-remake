@@ -289,7 +289,7 @@ function assertRobo2Collection(collections) {
 
   const objectTypes = new Set();
   const mirrorVariants = new Set();
-  const emitterDirections = new Set();
+  const cannonDirections = new Set();
   for (const map of robo2.maps) {
     const relative = `assets/maps/robo2/${map.id}.json`;
     const document = readJson(relative);
@@ -319,8 +319,8 @@ function assertRobo2Collection(collections) {
     for (const entity of document.entities) {
       objectTypes.add(entity.type);
       if (entity.type === "laser-mirror") mirrorVariants.add(entity.variant);
-      if (entity.type === "laser-emitter") {
-        emitterDirections.add(entity.direction);
+      if (entity.type === "laser-cannon") {
+        cannonDirections.add(entity.direction);
       }
     }
   }
@@ -329,15 +329,15 @@ function assertRobo2Collection(collections) {
     "laser-stone",
     "laser-bomb",
     "laser-mirror",
-    "laser-emitter",
+    "laser-cannon",
   ]) {
     if (!objectTypes.has(type)) throw new Error(`Robo 2 缺少机关 ${type}`);
   }
   if ([...mirrorVariants].sort().join(",") !== "backslash,slash") {
     throw new Error("Robo 2 必须包含 slash 与 backslash 两种镜面");
   }
-  if ([...emitterDirections].sort().join(",") !== "down,left,right,up") {
-    throw new Error("Robo 2 必须包含四个方向的激光发生器");
+  if ([...cannonDirections].sort().join(",") !== "down,left,right,up") {
+    throw new Error("Robo 2 必须包含四个方向的激光炮");
   }
 }
 

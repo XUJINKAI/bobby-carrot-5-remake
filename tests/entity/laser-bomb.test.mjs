@@ -10,7 +10,7 @@ import {
 } from "../../engine/dist/entities/registry.js";
 import {
   LASER_BOMB_IGNITION_DURATION_MS,
-} from "../../engine/dist/entities/custom/laser-bomb.js";
+} from "../../engine/dist/entities/robo2/laser-bomb.js";
 import { RuntimeEntityTypeId } from "../../engine/dist/entities/runtime-types.js";
 import { resolveLevelEntityVisualPreview } from "../../engine/dist/visual/preview.js";
 import { VisualRuntime } from "../../engine/dist/visual/VisualRuntime.js";
@@ -80,14 +80,14 @@ test("激光炸弹使用通用推动规则并提供独立视觉", () => {
   );
 });
 
-test("激光引爆炸弹后摧毁十字范围内的石头、镜面与发生器", () => {
+test("激光引爆炸弹后摧毁十字范围内的石头、镜面与激光炮", () => {
   const entities = filledGround(5, 5);
   entities.push(
-    { type: MapEntityTypeId.LASER_EMITTER, direction: "down", x: 2, y: 0 },
+    { type: MapEntityTypeId.LASER_CANNON, direction: "down", x: 2, y: 0 },
     { type: MapEntityTypeId.LASER_BOMB, x: 2, y: 2 },
     { type: MapEntityTypeId.LASER_STONE, x: 1, y: 2 },
     { type: MapEntityTypeId.LASER_MIRROR, variant: "slash", x: 3, y: 2 },
-    { type: MapEntityTypeId.LASER_EMITTER, direction: "down", x: 2, y: 3 },
+    { type: MapEntityTypeId.LASER_CANNON, direction: "down", x: 2, y: 3 },
     { type: MapEntityTypeId.LASER_STONE, x: 3, y: 1 },
     { type: MapEntityTypeId.BOBBY, x: 4, y: 4 },
   );
@@ -99,7 +99,7 @@ test("激光引爆炸弹后摧毁十字范围内的石头、镜面与发生器",
   });
   const [source, target] = entitiesOfType(
     world,
-    MapEntityTypeId.LASER_EMITTER,
+    MapEntityTypeId.LASER_CANNON,
   );
   const diagonalStone = entitiesOfType(
     world,
@@ -111,7 +111,7 @@ test("激光引爆炸弹后摧毁十字范围内的石头、镜面与发生器",
   const armedBomb = entitiesOfType(world, MapEntityTypeId.LASER_BOMB)[0];
   assert.equal(armedBomb.state?.armed, true);
   assert.equal(world.inputBlocked, false);
-  assert.equal(world.entity(target.id)?.type, MapEntityTypeId.LASER_EMITTER);
+  assert.equal(world.entity(target.id)?.type, MapEntityTypeId.LASER_CANNON);
   assert.equal(
     ignition.events.some((event) => event.type === "laser-bomb-exploded"),
     false,
@@ -124,7 +124,7 @@ test("激光引爆炸弹后摧毁十字范围内的石头、镜面与发生器",
   );
   const waiting = world.update({ tick: 1, stepMs: 16 });
   assert.equal(entitiesOfType(world, MapEntityTypeId.LASER_BOMB).length, 1);
-  assert.equal(world.entity(target.id)?.type, MapEntityTypeId.LASER_EMITTER);
+  assert.equal(world.entity(target.id)?.type, MapEntityTypeId.LASER_CANNON);
   assert.equal(
     waiting.events.some((event) => event.type === "laser-bomb-exploded"),
     false,
@@ -159,7 +159,7 @@ test("激光引爆炸弹后摧毁十字范围内的石头、镜面与发生器",
 
   assert.equal(entitiesOfType(world, MapEntityTypeId.LASER_BOMB).length, 0);
   assert.deepEqual(
-    entitiesOfType(world, MapEntityTypeId.LASER_EMITTER).map(({ id }) => id),
+    entitiesOfType(world, MapEntityTypeId.LASER_CANNON).map(({ id }) => id),
     [source.id],
   );
   assert.equal(world.entity(target.id), undefined);
@@ -253,7 +253,7 @@ test("激光引爆炸弹后摧毁十字范围内的石头、镜面与发生器",
 test("相邻炸弹逐颗连锁引爆，期间 Bobby 仍可移动", () => {
   const entities = filledGround(5, 5);
   entities.push(
-    { type: MapEntityTypeId.LASER_EMITTER, direction: "down", x: 2, y: 0 },
+    { type: MapEntityTypeId.LASER_CANNON, direction: "down", x: 2, y: 0 },
     { type: MapEntityTypeId.LASER_BOMB, x: 2, y: 2 },
     { type: MapEntityTypeId.LASER_BOMB, x: 3, y: 2 },
     { type: MapEntityTypeId.LASER_STONE, x: 4, y: 2 },
@@ -340,9 +340,9 @@ test("相邻炸弹逐颗连锁引爆，期间 Bobby 仍可移动", () => {
 test("分别被不同光路直接命中的炸弹同时开始起爆", () => {
   const entities = filledGround(5, 3);
   entities.push(
-    { type: MapEntityTypeId.LASER_EMITTER, direction: "right", x: 0, y: 0 },
+    { type: MapEntityTypeId.LASER_CANNON, direction: "right", x: 0, y: 0 },
     { type: MapEntityTypeId.LASER_BOMB, x: 2, y: 0 },
-    { type: MapEntityTypeId.LASER_EMITTER, direction: "right", x: 0, y: 2 },
+    { type: MapEntityTypeId.LASER_CANNON, direction: "right", x: 0, y: 2 },
     { type: MapEntityTypeId.LASER_BOMB, x: 2, y: 2 },
     { type: MapEntityTypeId.BOBBY, x: 4, y: 1 },
   );
@@ -383,7 +383,7 @@ test("分别被不同光路直接命中的炸弹同时开始起爆", () => {
 test("同一直线的炸弹由第一颗遮挡并在爆炸后启动第二颗", () => {
   const entities = filledGround(5, 2);
   entities.push(
-    { type: MapEntityTypeId.LASER_EMITTER, direction: "right", x: 0, y: 0 },
+    { type: MapEntityTypeId.LASER_CANNON, direction: "right", x: 0, y: 0 },
     { type: MapEntityTypeId.LASER_BOMB, x: 2, y: 0 },
     { type: MapEntityTypeId.LASER_BOMB, x: 3, y: 0 },
     { type: MapEntityTypeId.BOBBY, x: 4, y: 1 },
@@ -425,7 +425,7 @@ test("同一直线的炸弹由第一颗遮挡并在爆炸后启动第二颗", ()
 test("前方炸弹清除后由重新投影的激光启动远处炸弹", () => {
   const entities = filledGround(6, 2);
   entities.push(
-    { type: MapEntityTypeId.LASER_EMITTER, direction: "right", x: 0, y: 0 },
+    { type: MapEntityTypeId.LASER_CANNON, direction: "right", x: 0, y: 0 },
     { type: MapEntityTypeId.LASER_BOMB, x: 2, y: 0 },
     { type: MapEntityTypeId.LASER_BOMB, x: 4, y: 0 },
     { type: MapEntityTypeId.BOBBY, x: 5, y: 1 },
@@ -462,9 +462,9 @@ test("前方炸弹清除后由重新投影的激光启动远处炸弹", () => {
 test("同时爆炸的两条前沿只登记一次共同相邻炸弹", () => {
   const entities = filledGround(5, 4);
   entities.push(
-    { type: MapEntityTypeId.LASER_EMITTER, direction: "down", x: 1, y: 0 },
+    { type: MapEntityTypeId.LASER_CANNON, direction: "down", x: 1, y: 0 },
     { type: MapEntityTypeId.LASER_BOMB, x: 1, y: 1 },
-    { type: MapEntityTypeId.LASER_EMITTER, direction: "down", x: 3, y: 0 },
+    { type: MapEntityTypeId.LASER_CANNON, direction: "down", x: 3, y: 0 },
     { type: MapEntityTypeId.LASER_BOMB, x: 3, y: 1 },
     { type: MapEntityTypeId.LASER_BOMB, x: 2, y: 1 },
     { type: MapEntityTypeId.BOBBY, x: 4, y: 3 },
@@ -515,7 +515,7 @@ test("不可摧毁的障碍会截去对应方向的爆炸画面", () => {
     entity.x !== 1 || entity.y !== 2
   );
   entities.push(
-    { type: MapEntityTypeId.LASER_EMITTER, direction: "down", x: 2, y: 0 },
+    { type: MapEntityTypeId.LASER_CANNON, direction: "down", x: 2, y: 0 },
     { type: MapEntityTypeId.LASER_BOMB, x: 2, y: 2 },
     { type: MapEntityTypeId.STUMP, x: 1, y: 2 },
     { type: MapEntityTypeId.BOBBY, x: 4, y: 4 },

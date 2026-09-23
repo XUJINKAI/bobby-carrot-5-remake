@@ -21,7 +21,7 @@ const CYCLE_VARIATION_MS = 1_200;
 const UINT32_RANGE = 0x1_0000_0000;
 
 /**
- * 同一发生器的整条光路必须共享表现参数；以 sourceId 派生稳定随机数，
+ * 同一门激光炮的整条光路必须共享表现参数；以 sourceId 派生稳定随机数，
  * 可以区分交叉光路，同时避免重绘、Undo 或 Editor 预览时发生随机跳变。
  */
 export function resolveLaserAppearance(

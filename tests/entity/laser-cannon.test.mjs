@@ -11,10 +11,10 @@ import {
   createBuiltinVisualRegistry,
 } from "../../engine/dist/entities/registry.js";
 import {
-  LASER_EMITTER_FLASH_DURATION_MS,
-  LASER_EMITTER_FLASH_PHASE_MS,
-} from "../../engine/dist/entities/custom/laser-emitter.js";
-import { resolveLaserAppearance } from "../../engine/dist/entities/custom/laser-appearance.js";
+  LASER_CANNON_FLASH_DURATION_MS,
+  LASER_CANNON_FLASH_PHASE_MS,
+} from "../../engine/dist/entities/robo2/laser-cannon.js";
+import { resolveLaserAppearance } from "../../engine/dist/entities/robo2/laser-appearance.js";
 import { RuntimeEntityTypeId } from "../../engine/dist/entities/runtime-types.js";
 import { resolveLevelEntityVisualPreview } from "../../engine/dist/visual/preview.js";
 import { VisualRuntime } from "../../engine/dist/visual/VisualRuntime.js";
@@ -35,22 +35,22 @@ function beamEntities(world) {
   });
 }
 
-function emitterEntities(world) {
+function cannonEntities(world) {
   return world.query.entitiesMatching({
     kind: "type",
-    value: MapEntityTypeId.LASER_EMITTER,
+    value: MapEntityTypeId.LASER_CANNON,
   });
 }
 
-test("四向激光发生器使用对应的 Robo 2 原图", () => {
+test("四向激光炮使用对应的 Robo 2 原图", () => {
   for (const direction of ["up", "right", "down", "left"]) {
     const visual = resolveLevelEntityVisualPreview({
-      type: MapEntityTypeId.LASER_EMITTER,
+      type: MapEntityTypeId.LASER_CANNON,
       direction,
     });
     assert.deepEqual(visual?.layers[0], {
       kind: "image",
-      asset: ROBO2_GAMEPLAY_IMAGE_IDS.emitter[direction],
+      asset: ROBO2_GAMEPLAY_IMAGE_IDS.cannon[direction],
       sourceTileSize: 14,
       anchor: "center",
     });
@@ -58,7 +58,7 @@ test("四向激光发生器使用对应的 Robo 2 原图", () => {
   }
 });
 
-test("激光按发生器身份循环渐变颜色与粗细", () => {
+test("激光按激光炮身份循环渐变颜色与粗细", () => {
   const visual = resolveEntityVisualPreview({
     type: RuntimeEntityTypeId.LASER_BEAM,
     direction: "right",
@@ -143,12 +143,12 @@ test("激光只在空格的两侧边界之间绘制", () => {
   assert.equal(terminal, null);
 });
 
-test("激光从发生器沿固定方向延伸，并停在首个阻挡格", () => {
+test("激光从炮口沿固定方向延伸，并停在首个阻挡格", () => {
   const entities = [];
   for (let y = 0; y < 2; y += 1)
     for (let x = 0; x < 6; x += 1) entities.push(ground(x, y));
   entities.push(
-    { type: MapEntityTypeId.LASER_EMITTER, direction: "right", x: 0, y: 0 },
+    { type: MapEntityTypeId.LASER_CANNON, direction: "right", x: 0, y: 0 },
     { type: MapEntityTypeId.LASER_STONE, x: 3, y: 0 },
     { type: MapEntityTypeId.BOBBY, x: 0, y: 1 },
   );
@@ -179,7 +179,7 @@ test("Stump 在格子边界阻断激光", () => {
     if (x !== 3) entities.push(ground(x, 0));
   }
   entities.push(
-    { type: MapEntityTypeId.LASER_EMITTER, direction: "right", x: 0, y: 0 },
+    { type: MapEntityTypeId.LASER_CANNON, direction: "right", x: 0, y: 0 },
     { type: MapEntityTypeId.STUMP, x: 3, y: 0, stackOrder: 1 },
   );
   const world = new World({
@@ -212,7 +212,7 @@ test("激光按 Energy 规则穿过 High Grass、Fence 和普通可推动物", (
   const entities = [];
   for (let x = 0; x < 8; x += 1) entities.push(ground(x, 0));
   entities.push(
-    { type: MapEntityTypeId.LASER_EMITTER, direction: "right", x: 0, y: 0 },
+    { type: MapEntityTypeId.LASER_CANNON, direction: "right", x: 0, y: 0 },
     { type: MapEntityTypeId.HIGH_GRASS, x: 2, y: 0, stackOrder: 1 },
     { type: MapEntityTypeId.FENCE, x: 3, y: 0, stackOrder: 1 },
     { type: MapEntityTypeId.PUSHABLE_BOX, x: 4, y: 0, stackOrder: 1 },
@@ -246,7 +246,7 @@ test("Bobby 进入激光格八成时死亡", () => {
   for (let y = 0; y < 2; y += 1)
     for (let x = 0; x < 4; x += 1) entities.push(ground(x, y));
   entities.push(
-    { type: MapEntityTypeId.LASER_EMITTER, direction: "right", x: 0, y: 0 },
+    { type: MapEntityTypeId.LASER_CANNON, direction: "right", x: 0, y: 0 },
     { type: MapEntityTypeId.BOBBY, x: 1, y: 1 },
   );
   const world = new World(
@@ -281,7 +281,7 @@ test("Bobby 可以走上截断激光的单面 Mirror 而不受伤", () => {
     for (let x = 0; x < 4; x += 1) entities.push(ground(x, y));
   }
   entities.push(
-    { type: MapEntityTypeId.LASER_EMITTER, direction: "right", x: 0, y: 0 },
+    { type: MapEntityTypeId.LASER_CANNON, direction: "right", x: 0, y: 0 },
     { type: MapEntityTypeId.MIRROR, variant: "right-bottom", x: 2, y: 0 },
     { type: MapEntityTypeId.BOBBY, x: 2, y: 1 },
   );
@@ -312,7 +312,7 @@ test("光路重新投影不会伤害终点 Mirror 格上的 Bobby", () => {
     for (let x = 0; x < 4; x += 1) entities.push(ground(x, y));
   }
   entities.push(
-    { type: MapEntityTypeId.LASER_EMITTER, direction: "right", x: 0, y: 0 },
+    { type: MapEntityTypeId.LASER_CANNON, direction: "right", x: 0, y: 0 },
     { type: MapEntityTypeId.MIRROR, variant: "left-bottom", x: 2, y: 0 },
     { type: MapEntityTypeId.BOBBY, x: 2, y: 0 },
   );
@@ -353,7 +353,7 @@ test("关卡起点位于既有光路时可先离开", () => {
     for (let x = 0; x < 4; x += 1) entities.push(ground(x, y));
   }
   entities.push(
-    { type: MapEntityTypeId.LASER_EMITTER, direction: "right", x: 0, y: 0 },
+    { type: MapEntityTypeId.LASER_CANNON, direction: "right", x: 0, y: 0 },
     { type: MapEntityTypeId.BOBBY, x: 2, y: 0 },
   );
   const world = new World(
@@ -378,7 +378,7 @@ test("关卡起点位于既有光路时可先离开", () => {
   assert.deepEqual(world.entity(actor.id).anchor, { x: 2, y: 1 });
 });
 
-test("从非发射口方向推动发生器后，光束从新位置重新投影", () => {
+test("从非炮口方向推动激光炮后，光束从新位置重新投影", () => {
   const entities = [];
   for (let y = 0; y < 4; y += 1) {
     for (let x = 0; x < 6; x += 1) {
@@ -386,7 +386,7 @@ test("从非发射口方向推动发生器后，光束从新位置重新投影",
     }
   }
   entities.push(
-    { type: MapEntityTypeId.LASER_EMITTER, direction: "right", x: 1, y: 1 },
+    { type: MapEntityTypeId.LASER_CANNON, direction: "right", x: 1, y: 1 },
     { type: MapEntityTypeId.BOBBY, x: 1, y: 0 },
   );
   const world = new World({
@@ -396,9 +396,9 @@ test("从非发射口方向推动发生器后，光束从新位置重新投影",
     entities,
   });
   const actor = world.query.entitiesWithFact("player")[0];
-  const emitter = world.query.entitiesMatching({
+  const cannon = world.query.entitiesMatching({
     kind: "type",
-    value: MapEntityTypeId.LASER_EMITTER,
+    value: MapEntityTypeId.LASER_CANNON,
   })[0];
 
   const pushed = world.step({
@@ -410,7 +410,7 @@ test("从非发射口方向推动发生器后，光束从新位置重新投影",
     }],
   });
   assert.equal(pushed.moves[0].moved, true);
-  assert.deepEqual(world.entity(emitter.id).anchor, { x: 1, y: 2 });
+  assert.deepEqual(world.entity(cannon.id).anchor, { x: 1, y: 2 });
 
   world.update({ tick: 0, stepMs: 16 });
   assert.deepEqual(
@@ -424,7 +424,7 @@ test("从非发射口方向推动发生器后，光束从新位置重新投影",
   );
 });
 
-test("激光从背面命中同向发生器时只摧毁目标", () => {
+test("激光从背面命中同向激光炮时只摧毁目标", () => {
   const entities = [];
   for (let y = 0; y < 2; y += 1) {
     for (let x = 0; x < 6; x += 1) {
@@ -432,8 +432,8 @@ test("激光从背面命中同向发生器时只摧毁目标", () => {
     }
   }
   entities.push(
-    { type: MapEntityTypeId.LASER_EMITTER, direction: "right", x: 0, y: 0 },
-    { type: MapEntityTypeId.LASER_EMITTER, direction: "right", x: 3, y: 0 },
+    { type: MapEntityTypeId.LASER_CANNON, direction: "right", x: 0, y: 0 },
+    { type: MapEntityTypeId.LASER_CANNON, direction: "right", x: 3, y: 0 },
     { type: MapEntityTypeId.BOBBY, x: 0, y: 1 },
   );
   const world = new World({
@@ -442,12 +442,12 @@ test("激光从背面命中同向发生器时只摧毁目标", () => {
     height: 2,
     entities,
   });
-  const [source, target] = emitterEntities(world);
+  const [source, target] = cannonEntities(world);
 
   world.update({ tick: 0, stepMs: 16 });
 
   assert.deepEqual(
-    emitterEntities(world).map((emitter) => emitter.id),
+    cannonEntities(world).map((cannon) => cannon.id),
     [source.id],
   );
   assert.equal(world.entity(target.id), undefined);
@@ -469,14 +469,14 @@ test("激光从背面命中同向发生器时只摧毁目标", () => {
   );
 });
 
-test("发生器与所属光束在销毁后同步闪烁三次", () => {
+test("激光炮与所属光束在销毁后同步闪烁三次", () => {
   const entities = [];
   for (let y = 0; y < 2; y += 1) {
     for (let x = 0; x < 6; x += 1) entities.push(ground(x, y));
   }
   entities.push(
-    { type: MapEntityTypeId.LASER_EMITTER, direction: "right", x: 0, y: 0 },
-    { type: MapEntityTypeId.LASER_EMITTER, direction: "right", x: 3, y: 0 },
+    { type: MapEntityTypeId.LASER_CANNON, direction: "right", x: 0, y: 0 },
+    { type: MapEntityTypeId.LASER_CANNON, direction: "right", x: 3, y: 0 },
     { type: MapEntityTypeId.BOBBY, x: 0, y: 1 },
   );
   const world = new World({
@@ -485,10 +485,10 @@ test("发生器与所属光束在销毁后同步闪烁三次", () => {
     height: 2,
     entities,
   });
-  const target = emitterEntities(world)[1];
+  const target = cannonEntities(world)[1];
   const result = world.update({ tick: 0, stepMs: 16 });
   const event = result.events.find((candidate) =>
-    candidate.type === "laser-emitter-destroyed" &&
+    candidate.type === "laser-cannon-destroyed" &&
     candidate.entityId === target.id
   );
   assert.ok(event);
@@ -524,7 +524,7 @@ test("发生器与所属光束在销毁后同步闪烁三次", () => {
   assert.ok(first);
   assert.deepEqual(first.composition.layers[0], {
     kind: "image",
-    asset: ROBO2_GAMEPLAY_IMAGE_IDS.emitter.right,
+    asset: ROBO2_GAMEPLAY_IMAGE_IDS.cannon.right,
     sourceTileSize: 14,
     anchor: "center",
   });
@@ -544,9 +544,9 @@ test("发生器与所属光束在销毁后同步闪烁三次", () => {
   const expectedColor = resolveLaserAppearance(target.id, start.nowMs).color;
   assert.deepEqual(strokes, [expectedColor, expectedColor]);
 
-  assert.equal(transientAt(LASER_EMITTER_FLASH_PHASE_MS), undefined);
-  assert.ok(transientAt(LASER_EMITTER_FLASH_PHASE_MS * 2));
-  assert.equal(transientAt(LASER_EMITTER_FLASH_DURATION_MS), undefined);
+  assert.equal(transientAt(LASER_CANNON_FLASH_PHASE_MS), undefined);
+  assert.ok(transientAt(LASER_CANNON_FLASH_PHASE_MS * 2));
+  assert.equal(transientAt(LASER_CANNON_FLASH_DURATION_MS), undefined);
   assert.equal(visual.isAnimating, false);
 });
 
@@ -590,7 +590,7 @@ test("移动途中已经销毁的光束不会在交互点造成伤害", () => {
   assert.deepEqual(downed, []);
 });
 
-test("把相向发生器推入同一直线后两者同时摧毁", () => {
+test("把相向激光炮推入同一直线后两者同时摧毁", () => {
   const entities = [];
   for (let y = 0; y < 4; y += 1) {
     for (let x = 0; x < 6; x += 1) {
@@ -598,8 +598,8 @@ test("把相向发生器推入同一直线后两者同时摧毁", () => {
     }
   }
   entities.push(
-    { type: MapEntityTypeId.LASER_EMITTER, direction: "right", x: 0, y: 1 },
-    { type: MapEntityTypeId.LASER_EMITTER, direction: "left", x: 4, y: 2 },
+    { type: MapEntityTypeId.LASER_CANNON, direction: "right", x: 0, y: 1 },
+    { type: MapEntityTypeId.LASER_CANNON, direction: "left", x: 4, y: 2 },
     { type: MapEntityTypeId.BOBBY, x: 4, y: 3 },
   );
   const world = new World({
@@ -622,18 +622,18 @@ test("把相向发生器推入同一直线后两者同时摧毁", () => {
 
   world.update({ tick: 0, stepMs: 16 });
 
-  assert.deepEqual(emitterEntities(world), []);
+  assert.deepEqual(cannonEntities(world), []);
   assert.deepEqual(beamEntities(world), []);
 });
 
-test("多发生器地图由单个激光调度器统一更新", () => {
+test("多激光炮地图由单个激光调度器统一更新", () => {
   const entities = [];
   for (let y = 0; y < 5; y += 1) {
     for (let x = 0; x < 12; x += 1) entities.push(ground(x, y));
   }
   for (let x = 0; x < 12; x += 1) {
     entities.push(
-      { type: MapEntityTypeId.LASER_EMITTER, direction: "down", x, y: 0 },
+      { type: MapEntityTypeId.LASER_CANNON, direction: "down", x, y: 0 },
       { type: MapEntityTypeId.LASER_STONE, x, y: 2 },
     );
   }
@@ -656,11 +656,11 @@ test("多发生器地图由单个激光调度器统一更新", () => {
 
   const definitions = createBuiltinEntityRegistry();
   const behaviors = createBuiltinBehaviorRegistry();
-  const emitterBehaviorId = definitions
-    .require(MapEntityTypeId.LASER_EMITTER).behaviors[0];
+  const cannonBehaviorId = definitions
+    .require(MapEntityTypeId.LASER_CANNON).behaviors[0];
   const systemBehaviorId = definitions
     .require(RuntimeEntityTypeId.LASER_SYSTEM).behaviors[0];
-  assert.equal(behaviors.require(emitterBehaviorId).onTick, undefined);
+  assert.equal(behaviors.require(cannonBehaviorId).onTick, undefined);
   assert.equal(typeof behaviors.require(systemBehaviorId).onTick, "function");
   assert.deepEqual(
     definitions.require(MapEntityTypeId.LASER_BOMB).behaviors ?? [],
