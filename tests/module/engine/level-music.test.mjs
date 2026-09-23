@@ -19,6 +19,7 @@ class RecordingAudio {
 
 test("LevelMap music 由 Engine 解析明确曲目、静音与随机曲目", () => {
   assert.equal(resolveLevelMusic("shop", () => 0.5), "shop");
+  assert.equal(resolveLevelMusic("robo2/menu", () => 0.5), "robo2/menu");
   assert.equal(resolveLevelMusic("none", () => 0.5), null);
   assert.equal(resolveLevelMusic(undefined, () => 0), "ingame0");
   assert.equal(resolveLevelMusic("random", () => 0.5), "ingame1");

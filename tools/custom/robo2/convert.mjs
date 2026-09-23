@@ -59,6 +59,7 @@ export function convertRobo2Level(level, metadata) {
     meta: {
       name: `${id} · ${title}`,
     },
+    music: "robo2/menu",
     rules: {
       win: {
         type: "all",

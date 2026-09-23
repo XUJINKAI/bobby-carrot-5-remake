@@ -62,6 +62,7 @@ test("Robo 2 tile 转换为可校验的语义 Entity", () => {
   assert.equal(document.meta.name, "01 · The beggining!");
   assert.equal(Object.hasOwn(document.meta, "author"), false);
   assert.equal(Object.hasOwn(document.meta, "note"), false);
+  assert.equal(document.music, "robo2/menu");
   assert.equal(document.width, 4);
   assert.equal(document.height, 3);
   assert.equal(document.entities.length, 22);

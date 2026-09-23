@@ -74,6 +74,8 @@ Original Bonus 地图显式保存 `music: "shop"`，Lock 打开后的 `bonus` �
 根据地图状态选择；普通关卡省略 `music`，由播放页面在 `ingame0..2` 中随机选择。
 5 个 Special Scene 按原版固定保存地图音乐：Beaver Shop 与 Dream Machine 使用
 `shop`，Cloud 9、Dreamland Reward 与 Campaign Intro 使用 `sandman`。
+Robo 2 的 25 张地图显式保存 `music: "robo2/menu"`；默认随机池继续只包含 Original
+的 `ingame0..2`。
 
 filter option 的 Gameplay 图标使用统一 Entity preview descriptor，不区分 Original/Custom，也不区分 Terrain/Object。每个 option 通过 `icons` 数组按顺序提供一个或多个图标：
 

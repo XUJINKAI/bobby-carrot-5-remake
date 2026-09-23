@@ -309,6 +309,9 @@ function assertRobo2Collection(collections) {
     ) {
       throw new Error(`${relative}: 不应生成作者或注记`);
     }
+    if (document.music !== "robo2/menu") {
+      throw new Error(`${relative}: 必须显式使用 Robo 2 菜单音乐`);
+    }
     const bobbies = document.entities.filter((entity) => entity.type === "bobby");
     const exits = document.entities.filter((entity) => entity.type === "exit");
     const surfaces = document.entities.filter((entity) =>

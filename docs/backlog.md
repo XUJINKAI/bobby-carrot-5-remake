@@ -156,6 +156,13 @@
 
 ## Robo 2
 
+### 地图生命周期音乐
+
+当前 25 张 Robo 2 地图显式使用 `music: "robo2/menu"`，继续复用现有单曲地图音乐合同。
+当地图需要分别声明进入、持续背景、获胜与死亡曲目时，再扩展 `LevelMap` 音乐合同和
+`LevelMusicController`，使 `begin / end / die` 等一次性曲目由地图语义驱动。扩展时同时处理
+Restart、Undo、Replay、音色切换与一次性曲目重放，不根据 collection 身份隐式选曲。
+
 ### 激光摧毁与爆炸表现
 
 激光炮摧毁和炸弹爆炸当前先按确认过的网格时点提交 gameplay mutation。为两类事件补充独立的 World Event 与瞬态视觉，并在模拟器实测后校准表现时长、爆炸帧和 gameplay mutation 的对应时点。

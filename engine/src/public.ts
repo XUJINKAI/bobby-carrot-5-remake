@@ -65,6 +65,7 @@ export {
 } from "./time/WorldClock.js";
 export {
   AudioRuntime,
+  resolveMusicUrl,
   resolveOriginalMusicUrl,
   type MusicInteractionRequiredListener,
   type AudioRuntimeOptions,

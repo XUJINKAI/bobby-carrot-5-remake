@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   AudioRuntime,
+  resolveMusicUrl,
   resolveOriginalMusicUrl,
 } from "../../../engine/dist/public.js";
 
@@ -45,6 +46,55 @@ test("original music URLs are resolved by style and track id", () => {
     resolveOriginalMusicUrl(base, "8bit", "ingame1"),
     "https://example.test/assets/audio/original/8bit/ingame1.ogg",
   );
+});
+
+test("namespaced Robo 2 music resolves from its sibling audio bank", () => {
+  const base = "https://example.test/assets/audio/original/";
+  assert.equal(
+    resolveMusicUrl(base, "modern", "robo2/menu"),
+    "https://example.test/assets/audio/robo2/modern/menu.ogg",
+  );
+  assert.equal(
+    resolveMusicUrl(base, "8bit", "robo2/begin"),
+    "https://example.test/assets/audio/robo2/8bit/begin.ogg",
+  );
+});
+
+test("Robo 2 menu is loaded from its bank as looping map music", async (t) => {
+  const originalAudioContext = globalThis.AudioContext;
+  const originalFetch = globalThis.fetch;
+  const context = new RunningAudioContext();
+  const fetchedUrls = [];
+  globalThis.AudioContext = class {
+    constructor() {
+      return context;
+    }
+  };
+  globalThis.fetch = async (url) => {
+    fetchedUrls.push(String(url));
+    return {
+      ok: true,
+      async arrayBuffer() {
+        return new ArrayBuffer(0);
+      },
+    };
+  };
+  t.after(() => {
+    globalThis.AudioContext = originalAudioContext;
+    globalThis.fetch = originalFetch;
+  });
+
+  const audio = new AudioRuntime({
+    baseUrl: "https://example.test/assets/audio/original/",
+  });
+  audio.playMusic("robo2/menu");
+  await waitFor(() => context.createdSources.length === 1);
+
+  assert.deepEqual(fetchedUrls, [
+    "https://example.test/assets/audio/robo2/8bit/menu.ogg",
+  ]);
+  assert.equal(context.createdSources[0].loop, true);
+  audio.destroy();
 });
 
 test("audio runtime reports when browser interaction is required", async (t) => {
@@ -162,6 +212,7 @@ class RunningAudioContext {
   state = "running";
   currentTime = 0;
   destination = {};
+  createdSources = [];
 
   createGain() {
     return {
@@ -179,7 +230,7 @@ class RunningAudioContext {
   }
 
   createBufferSource() {
-    return {
+    const source = {
       loop: false,
       onended: null,
       connect() {
@@ -189,6 +240,8 @@ class RunningAudioContext {
       start() {},
       stop() {},
     };
+    this.createdSources.push(source);
+    return source;
   }
 
   async decodeAudioData() {
