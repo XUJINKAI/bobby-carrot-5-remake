@@ -18,6 +18,7 @@ import { resolveLaserAppearance } from "../../engine/dist/entities/custom/laser-
 import { RuntimeEntityTypeId } from "../../engine/dist/entities/runtime-types.js";
 import { resolveLevelEntityVisualPreview } from "../../engine/dist/visual/preview.js";
 import { VisualRuntime } from "../../engine/dist/visual/VisualRuntime.js";
+import { CommandQueue } from "../../engine/dist/world/behavior/CommandQueue.js";
 import { World } from "../support/engine/World.mjs";
 
 const ground = (x, y) => ({
@@ -272,6 +273,78 @@ test("Bobby 进入激光格八成时死亡", () => {
   assert.equal(world.actorLifecycle(actor.id).reason, "laser-beam");
   assert.equal(world.movement.motions.forEntity(actor.id).status, "interrupted");
   assert.equal(world.movement.motions.forEntity(actor.id).progress, 0.8);
+});
+
+test("Bobby 可以走上截断激光的单面 Mirror 而不受伤", () => {
+  const entities = [];
+  for (let y = 0; y < 2; y += 1) {
+    for (let x = 0; x < 4; x += 1) entities.push(ground(x, y));
+  }
+  entities.push(
+    { type: MapEntityTypeId.LASER_EMITTER, direction: "right", x: 0, y: 0 },
+    { type: MapEntityTypeId.MIRROR, variant: "right-bottom", x: 2, y: 0 },
+    { type: MapEntityTypeId.BOBBY, x: 2, y: 1 },
+  );
+  const world = new World(
+    { schemaVersion: 1, width: 4, height: 2, entities },
+    { motionDurationMs: 100 },
+  );
+  const actor = world.query.entitiesWithFact("player")[0];
+
+  const result = world.step({
+    intents: [{
+      type: "move",
+      actorId: actor.id,
+      direction: "up",
+      cause: { type: "player-input", source: "test" },
+    }],
+  });
+  assert.equal(result.moves[0].moved, true);
+  world.update({ tick: 0, stepMs: 100 });
+
+  assert.equal(world.dead, false);
+  assert.deepEqual(world.entity(actor.id).anchor, { x: 2, y: 0 });
+});
+
+test("光路重新投影不会伤害终点 Mirror 格上的 Bobby", () => {
+  const entities = [];
+  for (let y = 0; y < 3; y += 1) {
+    for (let x = 0; x < 4; x += 1) entities.push(ground(x, y));
+  }
+  entities.push(
+    { type: MapEntityTypeId.LASER_EMITTER, direction: "right", x: 0, y: 0 },
+    { type: MapEntityTypeId.MIRROR, variant: "left-bottom", x: 2, y: 0 },
+    { type: MapEntityTypeId.BOBBY, x: 2, y: 0 },
+  );
+  const world = new World({
+    schemaVersion: 1,
+    width: 4,
+    height: 3,
+    entities,
+  });
+  const actor = world.query.entitiesWithFact("player")[0];
+  const mirror = world.query.entitiesMatching({
+    kind: "type",
+    value: MapEntityTypeId.MIRROR,
+  })[0];
+  const commands = new CommandQueue();
+  commands.setState(mirror.id, { ...mirror.state, variant: "right-bottom" });
+  world.committer.commit(commands, { worldTick: null, worldTimeMs: 0 });
+
+  world.update({ tick: 0, stepMs: 16 });
+
+  assert.equal(world.dead, false);
+  assert.equal(world.actorLifecycle(actor.id).phase, "active");
+  assert.deepEqual(
+    beamEntities(world).map((beam) => ({
+      x: beam.anchor.x,
+      terminal: beam.state?.terminal,
+    })),
+    [
+      { x: 1, terminal: false },
+      { x: 2, terminal: true },
+    ],
+  );
 });
 
 test("关卡起点位于既有光路时可先离开", () => {

@@ -83,7 +83,11 @@ const laserBeamHazard: Behavior = {
   id: "laser-beam-hazard",
   onEnter({ actor, self, movement, query, commands }) {
     // MovementPlan 可能在光束销毁前已经建立；进入目标格时先确认光束仍存在。
-    if (query.entity(self.entity.id)?.type !== RuntimeEntityTypeId.LASER_BEAM) {
+    const beam = query.entity(self.entity.id);
+    if (
+      beam?.type !== RuntimeEntityTypeId.LASER_BEAM ||
+      beam.state?.terminal === true
+    ) {
       return;
     }
     if (!query.entityHasFact(actor.id, "player")) return;
@@ -120,6 +124,7 @@ const laserBeamContactAction: RuntimeActionDefinition = {
     const actor = query.entity(actorId);
     if (
       beam?.type !== RuntimeEntityTypeId.LASER_BEAM ||
+      beam.state?.terminal === true ||
       !actor ||
       !query.entityHasFact(actor.id, "player")
     ) {
@@ -493,6 +498,7 @@ function downActorsInRay(
 ): void {
   const actorIds = new Set<number>();
   for (const segment of ray) {
+    if (segment.terminal) continue;
     for (const presence of query.presencesAt(segment.cell)) {
       if (presence.facts.includes("player")) actorIds.add(presence.entityId);
     }
