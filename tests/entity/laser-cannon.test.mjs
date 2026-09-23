@@ -469,6 +469,65 @@ test("激光从背面命中同向激光炮时只摧毁目标", () => {
   );
 });
 
+test("激光炮遮挡后方炸弹，销毁后的下一次投影才会命中", () => {
+  const entities = [];
+  for (let y = 0; y < 2; y += 1) {
+    for (let x = 0; x < 7; x += 1) entities.push(ground(x, y));
+  }
+  entities.push(
+    { type: MapEntityTypeId.LASER_CANNON, direction: "right", x: 0, y: 0 },
+    { type: MapEntityTypeId.LASER_CANNON, direction: "up", x: 3, y: 0 },
+    { type: MapEntityTypeId.LASER_BOMB, x: 5, y: 0 },
+    { type: MapEntityTypeId.BOBBY, x: 0, y: 1 },
+  );
+  const world = new World({
+    schemaVersion: 1,
+    width: 7,
+    height: 2,
+    entities,
+  });
+  const [source, target] = cannonEntities(world);
+  const bomb = world.query.entitiesMatching({
+    kind: "type",
+    value: MapEntityTypeId.LASER_BOMB,
+  })[0];
+
+  assert.deepEqual(
+    beamEntities(world)
+      .filter((beam) => beam.state?.sourceId === source.id)
+      .map((beam) => ({
+        x: beam.anchor.x,
+        terminal: beam.state?.terminal,
+      })),
+    [
+      { x: 1, terminal: false },
+      { x: 2, terminal: false },
+      { x: 3, terminal: true },
+    ],
+  );
+
+  const destruction = world.update({ tick: 0, stepMs: 16 });
+
+  assert.equal(world.entity(target.id), undefined);
+  assert.notEqual(world.entity(bomb.id)?.state?.armed, true);
+  assert.equal(
+    destruction.events.some((event) =>
+      event.type === "laser-bomb-ignition-started"
+    ),
+    false,
+  );
+
+  const reprojection = world.update({ tick: 1, stepMs: 16 });
+
+  assert.equal(world.entity(bomb.id)?.state?.armed, true);
+  assert.equal(
+    reprojection.events.filter((event) =>
+      event.type === "laser-bomb-ignition-started"
+    ).length,
+    1,
+  );
+});
+
 test("激光炮与所属光束在销毁后同步闪烁三次", () => {
   const entities = [];
   for (let y = 0; y < 2; y += 1) {
