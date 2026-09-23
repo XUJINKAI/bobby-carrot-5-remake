@@ -145,61 +145,73 @@ Adventure index 只定义 Campaign topology：章节、章节内 level 顺序、
 
 Adventure 不拥有地图内容；它引用 `assets/maps/` 下的 MapDocument。
 
-## Custom map 构建源
+## Asset Producer 与构建源
 
-`custom-maps/` 是 generic custom collection 的构建输入。人工维护的地图可以直接提交语义 JSON；外部批量关卡集也可以先保留其原始文本，再由专用工具生成这个统一输入格式。
+`tools/assets/collections.json` 是 collection 顺序、展示信息、可见性与 Producer 的单一
+manifest。BC5、Robo 2、LOMA 与 Novoban 分别由 `tools/assets/bc5/`、`robo2/`、
+`loma/` 与 `novoban/` 生产；directory Producer 读取 `custom-maps/` 中人工维护的语义地图。
+`custom-maps/` 不保存批量来源生成物。
 
-生成型 custom map 目录必须加入 `.gitignore`，不能手工修改生成文件。`assets prepare`
-根据生成器、Model 合同、手写地图与运行模式的 SHA-256 复用完整生成结果；输入变化、
-生成文件缺失或执行 `assets rebuild` 时，先清理明确登记的生成目录，再从唯一源重新生成。
-10 个只读原版高清 JAR 与 Robo2 源 JAR 作为 extract 的源输入参与缓存指纹；
-`custom-maps/robo2/` 与 `assets/art/robo2/` 作为生成目录参与完整性检查。
-生成物内容本身不作为输入，因此地图重新生成或 Replay 写入 `verified` 不会造成缓存失效。
+统一任务图为每个任务声明输入、依赖和独占输出。缓存位于 `tmp/assets/cache/`，保存输入
+摘要、依赖结果摘要与输出清单；输入变化只运行受影响任务及其下游。Collection Publisher
+统一调用 Model parser 规范化 MapDocument，在临时目录完成全部写入后替换对应的
+`assets/maps/<collection>/`，最后按 manifest 汇总 `assets/maps/index.json`。
 
-LOMA Pushbox 使用：
+BC5 使用三阶段产物：
+
+```text
+original/official-hd/*.jar
+  ↓ bc5.extract
+tmp/assets/bc5/extracted/
+  ↓ bc5.decode
+tmp/assets/bc5/decoded/
+  ↓ bc5.adapt
+tmp/assets/bc5/adapted/
+  ├─→ assets/maps/original/
+  ├─→ assets/adventure/index.json
+  └─→ assets/art/hd/
+```
+
+Robo 2 使用受 Git 管理的 J2ME 包和明确登记的美术覆盖文件：
+
+```text
+tools/custom/robo2/robo2.jar
+  ↓ robo2.extract
+tmp/assets/robo2/extracted/
+  ↓ robo2.decode + encode round-trip
+tmp/assets/robo2/decoded/
+  ↓ robo2.adapt
+tmp/assets/robo2/adapted/
+  └─→ assets/maps/robo2/
+
+robo2.jar + overrides/*.png
+  └─→ assets/art/robo2/
+```
+
+decoded 地图保留来源 entry、record SHA-256、theme 与 tile code。来源工具边界负责 JAR
+byte、列优先格子、半字节 tile code、原始图片 entry 与覆盖文件；Engine 只消费语义地图
+与已注册的图片资源 ID。
+
+LOMA 与 Novoban 不增加没有格式意义的阶段目录：
 
 ```text
 tools/custom/LOMA.txt
-  ↓ tools/custom/loma-pushbox.mjs
-custom-maps/loma-pushbox/<chapter>/*.json  # ignored / generated
-  ↓ tools/custom/prepare.mjs
-assets/maps/loma-pushbox/index.json
-assets/maps/loma-pushbox/<map-id>.json
-```
+  ↓ LOMA Producer + Pushbox converter
+PreparedCollection
+  ↓ Collection Publisher
+assets/maps/loma-pushbox/
 
-`LOMA.txt` 是受 Git 管理的第三方源数据；授权与作者信息见根目录 `THIRD_PARTY_ASSETS.md`。
-
-LOMA 原始 `Title` 的 `LOMA01-*` ～ `LOMA10-*` 对应该 collection 的 10 个 source pattern，因此生成器把地图分别写入 `01` ～ `10` chapter 目录。`tools/custom/prepare.mjs` 从路径得到 collection `maps[].chapter`；chapter 不是 Engine `LevelMap` 字段，也不是 Editor JSON 的持久化字段。
-
-Novoban 使用同一生成边界，但源文件没有自然 chapter，因此保持平铺 collection：
-
-```text
 tools/custom/NOVOBAN.txt
-  ↓ tools/custom/novoban-pushbox.mjs
-custom-maps/novoban-pushbox/*.json   # ignored / generated
-  ↓ tools/custom/prepare.mjs
-assets/maps/novoban-pushbox/index.json
-assets/maps/novoban-pushbox/<map-id>.json
+  ↓ Novoban Producer + Pushbox converter
+PreparedCollection
+  ↓ Collection Publisher
+assets/maps/novoban-pushbox/
 ```
 
-Novoban 的 50 张地图按源文件顺序生成 `01` ～ `50`；原注释标题成为地图展示名，作者统一保留为 François Marques。版权与来源边界见根目录 `THIRD_PARTY_ASSETS.md`。
-
-Robo 2 使用受 Git 管理的原始 J2ME 包作为唯一地图源，并允许明确登记的美术覆盖文件进入同一个生成流程：
-
-```text
-tools/custom/robo2/
-  ├─ robo2.jar ───────────┬─→ extract.mjs
-  └─ overrides/*.png ─────┘       ↓
-  │                     assets/art/robo2/*.png  # ignored / generated
-  └─ robo2.jar ─────────────→ generate.mjs
-                                ↓
-                     custom-maps/robo2/*.json   # ignored / generated
-                                ↓ tools/custom/prepare.mjs
-                     assets/maps/robo2/index.json
-                     assets/maps/robo2/<map-id>.json
-```
-
-地图生成器与图片提取器都校验固定 JAR SHA-256。来源工具边界负责 JAR byte、列优先格子、半字节 tile code、原始图片 entry 与登记的美术覆盖文件；Engine 只消费语义地图与已注册的图片资源 ID。Robo 2 JAR、关卡、美术及转换结果的版权边界见根目录 `THIRD_PARTY_ASSETS.md`。
+`LOMA.txt` 是受 Git 管理的第三方源数据。原始 `Title` 的 `LOMA01-*` ～ `LOMA10-*`
+成为 collection 的 10 个 source pattern chapter。Novoban 的 50 张地图按源文件顺序生成
+`01` ～ `50`，原注释标题成为地图展示名，作者统一保留为 François Marques。版权与来源
+边界见根目录 `THIRD_PARTY_ASSETS.md`。
 
 LOMA 与 Novoban 的 XSB 字符转换由 `tools/custom/sokoban-xsb.mjs` 统一负责。每张地图从
 `PUSHBOX_TERRAIN_TABLE` 稳定选择一个主题，并按 `ground / boundary / obstacle` 类别与坐标
@@ -208,10 +220,19 @@ LOMA 与 Novoban 的 XSB 字符转换由 `tools/custom/sokoban-xsb.mjs` 统一�
 层。标准 `+` 因此表示同格 `ground + push-goal + Bobby`，不需要 `playerStart` 或 Start
 surface。
 
-`custom-maps/collections.json` 可用可选 `chapters` 为已存在的 chapter 目录补充 `name` 与 `description`。只有目录而没有补充信息时，runtime chapter 只包含目录提供的 `id`。`visible` 支持 `true`、`false` 和 `"dev"`：缺省或 `true` 进入所有 discovery index，`false` 不进入 discovery index，`"dev"` 只进入 `npm run dev` 生成的 index。可见性控制 collection discovery 和正式站点路由生成；地图与 collection 自身的 runtime assets 仍统一生成，供本地验证工具使用。chapter 身份和成员关系来自 `custom-maps/<collection>/<chapter>/`；只允许这一层 chapter 目录，根目录地图则没有 chapter。Explore 只读取统一生成的 collection index，不知道该 collection 的数据来源。
+`tools/assets/collections.json` 可用可选 `chapters` 为 directory Producer 已存在的 chapter
+目录补充 `name` 与 `description`。只有目录而没有补充信息时，runtime chapter 只包含目录
+提供的 `id`。`visible` 支持 `true`、`false` 和 `"dev"`：缺省或 `true` 进入所有 discovery
+index，`false` 不进入 discovery index，`"dev"` 只进入 `npm run dev` 生成的 index。
+可见性控制 collection discovery 和正式站点路由生成；地图与 collection 自身的 runtime
+assets 仍统一生成。directory Producer 的 chapter 身份和成员关系来自
+`custom-maps/<collection>/<chapter>/`；只允许这一层 chapter 目录，根目录地图没有 chapter。
+Explore 只读取统一生成的 collection index，不知道该 collection 的数据来源。
 
 ## 生成规则
 
-`npm run assets` 清理未被 Git 跟踪的生成物，并从 `original/` 与 `custom-maps/` 重建 runtime assets。
+`npm run assets` 清理 `tmp/assets/` 与已登记的最终生成目录，再通过同一任务图完整重建。
+`assets prepare` 复用逐任务缓存；`npm run dev` 复用同一任务图和 Vite watcher，把连续事件
+按 Producer 合并并串行重建。任务成功后刷新页面；失败时保留上一份完整输出。
 
 Original 生产过程可以保留 archive provenance；runtime 地图与 collection 合同统一使用产品语义 ID。

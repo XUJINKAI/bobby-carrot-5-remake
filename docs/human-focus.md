@@ -53,5 +53,5 @@ Editor Inspector 使用的是同一份语义；类型检查只负责验证结构
   两个 Adapter 特例的可执行审阅样例。
 - [`tools/pipeline/verify.mjs`](../tools/pipeline/verify.mjs)：仓库强制门禁的编排入口。
 
-`assets/extracted/`、`assets/generated/`、`dist/` 与 `tmp/` 是生成结果。人类审阅应回到
+`assets/maps/`、`assets/adventure/`、生成美术目录、`dist/` 与 `tmp/` 是生成结果。人类审阅应回到
 上述源文件判断含义，并用 `npm run verify` 确认生成链路一致。

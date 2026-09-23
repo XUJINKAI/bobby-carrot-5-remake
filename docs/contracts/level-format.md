@@ -325,9 +325,9 @@ assets/adventure/index.json
 ```text
 JAR / DAT
   ↓ extract
-original/extracted
+tmp/assets/bc5/extracted
   ↓ decode
-original/decoded        原始 terrain/object 语义
+tmp/assets/bc5/decoded        原始 terrain/object 语义
   ↓ adapt
 Entity Map v1
   ↓
@@ -346,7 +346,7 @@ DAT level record
 patched JAR
 ```
 
-`encoded/` 中间地图与 `original/decoded/` 的单关 JSON 使用同一合同，保留
+`encoded/` 中间地图与 `tmp/assets/bc5/decoded/` 的单关 JSON 使用同一合同，保留
 `terrainEncoding / source / recordLength / recordSha256 / dynamicSlots` 以及
 `width / height / terrain / objects`。Patch 流程从落盘后的中间地图重新读取
 `width / height / terrain / objects`，再生成目标 DAT record。
@@ -368,11 +368,11 @@ Original 工具链继续保留 archive/source identity：
 ```text
 JAR / DAT
   ↓ extract
-original/extracted
+tmp/assets/bc5/extracted
   ↓ decode
-original/decoded         release / packFile / levelIndex
+tmp/assets/bc5/decoded         release / packFile / levelIndex
   ↓ adapt
-original/adapted         产品语义 map id 与 MapDocument
+tmp/assets/bc5/adapted         产品语义 map id 与 MapDocument
 ```
 
 第一次转换到产品语义时直接得到 `1-1`、`1-2`、`1-bonus-1` 等产品 map id。Base/UP、DAT package 与 source record slot 只属于 archive provenance。

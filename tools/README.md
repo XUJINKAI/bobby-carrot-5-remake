@@ -8,7 +8,7 @@
 | 命令 | 用途 |
 | --- | --- |
 | `npm run dev` | 构建所需内容并启动本地开发服务。 |
-| `npm run assets` | 从允许提交的源文件重建 `assets/generated/`。 |
+| `npm run assets` | 从登记的源文件完整重建运行时地图与美术资产。 |
 | `npm run build` | 构建正式站点到 `dist/`。 |
 | `npm run preview` | 不重新构建，静态预览现有 `dist/`。 |
 | `npm run patch -- <options>` | 把语义地图 patch 到普通版 JAR；传入 `--hd` 时改用高清版，输出仅写入 `tmp/`。 |
@@ -21,7 +21,7 @@
 | 命令 | 用途 |
 | --- | --- |
 | `node tools/cli.mjs original extract` | 从只读官方 JAR 提取原始资源到生成目录。 |
-| `node tools/cli.mjs original decode` | 将 DAT 解码到 `original/decoded/`。 |
+| `node tools/cli.mjs original decode` | 将 DAT 解码到 `tmp/assets/bc5/decoded/`。 |
 | `node tools/cli.mjs original adapt` | 将 decoded 数据转换为语义地图，并生成 Adventure Catalog。 |
 | `node tools/cli.mjs original prepare` | 依次构建 Model、extract、decode 和 adapt。 |
 | `node tools/cli.mjs original inspect [--all]` | 将待确认的 atlas/object 类型统计写入 `tmp/unknown-tiles.json`；`--all` 保留全部引用。 |
@@ -33,14 +33,14 @@
 | 命令 | 用途 |
 | --- | --- |
 | `node tools/cli.mjs schema examples [entity-type]` | 构建 Model，并输出全部或指定 Entity 的 JSON 示例。 |
-| `node tools/cli.mjs assets prepare` | 输入未变化且生成物完整时复用缓存，否则重新生成资源。 |
+| `node tools/cli.mjs assets prepare` | 按任务检查输入、依赖与输出清单，只重建失效任务。 |
 | `node tools/cli.mjs assets rebuild` | 完整重建生成资源；等价于 `npm run assets`。 |
 
 ## 开发、构建与验证
 
 | 命令 | 用途 |
 | --- | --- |
-| `node tools/cli.mjs dev` | 准备开发资源并启动 Web 与 Editor 开发服务。 |
+| `node tools/cli.mjs dev` | 准备开发资源，启动 Web 与 Editor，并按 Producer 分组监听资产输入。 |
 | `node tools/cli.mjs build` | 构建 `dist/`。 |
 | `node tools/cli.mjs preview` | 静态预览已有构建。 |
 | `node tools/cli.mjs test [分类] [子目录]` | 按 `tests/` 目录过滤并运行非 smoke 测试。 |
@@ -48,8 +48,9 @@
 | `node tools/cli.mjs verify browser` | 单独运行浏览器 smoke test。 |
 | `node tools/cli.mjs clean` | 清理生成物。 |
 
-生成目录包括 `assets/extracted/`、`assets/generated/`、`original/decoded/`、
-`original/adapted/`、`dist/` 与 `tmp/`。这些内容由对应命令重建，不手工修改；
+阶段产物与任务缓存统一位于 `tmp/assets/`；最终生成目录为 `assets/maps/`、
+`assets/adventure/`、`assets/art/hd/` 与 `assets/art/robo2/`。这些内容由对应命令重建，
+不手工修改；
 `original/official/` 与 `original/official-hd/` 中的原版 JAR 始终只读。
 
 测试实现、辅助代码与夹具统一位于根 `tests/`，目录职责与过滤示例见

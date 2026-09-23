@@ -4,7 +4,7 @@
 
 ## 按坐标查找 `ts.png` 素材
 
-`original/decoded/` 中的 terrain 和 object 标签均以 `ts-<row>-<column>:` 开头。
+`tmp/assets/bc5/decoded/` 中的 terrain 和 object 标签均以 `ts-<row>-<column>:` 开头。
 对素材语义或命名不确定时，直接全局搜索坐标前缀即可定位所有原版地图引用，
 例如搜索 `ts-4-13:`。Engine 使用的机关帧与 Surface 归类集中维护在
 `model/src/map/entity/original-tile-visuals.json`；Editor Surface 的每个 atlas 单元均为单格 Entity。
@@ -51,7 +51,7 @@ npm run patch
 
 当前 Entity Map 会经 Original Adapter 还原为 DAT 可表达的地图；覆盖地形下的默认地面、隐藏目标和原版对象内部形态遵循 Adapter 的规范化规则。
 Adapter 结果先写入 `encoded/<release>/levels/<pack>-<slot>.json`，其格式与
-`original/decoded/` 的单关 JSON 一致。DAT encoder 从这些落盘文件重新读取地图，便于在
+`tmp/assets/bc5/decoded/` 的单关 JSON 一致。DAT encoder 从这些落盘文件重新读取地图，便于在
 运行模拟器前直接审阅实际参与打包的 terrain、objects、动态槽位和 record SHA。
 
 ## 3. 工具自动验证的内容

@@ -57,7 +57,7 @@ for (const [releaseId, replacements] of groupByRelease(encodedMaps)) {
 }
 
 /**
- * 先把 Entity Map 固化为与 original/decoded 相同的可审阅格式。
+ * 先把 Entity Map 固化为与 BC5 decoded 阶段相同的可审阅格式。
  * 后续编码会重新读取这些文件，确保落盘中间层就是 DAT 的实际输入。
  */
 function writeEncodedMaps(sourceMaps, directory) {

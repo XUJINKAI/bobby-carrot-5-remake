@@ -392,7 +392,7 @@ public identity: 1-1 / 1-bonus-1 / ... / 40-10
 
 ## Explore content / Custom Map Catalog
 
-Explore 使用 collection 组织所有自由游玩内容。`custom-maps/collections.json` 定义 collection 名称、顺序、说明与 discovery 可见性：
+Explore 使用 collection 组织所有自由游玩内容。`tools/assets/collections.json` 定义 collection 名称、顺序、说明、discovery 可见性与 Producer：
 
 ```text
 custom-maps/<collection>/<map>.json
@@ -405,7 +405,11 @@ assets/maps/<collection>/<map>.json
 
 源码目录负责内容归类：collection 下的一级目录决定 chapter，根目录中的地图没有 chapter，chapter 目录内不允许继续嵌套目录。同一 collection 混合两类地图时，根目录地图先作为无章节内容进入 index，随后按 chapter 与 map ID 排列章节内容。manifest 负责 collection discovery，其可选 `chapters` 只补充已存在 chapter 的展示信息；`visible: "dev"` 只在 `npm run dev` 时进入 discovery index。每个 collection 的 `index.json` 独立承载展示、搜索和筛选 metadata；游玩和编辑入口直接加载同目录下的纯 `LevelMap`。
 
-`tools/custom/prepare.mjs` 只生成 custom collection 资产并返回可见摘要；`tools/pipeline/assets.mjs` 在 Original 与 custom collection 全部就绪后统一生成 `assets/maps/index.json`。discovery index 只保存 `id` 与 `name`，collection description 只保存在各自的详细索引。
+BC5、Robo 2、LOMA 与 Novoban 使用 `tools/assets/` 中的显式 Producer；人工维护的
+collection 使用 directory Producer 读取 `custom-maps/`。统一 Collection Publisher 校验并
+规范化 MapDocument、原子发布每个 collection 目录，并在全部可见 collection 就绪后生成
+`assets/maps/index.json`。discovery index 只保存 `id` 与 `name`，collection description
+只保存在各自的详细索引。
 
 每章 1～3 星难度直接读取原版 DAT chapter metadata `packType`。
 
@@ -577,7 +581,7 @@ node tools/cli.mjs original patch \
   --out tmp/original-patch
 ```
 
-输入目录的 JSON 文件名是目标 public ID；工具通过 Catalog provenance 找回原始 JAR / DAT / slot，并按 JAR 合并输出。Adapter 先按 `original/decoded/<release>/levels/<pack>-<slot>.json` 的合同生成可审阅中间地图；默认输出位于 `tmp/original-patch/encoded/`，DAT encoder 重新读取该中间地图后再打包 JAR。
+输入目录的 JSON 文件名是目标 public ID；工具通过 Catalog provenance 找回原始 JAR / DAT / slot，并按 JAR 合并输出。Adapter 先按 `tmp/assets/bc5/decoded/<release>/levels/<pack>-<slot>.json` 的合同生成可审阅中间地图；默认输出位于 `tmp/original-patch/encoded/`，DAT encoder 重新读取该中间地图后再打包 JAR。
 
 Patch 默认使用 `original/official/` 普通版 JAR。传入 `--hd` 时使用
 `original/official-hd/` 高清版，并把输出命名为
@@ -585,7 +589,10 @@ Patch 默认使用 `original/official/` 普通版 JAR。传入 `--hd` 时使用
 
 ## Tools / Assets
 
-`assets/original/` 是不可变原始输入；`assets/extracted/`、`assets/generated/` 是可重建产物。Tools 负责 JAR 解包、source provenance、Catalog、章节星级、筛选索引和原版验证 JAR。
+`original/official/` 与 `original/official-hd/` 是不可变原始输入。统一资产任务图把 BC5 和
+Robo 2 的可审阅阶段产物保存到 `tmp/assets/<producer>/`，把地图、Adventure index 与美术
+原子发布到 `assets/`。任务缓存保存输入摘要、依赖结果和输出清单；`npm run dev` 使用同一
+任务图按 Producer 分组监听和增量重建。
 
 DAT 只在这些工具/验证路径需要时编译；正常产品输出不复制 `dat/dist`。
 
