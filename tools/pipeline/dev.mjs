@@ -10,9 +10,6 @@ run(process.execPath, [
 const { attachAssetWatcher } = await import(
   "../assets/orchestrator/watcher.mjs"
 );
-const { markReplayFilesAsVerified } = await import(
-  "../replay/mark-verified-maps.mjs"
-);
 
 const port = Number(process.env.PORT ?? 5173);
 const devHost = process.env.BC5R_DEV_HOST ?? "0.0.0.0";
@@ -26,7 +23,6 @@ const server = await createServer({
 });
 attachAssetWatcher({
   server,
-  afterPublish: markReplayFilesAsVerified,
 });
 await server.listen();
 

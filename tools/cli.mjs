@@ -19,13 +19,44 @@ if (group === "original") {
 } else if (group === "assets") {
   // 资产模块在加载时就导入 Model；冷启动必须先生成其包入口。
   run(tscCommand(), ["-b", "model"]);
-  const { rebuildAssets, prepareAssets } = await import("./pipeline/assets.mjs");
+  const {
+    prepareAssets,
+    rebuildAssets,
+    rebuildAssetsTransactionally,
+  } = await import("./pipeline/assets.mjs");
+  const selectedTaskIds = process.argv
+    .filter((argument) => argument.startsWith("--task="))
+    .map((argument) => argument.slice("--task=".length));
   const options = {
     includeDevCollections: process.argv.includes("--dev"),
+    ...(selectedTaskIds.length > 0 ? { selectedTaskIds } : {}),
   };
-  if (action === "rebuild") rebuildAssets(options);
-  else if (action === "prepare") prepareAssets(options);
-  else throw new Error("用法：node tools/cli.mjs assets prepare|rebuild");
+  const markReplayPresence = process.argv.includes("--replay-presence");
+  const transactional = process.argv.includes("--transactional");
+  if (transactional && action !== "rebuild") {
+    throw new Error("只有 assets rebuild 支持 --transactional");
+  }
+  if (action === "rebuild" && transactional) {
+    const beforeCommit = markReplayPresence
+      ? async ({ repositoryRoot }) => {
+        const { markReplayFilesAsVerified } = await import(
+          "./replay/mark-verified-maps.mjs"
+        );
+        markReplayFilesAsVerified({ repositoryRoot });
+      }
+      : undefined;
+    await rebuildAssetsTransactionally({ ...options, beforeCommit });
+  } else if (action === "rebuild") {
+    rebuildAssets(options);
+  } else if (action === "prepare") {
+    prepareAssets(options);
+    if (markReplayPresence) {
+      const { markReplayFilesAsVerified } = await import(
+        "./replay/mark-verified-maps.mjs"
+      );
+      markReplayFilesAsVerified();
+    }
+  } else throw new Error("用法：node tools/cli.mjs assets prepare|rebuild");
 } else if (group === "dev") run(process.execPath, ["tools/pipeline/dev.mjs"]);
 else if (group === "build") run(process.execPath, ["tools/pipeline/build.mjs"]);
 else if (group === "preview") run(process.execPath, ["tools/pipeline/preview.mjs"]);

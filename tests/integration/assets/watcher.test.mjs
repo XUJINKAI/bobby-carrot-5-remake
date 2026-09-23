@@ -1,9 +1,14 @@
 import assert from "node:assert/strict";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import test from "node:test";
 import { createAssetRegistry } from "../../../tools/assets/registry.mjs";
 import {
   affectedAssetTasks,
+  assetWatchCommandArgs,
   createAssetWatchCoordinator,
+  refreshWatchedAssetGraph,
   watchedAssetInputs,
 } from "../../../tools/assets/orchestrator/watcher.mjs";
 import { root } from "../../../tools/lib/fs.mjs";
@@ -90,6 +95,89 @@ test("所有 Collection Publisher 统一声明 Model 输入", () => {
   assert.ok(
     collectionTasks.every((task) => task.inputs.includes("model/src")),
   );
+});
+
+test("discovery 任务声明 collection visibility 输入", () => {
+  const discovery = tasks.find((task) => task.id === "publish.discovery");
+  assert.ok(discovery);
+  assert.ok(
+    discovery.inputs.includes("tools/assets/collection/visibility.mjs"),
+  );
+});
+
+test("资产 watcher 使用独立 CLI 子进程执行重建与开发标记", () => {
+  assert.deepEqual(assetWatchCommandArgs(["bc5.decode", "bc5.extract"]), [
+    "tools/cli.mjs",
+    "assets",
+    "prepare",
+    "--dev",
+    "--replay-presence",
+    "--task=bc5.decode",
+    "--task=bc5.extract",
+  ]);
+  assert.deepEqual(assetWatchCommandArgs(["assets.all", "bc5.extract"]), [
+    "tools/cli.mjs",
+    "assets",
+    "rebuild",
+    "--dev",
+    "--transactional",
+    "--replay-presence",
+  ]);
+});
+
+test("manifest 更新后刷新 task graph 与监听输入", (t) => {
+  const directory = fs.mkdtempSync(
+    path.join(os.tmpdir(), "bc5r-watcher-graph-"),
+  );
+  t.after(() => fs.rmSync(directory, { recursive: true, force: true }));
+  const manifestFile = path.join(directory, "tools/assets/collections.json");
+  fs.mkdirSync(path.dirname(manifestFile), { recursive: true });
+  const manifest = JSON.parse(
+    fs.readFileSync(path.join(root, "tools/assets/collections.json"), "utf8"),
+  );
+  fs.writeFileSync(manifestFile, `${JSON.stringify(manifest, null, 2)}\n`);
+
+  const added = [];
+  const removed = [];
+  const server = {
+    watcher: {
+      add(inputs) {
+        added.push(...inputs);
+      },
+      unwatch(inputs) {
+        removed.push(...inputs);
+      },
+    },
+  };
+  const initial = refreshWatchedAssetGraph({
+    server,
+    repositoryRoot: directory,
+  });
+  manifest.collections.push({
+    id: "new-dev-collection",
+    producer: "directory",
+    source: "custom-maps/new-dev-collection",
+    visible: "dev",
+  });
+  fs.writeFileSync(manifestFile, `${JSON.stringify(manifest, null, 2)}\n`);
+  const refreshed = refreshWatchedAssetGraph({
+    server,
+    repositoryRoot: directory,
+    previousInputs: initial.watchedInputs,
+  });
+
+  assert.ok(
+    refreshed.tasks.some(
+      (task) => task.id === "publish.collection.new-dev-collection",
+    ),
+  );
+  assert.ok(
+    refreshed.watchedInputs.has("custom-maps/new-dev-collection"),
+  );
+  assert.ok(
+    added.includes(path.join(directory, "custom-maps/new-dev-collection")),
+  );
+  assert.deepEqual(removed, []);
 });
 
 test("资产 watcher 合并连续事件并串行处理构建期间的新事件", async () => {

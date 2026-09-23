@@ -271,6 +271,7 @@ Explore 只读取统一生成的 collection index，不知道该 collection 的�
 `npm run dev` 复用同一任务图和 Vite watcher，把连续事件按 Producer 合并并串行重建。
 watcher 直接从任务 `inputs` 推导监听范围和受影响任务。单任务使用各自的原子发布边界；
 manifest 变化触发的完整重建先在隔离目录生成，并在提交前按 Replay 文件存在性写入开发标记。
-任务成功后刷新页面；失败时保留上一份完整输出。
+每次重建都由新的 Node 子进程加载生成代码，避免 ESM module cache 复用旧实现；manifest
+变化后同步重建 task graph 与监听输入。任务成功后刷新页面；失败时保留上一份完整输出。
 
 Original 生产过程可以保留 archive provenance；runtime 地图与 collection 合同统一使用产品语义 ID。

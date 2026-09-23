@@ -157,6 +157,7 @@ export function createAssetRegistry({
       "tools/assets/collections.json",
       "tools/assets/collection/manifest.mjs",
       "tools/assets/collection/publisher.mjs",
+      "tools/assets/collection/visibility.mjs",
     ],
     outputs: ["assets/maps/index.json"],
     fingerprint: `development=${development}`,
