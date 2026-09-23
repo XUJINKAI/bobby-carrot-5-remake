@@ -7,12 +7,34 @@ import { RELEASES } from "./source-definitions.mjs";
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, "../..");
 
-for (const release of RELEASES) {
-  const jarPath = path.join(root, "original/official-hd", release.jar);
-  if (!fs.existsSync(jarPath)) throw new Error(`缺少原始高清 JAR：${jarPath}`);
-  const outputDir = path.join(root, "original/extracted", release.id);
-  fs.rmSync(outputDir, { recursive: true, force: true });
-  fs.mkdirSync(outputDir, { recursive: true });
-  extractZip(jarPath, outputDir);
-  console.log(`解包 ${release.id} -> original/extracted/${release.id}`);
+export function extractOriginal({
+  repositoryRoot = root,
+  outputRoot = path.join(repositoryRoot, "tmp/assets/bc5/extracted"),
+} = {}) {
+  fs.rmSync(outputRoot, { recursive: true, force: true });
+  for (const release of RELEASES) {
+    const jarPath = path.join(
+      repositoryRoot,
+      "original/official-hd",
+      release.jar,
+    );
+    if (!fs.existsSync(jarPath)) {
+      throw new Error(`缺少原始高清 JAR：${jarPath}`);
+    }
+    const outputDirectory = path.join(outputRoot, release.id);
+    fs.mkdirSync(outputDirectory, { recursive: true });
+    extractZip(jarPath, outputDirectory);
+    console.log(`解包 ${release.id} -> ${relative(repositoryRoot, outputDirectory)}`);
+  }
+}
+
+function relative(repositoryRoot, target) {
+  return path.relative(repositoryRoot, target).split(path.sep).join("/");
+}
+
+if (
+  process.argv[1] &&
+  path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)
+) {
+  extractOriginal();
 }

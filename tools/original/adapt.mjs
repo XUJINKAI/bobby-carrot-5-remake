@@ -18,8 +18,8 @@ import { deriveOriginalWinCondition } from "./win-condition.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, "../..");
-const decoded = path.join(root, "original/decoded");
-const adapted = path.join(root, "original/adapted");
+const decoded = path.join(root, "tmp/assets/bc5/decoded");
+const adapted = path.join(root, "tmp/assets/bc5/adapted");
 const mapsRoot = path.join(adapted, "maps");
 const releaseOrder = new Map(
   RELEASES.map((release) => [release.id, release.order]),
@@ -254,7 +254,7 @@ function copyRuntimeAssets() {
 function copyRuntimeAssetCategory(rule, outputDir) {
   const sourceRoot = path.join(
     root,
-    "original/extracted",
+    "tmp/assets/bc5/extracted",
     rule.defaultRelease,
   );
   const names = fs
@@ -263,7 +263,12 @@ function copyRuntimeAssetCategory(rule, outputDir) {
     .sort();
   for (const name of names) {
     const release = rule.overrides[name] ?? rule.defaultRelease;
-    const source = path.join(root, "original/extracted", release, name);
+    const source = path.join(
+      root,
+      "tmp/assets/bc5/extracted",
+      release,
+      name,
+    );
     if (!fs.existsSync(source))
       throw new Error(`运行时资产来源不存在：${release}/${name}`);
     copy(source, path.join(outputDir, name));
