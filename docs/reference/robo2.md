@@ -91,7 +91,7 @@ node tools/custom/robo2/extract.mjs
 - Bomb 在格子边界阻断激光，同一直线排列时只有最靠近激光炮的一颗会被直接命中。
 - 分别被不同光路直接命中的 Bomb 各自开始起爆；后续 Bomb 只能在前一颗爆炸清除光路或触发相邻连锁后开始起爆。
 - Bomb 先播放中心起爆过程；该阶段不产生十字范围伤害，随后才结算并播放十字爆炸。
-- Bomb 摧毁中心及上、下、左、右相邻格中的 Stone、Mirror 与 Laser Cannon，并击倒范围内的 Bobby；Bobby 所在格仍显示爆炸。对角格不受影响，不可摧毁的障碍会截断对应方向的爆炸。
+- Bomb 摧毁中心及上、下、左、右相邻格中的 Stone、Mirror 与 Laser Cannon，并击倒范围内的 Bobby；Bobby 所在格仍显示爆炸。被爆炸命中的 Laser Cannon 与 Mirror 一样立即消失，只有被激光命中的 Laser Cannon 播放损毁闪烁。对角格不受影响，不可摧毁的障碍会截断对应方向的爆炸。
 - 直线串联的相邻 Bomb 逐颗引爆；多条独立起爆链可以同时推进。连锁播放期间 Robo 仍可移动，每次爆炸清除对象后重新计算光路。
 - 墙和终点不被 Bomb 摧毁。
 

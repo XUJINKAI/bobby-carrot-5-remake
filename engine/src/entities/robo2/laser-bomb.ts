@@ -11,11 +11,7 @@ import type {
   EntityId,
 } from "../../world/entity/EntityInstance.js";
 import { defineEntityModule, type EntityModule } from "../EntityModule.js";
-import {
-  beginLaserCannonDestruction,
-  flashSegmentsFromBeams,
-  groupLaserBeamsBySource,
-} from "./laser-cannon-destruction.js";
+import { groupLaserBeamsBySource } from "./laser-cannon-destruction.js";
 
 const destructibleTypes: ReadonlySet<EntityType> = new Set([
   MapEntityTypeId.LASER_STONE,
@@ -66,7 +62,7 @@ const laserBombExplosionVisual: TransientVisualDefinition = {
   id: "laser-bomb-explosion",
   eventType: "laser-bomb-exploded",
   durationMs: LASER_BOMB_EXPLOSION_DURATION_MS,
-  renderPass: "effect",
+  renderPass: "world-effect",
   resolve({ event, progress }) {
     const cells = explosionOffsetsFromEvent(event.data?.cells);
     return {
@@ -309,16 +305,11 @@ function detonateLaserBomb(
     if (!target) continue;
     destroyedTargetIds.add(targetId);
     if (target.type === MapEntityTypeId.LASER_CANNON) {
-      const beams = beamsBySource.get(target.id) ?? [];
-      beginLaserCannonDestruction(
-        commands,
-        target,
-        beams,
-        flashSegmentsFromBeams(beams),
-      );
-    } else {
-      commands.destroy(target.id);
+      for (const beam of beamsBySource.get(target.id) ?? []) {
+        commands.destroy(beam.id);
+      }
     }
+    commands.destroy(target.id);
   }
   return explosion.chainedBombIds;
 }

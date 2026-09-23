@@ -9,9 +9,6 @@ import {
   createBuiltinVisualRegistry,
 } from "../../engine/dist/entities/registry.js";
 import {
-  LASER_CANNON_FLASH_DURATION_MS,
-} from "../../engine/dist/entities/robo2/laser-cannon.js";
-import {
   LASER_BOMB_IGNITION_DURATION_MS,
 } from "../../engine/dist/entities/robo2/laser-bomb.js";
 import { RuntimeEntityTypeId } from "../../engine/dist/entities/runtime-types.js";
@@ -163,9 +160,15 @@ test("激光引爆炸弹后摧毁十字范围内的石头、镜面与激光炮",
   assert.equal(entitiesOfType(world, MapEntityTypeId.LASER_BOMB).length, 0);
   assert.deepEqual(
     entitiesOfType(world, MapEntityTypeId.LASER_CANNON).map(({ id }) => id),
-    [source.id, target.id],
+    [source.id],
   );
-  assert.equal(world.entity(target.id)?.state?.destroying, true);
+  assert.equal(world.entity(target.id), undefined);
+  assert.equal(
+    result.events.some((event) =>
+      event.type === "laser-cannon-destroyed" && event.entityId === target.id
+    ),
+    false,
+  );
   assert.equal(entitiesOfType(world, MapEntityTypeId.LASER_MIRROR).length, 0);
   assert.deepEqual(
     entitiesOfType(world, MapEntityTypeId.LASER_STONE).map(({ id }) => id),
@@ -177,11 +180,6 @@ test("激光引爆炸弹后摧毁十字范围内的石头、镜面与激光炮",
     ),
     false,
   );
-  world.update({
-    tick: 3,
-    stepMs: LASER_CANNON_FLASH_DURATION_MS,
-  });
-  assert.equal(world.entity(target.id), undefined);
   const explosion = result.events.find((event) =>
     event.type === "laser-bomb-exploded"
   );
@@ -200,8 +198,11 @@ test("激光引爆炸弹后摧毁十字范围内的石头、镜面与激光炮",
     stationaryDeathDurationMs: 0,
   });
   visual.update(start, "linear");
-  const transient = visual.scene(world).effect.find(
-    (item) => item.presence.entityId < 0,
+  const scene = visual.scene(world);
+  const transient = scene.worldEffect.find(
+    (item) =>
+      item.presence.entityId < 0 &&
+      item.composition.layers[0]?.asset === ROBO2_GAMEPLAY_IMAGE_IDS.explosion,
   );
   assert.ok(transient);
   assert.deepEqual(
@@ -255,6 +256,24 @@ test("激光引爆炸弹后摧毁十字范围内的石头、镜面与激光炮",
         offsetY: 0,
       },
     ],
+  );
+  assert.equal(
+    scene.worldEffect.some((item) =>
+      item.presence.entityId < 0 &&
+      item.composition.layers[0]?.asset ===
+        ROBO2_GAMEPLAY_IMAGE_IDS.cannon.down
+    ),
+    false,
+  );
+  assert.equal(
+    scene.effect.some((item) =>
+      item.composition.layers[0]?.asset === ROBO2_GAMEPLAY_IMAGE_IDS.explosion
+    ),
+    false,
+  );
+  assert.equal(
+    scene.standing.some((item) => item.presence.entityId > 0),
+    true,
   );
 });
 
