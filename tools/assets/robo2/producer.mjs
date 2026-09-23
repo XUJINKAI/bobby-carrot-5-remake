@@ -7,12 +7,12 @@ import {
   assertRobo2A1Archive,
   decodeRobo2Archive,
   ROBO2_LEVEL_TITLES,
-} from "../../custom/robo2/archive.mjs";
-import { convertRobo2Level } from "../../custom/robo2/convert.mjs";
+} from "./archive.mjs";
+import { convertRobo2Level } from "./convert.mjs";
 import {
   decodeRobo2LevelRecord,
   encodeRobo2LevelRecord,
-} from "../../custom/robo2/format.mjs";
+} from "./format.mjs";
 
 export function extractRobo2({ repositoryRoot, outputDirectory }) {
   const source = robo2SourceFile(repositoryRoot);
@@ -21,7 +21,7 @@ export function extractRobo2({ repositoryRoot, outputDirectory }) {
   replaceDirectory(outputDirectory, (directory) => {
     writeJson(path.join(directory, "archive.json"), {
       schemaVersion: 1,
-      source: "tools/custom/robo2/robo2.jar",
+      source: "tools/assets/robo2/robo2.jar",
       sha256: archive.sha256,
       entries: archive.levels.map((level) => `data/${level.index}`),
     });
@@ -91,7 +91,7 @@ export function prepareAdaptedRobo2Collection(adaptedDirectory) {
 }
 
 function robo2SourceFile(repositoryRoot) {
-  return path.join(repositoryRoot, "tools/custom/robo2/robo2.jar");
+  return path.join(repositoryRoot, "tools/assets/robo2/robo2.jar");
 }
 
 function replaceDirectory(directory, write) {

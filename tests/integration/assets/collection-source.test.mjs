@@ -3,7 +3,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
-import { discoverCollectionSource } from "../../../tools/custom/collection-source.mjs";
+import { discoverCollectionSource } from "../../../tools/assets/collection/directory-source.mjs";
 
 test("chapter 由一级目录发现，manifest 可以省略 chapters", (t) => {
   const directory = createCollectionDirectory(t);

@@ -4,7 +4,7 @@ import { root } from "../../lib/fs.mjs";
 import {
   isCollectionVisible,
   normalizeCollectionVisibility,
-} from "../../custom/collection-visibility.mjs";
+} from "./visibility.mjs";
 
 const cardSizes = new Set(["small", "medium", "big"]);
 const producerIds = new Set([

@@ -1,4 +1,4 @@
-import { createPushboxTerrainPicker } from "./pushbox-terrain.mjs";
+import { createPushboxTerrainPicker } from "./terrain.mjs";
 
 export const SOKOBAN_WIN_RULE = {
   type: "push-goal",

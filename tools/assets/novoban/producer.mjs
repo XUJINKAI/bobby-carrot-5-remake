@@ -1,10 +1,10 @@
 import fs from "node:fs";
 import path from "node:path";
-import { parseNovoban } from "../../custom/novoban-pushbox.mjs";
+import { parseNovoban } from "./parser.mjs";
 
 export function prepareNovobanCollection(repositoryRoot) {
   const text = fs.readFileSync(
-    path.join(repositoryRoot, "tools/custom/NOVOBAN.txt"),
+    path.join(repositoryRoot, "tools/assets/novoban/NOVOBAN.txt"),
     "utf8",
   );
   const levels = parseNovoban(text);

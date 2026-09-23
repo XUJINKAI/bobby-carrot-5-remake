@@ -24,11 +24,11 @@ const taskIds = [
 
 test("资产 watcher 把来源变化映射到独立 Producer 分组", () => {
   assert.deepEqual(
-    affectedAssetTasks("tools/custom/LOMA.txt", taskIds),
+    affectedAssetTasks("tools/assets/loma/LOMA.txt", taskIds),
     ["publish.collection.loma-pushbox"],
   );
   assert.deepEqual(
-    affectedAssetTasks("tools/custom/pushbox-terrain.mjs", taskIds),
+    affectedAssetTasks("tools/assets/pushbox/terrain.mjs", taskIds),
     [
       "publish.collection.loma-pushbox",
       "publish.collection.novoban-pushbox",
@@ -39,7 +39,7 @@ test("资产 watcher 把来源变化映射到独立 Producer 分组", () => {
     ["publish.collection.engine-lab"],
   );
   assert.deepEqual(
-    affectedAssetTasks("tools/custom/robo2/overrides/mirrorL.png", taskIds),
+    affectedAssetTasks("tools/assets/robo2/overrides/mirrorL.png", taskIds),
     ["publish.art.robo2"],
   );
   assert.deepEqual(

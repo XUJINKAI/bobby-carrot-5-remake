@@ -5,8 +5,8 @@ import {
   ROBO2_GAMEPLAY_IMAGE_FILES,
   ROBO2_GAMEPLAY_IMAGE_IDS,
 } from "../../../engine/dist/public.js";
-import { ROBO2_SOURCE_FILE } from "../../../tools/custom/robo2/archive.mjs";
-import { buildRobo2Art } from "../../../tools/custom/robo2/extract.mjs";
+import { ROBO2_SOURCE_FILE } from "../../../tools/assets/robo2/archive.mjs";
+import { buildRobo2Art } from "../../../tools/assets/robo2/art.mjs";
 
 test("Robo 2 素材源提供十张激光机关 gameplay 图片", () => {
   const art = buildRobo2Art(fs.readFileSync(ROBO2_SOURCE_FILE));
@@ -44,13 +44,13 @@ test("Robo 2 素材源提供十张激光机关 gameplay 图片", () => {
         height: 14,
       },
       {
-        source: "tools/custom/robo2/overrides/mirrorL.png",
+        source: "tools/assets/robo2/overrides/mirrorL.png",
         file: "mirrorL.png",
         width: 32,
         height: 48,
       },
       {
-        source: "tools/custom/robo2/overrides/mirrorR.png",
+        source: "tools/assets/robo2/overrides/mirrorR.png",
         file: "mirrorR.png",
         width: 32,
         height: 48,
@@ -83,7 +83,7 @@ test("Robo 2 素材源提供十张激光机关 gameplay 图片", () => {
   );
   for (const file of ["mirrorL.png", "mirrorR.png"]) {
     const override = fs.readFileSync(
-      new URL(`../../../tools/custom/robo2/overrides/${file}`, import.meta.url),
+      new URL(`../../../tools/assets/robo2/overrides/${file}`, import.meta.url),
     );
     assert.ok(art.find((asset) => asset.file === file)?.content.equals(override));
   }

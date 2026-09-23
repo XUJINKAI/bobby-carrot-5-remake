@@ -1,11 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { parseMapDocument } from "@bobby/model";
-import { convertRobo2Level } from "../../../tools/custom/robo2/convert.mjs";
+import { convertRobo2Level } from "../../../tools/assets/robo2/convert.mjs";
 import {
   decodeRobo2LevelRecord,
   ROBO2_TILE_CODE,
-} from "../../../tools/custom/robo2/format.mjs";
+} from "../../../tools/assets/robo2/format.mjs";
 
 test("Robo 2 第一关按模拟器坐标和炮口方向转换", () => {
   const decoded = decodeRobo2LevelRecord(

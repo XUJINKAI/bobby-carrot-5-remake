@@ -1,4 +1,4 @@
-import { convertXsbBoard, isXsbBoardLine } from "./sokoban-xsb.mjs";
+import { convertXsbBoard, isXsbBoardLine } from "../pushbox/xsb.mjs";
 
 const author = "François Marques";
 

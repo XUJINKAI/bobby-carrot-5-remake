@@ -5,7 +5,7 @@ import { parseLevelMap } from "@bobby/model";
 import {
   buildRobo2Maps,
   ROBO2_SOURCE_FILE,
-} from "../../../tools/custom/robo2/generate.mjs";
+} from "../../../tools/assets/robo2/generate.mjs";
 import { World } from "../../support/engine/World.mjs";
 
 test("Robo 2 的 25 张地图都能启动为有效 Engine World", () => {

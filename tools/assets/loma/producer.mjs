@@ -1,10 +1,10 @@
 import fs from "node:fs";
 import path from "node:path";
-import { parseLoma } from "../../custom/loma-pushbox.mjs";
+import { parseLoma } from "./parser.mjs";
 
 export function prepareLomaCollection(repositoryRoot) {
   const text = fs.readFileSync(
-    path.join(repositoryRoot, "tools/custom/LOMA.txt"),
+    path.join(repositoryRoot, "tools/assets/loma/LOMA.txt"),
     "utf8",
   );
   const levels = parseLoma(text);

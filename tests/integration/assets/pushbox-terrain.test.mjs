@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { createPushboxTerrainPicker } from "../../../tools/custom/pushbox-terrain.mjs";
-import { convertXsbBoard } from "../../../tools/custom/sokoban-xsb.mjs";
+import { createPushboxTerrainPicker } from "../../../tools/assets/pushbox/terrain.mjs";
+import { convertXsbBoard } from "../../../tools/assets/pushbox/xsb.mjs";
 
 test("Pushbox 每张地图固定选一个主题，各类素材随主题保持一致", () => {
   const table = {

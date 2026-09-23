@@ -3,7 +3,7 @@ import test from "node:test";
 import {
   isCollectionVisible,
   normalizeCollectionVisibility,
-} from "../../../tools/custom/collection-visibility.mjs";
+} from "../../../tools/assets/collection/visibility.mjs";
 import {
   visibleCollectionSummaries,
 } from "../../../tools/assets/collection/manifest.mjs";

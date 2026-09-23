@@ -1,6 +1,5 @@
 import fs from "node:fs";
 import path from "node:path";
-import { buildRobo2Art } from "../custom/robo2/extract.mjs";
 import { root } from "../lib/fs.mjs";
 import {
   adaptBc5,
@@ -28,6 +27,7 @@ import {
   extractRobo2,
   prepareAdaptedRobo2Collection,
 } from "./robo2/producer.mjs";
+import { buildRobo2Art } from "./robo2/art.mjs";
 
 export function createAssetRegistry({
   repositoryRoot = root,
@@ -91,11 +91,7 @@ export function createAssetRegistry({
       inputs: [
         ...collectionPublisherInputs(),
         "tools/assets/loma",
-        "tools/custom/LOMA.txt",
-        "tools/custom/loma-pushbox.mjs",
-        "tools/custom/sokoban-xsb.mjs",
-        "tools/custom/pushbox-terrain.mjs",
-        "tools/custom/pushbox-terrain-table.mjs",
+        "tools/assets/pushbox",
         "model/src",
       ],
       collection: requiredCollection(collectionByProducer, "loma"),
@@ -110,11 +106,7 @@ export function createAssetRegistry({
       inputs: [
         ...collectionPublisherInputs(),
         "tools/assets/novoban",
-        "tools/custom/NOVOBAN.txt",
-        "tools/custom/novoban-pushbox.mjs",
-        "tools/custom/sokoban-xsb.mjs",
-        "tools/custom/pushbox-terrain.mjs",
-        "tools/custom/pushbox-terrain-table.mjs",
+        "tools/assets/pushbox",
         "model/src",
       ],
       collection: requiredCollection(collectionByProducer, "novoban"),
@@ -138,7 +130,7 @@ export function createAssetRegistry({
       inputs: [
         ...collectionPublisherInputs(),
         "tools/assets/collection/directory-producer.mjs",
-        "tools/custom/collection-source.mjs",
+        "tools/assets/collection/directory-source.mjs",
         collection.source,
         "model/src",
       ],
@@ -227,9 +219,9 @@ function createRobo2ExtractTask(repositoryRoot) {
     id: "robo2.extract",
     dependencies: [],
     inputs: [
-      "tools/custom/robo2/robo2.jar",
-      "tools/custom/robo2/archive.mjs",
-      "tools/custom/robo2/format.mjs",
+      "tools/assets/robo2/robo2.jar",
+      "tools/assets/robo2/archive.mjs",
+      "tools/assets/robo2/format.mjs",
       "tools/assets/robo2/producer.mjs",
       "tools/lib/zip-patch.mjs",
     ],
@@ -246,7 +238,7 @@ function createRobo2DecodeTask(repositoryRoot) {
     id: "robo2.decode",
     dependencies: ["robo2.extract"],
     inputs: [
-      "tools/custom/robo2/format.mjs",
+      "tools/assets/robo2/format.mjs",
       "tools/assets/robo2/producer.mjs",
     ],
     outputs: ["tmp/assets/robo2/decoded"],
@@ -263,7 +255,7 @@ function createRobo2AdaptTask(repositoryRoot) {
     dependencies: ["robo2.decode"],
     inputs: [
       "model/src",
-      "tools/custom/robo2/convert.mjs",
+      "tools/assets/robo2/convert.mjs",
       "tools/assets/robo2/producer.mjs",
     ],
     outputs: ["tmp/assets/robo2/adapted"],
@@ -279,13 +271,13 @@ function createRobo2ArtTask(repositoryRoot, stagingRoot) {
     id: "publish.art.robo2",
     dependencies: ["robo2.extract"],
     inputs: [
-      "tools/custom/robo2/extract.mjs",
-      "tools/custom/robo2/overrides",
+      "tools/assets/robo2/art.mjs",
+      "tools/assets/robo2/overrides",
     ],
     outputs: ["assets/art/robo2"],
     run() {
       const jar = fs.readFileSync(
-        path.join(repositoryRoot, "tools/custom/robo2/robo2.jar"),
+        path.join(repositoryRoot, "tools/assets/robo2/robo2.jar"),
       );
       const art = buildRobo2Art(jar);
       publishDirectoryAtomically({

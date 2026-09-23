@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { discoverCollectionSource } from "../../custom/collection-source.mjs";
+import { discoverCollectionSource } from "./directory-source.mjs";
 
 export function prepareDirectoryCollection(collection, repositoryRoot) {
   const directory = path.join(repositoryRoot, collection.source);

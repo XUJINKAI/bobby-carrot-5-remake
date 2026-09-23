@@ -2,9 +2,11 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import test from "node:test";
 import { root } from "../../../tools/lib/fs.mjs";
-import { parseLoma } from "../../../tools/custom/loma-pushbox.mjs";
+import { parseLoma } from "../../../tools/assets/loma/parser.mjs";
 
-const levels = parseLoma(fs.readFileSync(`${root}/tools/custom/LOMA.txt`, "utf8"));
+const levels = parseLoma(
+  fs.readFileSync(`${root}/tools/assets/loma/LOMA.txt`, "utf8"),
+);
 
 test("LOMA source parses into 137 maps grouped by the ten source patterns", () => {
   assert.equal(levels.length, 137);

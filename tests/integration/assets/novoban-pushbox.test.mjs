@@ -2,17 +2,17 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import test from "node:test";
 import { root } from "../../../tools/lib/fs.mjs";
-import { parseNovoban } from "../../../tools/custom/novoban-pushbox.mjs";
+import { parseNovoban } from "../../../tools/assets/novoban/parser.mjs";
 import {
   createPushboxTerrainPicker,
-} from "../../../tools/custom/pushbox-terrain.mjs";
+} from "../../../tools/assets/pushbox/terrain.mjs";
 import {
   countPushGoals,
   SOKOBAN_WIN_RULE,
-} from "../../../tools/custom/sokoban-xsb.mjs";
+} from "../../../tools/assets/pushbox/xsb.mjs";
 
 const levels = parseNovoban(
-  fs.readFileSync(`${root}/tools/custom/NOVOBAN.txt`, "utf8"),
+  fs.readFileSync(`${root}/tools/assets/novoban/NOVOBAN.txt`, "utf8"),
 );
 
 test("Novoban source parses into the original 50-level order", () => {

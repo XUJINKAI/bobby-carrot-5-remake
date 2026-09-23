@@ -4,7 +4,7 @@ import {
   decodeRobo2LevelRecord,
   encodeRobo2LevelRecord,
   ROBO2_TILE_CODE,
-} from "../../../tools/custom/robo2/format.mjs";
+} from "../../../tools/assets/robo2/format.mjs";
 
 const FIRST_LEVEL_HEX =
   "0606031111111008011000b127000110a001111111";

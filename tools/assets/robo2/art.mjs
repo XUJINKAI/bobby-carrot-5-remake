@@ -46,7 +46,7 @@ function archiveArt(source, file, width, height) {
 function overrideArt(file, width, height) {
   return Object.freeze({
     kind: "override",
-    source: `tools/custom/robo2/overrides/${file}`,
+    source: `tools/assets/robo2/overrides/${file}`,
     file,
     width,
     height,

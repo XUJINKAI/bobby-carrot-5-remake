@@ -8,7 +8,7 @@ import {
 import {
   PUSHBOX_TERRAIN_SEED,
   PUSHBOX_TERRAIN_TABLE,
-} from "./pushbox-terrain-table.mjs";
+} from "./terrain-table.mjs";
 
 const categories = ["ground", "boundary", "obstacle"];
 

@@ -7,13 +7,7 @@ const watchedRoots = [
   "model/src",
   "original/official-hd",
   "tools/original",
-  "tools/custom",
-  "tools/assets/collections.json",
-  "tools/assets/bc5",
-  "tools/assets/collection",
-  "tools/assets/loma",
-  "tools/assets/novoban",
-  "tools/assets/robo2",
+  "tools/assets",
   "custom-maps",
 ];
 
@@ -96,7 +90,11 @@ export function affectedAssetTasks(relativePath, taskIds) {
     }
   };
 
-  if (relative === "tools/assets/collections.json") {
+  if (
+    relative === "tools/assets/collections.json" ||
+    relative === "tools/assets/collection/manifest.mjs" ||
+    relative === "tools/assets/collection/visibility.mjs"
+  ) {
     selected.add("assets.all");
   } else if (
     relative.startsWith("original/official-hd/") ||
@@ -120,36 +118,25 @@ export function affectedAssetTasks(relativePath, taskIds) {
       !id.endsWith(".original") && !id.endsWith(".robo2"),
     );
   } else if (
-    relative === "tools/custom/robo2/robo2.jar" ||
-    relative === "tools/custom/robo2/archive.mjs" ||
-    relative === "tools/custom/robo2/format.mjs" ||
-    relative.startsWith("tools/assets/robo2/")
+    relative === "tools/assets/robo2/robo2.jar" ||
+    relative === "tools/assets/robo2/archive.mjs" ||
+    relative === "tools/assets/robo2/producer.mjs"
   ) {
     add("robo2.extract");
-  } else if (relative === "tools/custom/robo2/convert.mjs") {
+  } else if (relative === "tools/assets/robo2/format.mjs") {
+    add("robo2.decode");
+  } else if (relative === "tools/assets/robo2/convert.mjs") {
     add("robo2.adapt");
   } else if (
-    relative === "tools/custom/robo2/extract.mjs" ||
-    relative.startsWith("tools/custom/robo2/overrides/")
+    relative === "tools/assets/robo2/art.mjs" ||
+    relative.startsWith("tools/assets/robo2/overrides/")
   ) {
     add("publish.art.robo2");
-  } else if (
-    relative === "tools/custom/LOMA.txt" ||
-    relative === "tools/custom/loma-pushbox.mjs" ||
-    relative.startsWith("tools/assets/loma/")
-  ) {
+  } else if (relative.startsWith("tools/assets/loma/")) {
     add("publish.collection.loma-pushbox");
-  } else if (
-    relative === "tools/custom/NOVOBAN.txt" ||
-    relative === "tools/custom/novoban-pushbox.mjs" ||
-    relative.startsWith("tools/assets/novoban/")
-  ) {
+  } else if (relative.startsWith("tools/assets/novoban/")) {
     add("publish.collection.novoban-pushbox");
-  } else if (
-    relative === "tools/custom/sokoban-xsb.mjs" ||
-    relative === "tools/custom/pushbox-terrain.mjs" ||
-    relative === "tools/custom/pushbox-terrain-table.mjs"
-  ) {
+  } else if (relative.startsWith("tools/assets/pushbox/")) {
     add(
       "publish.collection.loma-pushbox",
       "publish.collection.novoban-pushbox",

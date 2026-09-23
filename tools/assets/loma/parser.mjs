@@ -1,4 +1,4 @@
-import { convertXsbBoard, isXsbBoardLine } from "./sokoban-xsb.mjs";
+import { convertXsbBoard, isXsbBoardLine } from "../pushbox/xsb.mjs";
 
 const expectedAuthorCounts = new Map([
   ["Aymeric du Peloux", 11], ["François Marques", 10], ["David Skinner", 30],
