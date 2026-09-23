@@ -15,6 +15,26 @@ test("首页 GitHub 入口在移动端保持外露", () => {
   assert.equal(repositoryAction().collapse, "keep");
 });
 
+test("首页与顶栏共用模式文案，并把 Explore 排在 Adventure 前", () => {
+  const chrome = readFileSync(
+    new URL("../../../web/src/app/pageChrome.ts", import.meta.url),
+    "utf8",
+  );
+  const home = readFileSync(
+    new URL("../../../web/src/pages/home/HomeModeMenu.vue", import.meta.url),
+    "utf8",
+  );
+
+  assert.ok(
+    chrome.indexOf('webT("nav.explore")')
+      < chrome.indexOf('webT("nav.adventure")'),
+  );
+  assert.match(home, /webT\("nav\.explore"\)/);
+  assert.match(home, /webT\("nav\.adventure"\)/);
+  assert.match(home, /webT\("nav\.editor"\)/);
+  assert.doesNotMatch(home, /webT\("home\.(?:explore|adventure|editor)"\)/);
+});
+
 test("首页开发状态在移动端保持显示", () => {
   const source = readFileSync(
     new URL("../../../web/src/shell/ShellIdentity.vue", import.meta.url),

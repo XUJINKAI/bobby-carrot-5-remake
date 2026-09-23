@@ -22,7 +22,7 @@ const catalog = {
   "nav.home": "Home",
   "nav.adventure": "Adventure",
   "nav.explore": "Explore",
-  "nav.editor": "Editor",
+  "nav.editor": "Map Editor",
   "context.import": "Import Data",
   "context.embed": "Embed",
   "common.close": "Close",

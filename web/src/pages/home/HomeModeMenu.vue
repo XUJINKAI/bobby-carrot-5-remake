@@ -93,7 +93,7 @@ onBeforeUnmount(() => {
         href="/explore"
         @click.prevent="emit('navigate', '/explore')"
       >
-        <strong>{{ webT("home.explore") }}</strong>
+        <strong>{{ webT("nav.explore") }}</strong>
         <span>{{ webT("home.exploreDescription") }}</span>
         <AppIcon name="next" />
       </a>
@@ -102,7 +102,7 @@ onBeforeUnmount(() => {
         href="/adventure"
         @click.prevent="emit('navigate', '/adventure')"
       >
-        <strong>{{ webT("home.adventure") }}</strong>
+        <strong>{{ webT("nav.adventure") }}</strong>
         <span>{{ webT("home.adventureDescription") }}</span>
         <AppIcon name="next" />
       </a>
@@ -111,7 +111,7 @@ onBeforeUnmount(() => {
         href="/edit"
         @click.prevent="emit('navigate', '/edit')"
       >
-        <strong>{{ webT("home.editor") }}</strong>
+        <strong>{{ webT("nav.editor") }}</strong>
         <span>{{ webT("home.editorDescription") }}</span>
         <AppIcon name="next" />
       </a>
