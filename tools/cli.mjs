@@ -29,7 +29,7 @@ if (group === "original") {
   if (action === "examples") {
     // Storage 示例通过 Adventure 的正式 parser 生成，避免手写镜像漂移。
     run(tscCommand(), ["-b", "model", "adventure", "--force"]);
-    run(process.execPath, ["tools/model/examples.mjs", ...process.argv.slice(4)]);
+    run(process.execPath, ["tools/schema/examples.mjs", ...process.argv.slice(4)]);
   } else throw new Error("用法：node tools/cli.mjs schema examples [entity-type]");
 } else if (group === "assets") {
   // 资产模块在加载时就导入 Model；冷启动必须先生成其包入口。

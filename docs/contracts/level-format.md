@@ -262,10 +262,6 @@ Engine 返回同结构的目标结果树。叶子包含 `completed` 和可选 `r
 HUD 与 Editor 使用 Engine 的结果和可用性定义。关卡最终完成时机仍由 World
 运动与生命周期开关裁决。
 
-现有 schemaVersion 1 开发期地图若保存了标准 `collect-all / fill-all / reach`
-条件，可以运行 `node tools/model/convert-goals.mjs 输入.json 输出.json` 显式转换。
-自定义 selector 条件会报告准确路径，须逐项确定目标语义。
-
 ## MapDocument
 
 网站运行时地图位于：
