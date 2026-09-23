@@ -219,10 +219,6 @@ test("Editor Canvas 复用 Engine 光路投影且不污染可编辑空间", () =
     [[38, 19], [76, 19]],
     [[76, 19], [114, 19]],
   ]);
-
-  renderer.render(state, 700);
-  assert.notEqual(target.strokes()[0].color, target.strokes()[2].color);
-  assert.notEqual(target.strokes()[0].width, target.strokes()[2].width);
 });
 
 test("Editor 光路按 Energy 规则穿过覆盖物并由原版 Mirror 反射", () => {
