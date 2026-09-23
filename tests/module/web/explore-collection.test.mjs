@@ -31,6 +31,15 @@ test("Explore collection 文案按 ID 本地化并支持可选 tag", () => {
   assert.match(exploreTabs, /tag: collectionTag\(collection\.id\)/);
   assert.match(exploreTabs, /v-if="collection\.tag"/);
   assert.match(exploreTabs, /justify-content:\s*center/);
+  assert.match(exploreTabs, /min-height:\s*70px/);
+  assert.match(
+    exploreTabs,
+    /\.explore-tab-name\s*\{[^}]*font-size:\s*1\.1rem[^}]*font-weight:\s*800/s,
+  );
+  assert.match(
+    exploreTabs,
+    /\.explore-tab-tag\s*\{[^}]*font-size:\s*0\.74rem[^}]*font-weight:\s*700/s,
+  );
 });
 
 test("Explore chapter 只显示 collection 提供的展示名称", () => {

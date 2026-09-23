@@ -40,8 +40,8 @@ Engine Game Runtime
 Bobby Carrot 5 Remake
 ├── Home
 │   ├── Welcome Demo
-│   ├── Adventure 入口
 │   ├── Explore 入口
+│   ├── Adventure 入口
 │   ├── Editor 入口
 │   ├── Import Custom Map
 │   └── 项目介绍
@@ -75,15 +75,15 @@ Home 是产品入口页，承担品牌展示和快速进入模式两项职责。
 │ [icon] Bobby Carrot 5 Remake                       ♫  ⚙     │
 │                                                             │
 │ ┌────────────────────────┐  ┌─────────────────────────────┐ │
-│ │ Welcome Demo           │  │ Adventure                   │ │
-│ │ Engine Game Stage      │  │ Explore                     │ │
+│ │ Welcome Demo           │  │ Explore                     │ │
+│ │ Engine Game Stage      │  │ Adventure                   │ │
 │ │ 操作提示 / 摇杆        │  │ Editor                      │ │
 │ └────────────────────────┘  │ Import Custom Map           │ │
 │                             └─────────────────────────────┘ │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-Adventure 是主入口，Explore 和 Editor 是并列的次级入口，Import Custom Map 是明确的文件入口。
+首页模式入口依次为 Explore、Adventure、Editor 和 Import Custom Map，使用同级卡片样式；Import Custom Map 是明确的文件入口。
 
 首页顶栏的 GitHub 仓库入口在桌面和移动端都保持外露，Settings 与 Help 在移动端进入更多菜单。
 

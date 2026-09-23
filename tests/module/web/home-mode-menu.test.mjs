@@ -20,6 +20,10 @@ test("首页模式入口使用同级样式并说明各自能力", async () => {
 
   assert.doesNotMatch(menu, /home-mode-card primary/);
   assert.doesNotMatch(menu, /\.home-mode-card\.primary/);
+  assert.ok(
+    menu.indexOf('href="/explore"') < menu.indexOf('href="/adventure"'),
+    "首页应先显示 Explore，再显示 Adventure",
+  );
   assert.match(menu, /\.home-embed-link\s*\{[\s\S]*font-size: 0\.86rem/);
   assert.match(
     zhCatalog,

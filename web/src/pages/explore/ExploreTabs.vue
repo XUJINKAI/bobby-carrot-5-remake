@@ -46,7 +46,7 @@ const localizedCollections = computed(() =>
 <style scoped>
 .explore-tabs {
   display: flex;
-  gap: 8px;
+  gap: 10px;
   margin-bottom: 20px;
   overflow-x: auto;
   padding: 4px 0;
@@ -57,26 +57,27 @@ const localizedCollections = computed(() =>
   flex-direction: column;
   justify-content: center;
   border: 3px solid var(--bc-panel-border);
-  border-radius: 5px;
+  border-radius: 7px;
   background: var(--bc-panel);
   color: #fff;
   flex: 0 0 auto;
-  min-height: 58px;
-  padding: 7px 16px;
+  min-width: 132px;
+  min-height: 65px;
+  padding: 10px 20px;
   text-decoration: none;
 }
 
 .explore-tab-name {
-  font-size: 1rem;
+  font-size: 1.1rem;
   font-weight: 800;
-  line-height: 1.15;
+  line-height: 1.1;
 }
 
 .explore-tab-tag {
-  margin-top: 3px;
+  margin-top: 6px;
   color: color-mix(in srgb, currentColor 72%, transparent);
-  font-size: 0.68rem;
-  font-weight: 650;
+  font-size: 0.74rem;
+  font-weight: 700;
   line-height: 1.1;
 }
 
