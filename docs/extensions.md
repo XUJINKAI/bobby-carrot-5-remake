@@ -34,7 +34,7 @@ Novoban 和 LOMA 的 XSB 地图由 `tools/custom/sokoban-xsb.mjs` 转换。地�
 
 光束在红、蓝、紫三色之间连续循环，并同步改变线宽。每门激光炮以稳定 `sourceId` 派生自己的相位、周期和粗细节奏，同一门激光炮经过镜面反射后的全部线段始终保持一致；这组参数只属于 Presentation，不进入地图格式、World 状态或伤害判定。Editor 复用 Engine Visual 的固定相位显示光路，地图 revision 改变时才重画底图；动态渐变只在 Play Test 和正式 gameplay 中播放。
 
-地图加载时已经覆盖 Bobby 起点的既有光路提供一次离开机会；Bobby 主动进入光路，或机关变化后光路重新投影到 Bobby 所在格，都会触发死亡。这个边界允许 Robo 2 来源地图保留原始起点，同时不削弱运行中的激光危险。
+地图加载时已经覆盖 Bobby 起点的既有光路提供一次离开机会；Bobby 主动进入光路，或机关变化后光路重新投影到 Bobby 所在格，都会触发死亡。重新投影按来源炮与语义线段增量同步 Runtime Entity，未变化的线段保留 Entity identity；新出现的线段覆盖静止 Bobby 时立即结算，覆盖正在进入该格的 Bobby 时仍在移动进度 `0.8` 结算。这个边界允许 Robo 2 来源地图保留原始起点，同时不削弱运行中的激光危险。
 
 `laser-mirror` 是可推动的双面反射镜，使用必填 `variant` 区分两种对角线。`slash`（`/`）按 `up ↔ right`、`down ↔ left` 反射；`backslash`（`\`）按 `up ↔ left`、`down ↔ right` 反射。光路通过镜面后继续投影，循环光路在相同格子和入射方向再次出现时终止追踪。
 
@@ -42,7 +42,7 @@ Novoban 和 LOMA 的 XSB 地图由 `tools/custom/sokoban-xsb.mjs` 转换。地�
 
 激光命中另一个 `laser-cannon` 时摧毁目标激光炮及其光束。若两门激光炮互相照射，它们在同一个 World tick 中一起摧毁；其它激光炮随后按更新后的阻挡布局重新投影。
 
-激光炮和所属光束在 gameplay 中立即销毁，并把销毁前的完整光路快照交给 Presentation。表现层以 `100ms` 为一相位，按亮、灭、亮完成三次明暗切换后消失，总时长 `300ms`。激光炮与光束始终使用同一相位；进入光束格后由非阻塞 RuntimeAction 等待到移动进度 `0.8`，结算时再次确认光束仍存在，因此遗留表现不参与碰撞或伤害。
+激光炮和所属光束在 gameplay 中立即销毁，并把销毁前的完整光路快照交给 Presentation。表现层以 `100ms` 为一相位，按亮、灭、亮完成三次明暗切换后消失，总时长 `300ms`。激光炮与光束始终使用同一相位；进入光束格后由非阻塞 RuntimeAction 等待到移动进度 `0.8`，Action 归属来源炮，结算时再次确认当前语义光路仍包含接触线段，因此光束 Entity 同步和遗留表现都不会改变伤害时点。
 
 `laser-bomb` 是使用 Robo 2 `bombTickTick.png` 原图的可推动阻挡对象。激光命中后先播放六帧 `bombExplode.png` 起爆动画；这个 `600ms` 阶段不销毁炸弹或周围对象。起爆完成时才结算中心以及上、右、下、左相邻格中的 `laser-stone`、`laser-mirror` 和 `laser-cannon`，并在十字范围播放六帧 `explosion.png`。对角格、其它 Entity 与 Surface 保持不变，不可摧毁的阻挡对象会在边界截去对应方向的爆炸范围。
 

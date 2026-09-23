@@ -65,7 +65,7 @@ const laserCannonBehavior: Behavior = {
         candidate.id === projection.sourceId
       );
       if (!cannon) continue;
-      replaceOwnedBeam(commands, cannon, [], projection.segments);
+      reconcileOwnedBeam(commands, cannon, [], projection.segments);
     }
     commands.spawn({
       type: RuntimeEntityTypeId.LASER_SYSTEM,
@@ -95,40 +95,34 @@ const laserBeamHazard: Behavior = {
       return;
     }
     if (!query.entityHasFact(actor.id, "player")) return;
-    const motion = movement?.motion;
-    const delayMs = motion
-      ? Math.max(
-          0,
-          motion.durationMs * LASER_BEAM_DAMAGE_PROGRESS -
-            motion.durationMs * motion.progress,
-        )
-      : 0;
-    if (delayMs === 0) {
-      commands.downActor(actor.id, "laser-beam");
-      return;
-    }
-    commands.startAction({
-      kind: LASER_BEAM_CONTACT_ACTION,
-      ownerEntityId: self.entity.id,
-      state: {
-        actorId: actor.id,
-        delayMs,
-        elapsedMs: 0,
-      },
-    });
+    const sourceId = numericState(beam.state?.sourceId);
+    const source = query.entity(sourceId);
+    if (source?.type !== MapEntityTypeId.LASER_CANNON) return;
+    startLaserContact(
+      commands,
+      actor.id,
+      source.id,
+      beamKey(beam),
+      movement?.motion,
+    );
   },
 };
 
 const laserBeamContactAction: RuntimeActionDefinition = {
   kind: LASER_BEAM_CONTACT_ACTION,
   update({ action, time, query, commands }) {
-    const beamId = action.ownerEntityId;
+    const sourceId = action.ownerEntityId;
     const actorId = numericState(action.state.actorId);
-    const beam = beamId === undefined ? undefined : query.entity(beamId);
+    const contactSegmentKey = stringState(action.state.segmentKey);
+    const source = sourceId === undefined ? undefined : query.entity(sourceId);
     const actor = query.entity(actorId);
     if (
-      beam?.type !== RuntimeEntityTypeId.LASER_BEAM ||
-      beam.state?.terminal === true ||
+      source?.type !== MapEntityTypeId.LASER_CANNON ||
+      source.state?.destroying === true ||
+      !contactSegmentKey ||
+      !traceCannonRay(query, source).some((segment) =>
+        !segment.terminal && segmentKey(segment) === contactSegmentKey
+      ) ||
       !actor ||
       !query.entityHasFact(actor.id, "player")
     ) {
@@ -350,7 +344,14 @@ export function laserBeamSpawnSpecs(
   sourceId: EntityId,
   ray: readonly LaserRaySegment[],
 ): readonly EntitySpawnSpec[] {
-  return ray.map((segment) => ({
+  return ray.map((segment) => laserBeamSpawnSpec(sourceId, segment));
+}
+
+function laserBeamSpawnSpec(
+  sourceId: EntityId,
+  segment: LaserRaySegment,
+): EntitySpawnSpec {
+  return {
     type: RuntimeEntityTypeId.LASER_BEAM,
     x: segment.cell.x,
     y: segment.cell.y,
@@ -362,7 +363,7 @@ export function laserBeamSpawnSpecs(
         ? { outgoingDirection: segment.outgoingDirection }
         : {}),
     },
-  }));
+  };
 }
 
 function updateLaserSystem(
@@ -404,13 +405,13 @@ function updateLaserSystem(
   for (const cannon of cannons) {
     if (destroyedCannons.has(cannon.id)) continue;
     const ray = rays.get(cannon.id) ?? [];
-    const changed = replaceOwnedBeam(
+    const addedSegments = reconcileOwnedBeam(
       commands,
       cannon,
       beamsBySource.get(cannon.id) ?? [],
       ray,
     );
-    if (changed) downActorsInRay(query, commands, ray);
+    contactActorsInAddedSegments(query, commands, cannon, addedSegments);
   }
   commands.setState(system.id, { topologySignature });
 }
@@ -499,50 +500,108 @@ function collectLaserTargets(
   }
 }
 
-function replaceOwnedBeam(
+function reconcileOwnedBeam(
   commands: WorldCommandApi,
   cannon: Readonly<EntityInstance>,
   current: readonly Readonly<EntityInstance>[],
   ray: readonly LaserRaySegment[],
-): boolean {
-  if (beamMatches(current, ray)) return false;
-  for (const beam of current) {
-    commands.destroy(beam.id);
+): readonly LaserRaySegment[] {
+  const unmatchedByKey = new Map<string, Readonly<EntityInstance>[]>();
+  for (const beam of [...current].sort((left, right) => left.id - right.id)) {
+    const key = beamKey(beam);
+    const unmatched = unmatchedByKey.get(key) ?? [];
+    unmatched.push(beam);
+    unmatchedByKey.set(key, unmatched);
   }
-  for (const beam of laserBeamSpawnSpecs(cannon.id, ray))
-    commands.spawn(beam);
-  return true;
+
+  const addedSegments: LaserRaySegment[] = [];
+  for (const segment of ray) {
+    const key = segmentKey(segment);
+    const unmatched = unmatchedByKey.get(key);
+    if (unmatched?.length) {
+      unmatched.shift();
+      if (unmatched.length === 0) unmatchedByKey.delete(key);
+      continue;
+    }
+    commands.spawn(laserBeamSpawnSpec(cannon.id, segment));
+    addedSegments.push(segment);
+  }
+  for (const unmatched of unmatchedByKey.values()) {
+    for (const beam of unmatched) commands.destroy(beam.id);
+  }
+  return addedSegments;
 }
 
-function downActorsInRay(
+function contactActorsInAddedSegments(
   query: WorldQueryApi,
   commands: WorldCommandApi,
-  ray: readonly LaserRaySegment[],
+  cannon: Readonly<EntityInstance>,
+  addedSegments: readonly LaserRaySegment[],
 ): void {
-  const actorIds = new Set<number>();
-  for (const segment of ray) {
+  const contactedActors = new Set<EntityId>();
+  for (const segment of addedSegments) {
     if (segment.terminal) continue;
     for (const presence of query.presencesAt(segment.cell)) {
-      if (presence.facts.includes("player")) actorIds.add(presence.entityId);
+      if (
+        contactedActors.has(presence.entityId) ||
+        !presence.facts.includes("player")
+      ) {
+        continue;
+      }
+      contactedActors.add(presence.entityId);
+      const motion = query.motionForEntity(presence.entityId);
+      const enteringMotion = motion?.status === "running" &&
+          sameCell(motion.to, segment.cell)
+        ? motion
+        : undefined;
+      startLaserContact(
+        commands,
+        presence.entityId,
+        cannon.id,
+        segmentKey(segment),
+        enteringMotion,
+      );
     }
   }
-  for (const actorId of [...actorIds].sort((left, right) => left - right)) {
+}
+
+interface LaserContactMotion {
+  readonly durationMs: number;
+  readonly progress: number;
+}
+
+function startLaserContact(
+  commands: WorldCommandApi,
+  actorId: EntityId,
+  sourceId: EntityId,
+  contactSegmentKey: string,
+  motion: LaserContactMotion | undefined,
+): void {
+  const delayMs = motion
+    ? Math.max(
+        0,
+        motion.durationMs * LASER_BEAM_DAMAGE_PROGRESS -
+          motion.durationMs * motion.progress,
+      )
+    : 0;
+  if (delayMs === 0) {
     commands.downActor(actorId, "laser-beam");
+    return;
   }
+  commands.startAction({
+    kind: LASER_BEAM_CONTACT_ACTION,
+    ownerEntityId: sourceId,
+    state: {
+      actorId,
+      segmentKey: contactSegmentKey,
+      delayMs,
+      elapsedMs: 0,
+    },
+  });
 }
 
 function compareEntityIds(left: EntityId, right: EntityId): number {
   return left - right;
-}
-
-function beamMatches(
-  beams: readonly Readonly<EntityInstance>[],
-  ray: readonly LaserRaySegment[],
-): boolean {
-  if (beams.length !== ray.length) return false;
-  const beamKeys = beams.map(beamKey).sort();
-  const rayKeys = ray.map(segmentKey).sort();
-  return beamKeys.every((key, index) => key === rayKeys[index]);
 }
 
 function laserTargetStopsAt(
@@ -591,6 +650,10 @@ function cellKey(cell: CellPosition): string {
   return `${cell.x},${cell.y}`;
 }
 
+function sameCell(left: CellPosition, right: CellPosition): boolean {
+  return left.x === right.x && left.y === right.y;
+}
+
 function directionVector(direction: Direction): CellPosition {
   return {
     up: { x: 0, y: -1 },
@@ -614,6 +677,10 @@ function directionState(value: unknown): Direction | null {
 
 function numericState(value: unknown): number {
   return typeof value === "number" && Number.isFinite(value) ? value : 0;
+}
+
+function stringState(value: unknown): string | null {
+  return typeof value === "string" ? value : null;
 }
 
 interface LaserFlashSegment {
