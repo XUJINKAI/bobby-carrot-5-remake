@@ -7,6 +7,12 @@ import {
   formatGameplayCountdown,
   formatGameplayElapsed,
 } from "../../../engine/dist/ui/GameplayHudView.js";
+import { GAMEPLAY_UI_Z_INDEX } from "../../../engine/dist/ui/gameplayMount.js";
+
+test("Engine Gameplay UI 按摇杆、对话、HUD 顺序分层", () => {
+  assert.ok(GAMEPLAY_UI_Z_INDEX.joystick > GAMEPLAY_UI_Z_INDEX.dialog);
+  assert.ok(GAMEPLAY_UI_Z_INDEX.dialog > GAMEPLAY_UI_Z_INDEX.hud);
+});
 
 function emptyInventory() {
   return {

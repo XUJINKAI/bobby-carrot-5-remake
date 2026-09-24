@@ -14,6 +14,13 @@ export function resolveGameplayMount(
 
 export const GAMEPLAY_RIGHT_INSET_CSS_VAR = "--engine-gameplay-right-inset";
 
+/** Engine gameplay mount 内部的固定层级；产品级模态层由宿主在更高层管理。 */
+export const GAMEPLAY_UI_Z_INDEX = {
+  hud: 5,
+  dialog: 6,
+  joystick: 7,
+} as const;
+
 export interface GameplayRightInsetLease {
   set(pixels: number): void;
   release(): void;

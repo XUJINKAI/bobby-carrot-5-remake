@@ -1,7 +1,10 @@
 import { MapEntityTypeId, originalTileVisual } from "@bobby/model";
 import type { ImageManager, LoadedImageSlice } from "../image/ImageManager.js";
 import { ORIGINAL_GAMEPLAY_HUD_SLICE_IDS } from "../image/OriginalGameplayImages.js";
-import { GAMEPLAY_RIGHT_INSET_CSS_VAR } from "./gameplayMount.js";
+import {
+  GAMEPLAY_RIGHT_INSET_CSS_VAR,
+  GAMEPLAY_UI_Z_INDEX,
+} from "./gameplayMount.js";
 import type { GameplayHudModel } from "./GameplayHudModel.js";
 
 export interface GameplayHudViewOptions {
@@ -66,7 +69,7 @@ export class GameplayHudView {
     Object.assign(this.root.style, {
       position: "absolute",
       inset: "0",
-      zIndex: "5",
+      zIndex: String(GAMEPLAY_UI_Z_INDEX.hud),
       pointerEvents: "none",
       color: "#eef5ef",
       opacity: "0.68",

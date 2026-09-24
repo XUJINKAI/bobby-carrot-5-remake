@@ -569,6 +569,17 @@ async function interactiveDataExchangeSmoke(url) {
     await delay(50);
   const importButton = document.querySelector('[data-home-import]');
   if (!importButton) throw new Error('missing import button');
+  const screenControl = document.querySelector('.home-demo-screen-control');
+  let joystick = null;
+  for (let i = 0; i < 120 && !joystick; i += 1) {
+    await delay(50);
+    joystick = document.querySelector('.engine-screen-joystick-layer');
+  }
+  if (!screenControl || !joystick) throw new Error('missing home demo joystick');
+  if (joystick.hidden) {
+    screenControl.click();
+    for (let i = 0; i < 120 && joystick.hidden; i += 1) await delay(50);
+  }
   importButton.click();
   const source = {
     game: ${JSON.stringify(BC5R_GAME_ID)},
@@ -583,6 +594,14 @@ async function interactiveDataExchangeSmoke(url) {
     textarea = document.querySelector('.home-import-dialog textarea');
   }
   if (!textarea) throw new Error('missing import textarea');
+  const activation = document.querySelector('.engine-screen-joystick-activation');
+  if (!activation) throw new Error('missing joystick activation area');
+  const rect = activation.getBoundingClientRect();
+  const hit = document.elementFromPoint(
+    rect.left + rect.width / 2,
+    rect.top + rect.height / 2,
+  );
+  const dialogCoversJoystick = Boolean(hit?.closest('.home-import-dialog-layer'));
   textarea.value = JSON.stringify(source);
   textarea.dispatchEvent(new Event('input', { bubbles: true }));
   const open = document.querySelector(
@@ -595,6 +614,7 @@ async function interactiveDataExchangeSmoke(url) {
   const confirmation = document.querySelector('.import-save-confirmation');
   return JSON.stringify({
     confirmation: confirmation?.textContent?.includes('Explore Save') ?? false,
+    dialogCoversJoystick,
   });
 })()
 `;
@@ -602,7 +622,7 @@ async function interactiveDataExchangeSmoke(url) {
   if (result.status !== 0)
     throw new Error(`Interactive home import smoke failed: ${result.stderr || result.stdout}`);
   const payload = lastJsonLine(result.stdout);
-  if (!payload.confirmation)
+  if (!payload.confirmation || !payload.dialogCoversJoystick)
     throw new Error(`Unexpected home import smoke result: ${JSON.stringify(payload)}`);
 }
 
