@@ -31,7 +31,7 @@ export function nextLeafRoute(
     )
   );
   return direction
-    ? { direction, movement: leafMovementFor(query, entity) }
+    ? { direction, movement: leafMovementFor(query, entity, direction) }
     : null;
 }
 
@@ -66,11 +66,13 @@ export function leafRouteAwaitsMovingSupportSettlement(
 export function leafMovementFor(
   query: WorldQueryApi,
   entity: Readonly<EntityInstance>,
+  direction: Direction,
 ): ActionMovementCadence {
-  return query.hasSelectorAt(entity.anchor, {
-    kind: "type",
-    value: MapEntityTypeId.WATERFALL,
-  })
+  return direction === "down" &&
+      query.hasSelectorAt(entity.anchor, {
+        kind: "type",
+        value: MapEntityTypeId.WATERFALL,
+      })
     ? LEAF_MOVEMENT.waterfall
     : LEAF_MOVEMENT.normal;
 }
