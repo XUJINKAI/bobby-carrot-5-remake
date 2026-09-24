@@ -1,0 +1,83 @@
+{
+  "formatVersion": 1,
+  "meta": {
+    "id": "robo2/06",
+    "url": "https://bc5r.xujinkai.net/explore/play/robo2/06",
+    "note": ""
+  },
+  "runtime": {
+    "worldHz": 60,
+    "bobbyLocomotion": {
+      "moveMs": 350
+    }
+  },
+  "finalState": {
+    "status": "won",
+    "moves": 49,
+    "position": [
+      {
+        "x": 6,
+        "y": 1
+      }
+    ],
+    "elapsedMs": 47467,
+    "counters": {},
+    "completedConditions": [
+      {
+        "type": "exit"
+      }
+    ]
+  },
+  "endTick": 2848,
+  "frames": [
+    {"tick":73,"groups":[{"intents":[{"type":"move","direction":"left"}]}]},
+    {"tick":99,"groups":[{"intents":[{"type":"move","direction":"down"}]}]},
+    {"tick":128,"groups":[{"intents":[{"type":"move","direction":"down"}]}]},
+    {"tick":155,"groups":[{"intents":[{"type":"move","direction":"left"}]}]},
+    {"tick":179,"groups":[{"intents":[{"type":"move","direction":"up"}]}]},
+    {"tick":204,"groups":[{"intents":[{"type":"move","direction":"up"}]}]},
+    {"tick":228,"groups":[{"intents":[{"type":"move","direction":"up"}]}]},
+    {"tick":254,"groups":[{"intents":[{"type":"move","direction":"up"}]}]},
+    {"tick":285,"groups":[{"intents":[{"type":"move","direction":"up"}]}]},
+    {"tick":332,"groups":[{"intents":[{"type":"move","direction":"left"}]}]},
+    {"tick":355,"groups":[{"intents":[{"type":"move","direction":"up"}]}]},
+    {"tick":376,"groups":[{"intents":[{"type":"move","direction":"right"}]}]},
+    {"tick":409,"groups":[{"intents":[{"type":"move","direction":"right"}]}]},
+    {"tick":463,"groups":[{"intents":[{"type":"move","direction":"down"}]}]},
+    {"tick":1259,"groups":[{"intents":[{"type":"move","direction":"up"}]}]},
+    {"tick":1295,"groups":[{"intents":[{"type":"move","direction":"up"}]}]},
+    {"tick":1353,"groups":[{"intents":[{"type":"move","direction":"down"}]}]},
+    {"tick":1380,"groups":[{"intents":[{"type":"move","direction":"right"}]}]},
+    {"tick":1407,"groups":[{"intents":[{"type":"move","direction":"right"}]}]},
+    {"tick":1435,"groups":[{"intents":[{"type":"move","direction":"down"}]}]},
+    {"tick":1459,"groups":[{"intents":[{"type":"move","direction":"left"}]}]},
+    {"tick":1488,"groups":[{"intents":[{"type":"move","direction":"left"}]}]},
+    {"tick":1524,"groups":[{"intents":[{"type":"move","direction":"down"}]}]},
+    {"tick":1554,"groups":[{"intents":[{"type":"move","direction":"up"}]}]},
+    {"tick":1579,"groups":[{"intents":[{"type":"move","direction":"left"}]}]},
+    {"tick":1607,"groups":[{"intents":[{"type":"move","direction":"down"}]}]},
+    {"tick":1662,"groups":[{"intents":[{"type":"move","direction":"left"}]}]},
+    {"tick":1684,"groups":[{"intents":[{"type":"move","direction":"up"}]}]},
+    {"tick":1710,"groups":[{"intents":[{"type":"move","direction":"up"}]}]},
+    {"tick":1735,"groups":[{"intents":[{"type":"move","direction":"up"}]}]},
+    {"tick":1765,"groups":[{"intents":[{"type":"move","direction":"up"}]}]},
+    {"tick":2089,"groups":[{"intents":[{"type":"move","direction":"down"}]}]},
+    {"tick":2124,"groups":[{"intents":[{"type":"move","direction":"down"}]}]},
+    {"tick":2150,"groups":[{"intents":[{"type":"move","direction":"left"}]}]},
+    {"tick":2369,"groups":[{"intents":[{"type":"move","direction":"right"}]}]},
+    {"tick":2396,"groups":[{"intents":[{"type":"move","direction":"down"}]}]},
+    {"tick":2422,"groups":[{"intents":[{"type":"move","direction":"left"}]}]},
+    {"tick":2475,"groups":[{"intents":[{"type":"move","direction":"right"}]}]},
+    {"tick":2513,"groups":[{"intents":[{"type":"move","direction":"up"}]}]},
+    {"tick":2563,"groups":[{"intents":[{"type":"move","direction":"up"}]}]},
+    {"tick":2591,"groups":[{"intents":[{"type":"move","direction":"up"}]}]},
+    {"tick":2617,"groups":[{"intents":[{"type":"move","direction":"left"}]}]},
+    {"tick":2643,"groups":[{"intents":[{"type":"move","direction":"up"}]}]},
+    {"tick":2669,"groups":[{"intents":[{"type":"move","direction":"right"}]}]},
+    {"tick":2703,"groups":[{"intents":[{"type":"move","direction":"right"}]}]},
+    {"tick":2732,"groups":[{"intents":[{"type":"move","direction":"up"}]}]},
+    {"tick":2760,"groups":[{"intents":[{"type":"move","direction":"up"}]}]},
+    {"tick":2795,"groups":[{"intents":[{"type":"move","direction":"up"}]}]},
+    {"tick":2826,"groups":[{"intents":[{"type":"move","direction":"left"}]}]}
+  ]
+}
