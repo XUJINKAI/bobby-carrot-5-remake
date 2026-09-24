@@ -4,7 +4,12 @@ import {
   type EditorMap,
   type LevelValidationIssue,
 } from "@bobby/editor";
-import type { AudioBackend, ImageManager } from "@bobby/engine";
+import {
+  resolveLevelMusic,
+  type AudioBackend,
+  type ImageManager,
+} from "@bobby/engine";
+import type { MapMusic } from "@bobby/model";
 import type { GameSession } from "../../runtime/game/createGameSession.js";
 import { createGameSession } from "../../runtime/game/createGameSession.js";
 import { bindGameplayShell } from "../../runtime/game/bindGameplayShell.js";
@@ -57,6 +62,7 @@ const screenControlEnabled = ref(
   getWebSettings().controls.screenControlEnabled,
 );
 const runtimeIssue = ref<LevelValidationIssue | null>(null);
+const musicPreviewing = ref(false);
 const issues = computed(() =>
   validateEditorLevel(
     page.snapshot.value.level as EditorMap,
@@ -114,6 +120,7 @@ watch(
 );
 
 async function togglePlay(): Promise<void> {
+  stopMusicPreview();
   if (!props.playRoute) {
     openPlayRoute();
     return;
@@ -252,6 +259,7 @@ function stopPlay(): void {
   session?.destroy();
   session = null;
   props.audio.stopMusic();
+  musicPreviewing.value = false;
   page.playing.value = false;
   syncShell();
 }
@@ -278,6 +286,29 @@ function importLevel(level: EditorMap): void {
 }
 function markDownloaded(): void {
   page.document.markSaved();
+}
+
+function setMusic(music: MapMusic | undefined): void {
+  stopMusicPreview();
+  page.setMusic(music);
+}
+
+function toggleMusicPreview(): void {
+  if (musicPreviewing.value) {
+    stopMusicPreview();
+    return;
+  }
+  const track = resolveLevelMusic(page.snapshot.value.level.music);
+  if (!track) return;
+  props.audio.resume();
+  props.audio.playMusic(track);
+  musicPreviewing.value = true;
+}
+
+function stopMusicPreview(): void {
+  if (!musicPreviewing.value) return;
+  props.audio.stopMusic();
+  musicPreviewing.value = false;
 }
 
 function selectAll(): void {
@@ -447,6 +478,7 @@ function isMobileEditor(): boolean {
       :deletion-target-index="page.deletionTargetIndex.value"
       :rules="page.rules.value"
       :rule-mode="page.ruleMode.value"
+      :music-previewing="musicPreviewing"
       :palette="page.palette"
       :palette-size="page.paletteSize.value"
       :left-open="leftOpen"
@@ -487,7 +519,8 @@ function isMobileEditor(): boolean {
       @max-moves="page.setMaxMoves"
       @max-time="page.setMaxTimeSeconds"
       @metadata-field="page.setMetadataValue"
-      @music="page.setMusic"
+      @music="setMusic"
+      @music-preview-toggle="toggleMusicPreview"
       @play-restart="restartPlay"
       @play-stop="exitPlayRoute"
     />

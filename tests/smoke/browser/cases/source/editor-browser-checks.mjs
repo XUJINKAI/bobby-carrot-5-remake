@@ -276,6 +276,7 @@ async function verifyLevelControls(cdp, sessionId) {
     sessionId,
     `(() => ({
       music: document.querySelector('[data-editor-music]')?.value,
+      musicPreview: document.querySelector('[data-editor-music-preview]')?.textContent?.trim(),
       modes: [...document.querySelectorAll('[data-rule-mode]')]
         .map((button) => button.getAttribute('data-rule-mode')),
       active: document.querySelector('[data-rule-mode][aria-pressed="true"]')
@@ -283,12 +284,33 @@ async function verifyLevelControls(cdp, sessionId) {
     }))()`,
   );
   if (
-    initial.music !== "" ||
+    initial.music !== "random" ||
+    initial.musicPreview !== "Preview" ||
     JSON.stringify(initial.modes) !== JSON.stringify(["any", "all"]) ||
     initial.active !== "all"
   ) {
     throw new Error(`Editor Level 控件初始状态异常：${JSON.stringify(initial)}`);
   }
+  await cdp.evaluate(
+    sessionId,
+    "document.querySelector('[data-editor-music-preview]')?.click(); true",
+  );
+  await waitForBrowserState(async () =>
+    (await cdp.evaluate(
+      sessionId,
+      "document.querySelector('[data-editor-music-preview]')?.textContent?.trim()",
+    )) === "Stop",
+  );
+  await cdp.evaluate(
+    sessionId,
+    "document.querySelector('[data-editor-music-preview]')?.click(); true",
+  );
+  await waitForBrowserState(async () =>
+    (await cdp.evaluate(
+      sessionId,
+      "document.querySelector('[data-editor-music-preview]')?.textContent?.trim()",
+    )) === "Preview",
+  );
   await cdp.evaluate(
     sessionId,
     `(() => {
