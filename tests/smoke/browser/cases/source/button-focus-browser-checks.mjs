@@ -7,6 +7,14 @@ export async function verifyButtonFocusPolicy(cdp, sessionId) {
   const initialOutline = await cdp.evaluate(sessionId,
     "getComputedStyle(document.activeElement).outlineStyle");
   if (initialOutline !== "none") throw new Error("页面初次加载显示了焦点框");
+  await waitForBrowserState(async () => cdp.evaluate(sessionId,
+    "document.querySelector('.home-demo-panel .engine-screen-joystick-layer')?.hidden === false"));
+  await cdp.evaluate(sessionId, "document.querySelector('.home-demo-screen-control').click(); true");
+  await waitForBrowserState(async () => cdp.evaluate(sessionId,
+    "document.querySelector('.home-demo-panel .engine-screen-joystick-layer')?.hidden === true && document.querySelector('.home-demo-screen-control')?.getAttribute('aria-pressed') === 'false'"));
+  await cdp.evaluate(sessionId, "document.querySelector('.home-demo-screen-control').click(); true");
+  await waitForBrowserState(async () => cdp.evaluate(sessionId,
+    "document.querySelector('.home-demo-panel .engine-screen-joystick-layer')?.hidden === false && document.querySelector('.home-demo-screen-control')?.getAttribute('aria-pressed') === 'true'"));
   const initial = await cdp.evaluate(sessionId, `(() => {
     document.querySelector('#music').focus();
     return {
@@ -29,7 +37,34 @@ export async function verifyButtonFocusPolicy(cdp, sessionId) {
   const demoOutline = await cdp.evaluate(sessionId,
     "getComputedStyle(document.querySelector('.home-demo-panel')).outlineStyle");
   if (demoOutline === "none") throw new Error("Demo 焦点未标记整个面板");
+  await press(cdp, sessionId, "ArrowDown", 40);
+  if (await cdp.evaluate(sessionId,
+    "getComputedStyle(document.querySelector('.home-demo-panel')).outlineStyle") === "none")
+    throw new Error("Tab 进入 Demo 后方向键游玩丢失了焦点框");
+  const demoPoint = await cdp.evaluate(sessionId, `(() => {
+    const rect = document.querySelector('.home-demo-panel canvas').getBoundingClientRect();
+    return { x: rect.left + rect.width / 4, y: rect.top + rect.height / 4 };
+  })()`);
+  await cdp.send("Input.dispatchMouseEvent", {
+    type: "mousePressed", button: "left", clickCount: 1, ...demoPoint,
+  }, sessionId);
+  await cdp.send("Input.dispatchMouseEvent", {
+    type: "mouseReleased", button: "left", clickCount: 1, ...demoPoint,
+  }, sessionId);
+  await holdDirection(cdp, sessionId, "ArrowDown", 40);
+  if (!(await cdp.evaluate(sessionId, "document.activeElement?.matches('.home-demo-panel canvas')")))
+    throw new Error("鼠标进入 Demo 后方向键游玩丢失了画布焦点");
+  if (await cdp.evaluate(sessionId,
+    "getComputedStyle(document.querySelector('.home-demo-panel')).outlineStyle") !== "none")
+    throw new Error("鼠标进入 Demo 后方向键游玩显示了焦点框");
+  await press(cdp, sessionId, "Tab", 9, { modifiers: 8 });
+  await press(cdp, sessionId, "Tab", 9, { modifiers: 8 });
+  if (!(await cdp.evaluate(sessionId, "document.activeElement?.matches('.home-demo-panel canvas')")) ||
+    await cdp.evaluate(sessionId,
+      "getComputedStyle(document.querySelector('.home-demo-panel')).outlineStyle") === "none")
+    throw new Error("Shift+Tab 重新进入 Demo 未显示面板焦点框");
   await cdp.evaluate(sessionId, "document.activeElement.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerType: 'touch' })); document.activeElement.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerType: 'touch' })); true");
+  await press(cdp, sessionId, "ArrowDown", 40);
   if (await cdp.evaluate(sessionId,
     "getComputedStyle(document.querySelector('.home-demo-panel')).outlineStyle") !== "none")
     throw new Error("触屏操作后 Demo 焦点框仍然显示");

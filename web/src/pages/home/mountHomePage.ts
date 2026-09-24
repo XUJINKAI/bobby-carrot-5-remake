@@ -12,10 +12,7 @@ import type { GameSession } from "../../runtime/game/createGameSession.js";
 import { resolveMapDocument } from "../../services/catalog/exploreMaps.js";
 import type { ImportedData } from "../../services/import/importPipeline.js";
 import { configureShell } from "../../shell/shellBridge.js";
-import {
-  getWebSettings,
-  updateWebSettings,
-} from "../../storage/settingsStorage.js";
+import { updateWebSettings } from "../../storage/settingsStorage.js";
 import HomePage from "./HomePage.vue";
 import { createHomeDemoLevel } from "./homeDemoLevel.js";
 import type { HomeViewState } from "./types.js";
@@ -51,8 +48,7 @@ export async function renderHome(
   });
   syncShell();
   app.replaceChildren();
-  const initialScreenControlEnabled =
-    getWebSettings().controls.screenControlEnabled;
+  const initialScreenControlEnabled = true;
   const view = reactive<HomeViewState>({
     demoStatus: webT("home.demoMove"),
     demoResult: null,

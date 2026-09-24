@@ -596,6 +596,9 @@ async function interactiveDataExchangeSmoke(url) {
   if (!textarea) throw new Error('missing import textarea');
   const activation = document.querySelector('.engine-screen-joystick-activation');
   if (!activation) throw new Error('missing joystick activation area');
+  // 窄视口中的 Demo 位于首屏下方，覆盖检查必须使用可见区域内的摇杆坐标。
+  activation.scrollIntoView({ block: 'center', behavior: 'instant' });
+  await new Promise((resolve) => requestAnimationFrame(resolve));
   const rect = activation.getBoundingClientRect();
   const hit = document.elementFromPoint(
     rect.left + rect.width / 2,

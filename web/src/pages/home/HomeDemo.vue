@@ -74,7 +74,7 @@ function reportCanvas(element: unknown): void {
 </template>
 
 <style scoped>
-:global(html[data-keyboard-focus="true"] .home-demo-panel:has(canvas:focus-visible)) {
+:global(html[data-tab-focus="true"] .home-demo-panel:has(canvas:focus-visible)) {
   outline: 3px solid var(--bc-highlight);
   outline-offset: 3px;
 }

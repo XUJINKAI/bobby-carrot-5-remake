@@ -36,6 +36,7 @@ export class WebKeyboard {
       keydown: (event) => this.page?.arrow(event) ?? false,
     });
     root.ownerDocument.documentElement.dataset.keyboardFocus = "false";
+    root.ownerDocument.documentElement.dataset.tabFocus = "false";
     root.ownerDocument.addEventListener("keydown", this.observeKeyboardFocus, true);
     root.ownerDocument.addEventListener("pointerdown", this.onPointerDown, true);
     root.ownerDocument.addEventListener("focusin", this.onFocusIn, true);
@@ -110,6 +111,7 @@ export class WebKeyboard {
     this.runtime.destroy();
     this.root.ownerDocument.removeEventListener("keydown", this.observeKeyboardFocus, true);
     delete this.root.ownerDocument.documentElement.dataset.keyboardFocus;
+    delete this.root.ownerDocument.documentElement.dataset.tabFocus;
     this.root.ownerDocument.removeEventListener("pointerdown", this.onPointerDown, true);
     this.root.ownerDocument.removeEventListener("focusin", this.onFocusIn, true);
   }
@@ -120,13 +122,17 @@ export class WebKeyboard {
 
   /** 只记录交互方式，不处理命令；捕获阶段先于原生焦点和页面动作。 */
   private readonly observeKeyboardFocus = (event: KeyboardEvent): void => {
-    if (!event.isComposing && !event.ctrlKey && !event.metaKey && !event.altKey &&
-        ["Tab", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Enter", " "].includes(event.key))
+    if (event.isComposing || event.ctrlKey || event.metaKey || event.altKey) return;
+    // 游戏方向键只操作画布；需要区分 Tab 导航与指针进入后的键盘游玩。
+    if (event.key === "Tab")
+      this.root.ownerDocument.documentElement.dataset.tabFocus = "true";
+    if (["Tab", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Enter", " "].includes(event.key))
       this.root.ownerDocument.documentElement.dataset.keyboardFocus = "true";
   };
 
   private readonly onPointerDown = (event: PointerEvent): void => {
     this.root.ownerDocument.documentElement.dataset.keyboardFocus = "false";
+    this.root.ownerDocument.documentElement.dataset.tabFocus = "false";
     const target = event.target instanceof Element
       ? event.target.closest<HTMLElement>("button, a[href], canvas") : null;
     if (!target) return;
