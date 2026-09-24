@@ -130,6 +130,45 @@ test("Cloud Grid does not count as support occupancy", () => {
   assert.deepEqual(world.entity(cloud.id).anchor, { x: 2, y: 0 });
 });
 
+test("Wind 推动的同向 Cloud 在前方 Cloud 停下后保持分格", () => {
+  const world = new World(
+    {
+      schemaVersion: 1,
+      width: 4,
+      height: 1,
+      entities: [
+        ...[0, 1, 2, 3].map((x) => ({
+          type: MapEntityTypeId.STARFIELD,
+          x,
+          y: 0,
+          variant: "large-star",
+        })),
+        { type: MapEntityTypeId.WINDMILL, x: 0, y: 0, direction: "right" },
+        {
+          type: MapEntityTypeId.WIND_SWITCH,
+          x: 0,
+          y: 0,
+          direction: "right",
+          active: true,
+        },
+        { type: MapEntityTypeId.CLOUD, x: 1, y: 0, color: "red" },
+        { type: MapEntityTypeId.CLOUD, x: 2, y: 0, color: "purple" },
+      ],
+    },
+    { motionDurationMs: 350 },
+  );
+  const clouds = world.query.entitiesMatching({
+    kind: "type",
+    value: MapEntityTypeId.CLOUD,
+  });
+
+  for (let tick = 1; tick <= 50; tick += 1)
+    world.update({ tick, stepMs: 50 });
+
+  assert.deepEqual(world.entity(clouds[0].id).anchor, { x: 2, y: 0 });
+  assert.deepEqual(world.entity(clouds[1].id).anchor, { x: 3, y: 0 });
+});
+
 test("Cloud 可经过天空中的 Carrot，并在转向受阻后沿原方向续行", () => {
   const entities = [];
   for (let y = 0; y < 4; y += 1) {
@@ -222,6 +261,42 @@ test("初始位于潮流上的 Leaf 自动漂流，普通水面上的 Leaf 保�
   world.update({ tick: 2, stepMs: CLOUD_MOVEMENT.cellMs });
   assert.deepEqual(world.entity(leaves[0].id).anchor, { x: 2, y: 0 });
   assert.deepEqual(world.entity(leaves[1].id).anchor, { x: 1, y: 1 });
+});
+
+test("Tide 推动的 Leaf 会被刚刚停下的同向 Leaf 阻挡", () => {
+  const world = new World(
+    {
+      schemaVersion: 1,
+      width: 4,
+      height: 1,
+      entities: [
+        ...[0, 1, 2, 3].map((x) => ({
+          type: MapEntityTypeId.WATER,
+          x,
+          y: 0,
+        })),
+        { type: MapEntityTypeId.TIDE, x: 0, y: 0, direction: "right" },
+        { type: MapEntityTypeId.LEAF, x: 0, y: 0, stackOrder: 1 },
+        { type: MapEntityTypeId.LEAF, x: 1, y: 0, stackOrder: 1 },
+        { type: MapEntityTypeId.BOBBY, x: 0, y: 0, stackOrder: 2 },
+      ],
+    },
+    { motionDurationMs: 350 },
+  );
+  const actor = world.query.entitiesWithFact("player")[0];
+  const leaves = world.query.entitiesMatching({
+    kind: "type",
+    value: MapEntityTypeId.LEAF,
+  });
+
+  assert.equal(move(world, actor.id, "right").moves[0].moved, true);
+  for (let tick = 1; tick <= 50; tick += 1)
+    world.update({ tick, stepMs: 50 });
+
+  assert.deepEqual(world.entity(leaves[0].id).anchor, { x: 2, y: 0 });
+  assert.deepEqual(world.entity(leaves[1].id).anchor, { x: 3, y: 0 });
+  assert.equal(world.entity(leaves[0].id).state?.moving, false);
+  assert.equal(world.entity(leaves[1].id).state?.moving, false);
 });
 
 test("Leaf 顺流改向受阻时沿原方向续行", () => {

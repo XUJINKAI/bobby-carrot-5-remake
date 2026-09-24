@@ -23,8 +23,13 @@ export function movingSupportOccupiedAt(
     if (
       occupant.type === MapEntityTypeId.CLOUD ||
       occupant.type === MapEntityTypeId.LEAF
-    )
-      return occupant.direction !== direction || occupant.state?.moving !== true;
+    ) {
+      // Action 在 motion 到达后的同一 tick 才会结算停止状态。这里必须读取
+      // WorldMotion，否则后车会在该阶段窗口里把已经到站的载体误判为仍在前进。
+      const occupantMotion = query.motionForEntity(occupant.id);
+      return occupant.direction !== direction ||
+        occupantMotion?.status !== "running";
+    }
     return false;
   });
 }

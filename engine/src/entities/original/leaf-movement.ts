@@ -21,15 +21,7 @@ export function nextLeafRoute(
   entity: Readonly<EntityInstance>,
   launchDirection: Direction | null,
 ): LeafRoute | null {
-  const currentDirection = directionState(entity.direction) ?? "right";
-  const preferredDirection =
-    launchDirection ?? leafDirectionAt(query, entity.anchor, currentDirection);
-
-  // 只有正在漂流的 Leaf 才能在水流改向受阻后沿原方向续行。
-  // 停在 Tide / Waterfall 上时必须等待水流前方清空，不能把默认朝向当成退路。
-  const candidates = entity.state?.moving === true
-    ? [preferredDirection, currentDirection]
-    : [preferredDirection];
+  const candidates = leafRouteCandidates(query, entity, launchDirection);
   const direction = candidates.find((candidate) =>
     canEnterLeafDomain(
       query,
@@ -41,6 +33,34 @@ export function nextLeafRoute(
   return direction
     ? { direction, movement: leafMovementFor(query, entity) }
     : null;
+}
+
+/**
+ * motion 到达与 Action 结算位于同一 tick 的不同阶段。前方载体正在
+ * 决定续行或停止时，Leaf 需要保留 Action 到下一 tick 再重试。
+ */
+export function leafRouteAwaitsMovingSupportSettlement(
+  query: WorldQueryApi,
+  entity: Readonly<EntityInstance>,
+  launchDirection: Direction | null,
+): boolean {
+  return leafRouteCandidates(query, entity, launchDirection).some(
+    (direction) =>
+      query.presencesAt(addDirection(entity.anchor, direction)).some(
+        (presence) => {
+          if (presence.entityId === entity.id) return false;
+          const occupant = query.entity(presence.entityId);
+          if (
+            occupant?.type !== MapEntityTypeId.CLOUD &&
+            occupant?.type !== MapEntityTypeId.LEAF
+          )
+            return false;
+          return occupant.direction === direction &&
+            occupant.state?.moving === true &&
+            query.motionForEntity(occupant.id)?.status !== "running";
+        },
+      ),
+  );
 }
 
 export function leafMovementFor(
@@ -93,6 +113,22 @@ function leafDirectionAt(
     })
       ? "down"
       : fallback);
+}
+
+function leafRouteCandidates(
+  query: WorldQueryApi,
+  entity: Readonly<EntityInstance>,
+  launchDirection: Direction | null,
+): readonly Direction[] {
+  const currentDirection = directionState(entity.direction) ?? "right";
+  const preferredDirection =
+    launchDirection ?? leafDirectionAt(query, entity.anchor, currentDirection);
+
+  // 只有正在漂流的 Leaf 才能在水流改向受阻后沿原方向续行。
+  // 停在 Tide / Waterfall 上时必须等待水流前方清空，不能把默认朝向当成退路。
+  return entity.state?.moving === true
+    ? [preferredDirection, currentDirection]
+    : [preferredDirection];
 }
 
 function canEnterLeafDomain(

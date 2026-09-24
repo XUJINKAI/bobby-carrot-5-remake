@@ -32,6 +32,7 @@ import {
 } from "./cloud-movement.js";
 import {
   hasLeafAutomaticCurrent,
+  leafRouteAwaitsMovingSupportSettlement,
   leafMovementFor,
   nextLeafRoute,
   tideDirectionAt,
@@ -141,7 +142,13 @@ export const movingEntityAction: RuntimeActionDefinition = {
       return stopMovingEntity(
         entity,
         commands,
-        hasAutomaticCurrent(query, entity),
+        hasAutomaticCurrent(query, entity) ||
+          (!isCloud(entity.type) &&
+            leafRouteAwaitsMovingSupportSettlement(
+              query,
+              entity,
+              directionState(entity.state?.launchDirection),
+            )),
       );
 
     if (!consumeActionDeadline(action, route.movement.cellMs, time.stepMs / 2))
