@@ -21,13 +21,13 @@ const { tasks } = createAssetRegistry({
 test("资产 watcher 把来源变化映射到独立 Producer 分组", () => {
   assert.deepEqual(
     affectedAssetTasks("tools/assets/loma/LOMA.txt", tasks),
-    ["publish.collection.loma-pushbox"],
+    ["publish.collection.loma"],
   );
   assert.deepEqual(
     affectedAssetTasks("tools/assets/pushbox/terrain.mjs", tasks),
     [
-      "publish.collection.loma-pushbox",
-      "publish.collection.novoban-pushbox",
+      "publish.collection.loma",
+      "publish.collection.novoban",
     ],
   );
   assert.deepEqual(

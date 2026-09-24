@@ -2,6 +2,7 @@ const catalog = {
   "adventure.homeAria": "冒险模式",
   "adventure.homeTitle": "冒险模式",
   "adventure.continue": "继续冒险",
+  "adventure.continueLevel": "继续关卡: {id}",
   "adventure.chapters": "章节选择",
   "adventure.chaptersDescription": "选择章节与已解锁关卡",
   "adventure.shop": "海狸商店",

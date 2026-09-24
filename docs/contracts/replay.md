@@ -190,7 +190,7 @@ Adventure 的 Save、动态地图补丁与宿主交互不在此标记的保证�
 ## Web 录制入口
 
 Explore 游戏页底栏左侧提供“录制”入口。“重新开始并录制”从关卡正式起点创建一次 take，
-录制期间同一按钮可以手动停止；关卡通关时自动结束。停止后立即调用无头 Runner 从 tick 0
+录制期间同一按钮可以手动停止；关卡通关或失败时自动结束。停止后立即调用无头 Runner 从 tick 0
 复跑到录制终点。
 Replay JSON 可以直接编辑，并可从起点播放、暂停、停止、跳转起点或终点、复制到剪贴板或
 下载为 Engine 测试 fixture；“加载内置过法”按当前关卡读取仓库 fixture。在 `npm run dev`
@@ -207,8 +207,8 @@ Engine 的常驻 `timeScale`，同时作用于普通游戏、
 终点快进仍逐 Tick 发布沿途 `WorldEvent`，以保持独立关卡的事件观察顺序。
 
 录制面板的打开状态和 Replay 录制状态都不改变 GamePage 的终局流程。通关与失败照常播放
-角色过渡、终局音乐并显示结果卡片；通关事件在获胜 Tick 写入 Recorder 后自动停止 take 并
-生成 Replay JSON。失败状态保留 take，允许用户手动决定是否保存这段调试输入。
+角色过渡、终局音乐并显示结果卡片；终局事件在对应 Tick 写入 Recorder 后自动停止 take 并
+生成 Replay JSON。
 
 关卡进入表现期间 WorldClock 不推进，键盘、指针、摇杆和外部移动意图会被丢弃，
 因此进入动画不增加 Replay tick、`elapsedMs` 或输入 frame。Replay 播放从同一个
@@ -232,4 +232,6 @@ Explore 游戏页使用 `Tab` 开关录制面板；焦点位于链接、按钮�
 加载并验证。
 
 桌面布局为面板保留固定宽度并缩小 Canvas 可用区域；窄屏布局将面板悬浮在游戏区域内，
-保持 Canvas 尺寸。面板开关引起可用区域变化时，Web 必须触发 Engine viewport resize。
+保持 Canvas 尺寸。窄屏开始录制后自动收起面板，录制停止后自动展开；桌面端保持用户选择的
+面板状态。录制期间底栏录制图标使用红色。面板开关引起可用区域变化时，Web 必须触发
+Engine viewport resize。

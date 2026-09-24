@@ -73,7 +73,7 @@ test("collection catalogs use manifest IDs and keep optional tag parity", async 
     }
   }
   assert.equal(
-    loaded["collections.loma-pushbox.tag"],
+    loaded["collections.loma.tag"],
     "推箱子",
   );
   assert.equal(

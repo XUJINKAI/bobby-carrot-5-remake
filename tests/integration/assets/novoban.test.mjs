@@ -67,7 +67,7 @@ test("Novoban XSB plus keeps push-goal surface under Bobby", () => {
     (entity) => entity.type === "bobby",
   );
   const terrain = createPushboxTerrainPicker(
-    `novoban-pushbox/${surrounded.id}`,
+    `novoban/${surrounded.id}`,
   );
   assert.deepEqual(bobby, { type: "bobby", x: 3, y: 3, stackOrder: 2 });
   assert.deepEqual(

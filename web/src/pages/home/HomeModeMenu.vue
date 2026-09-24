@@ -134,39 +134,42 @@ onBeforeUnmount(() => {
       <span>{{ webT("home.embed") }}</span>
       <AppIcon name="next" />
     </a>
-    <div
-      v-if="importOpen"
-      class="home-import-dialog-layer"
-      role="presentation"
-      @pointerdown="backdropDismiss.pointerDown"
-      @pointerup="backdropDismiss.pointerUp"
-      @pointercancel="backdropDismiss.pointerCancel"
-    >
-      <section class="home-import-dialog" role="dialog" aria-modal="true" :aria-label="webT('home.importDialog')">
-        <header>
-          <strong>{{ webT("home.importDialog") }}</strong>
-          <button type="button" :aria-label="webT('common.close')" @click="closeImport">
-            <AppIcon name="close" />
-          </button>
-        </header>
-        <ImportSaveConfirmation
-          v-if="pendingSave"
-          :data="pendingSave"
-          @confirm="confirmSave"
-          @cancel="cancelPendingSave"
-        />
-        <DataExchangePanel
-          v-else
-          class="home-data-exchange"
-          :serialize="serializeImport"
-          :parse="parseImport"
-          :placeholder="webT('home.importPlaceholder')"
-          filename="bc5r-data"
-          :toolbar="toolbar"
-          @import="acceptImport"
-        />
-      </section>
-    </div>
+    <Teleport to="body">
+      <div
+        v-if="importOpen"
+        class="home-import-dialog-layer"
+        role="presentation"
+        @pointerdown="backdropDismiss.pointerDown"
+        @pointerup="backdropDismiss.pointerUp"
+        @pointercancel="backdropDismiss.pointerCancel"
+        @click="backdropDismiss.click"
+      >
+        <section class="home-import-dialog" role="dialog" aria-modal="true" :aria-label="webT('home.importDialog')">
+          <header>
+            <strong>{{ webT("home.importDialog") }}</strong>
+            <button type="button" :aria-label="webT('common.close')" @click="closeImport">
+              <AppIcon name="close" />
+            </button>
+          </header>
+          <ImportSaveConfirmation
+            v-if="pendingSave"
+            :data="pendingSave"
+            @confirm="confirmSave"
+            @cancel="cancelPendingSave"
+          />
+          <DataExchangePanel
+            v-else
+            class="home-data-exchange"
+            :serialize="serializeImport"
+            :parse="parseImport"
+            :placeholder="webT('home.importPlaceholder')"
+            filename="bc5r-data"
+            :toolbar="toolbar"
+            @import="acceptImport"
+          />
+        </section>
+      </div>
+    </Teleport>
     <slot />
   </nav>
 </template>

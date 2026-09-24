@@ -1,6 +1,9 @@
 import type { Direction } from "@bobby/model";
 import type { LogicalInputAction } from "../input/InputController.js";
-import { resolveGameplayMount } from "./gameplayMount.js";
+import {
+  GAMEPLAY_UI_Z_INDEX,
+  resolveGameplayMount,
+} from "./gameplayMount.js";
 
 export interface GameplayDialogViewOptions {
   root?: HTMLElement;
@@ -77,7 +80,7 @@ export class GameplayDialogView {
       position: "absolute",
       left: "50%",
       bottom: "18px",
-      zIndex: "7",
+      zIndex: String(GAMEPLAY_UI_Z_INDEX.dialog),
       width: "min(560px, calc(100% - 32px))",
       maxHeight: "min(42vh, 260px)",
       transform: "translateX(-50%)",

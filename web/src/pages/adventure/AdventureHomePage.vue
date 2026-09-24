@@ -26,7 +26,9 @@ const emit = defineEmits<{ navigate: [path: string] }>();
           @click.prevent="emit('navigate', '/adventure/play/' + view.resumeLevelId)"
         >
           <strong>{{ webT("adventure.continue") }}</strong>
-          <span>{{ view.resumeLevelId.toUpperCase() }}</span>
+          <span class="adventure-resume-level">{{ webT("adventure.continueLevel", {
+            id: view.resumeLevelId.toUpperCase(),
+          }) }}</span>
           <AppIcon name="next" />
         </a>
         <a

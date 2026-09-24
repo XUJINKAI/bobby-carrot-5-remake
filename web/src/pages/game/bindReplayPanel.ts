@@ -22,6 +22,7 @@ import {
 } from "../../i18n/webI18n.js";
 
 const REPLAY_PARSE_DELAY_MS = 300;
+const NARROW_REPLAY_PANEL_QUERY = "(max-width: 620px)";
 
 
 export function replayVerificationPresentation(
@@ -73,6 +74,7 @@ export function bindReplayPanel(options: {
   meta: ReplayRecordingMeta;
   initialOpen?: boolean;
   onVisibilityChange(open: boolean): void;
+  onRecordingChange?(recording: boolean): void;
   onTimelineRestart(): void;
 }): ReplayPanelController {
   const panel = required<HTMLElement>(options.root, "[data-replay-panel]");
@@ -115,6 +117,7 @@ export function bindReplayPanel(options: {
   let replayTextDirty = false;
   let replayParseTimer: number | null = null;
   let destroyed = false;
+  let recordingState = options.game.replayRecording;
   let verificationState: { text: WebDisplayText; failed: boolean } = {
     text: localizedText("game.replay.waitRecord"),
     failed: false,
@@ -215,6 +218,7 @@ export function bindReplayPanel(options: {
       replayTextDirty = false;
       setVerification(localizedText("game.replay.recording"));
       update();
+      if (isNarrowReplayPanel()) setOpen(false);
     } catch (error) {
       showError(error);
     }
@@ -229,6 +233,7 @@ export function bindReplayPanel(options: {
       replayTextDirty = false;
       verifyReplay();
       update();
+      if (isNarrowReplayPanel()) setOpen(true);
     } catch (error) {
       showError(error);
     }
@@ -436,6 +441,10 @@ export function bindReplayPanel(options: {
     const paused = options.game.replayPaused;
     panel.classList.toggle("recording", recording);
     panel.classList.toggle("playing", playing && !paused);
+    if (recording !== recordingState) {
+      recordingState = recording;
+      options.onRecordingChange?.(recording);
+    }
     status.textContent = recording
       ? webT("game.replay.recording")
       : paused
@@ -498,6 +507,7 @@ export function bindReplayPanel(options: {
     "level-complete",
     stopRecording,
   );
+  const unsubscribeDeath = options.game.on("death", stopRecording);
   setOpen(open, false);
   update();
 
@@ -516,9 +526,14 @@ export function bindReplayPanel(options: {
       window.removeEventListener("keydown", onKeyDown);
       unsubscribeRecordingAbort();
       unsubscribeLevelComplete();
+      unsubscribeDeath();
       stage.classList.remove("replay-panel-open");
     },
   };
+}
+
+function isNarrowReplayPanel(): boolean {
+  return window.matchMedia(NARROW_REPLAY_PANEL_QUERY).matches;
 }
 
 function actionButton(root: ParentNode, action: string): HTMLButtonElement {

@@ -1,6 +1,7 @@
 import type { Direction } from "@bobby/model";
 import {
   GAMEPLAY_RIGHT_INSET_CSS_VAR,
+  GAMEPLAY_UI_Z_INDEX,
   resolveGameplayMount,
 } from "../ui/gameplayMount.js";
 
@@ -190,7 +191,7 @@ export class ScreenJoystick {
       right: `var(${GAMEPLAY_RIGHT_INSET_CSS_VAR}, 0px)`,
       overflow: "hidden",
       pointerEvents: "none",
-      zIndex: "7",
+      zIndex: String(GAMEPLAY_UI_Z_INDEX.joystick),
     });
 
     this.activationArea = document.createElement("div");

@@ -29,6 +29,46 @@ export async function verifyEditorExperience(cdp, sessionId) {
   await verifyPlayControls(cdp, sessionId);
 }
 
+export async function verifyNarrowEditorStartsWithoutPanels(cdp, sessionId) {
+  await cdp.send(
+    "Emulation.setDeviceMetricsOverride",
+    { width: 390, height: 760, deviceScaleFactor: 1, mobile: true },
+    sessionId,
+  );
+  await cdp.send("Page.reload", {}, sessionId);
+  await waitForBrowserState(
+    async () =>
+      Boolean(
+        await cdp.evaluate(
+          sessionId,
+          "document.querySelector('.bobby-editor .editor-map-shell')",
+        ),
+      ),
+    20_000,
+  );
+  const state = await cdp.evaluate(
+    sessionId,
+    `(() => {
+      const root = document.querySelector('.bobby-editor');
+      const visible = (selector) => {
+        const element = document.querySelector(selector);
+        return Boolean(element && getComputedStyle(element).display !== 'none');
+      };
+      return {
+        paletteOpen: root?.classList.contains('palette-sheet-open'),
+        inspectorOpen: root?.classList.contains('inspector-sheet-open'),
+        paletteVisible: visible('.editor-palette'),
+        surfaceVisible: visible('.editor-surface-panel'),
+        inspectorVisible: visible('.editor-inspector'),
+        levelVisible: visible('.editor-level-info'),
+      };
+    })()`,
+  );
+  if (Object.values(state).some(Boolean)) {
+    throw new Error(`窄屏 Editor 初始显示了面板：${JSON.stringify(state)}`);
+  }
+}
+
 async function verifyMetadataSync(cdp, sessionId) {
   await clickWhenPresent(cdp, sessionId, "#editor-level-info");
   await waitForBrowserState(async () =>
@@ -276,6 +316,7 @@ async function verifyLevelControls(cdp, sessionId) {
     sessionId,
     `(() => ({
       music: document.querySelector('[data-editor-music]')?.value,
+      musicPreview: document.querySelector('[data-editor-music-preview]')?.textContent?.trim(),
       modes: [...document.querySelectorAll('[data-rule-mode]')]
         .map((button) => button.getAttribute('data-rule-mode')),
       active: document.querySelector('[data-rule-mode][aria-pressed="true"]')
@@ -283,12 +324,33 @@ async function verifyLevelControls(cdp, sessionId) {
     }))()`,
   );
   if (
-    initial.music !== "" ||
+    initial.music !== "random" ||
+    initial.musicPreview !== "Preview" ||
     JSON.stringify(initial.modes) !== JSON.stringify(["any", "all"]) ||
     initial.active !== "all"
   ) {
     throw new Error(`Editor Level 控件初始状态异常：${JSON.stringify(initial)}`);
   }
+  await cdp.evaluate(
+    sessionId,
+    "document.querySelector('[data-editor-music-preview]')?.click(); true",
+  );
+  await waitForBrowserState(async () =>
+    (await cdp.evaluate(
+      sessionId,
+      "document.querySelector('[data-editor-music-preview]')?.textContent?.trim()",
+    )) === "Stop",
+  );
+  await cdp.evaluate(
+    sessionId,
+    "document.querySelector('[data-editor-music-preview]')?.click(); true",
+  );
+  await waitForBrowserState(async () =>
+    (await cdp.evaluate(
+      sessionId,
+      "document.querySelector('[data-editor-music-preview]')?.textContent?.trim()",
+    )) === "Preview",
+  );
   await cdp.evaluate(
     sessionId,
     `(() => {

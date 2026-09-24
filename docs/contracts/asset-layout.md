@@ -232,13 +232,13 @@ tools/assets/loma/LOMA.txt
   ↓ LOMA Producer + Pushbox converter
 PreparedCollection
   ↓ Collection Publisher
-assets/maps/loma-pushbox/
+assets/maps/loma/
 
 tools/assets/novoban/NOVOBAN.txt
   ↓ Novoban Producer + Pushbox converter
 PreparedCollection
   ↓ Collection Publisher
-assets/maps/novoban-pushbox/
+assets/maps/novoban/
 ```
 
 `LOMA.txt` 是受 Git 管理的第三方源数据。原始 `Title` 的 `LOMA01-*` ～ `LOMA10-*`

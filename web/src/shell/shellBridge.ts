@@ -1,4 +1,4 @@
-import type { AppIconName } from "../shared/icons/types.js";
+import type { AppIconName, AppIconWeight } from "../shared/icons/types.js";
 import { webT } from "../i18n/webI18n.js";
 
 export type ShellIcon = AppIconName;
@@ -15,6 +15,7 @@ export interface ShellIdentity {
   statusText?: string;
   contextName?: string;
   productNameVisible?: boolean;
+  productNameVisibleOnNarrow?: boolean;
   contextNameVisible?: boolean;
   href?: string;
   menu?: ShellMenuItem[];
@@ -24,11 +25,17 @@ export interface ShellAction {
   id: string;
   label?: string;
   icon?: ShellIcon;
+  iconWeight?: AppIconWeight;
+  iconTone?: "danger";
   cornerIcon?: ShellIcon;
   title?: string;
   href?: string;
   external?: boolean;
   collapse?: "keep" | "overflow" | "hide";
+  narrow?: {
+    placement?: "bottom-trailing";
+    iconOnly?: boolean;
+  };
   disabled?: boolean;
   pressed?: boolean;
   tip?: string;
@@ -138,4 +145,3 @@ export function mergeShellRuntimeWarnings(
     },
   };
 }
-

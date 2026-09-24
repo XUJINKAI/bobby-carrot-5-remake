@@ -43,6 +43,7 @@ export class MovementTransaction {
     cause: MoveCause,
     updateDirection = true,
     lifecycle?: MovementLifecycle,
+    timingSourceEntityId?: EntityId,
   ): void {
     this.commands.move(entityId, to.x, to.y);
     if (updateDirection) this.commands.setDirection(entityId, direction);
@@ -52,6 +53,7 @@ export class MovementTransaction {
       to: { ...to },
       direction,
       cause: structuredClone(cause),
+      ...(timingSourceEntityId === undefined ? {} : { timingSourceEntityId }),
       ...(lifecycle
         ? {
             lifecycle: {

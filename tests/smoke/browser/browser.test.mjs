@@ -122,11 +122,11 @@ try {
       "Dreamland Reward",
       'href="/explore/play/original/campaign-intro"',
     ],
-    ['class="adventure-menu"'],
+    ['class="adventure-menu"', 'class="recording-indicator"'],
   );
   await exploreDifficultySmoke(`${origin}/explore`);
   await interactiveFilterSmoke(`${origin}/explore`);
-  await smoke(`${origin}/explore/novoban-pushbox`, [
+  await smoke(`${origin}/explore/novoban`, [
     'class="explore-tabs"',
     'class="explore-ungrouped-maps"',
     'data-card-size="medium"',
@@ -134,14 +134,14 @@ try {
     "01 · Be ban 10",
   ]);
   await smoke(
-    `${origin}/explore/loma-pushbox`,
+    `${origin}/explore/loma`,
     [
       'class="explore-tabs"',
       'class="chapter-card"',
       'class="chapter-name"',
       'data-card-size="small"',
       "LOMA",
-      'href="/explore/play/loma-pushbox/01-01"',
+      'href="/explore/play/loma/01-01"',
     ],
     ['class="chapter-id"', 'class="chapter-separator"'],
   );
@@ -165,7 +165,7 @@ try {
     'href="/explore/play/robo2/01"',
     'href="/explore/play/robo2/25"',
   ]);
-  await smoke(`${origin}/explore/play/loma-pushbox/01-01`, [
+  await smoke(`${origin}/explore/play/loma/01-01`, [
     'class="game-page"',
     'id="game"',
     'id="map-status"',
@@ -174,13 +174,13 @@ try {
     "01-01",
   ]);
   await interactiveMapStatusSmoke(
-    `${origin}/explore/play/loma-pushbox/01-01`,
+    `${origin}/explore/play/loma/01-01`,
     {
       icon: "map-details",
       tone: "muted",
       details: {
         verification: ["未验证", "Not verified"],
-        "map-id": "loma-pushbox/01-01",
+        "map-id": "loma/01-01",
         "map-name": "01-01",
         author: "Aymeric du Peloux",
       },
@@ -225,7 +225,7 @@ try {
       "map-name": "1",
     },
   });
-  await smoke(`${origin}/explore/play/novoban-pushbox/01`, [
+  await smoke(`${origin}/explore/play/novoban/01`, [
     'class="game-page"',
     'id="game"',
     "01 · Be ban 10",
@@ -238,7 +238,9 @@ try {
   await smoke(`${origin}/adventure`, [
     "adventure-viewport-auto",
     'class="adventure-menu"',
+    'class="shell-product-name"',
     'class="shell-context-name"',
+    'class="adventure-resume-level"',
   ]);
   await smoke(`${origin}/adventure/chapters`, [
     'class="adventure-chapters"',
@@ -258,6 +260,7 @@ try {
     [
       "original-adventure-game",
       'id="game"',
+      'class="shell-product-name"',
       'id="map-status"',
       'data-icon="map-status"',
       'class="shell-indicator-button tone-success"',
@@ -339,7 +342,17 @@ try {
   ]);
   await expectStatus(`${origin}/robots.txt`, 200, "text/plain");
   await expectStatus(`${origin}/sitemap.xml`, 200, "application/xml");
-  await expectStatus(`${origin}/edit/novoban-pushbox/01`, 404, "text/plain");
+  await verifyRouteMigration(
+    `${origin}/explore/loma-pushbox?source=legacy#tabs`,
+    "/explore/loma",
+    ".explore-tabs",
+  );
+  await verifyRouteMigration(
+    `${origin}/explore/play/novoban-pushbox/01?source=legacy#game`,
+    "/explore/play/novoban/01",
+    ".game-page",
+  );
+  await expectStatus(`${origin}/edit/novoban/01`, 404, "text/plain");
   await expectStatus(`${origin}/explore/original`, 404, "text/plain");
   await expectStatus(`${origin}/this-route-does-not-exist`, 404, "text/plain");
   await expectStatus(`${origin}/assets/does-not-exist.png`, 404, "text/plain");
@@ -378,6 +391,47 @@ async function expectStatus(url, expectedStatus, typePrefix) {
   const body = await response.text();
   if (expectedStatus === 404 && body.includes('<div id="app">'))
     throw new Error(`404 request ${url} incorrectly received SPA HTML`);
+}
+async function verifyRouteMigration(navigateUrl, expectedPathname, readySelector) {
+  const readyUrl = new URL(navigateUrl);
+  readyUrl.pathname = expectedPathname;
+  const result = await runBrowserEval(
+    navigateUrl,
+    `(async () => {
+      const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+      for (let i = 0; i < 120; i += 1) {
+        if (
+          location.pathname === ${JSON.stringify(expectedPathname)} &&
+          location.search === "?source=legacy" &&
+          location.hash === ${JSON.stringify(readyUrl.hash)} &&
+          document.querySelector(${JSON.stringify(readySelector)})
+        ) {
+          return JSON.stringify({
+            pathname: location.pathname,
+            search: location.search,
+            hash: location.hash,
+          });
+        }
+        await delay(50);
+      }
+      return JSON.stringify({
+        pathname: location.pathname,
+        search: location.search,
+        hash: location.hash,
+      });
+    })()`,
+    readyUrl.href,
+  );
+  if (result.status !== 0)
+    throw new Error(`历史路由迁移检查失败：${result.stderr || result.stdout}`);
+  const actual = lastJsonLine(result.stdout);
+  if (
+    actual.pathname !== expectedPathname ||
+    actual.search !== "?source=legacy" ||
+    actual.hash !== readyUrl.hash
+  ) {
+    throw new Error(`历史路由迁移结果异常：${JSON.stringify(actual)}`);
+  }
 }
 async function smoke(url, expected, forbidden = []) {
   const result = await runBrowser(url, expected);
@@ -515,6 +569,17 @@ async function interactiveDataExchangeSmoke(url) {
     await delay(50);
   const importButton = document.querySelector('[data-home-import]');
   if (!importButton) throw new Error('missing import button');
+  const screenControl = document.querySelector('.home-demo-screen-control');
+  let joystick = null;
+  for (let i = 0; i < 120 && !joystick; i += 1) {
+    await delay(50);
+    joystick = document.querySelector('.engine-screen-joystick-layer');
+  }
+  if (!screenControl || !joystick) throw new Error('missing home demo joystick');
+  if (joystick.hidden) {
+    screenControl.click();
+    for (let i = 0; i < 120 && joystick.hidden; i += 1) await delay(50);
+  }
   importButton.click();
   const source = {
     game: ${JSON.stringify(BC5R_GAME_ID)},
@@ -529,6 +594,14 @@ async function interactiveDataExchangeSmoke(url) {
     textarea = document.querySelector('.home-import-dialog textarea');
   }
   if (!textarea) throw new Error('missing import textarea');
+  const activation = document.querySelector('.engine-screen-joystick-activation');
+  if (!activation) throw new Error('missing joystick activation area');
+  const rect = activation.getBoundingClientRect();
+  const hit = document.elementFromPoint(
+    rect.left + rect.width / 2,
+    rect.top + rect.height / 2,
+  );
+  const dialogCoversJoystick = Boolean(hit?.closest('.home-import-dialog-layer'));
   textarea.value = JSON.stringify(source);
   textarea.dispatchEvent(new Event('input', { bubbles: true }));
   const open = document.querySelector(
@@ -541,6 +614,7 @@ async function interactiveDataExchangeSmoke(url) {
   const confirmation = document.querySelector('.import-save-confirmation');
   return JSON.stringify({
     confirmation: confirmation?.textContent?.includes('Explore Save') ?? false,
+    dialogCoversJoystick,
   });
 })()
 `;
@@ -548,11 +622,11 @@ async function interactiveDataExchangeSmoke(url) {
   if (result.status !== 0)
     throw new Error(`Interactive home import smoke failed: ${result.stderr || result.stdout}`);
   const payload = lastJsonLine(result.stdout);
-  if (!payload.confirmation)
+  if (!payload.confirmation || !payload.dialogCoversJoystick)
     throw new Error(`Unexpected home import smoke result: ${JSON.stringify(payload)}`);
 }
 
-async function runBrowserEval(url, script) {
+async function runBrowserEval(navigateUrl, script, readyUrl = navigateUrl) {
   if (!browserRuntime)
     return { status: 1, stdout: "", stderr: "Chromium runtime 未启动" };
   let context = null;
@@ -598,10 +672,14 @@ addEventListener("unhandledrejection", (event) => {
           },
           sessionId,
         );
-        const navigation = await cdp.send("Page.navigate", { url }, sessionId);
+        const navigation = await cdp.send(
+          "Page.navigate",
+          { url: navigateUrl },
+          sessionId,
+        );
         if (navigation.errorText)
           throw new Error(`Chromium navigation failed: ${navigation.errorText}`);
-        await waitForPageReady(cdp, sessionId, url);
+        await waitForPageReady(cdp, sessionId, readyUrl);
         const evaluation = await cdp.send(
           "Runtime.evaluate",
           { expression: script, awaitPromise: true, returnByValue: true },
@@ -619,7 +697,7 @@ addEventListener("unhandledrejection", (event) => {
         };
       })(),
       40_000,
-      `Chromium timed out while loading ${url}`,
+      `Chromium timed out while loading ${navigateUrl} (ready URL ${readyUrl})`,
     );
   } catch (error) {
     return {
@@ -697,8 +775,8 @@ function startBrowserRuntime(browserPath) {
   };
 }
 
-async function waitForPageReady(cdp, sessionId, url) {
-  const expected = new URL(url);
+async function waitForPageReady(cdp, sessionId, readyUrl) {
+  const expected = new URL(readyUrl);
   const expectedDocumentUrl = `${expected.origin}${expected.pathname}${expected.search}`;
   const deadline = Date.now() + 12_000;
   while (Date.now() < deadline) {
@@ -722,7 +800,7 @@ async function waitForPageReady(cdp, sessionId, url) {
     }
     await delay(50);
   }
-  throw new Error(`Chromium page did not become ready: ${url}`);
+  throw new Error(`Chromium page did not become ready: ${readyUrl}`);
 }
 
 function isNavigationContextError(error) {

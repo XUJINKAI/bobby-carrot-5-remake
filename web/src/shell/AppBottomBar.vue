@@ -1,10 +1,13 @@
 <script setup lang="ts">
-import type { ShellConfig } from "./shellBridge.js";
+import type { ShellAction, ShellConfig } from "./shellBridge.js";
 import ShellActionButton from "./ShellActionButton.vue";
 import ShellIndicator from "./ShellIndicator.vue";
 import AppIcon from "../shared/icons/AppIcon.vue";
 
-defineProps<{ config: NonNullable<ShellConfig["bottomBar"]> }>();
+defineProps<{
+  config: NonNullable<ShellConfig["bottomBar"]>;
+  narrowTrailing?: ShellAction[];
+}>();
 const emit = defineEmits<{ navigate: [path: string]; action: [id: string] }>();
 
 function navigateInfo(event: MouseEvent, href: string, external?: boolean): void {
@@ -35,6 +38,15 @@ function navigateInfo(event: MouseEvent, href: string, external?: boolean): void
       </template>
     </div>
     <div class="shell-bottom-trailing">
+      <ShellActionButton
+        v-for="item in narrowTrailing ?? []"
+        :key="`narrow-${item.id}`"
+        class="shell-bottom-narrow-action"
+        :action="item"
+        :dom-id="`narrow-${item.id}`"
+        @action="emit('action', $event)"
+        @navigate="emit('navigate', $event)"
+      />
       <ShellActionButton v-for="item in config.trailing ?? []" :key="item.id" :action="item" @action="emit('action', $event)" @navigate="emit('navigate', $event)" />
     </div>
   </footer>
@@ -80,6 +92,10 @@ function navigateInfo(event: MouseEvent, href: string, external?: boolean): void
   justify-content: flex-end;
 }
 
+.shell-bottom-trailing > .shell-bottom-narrow-action {
+  display: none;
+}
+
 @media (max-width: 700px) {
   .app-bottom-bar {
     grid-template-columns: auto minmax(0, 1fr) auto;
@@ -93,6 +109,10 @@ function navigateInfo(event: MouseEvent, href: string, external?: boolean): void
 
   .shell-bottom-info {
     justify-content: flex-start;
+  }
+
+  .shell-bottom-trailing > .shell-bottom-narrow-action {
+    display: inline-flex;
   }
 }
 </style>

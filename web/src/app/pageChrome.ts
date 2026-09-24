@@ -13,6 +13,7 @@ export function homeIdentity(): ShellIdentity {
     icon: siteUrl("assets/art/hd/icon.png"),
     productName: webT("brand.name"),
     productNameVisible: true,
+    productNameVisibleOnNarrow: true,
     href: "/",
   };
 }

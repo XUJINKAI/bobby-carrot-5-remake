@@ -11,6 +11,7 @@ import {
   exploreMapSeoDescriptor,
   staticSeoDescriptor,
 } from "../../web/src/seo/seoDescriptors.js";
+import { legacyRoutePaths } from "../../web/src/app/routeMigrations.js";
 
 const dist = path.join(root, "dist");
 const assets = path.join(root, "assets");
@@ -29,6 +30,9 @@ export function generateSeoArtifacts() {
       throw new Error(`重复 public route：${route.canonicalPath}`);
     seen.add(route.canonicalPath);
     writeRouteShell(sourceHtml, route);
+    for (const legacyPath of legacyRoutePaths(route.canonicalPath)) {
+      writeRouteShell(sourceHtml, route, legacyPath);
+    }
   }
 
   writeNotFoundPage();
@@ -115,7 +119,11 @@ function requireStaticRoute(pathname) {
   return route;
 }
 
-function writeRouteShell(sourceHtml, descriptor) {
+function writeRouteShell(
+  sourceHtml,
+  descriptor,
+  outputPath = descriptor.canonicalPath,
+) {
   const fallback = bilingualSeoDescriptor(descriptor);
   const canonical =
     `${siteOrigin}${fallback.canonicalPath === "/" ? "/" : fallback.canonicalPath}`;
@@ -144,9 +152,9 @@ function writeRouteShell(sourceHtml, descriptor) {
 
   const html = replaceBaseSeo(sourceHtml, fallback)
     .replace("</head>", `    ${extraHead}\n  </head>`);
-  const target = fallback.canonicalPath === "/"
+  const target = outputPath === "/"
     ? path.join(dist, "index.html")
-    : path.join(dist, fallback.canonicalPath.slice(1), "index.html");
+    : path.join(dist, outputPath.slice(1), "index.html");
   fs.mkdirSync(path.dirname(target), { recursive: true });
   fs.writeFileSync(target, html);
 }

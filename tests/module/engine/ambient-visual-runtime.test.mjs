@@ -238,6 +238,25 @@ test("Butterfly 使用可复现的独立慢速航点", () => {
   assert.deepEqual(repeated.scene(world).ambientForeground, moved);
 });
 
+test("Butterfly 尺寸随地图格缩放", () => {
+  const world = terrainWorld(20, 20);
+  const runtime = new VisualRuntime(createBuiltinVisualRegistry(), 48, {}, {
+    ambient: { seed: 71, butterflyDensity: 30 },
+  });
+  runtime.camera.setViewport(320, 320);
+  runtime.update({ frame: 0, nowMs: 0, deltaMs: 0 }, "linear");
+
+  const normal = runtime.scene(world).ambientForeground;
+  assert.ok(normal.length > 0);
+  assert.equal(normal[0].size, 48);
+
+  runtime.camera.setZoom(2);
+  const zoomed = runtime.scene(world).ambientForeground;
+  assert.ok(zoomed.length > 0);
+  assert.equal(zoomed[0].size, 96);
+  assertScreenItemsInsideMap(zoomed, world, runtime.camera);
+});
+
 test("Gameplay Sky shimmer 复用 Title 的 ta.png 切片", () => {
   const world = new World({
     schemaVersion: 1,

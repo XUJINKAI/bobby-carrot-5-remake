@@ -21,7 +21,7 @@ export function parseNovoban(text) {
       author,
       board,
       level: convertXsbBoard(board, `Novoban ${id} · ${title}`, {
-        mapKey: `novoban-pushbox/${id}`,
+        mapKey: `novoban/${id}`,
       }),
     });
   }

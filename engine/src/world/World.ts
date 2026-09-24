@@ -378,6 +378,7 @@ export class World {
     const moveIntents = group.intents.filter(
       (intent): intent is MoveIntent => intent.type === "move",
     );
+    this.movementResolver.reserveActiveMotionDestinations(transaction);
     this.movementResolver.reserveIntentDestinations(moveIntents, transaction);
 
     for (const intent of moveIntents) {
@@ -531,17 +532,28 @@ export class World {
       sourceDurations.set(request.entityId, this.durationForMotion(request));
     }
     for (const request of requests) {
-      // 同一事务中的被推动对象必须跟随推动者的实际 cadence；否则调整
-      // Bobby locomotion 后，两条 motion 会在不同时间结束并持续阻塞输入。
-      const durationMs = request.cause.type === "push"
-        ? sourceDurations.get(request.cause.sourceEntityId) ??
-          this.durationForMotion(request)
-        : sourceDurations.get(request.entityId) ??
-          this.durationForMotion(request);
+      const timingSource = request.timingSourceEntityId === undefined
+        ? undefined
+        : this.movement.motions.forEntity(request.timingSourceEntityId);
+      // Push 从同一事务的推动者取得 cadence；接触续行则从已有 motion
+      // 同时取得 cadence 与 progress，避免速度交接产生静止帧。
+      const durationMs = timingSource?.durationMs ??
+        (request.cause.type === "push"
+          ? sourceDurations.get(request.cause.sourceEntityId) ??
+            this.durationForMotion(request)
+          : sourceDurations.get(request.entityId) ??
+            this.durationForMotion(request));
+      const timedRequest = timingSource && request.cause.type === "forced"
+        ? {
+            ...request,
+            cause: { ...request.cause, cadenceMs: timingSource.durationMs },
+          }
+        : request;
       const motion = this.movement.start(
-        request,
+        timedRequest,
         durationMs,
         request.lifecycle,
+        timingSource?.progress ?? 0,
       );
       result.motions.push(motion);
       result.deltas.push(

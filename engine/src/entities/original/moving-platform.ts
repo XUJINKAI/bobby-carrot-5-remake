@@ -32,6 +32,7 @@ import {
 } from "./cloud-movement.js";
 import {
   hasLeafAutomaticCurrent,
+  leafRouteAwaitsMovingSupportSettlement,
   leafMovementFor,
   nextLeafRoute,
   tideDirectionAt,
@@ -58,7 +59,7 @@ export const movingPlatformBehavior: Behavior = createMovingPlatformSupportBehav
 
     // 潮流只禁止逆流启动；首格保留 Bobby 的进入方向，后续再尝试随流。
     const actionActive = self.entity.state?.movingActionActive === true;
-    const movementCadence = leafMovementFor(query, self.entity);
+    const movementCadence = leafMovementFor(query, self.entity, direction);
     const launchDeadlineMs = primeDeadlineForHandoff(
       movementCadence.cellMs,
       movement?.motion,
@@ -137,12 +138,22 @@ export const movingEntityAction: RuntimeActionDefinition = {
           entity,
           directionState(entity.state?.launchDirection),
         );
-    if (!route)
+    if (!route) {
+      if (
+        !isCloud(entity.type) &&
+        leafRouteAwaitsMovingSupportSettlement(
+          query,
+          entity,
+          directionState(entity.state?.launchDirection),
+        )
+      )
+        return "running";
       return stopMovingEntity(
         entity,
         commands,
         hasAutomaticCurrent(query, entity),
       );
+    }
 
     if (!consumeActionDeadline(action, route.movement.cellMs, time.stepMs / 2))
       return "running";
@@ -215,7 +226,7 @@ function initialMovementMs(
 ): number {
   return isCloud(entity.type)
     ? CLOUD_MOVEMENT.cellMs
-    : leafMovementFor(query, entity).cellMs;
+    : leafMovementFor(query, entity, "down").cellMs;
 }
 
 function hasAutomaticCurrent(

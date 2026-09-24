@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import { test } from "vitest";
 import { placementPresetWithField } from "../../../web/src/pages/editor/editorFieldValues.ts";
+import { EDITOR_MUSIC_OPTIONS } from "../../../web/src/pages/editor/editorMusicOptions.ts";
 
 const page = fs.readFileSync(
   new URL("../../../web/src/pages/editor/EditorPage.vue", import.meta.url),
@@ -107,7 +108,9 @@ test("Palette 和 Surface 发布工具动作与简洁标题", () => {
   assert.match(page, /event\.key === "Tab"[\s\S]*switchAuthoringPanel\(\)/);
 });
 
-test("Editor 默认打开 Palette 并使用 Select 语义", () => {
+test("Editor 宽屏默认打开 Palette，窄屏默认关闭全部面板", () => {
+  assert.match(page, /const leftOpen = ref\(!startsMobile\)/);
+  assert.match(page, /startsMobile \? null : "inspector"/);
   assert.match(pageState, /leftPanel = ref<EditorLeftPanel>\("palette"\)/);
   assert.match(shell, /leftPanel: "palette" \| "surface" = "palette"/);
   assert.match(pageState, /paletteTool = ref<EditorTool>\("select"\)/);
@@ -122,6 +125,8 @@ test("Editor 默认打开 Palette 并使用 Select 语义", () => {
 test("Editor Play 保持编辑器顶栏并切换为游戏底栏", () => {
   assert.match(shell, /commands: playing[\s\S]*id: "editor-play"/);
   assert.match(shell, /leading: playing[\s\S]*id: "editor-replay-record"/);
+  assert.match(shell, /iconWeight: playState\.replayRecording \? "fill" : "regular"/);
+  assert.match(shell, /playState\.replayRecording[\s\S]*?iconTone: "danger" as const/);
   assert.match(shell, /trailing: playing[\s\S]*id: "screen-control"/);
   assert.match(page, /bindReplayPanel/);
   assert.match(page, /bindGameplayShell/);
@@ -222,27 +227,47 @@ test("Level 最大时间把单位放在标签中", () => {
 });
 
 test("Level 音乐只列出循环曲目并用省略字段表达默认随机", () => {
-  assert.match(levelInfo, /<option value="">默认（随机）<\/option>/);
-  for (const track of [
+  assert.deepEqual(EDITOR_MUSIC_OPTIONS.map((option) => option.value), [
+    "random",
+    "none",
     "ingame0",
     "ingame1",
     "ingame2",
-    "mow",
     "shop",
-    "bonus",
     "sandman",
-    "train",
     "universe",
     "fly",
+    "robo2/menu",
+  ]);
+  assert.deepEqual(
+    EDITOR_MUSIC_OPTIONS.map((option) => option.label),
+    EDITOR_MUSIC_OPTIONS.map((option) => option.value),
+  );
+  assert.equal(
+    EDITOR_MUSIC_OPTIONS.some((option) => /[\u3400-\u9fff]/u.test(option.label)),
+    false,
+  );
+  for (const eventTrack of [
+    "alarm",
+    "cleared",
+    "death",
+    "mow",
+    "bonus",
+    "train",
     "title",
   ]) {
-    assert.match(levelInfo, new RegExp(`value: "${track}"`));
+    assert.equal(
+      EDITOR_MUSIC_OPTIONS.some((option) => option.value === eventTrack),
+      false,
+    );
   }
-  for (const eventTrack of ["alarm", "cleared", "death"]) {
-    assert.doesNotMatch(levelInfo, new RegExp(`value: "${eventTrack}"`));
-  }
+  assert.match(levelInfo, /data-editor-music-preview/);
+  assert.match(levelInfo, /musicPreviewing \? "Stop" : "Preview"/);
+  assert.match(levelInfo, /value === "random" \? undefined : value/);
+  assert.match(page, /resolveLevelMusic\(page\.snapshot\.value\.level\.music\)/);
+  assert.match(page, /@music-preview-toggle="toggleMusicPreview"/);
   assert.match(pageState, /setMusic\(music: MapMusic \| undefined\)/);
-  assert.match(page, /@music="page\.setMusic"/);
+  assert.match(page, /@music="setMusic"/);
 });
 
 test("Level 规则模式开关左侧任一、右侧全部", () => {

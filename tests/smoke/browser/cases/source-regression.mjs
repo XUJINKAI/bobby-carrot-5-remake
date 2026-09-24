@@ -4,8 +4,12 @@ import { createServer } from "vite";
 import { root } from "../../../../tools/lib/fs.mjs";
 import { verifyButtonFocusPolicy } from "./source/button-focus-browser-checks.mjs";
 import { waitForBrowserState } from "./source/browser-regression-wait.mjs";
-import { verifyEditorExperience } from "./source/editor-browser-checks.mjs";
 import {
+  verifyEditorExperience,
+  verifyNarrowEditorStartsWithoutPanels,
+} from "./source/editor-browser-checks.mjs";
+import {
+  verifyExploreRecordingIndicators,
   verifyNarrowExploreTabs,
   verifyNarrowExploreGameNavigation,
 } from "./source/game-navigation-browser-checks.mjs";
@@ -16,9 +20,11 @@ import {
 } from "./source/locale-browser-checks.mjs";
 import {
   replayLayout,
+  verifyNarrowGameActions,
   verifyReplayPanelShortcut,
 } from "./source/replay-browser-checks.mjs";
 import { verifySettingsPage } from "./source/settings-browser-checks.mjs";
+import { verifyNarrowHomeProductName } from "./source/topbar-browser-checks.mjs";
 
 export async function runSourceBrowserRegression(cdp) {
     const vite = await createServer({
@@ -38,10 +44,15 @@ export async function runSourceBrowserRegression(cdp) {
 
     try {
       await verifyButtonFocusPolicy(cdp, await openPage(cdp, `${origin}/`));
+      await verifyNarrowHomeProductName(cdp, await openPage(cdp, `${origin}/`));
       await verifyMusicInteractionTip(cdp, `${origin}/`);
       await verifyQuickSettings(cdp, `${origin}/`);
       await verifySettingsPage(cdp, await openPage(cdp, `${origin}/settings`));
       await verifyEditorExperience(
+        cdp,
+        await openPage(cdp, `${origin}/edit`),
+      );
+      await verifyNarrowEditorStartsWithoutPanels(
         cdp,
         await openPage(cdp, `${origin}/edit`),
       );
@@ -54,9 +65,13 @@ export async function runSourceBrowserRegression(cdp) {
         cdp,
         await openPage(cdp, `${origin}/import/v1#%`),
       );
+      await verifyExploreRecordingIndicators(
+        cdp,
+        await openPage(cdp, `${origin}/explore/robo2`),
+      );
       await verifyNarrowExploreTabs(
         cdp,
-        await openPage(cdp, `${origin}/explore/loma-pushbox`),
+        await openPage(cdp, `${origin}/explore/loma`),
       );
       await verifyNarrowExploreGameNavigation(
         cdp,
@@ -380,6 +395,15 @@ async function verifyReplayPanel(cdp, url) {
       ),
     ),
   );
+  await waitFor(async () =>
+    Boolean(
+      await cdp.evaluate(
+        sessionId,
+        `!document.querySelector('[data-replay-panel]')?.hidden &&
+          document.querySelector('#replay-record .tone-danger')`,
+      ),
+    ),
+  );
   await new Promise((resolve) => setTimeout(resolve, 1_000));
   await dispatchKey(cdp, sessionId, "keyDown", "ArrowRight", 39);
   await new Promise((resolve) => setTimeout(resolve, 200));
@@ -408,6 +432,15 @@ async function verifyReplayPanel(cdp, url) {
             verification.textContent?.includes('ticks')
           );
         })()`,
+      ),
+    ),
+  );
+  await waitFor(async () =>
+    Boolean(
+      await cdp.evaluate(
+        sessionId,
+        `!document.querySelector('[data-replay-panel]')?.hidden &&
+          !document.querySelector('#replay-record .tone-danger')`,
       ),
     ),
   );
@@ -667,10 +700,39 @@ async function verifyReplayPanel(cdp, url) {
     20_000,
   );
   const mobileLayout = await replayLayout(cdp, sessionId);
+  await verifyNarrowGameActions(cdp, sessionId);
   if (Math.abs(mobileLayout.canvasLeft - mobileLayout.stageLeft) > 1)
     throw new Error("Replay mobile panel changed the canvas layout");
   if (mobileLayout.panelLeft < mobileLayout.stageLeft + 9)
     throw new Error("Replay mobile panel did not float inside the game stage");
+
+  await cdp.evaluate(
+    sessionId,
+    "document.querySelector('[data-replay-action=\"record\"]')?.click(); true",
+  );
+  await waitFor(async () =>
+    Boolean(
+      await cdp.evaluate(
+        sessionId,
+        `document.querySelector('[data-replay-panel]')?.hidden &&
+          document.querySelector('#replay-record .tone-danger')`,
+      ),
+    ),
+  );
+  await cdp.evaluate(
+    sessionId,
+    "document.querySelector('[data-replay-action=\"record\"]')?.click(); true",
+  );
+  await waitFor(async () =>
+    Boolean(
+      await cdp.evaluate(
+        sessionId,
+        `!document.querySelector('[data-replay-panel]')?.hidden &&
+          !document.querySelector('#replay-record .tone-danger') &&
+          document.querySelector('[data-replay-output]')?.value`,
+      ),
+    ),
+  );
 }
 
 async function verifyReplaySaveButton(cdp, sessionId) {

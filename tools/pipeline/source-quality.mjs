@@ -238,8 +238,8 @@ function checkRepositoryStructure() {
   }
 
   for (const file of [
-    "assets/maps/loma-pushbox/01-01.json",
-    "assets/maps/novoban-pushbox/01.json",
+    "assets/maps/loma/01-01.json",
+    "assets/maps/novoban/01.json",
     "assets/maps/robo2/01.json",
     "assets/art/robo2/mirrorL.png",
   ]) {

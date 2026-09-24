@@ -87,6 +87,43 @@
   - Engine 独立运行时仍可使用默认 browser keyboard source。
 - 迁移完成后，Web 页面不再通过直接 `window.addEventListener("keydown", ...)` 实现产品快捷键。
 
+### Web Shell 配置与响应式模型收敛
+
+当前 Web Shell 已由页面提交语义化 `ShellConfig`，统一负责 TopBar、BottomBar、响应式折叠、
+Overflow 和窄屏 Action 迁移；页面与 App Root 继续解释 action ID。现有边界能够支持当前页面，
+后续增加 Shell 状态或更多响应式布局前，按以下阶段收敛配置模型。
+
+第一阶段优先降低配置调用的维护风险：
+
+- 将 `gameShellConfig()`、`configureEditorShell()` 和 `editorShellConfig()` 的多个位置参数改为
+  具名状态对象，避免布尔值、可选地图信息和 Replay 状态因参数顺序产生错配。
+- 为各页面的 Shell state 建立明确类型；配置生成函数保持纯函数，便于直接测试不同模式和状态。
+
+第二阶段统一 Action 合同：
+
+- 将当前同时存在的 `collapse` 与 `narrow` 收敛到单一响应式配置结构，统一表达窄屏的保留、
+  Overflow、隐藏、位置迁移和纯图标呈现。
+- 明确互斥组合，例如进入 Overflow 的 Action 不能同时迁移到底栏；使用类型或配置校验阻止
+  无效状态。
+- 将 `ShellAction` 拆分为 command 与 link 的判别联合，约束 `href`、`external` 和命令派发字段，
+  避免可选字段任意组合。
+
+第三阶段收敛状态所有权：
+
+- App Root 根据全局设置和页面配置派生最终 ShellConfig，不直接修改页面提交的 Action 对象；
+  `pressed`、动态 icon 与 tip 保持单向数据流。
+- 将 gameplay runtime warning 的配置合并从 `shellBridge.ts` 移到 App Root 或专用 Shell composer，
+  使 Bridge 只负责安装、保存和派发配置。
+- 为 Shell 的 700px、Identity 的 700/900px、Replay 与 Editor 的 620px 建立具名布局层级，记录
+  每个断点的产品语义；共享同一层级的组件使用同一来源，保留确有不同职责的断点。
+
+验收要求：
+
+- Home、Explore、Adventure、Import、Editor、Settings 与 Embed 的 TopBar / BottomBar 行为保持一致。
+- 宽屏、窄屏、Overflow、Action 迁移及 label 收敛均有模块测试和 Chromium 布局回归。
+- 页面配置代码不读取 viewport；响应式呈现继续由 Shell 统一负责。
+- Shell renderer 不识别页面、模式、Gameplay、Editor 或具体 action ID。
+
 ## Testing
 
 ### 测试覆盖清单与价值审计

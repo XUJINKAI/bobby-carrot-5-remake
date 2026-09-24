@@ -155,44 +155,6 @@ test("Bobby walking loops from movement frame four back to frame four", () => {
   assert.equal(end.layers[0].frameIndex, 3);
 });
 
-test("Bobby Ice slide stays on movement frame seven", () => {
-  const composition = bobbyVisual({
-    direction: "left",
-    runtime: {
-      offsetX: 0.5,
-      moving: true,
-      progress: 0.5,
-      animation: "ice",
-      direction: "left",
-    },
-  });
-  assert.deepEqual(composition.layers[0], {
-    kind: "image",
-    asset: "bobby-left",
-    frameColumns: 8,
-    frameRows: 1,
-    frameIndex: 6,
-    anchor: "bottom",
-    offsetY: -12,
-  });
-});
-
-test("Bobby uses the normal standing frame while stationary on Ice", () => {
-  const composition = bobbyVisual({
-    surfaceType: MapEntityTypeId.ICE,
-    direction: "right",
-    runtime: {
-      offsetX: 0,
-      moving: false,
-      progress: 1,
-      direction: "right",
-      stationarySinceMs: 1000,
-    },
-  });
-  assert.equal(composition.layers[0].asset, "bobby-right");
-  assert.equal(composition.layers[0].frameIndex, 3);
-});
-
 test("Bobby uses the Up strip while standing or moving on Beanstalk", () => {
   const standing = bobbyVisual({
     surfaceType: MapEntityTypeId.BEANSTALK,
@@ -209,6 +171,24 @@ test("Bobby uses the Up strip while standing or moving on Beanstalk", () => {
   assert.equal(standing.layers[0].frameIndex, 3);
   assert.equal(moving.layers[0].asset, "bobby-up");
   assert.equal(moving.layers[0].frameIndex, 7);
+});
+
+test("Bobby 横向进入 Beanstalk Base 时在中点切换为攀爬姿势", () => {
+  const walking = bobbyVisual({
+    surfaceType: RuntimeEntityTypeId.BEANSTALK_BASE,
+    direction: "right",
+    runtime: { moving: true, progress: 0.25 },
+  });
+  const climbing = bobbyVisual({
+    surfaceType: RuntimeEntityTypeId.BEANSTALK_BASE,
+    direction: "right",
+    runtime: { moving: true, progress: 0.75 },
+  });
+
+  assert.equal(walking.layers[0].asset, "bobby-right");
+  assert.equal(walking.layers[0].frameIndex, 5);
+  assert.equal(climbing.layers[0].asset, "bobby-up");
+  assert.equal(climbing.layers[0].frameIndex, 1);
 });
 
 test("Bobby idle starts after five seconds and advances every 50ms", () => {

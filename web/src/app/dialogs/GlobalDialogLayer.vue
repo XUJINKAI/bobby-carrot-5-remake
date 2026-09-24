@@ -14,6 +14,7 @@ const backdropDismiss = createBackdropDismissHandlers(() => emit("close"));
     @pointerdown="backdropDismiss.pointerDown"
     @pointerup="backdropDismiss.pointerUp"
     @pointercancel="backdropDismiss.pointerCancel"
+    @click="backdropDismiss.click"
   >
     <HelpDialog :html="helpHtml" @close="emit('close')" />
   </div>

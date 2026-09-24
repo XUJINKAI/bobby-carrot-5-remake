@@ -83,6 +83,10 @@ Surface 基础地貌通过 Brush 画成另一种 Terrain 来替换。Palette 的
 
 `Ctrl+A` 选择整张地图。`Tab` 在编辑状态直接切换 Palette / Surface，并打开对应左侧面板；文本输入和 Play Test 不拦截这些编辑快捷键。
 
+Editor 首次打开时，宽屏显示 Palette 与 Inspector；620px 及以下的窄屏只显示地图画布，
+Palette、Surface、Inspector 与 Level 面板均由用户通过 Bottom Bar 主动打开。用户打开一侧面板时，
+另一侧面板自动收起。
+
 ### Pattern 与 Variant
 
 Variant 分配支持：

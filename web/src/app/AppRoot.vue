@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import type { AudioRuntime } from "@bobby/engine";
-import { onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useGlobalSettings } from "./settings/useGlobalSettings.js";
 import { localizeGlobalActions, musicActionIcon } from "./pageChrome.js";
 import GlobalDialogLayer from "./dialogs/GlobalDialogLayer.vue";
 import QuickSettingsPanel from "./dialogs/QuickSettingsPanel.vue";
 import AppBottomBar from "../shell/AppBottomBar.vue";
 import AppTopBar from "../shell/AppTopBar.vue";
+import { narrowBottomTrailingActions } from "../shell/responsiveActions.js";
 import { createBackdropDismissHandlers } from "../shared/dialog/backdropDismiss.js";
 import type { Navigate } from "./pageContracts.js";
 import type { ShellViewState } from "../shell/shellBridge.js";
@@ -29,6 +30,9 @@ const disposeMusicInteraction = props.audio.onMusicInteractionRequiredChange(
   (required) => {
     musicInteractionRequired.value = required;
   },
+);
+const narrowTrailingActions = computed(() =>
+  narrowBottomTrailingActions(props.shell.config),
 );
 
 function openSettings(): void {
@@ -209,6 +213,7 @@ onMounted(() => {
       <AppBottomBar
         v-if="shell.config.bottomBar?.visible && shell.config.bottomBar.fixed === false"
         :config="shell.config.bottomBar"
+        :narrow-trailing="narrowTrailingActions"
         @navigate="navigate"
         @action="dispatchAction"
       />
@@ -218,6 +223,7 @@ onMounted(() => {
       key="fixed-bottombar"
       class="app-shell-fixed-bottom"
       :config="shell.config.bottomBar"
+      :narrow-trailing="narrowTrailingActions"
       @navigate="navigate"
       @action="dispatchAction"
     />
@@ -229,6 +235,7 @@ onMounted(() => {
       @pointerdown="settingsBackdropDismiss.pointerDown"
       @pointerup="settingsBackdropDismiss.pointerUp"
       @pointercancel="settingsBackdropDismiss.pointerCancel"
+      @click="settingsBackdropDismiss.click"
     >
       <QuickSettingsPanel
         :state="settings.state"

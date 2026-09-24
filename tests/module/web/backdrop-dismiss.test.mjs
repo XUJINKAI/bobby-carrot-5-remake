@@ -7,6 +7,10 @@ function pointerEvent(pointerId, target, currentTarget) {
   return { pointerId, target, currentTarget };
 }
 
+function clickEvent(pointerId, target, currentTarget) {
+  return { pointerId, target, currentTarget };
+}
+
 test("遮罩关闭要求按下和释放都发生在遮罩空白处", () => {
   const backdrop = {};
   const panel = {};
@@ -15,19 +19,37 @@ test("遮罩关闭要求按下和释放都发生在遮罩空白处", () => {
 
   handlers.pointerDown(pointerEvent(1, panel, backdrop));
   handlers.pointerUp(pointerEvent(1, backdrop, backdrop));
+  handlers.click(clickEvent(1, backdrop, backdrop));
   assert.equal(dismissCount, 0);
 
   handlers.pointerDown(pointerEvent(2, backdrop, backdrop));
   handlers.pointerUp(pointerEvent(2, panel, backdrop));
+  handlers.click(clickEvent(2, backdrop, backdrop));
   assert.equal(dismissCount, 0);
 
   handlers.pointerDown(pointerEvent(3, backdrop, backdrop));
   handlers.pointerCancel(pointerEvent(3, backdrop, backdrop));
   handlers.pointerUp(pointerEvent(3, backdrop, backdrop));
+  handlers.click(clickEvent(3, backdrop, backdrop));
   assert.equal(dismissCount, 0);
 
   handlers.pointerDown(pointerEvent(4, backdrop, backdrop));
   handlers.pointerUp(pointerEvent(4, backdrop, backdrop));
+  assert.equal(dismissCount, 0);
+  handlers.click(clickEvent(4, backdrop, backdrop));
+  assert.equal(dismissCount, 1);
+});
+
+test("遮罩等待合成 click 后关闭并兼容无 pointerId 的 click", () => {
+  const backdrop = {};
+  let dismissCount = 0;
+  const handlers = createBackdropDismissHandlers(() => dismissCount++);
+
+  handlers.pointerDown(pointerEvent(5, backdrop, backdrop));
+  handlers.pointerUp(pointerEvent(5, backdrop, backdrop));
+  assert.equal(dismissCount, 0);
+
+  handlers.click({ target: backdrop, currentTarget: backdrop });
   assert.equal(dismissCount, 1);
 });
 
@@ -44,6 +66,7 @@ test("所有可关闭背景的面板共用完整指针手势规则", async () =>
     assert.match(source, /@pointerdown=/);
     assert.match(source, /@pointerup=/);
     assert.match(source, /@pointercancel=/);
+    assert.match(source, /@click=/);
     assert.doesNotMatch(source, /@(click|pointerdown)\.self=/);
   }
 });

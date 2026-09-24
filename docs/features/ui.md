@@ -451,7 +451,7 @@ Level Browser：
 └────────────────────────────────────────────────────────────────────────┘
 ```
 
-Explore 的一级导航是地图 collection。`/explore` 与 `/explore/original` 显示原版关卡，`/explore/novoban-pushbox`、`/explore/loma-pushbox` 与 `/explore/engine-lab` 分别显示 Novoban、LOMA 和 Engine Lab 地图。每个 Tab 第一行显示本地化 Collection 名称，第二行可选显示简短玩法标签；没有标签时名称在统一高度中垂直居中。Original Tab 平铺 40 章，展示 400 个普通关卡和 80 个 Bonus 奖励关，并提供：
+Explore 的一级导航是地图 collection。`/explore` 显示原版关卡，`/explore/novoban`、`/explore/loma` 与 `/explore/engine-lab` 分别显示 Novoban、LOMA 和 Engine Lab 地图。每个 Tab 第一行显示本地化 Collection 名称，第二行可选显示简短玩法标签；没有标签时名称在统一高度中垂直居中。Original Tab 平铺 40 章，展示 400 个普通关卡和 80 个 Bonus 奖励关，并提供：
 
 - 最近浏览；
 - 随机一关；
@@ -639,9 +639,11 @@ Help 是用户界面中完整操作说明的唯一来源；首页 Demo 的 `home
 ├──────────────────────────────┤
 │ Debug / Inspector            │
 ├──────────────────────────────┤
-│ Engine Gameplay HUD          │
-├──────────────────────────────┤
 │ Engine Screen Joystick       │
+├──────────────────────────────┤
+│ Engine Gameplay Dialog       │
+├──────────────────────────────┤
+│ Engine Gameplay HUD          │
 ├──────────────────────────────┤
 │ Canvas                       │  最低
 └──────────────────────────────┘
@@ -655,7 +657,9 @@ Help 是用户界面中完整操作说明的唯一来源；首页 Demo 的 `home
 
 Restart、Undo、Play Test 和普通关卡切换使用直接操作。破坏性存档操作、Editor 未保存离开和其它不可轻易恢复的动作使用统一确认 Dialog。
 
-可通过背景关闭的 Dialog 只有在同一指针于遮罩空白处按下并释放时才关闭。由面板内部开始、跨出面板结束的拖拽手势保持 Dialog 打开。
+可通过背景关闭的 Dialog 只有在同一指针于遮罩空白处按下并释放，并由浏览器提交对应 click
+后才关闭。遮罩在 click 期间保持挂载，避免触屏合成 click 命中后方控件。由面板内部开始、
+跨出面板结束的拖拽手势保持 Dialog 打开。
 
 Editor Draft 发生修改后，离开 Editor 或切换模式时显示未保存保护；继续编辑和确认离开是两个明确动作。
 

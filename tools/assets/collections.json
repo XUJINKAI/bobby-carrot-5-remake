@@ -12,12 +12,12 @@
       "producer": "robo2"
     },
     {
-      "id": "novoban-pushbox",
+      "id": "novoban",
       "cardSize": "medium",
       "producer": "novoban"
     },
     {
-      "id": "loma-pushbox",
+      "id": "loma",
       "cardSize": "small",
       "producer": "loma"
     },

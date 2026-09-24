@@ -43,6 +43,7 @@ export interface StartWorldMotion {
   direction: Direction;
   cause: MoveCause;
   durationMs: number;
+  initialProgress?: number;
 }
 
 export interface MovementLifecycle {
@@ -87,6 +88,7 @@ export class WorldMotionStore {
     if (current) this.remove(current.id);
 
     const durationMs = safeDuration(spec.durationMs);
+    const progress = clampProgress(spec.initialProgress ?? 0);
     const motion: WorldMotion = {
       id: this.nextIdValue++,
       kind: "move",
@@ -96,8 +98,8 @@ export class WorldMotionStore {
       direction: spec.direction,
       cause: structuredClone(spec.cause),
       durationMs,
-      elapsedMs: 0,
-      progress: 0,
+      elapsedMs: durationMs * progress,
+      progress,
       status: "running",
     };
     this.motions.set(motion.id, motion);

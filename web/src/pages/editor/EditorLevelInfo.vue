@@ -7,6 +7,7 @@ import type {
 } from "@bobby/editor";
 import type { MapMusic } from "@bobby/model";
 import { computed } from "vue";
+import { EDITOR_MUSIC_OPTIONS } from "./editorMusicOptions.js";
 import type { EditorMetadataField } from "./useEditorPage.js";
 
 const props = defineProps<{
@@ -16,10 +17,12 @@ const props = defineProps<{
   noteValue: string;
   rules: readonly EditorRuleCapability[];
   ruleMode: EditorRuleMode;
+  musicPreviewing: boolean;
 }>();
 const emit = defineEmits<{
   metadataField: [field: EditorMetadataField, value: string];
   music: [value: MapMusic | undefined];
+  musicPreviewToggle: [];
   maxMoves: [value: number | null];
   maxTime: [value: number | null];
   rule: [kind: EditorRuleKind, enabled: boolean];
@@ -32,26 +35,9 @@ const labels: Record<EditorRuleKind, string> = {
   exit: "到达终点",
   "golden-carrot": "取得金胡萝卜",
 };
-const musicOptions: readonly { value: MapMusic; label: string }[] = [
-  { value: "none", label: "无音乐" },
-  { value: "ingame0", label: "INGAME 1" },
-  { value: "ingame1", label: "INGAME 2" },
-  { value: "ingame2", label: "INGAME 3" },
-  { value: "mow", label: "Lawnmower" },
-  { value: "shop", label: "Beaver Shop" },
-  { value: "bonus", label: "Bonus Level" },
-  { value: "sandman", label: "Sandman" },
-  { value: "train", label: "Night Train" },
-  { value: "universe", label: "Universe" },
-  { value: "fly", label: "Golden Carrot" },
-  { value: "title", label: "Title" },
-];
-const selectedMusic = computed(() =>
-  props.level.music === "random" ? "" : props.level.music ?? "",
-);
+const selectedMusic = computed(() => props.level.music ?? "random");
 const knownMusic = computed(() =>
-  selectedMusic.value === "" ||
-  musicOptions.some((option) => option.value === selectedMusic.value),
+  EDITOR_MUSIC_OPTIONS.some((option) => option.value === selectedMusic.value),
 );
 
 function limit(type: "max-moves" | "max-time-seconds"): number | null {
@@ -71,8 +57,8 @@ function numberValue(event: Event): number | null {
 }
 
 function applyMusic(event: Event): void {
-  const value = (event.target as HTMLSelectElement).value;
-  emit("music", value ? value : undefined);
+  const value = (event.target as HTMLSelectElement).value as MapMusic;
+  emit("music", value === "random" ? undefined : value);
 }
 
 function textValue(event: Event): string {
@@ -113,22 +99,32 @@ function textValue(event: Event): string {
       </label>
       <label class="editor-field">
         <span>背景音乐</span>
-        <select
-          data-editor-music
-          :value="selectedMusic"
-          @change="applyMusic"
-        >
-          <option value="">默认（随机）</option>
-          <option
-            v-if="!knownMusic"
+        <span class="editor-music-control">
+          <select
+            data-editor-music
             :value="selectedMusic"
-          >{{ selectedMusic }}</option>
-          <option
-            v-for="option in musicOptions"
-            :key="option.value"
-            :value="option.value"
-          >{{ option.label }}</option>
-        </select>
+            @change="applyMusic"
+          >
+            <option
+              v-if="!knownMusic"
+              :value="selectedMusic"
+            >{{ selectedMusic }}</option>
+            <option
+              v-for="option in EDITOR_MUSIC_OPTIONS"
+              :key="option.value"
+              :value="option.value"
+            >{{ option.label }}</option>
+          </select>
+          <button
+            type="button"
+            class="editor-music-preview"
+            data-editor-music-preview
+            :class="{ active: musicPreviewing }"
+            :disabled="selectedMusic === 'none'"
+            :aria-pressed="musicPreviewing"
+            @click="emit('musicPreviewToggle')"
+          >{{ musicPreviewing ? "Stop" : "Preview" }}</button>
+        </span>
       </label>
     </section>
     <section class="editor-inspector-section editor-level-rules">
@@ -198,6 +194,32 @@ function textValue(event: Event): string {
 </template>
 
 <style scoped>
+.editor-music-control {
+  display:grid;
+  grid-template-columns:minmax(0, 1fr) auto;
+  gap:7px;
+}
+.editor-music-control select {
+  min-width:0;
+}
+.editor-music-preview {
+  min-width:58px;
+  padding:6px 9px;
+  border:1px solid var(--line);
+  border-radius:6px;
+  background:var(--panel2);
+  color:inherit;
+  font:inherit;
+  cursor:pointer;
+}
+.editor-music-preview:hover:not(:disabled),
+.editor-music-preview.active {
+  background:var(--bc-active);
+}
+.editor-music-preview:disabled {
+  opacity:0.45;
+  cursor:default;
+}
 .editor-level-rules { display:grid; gap:10px; }
 .editor-rule-title {
   display:flex;

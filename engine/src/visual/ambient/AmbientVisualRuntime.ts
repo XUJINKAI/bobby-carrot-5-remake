@@ -29,7 +29,6 @@ const SKY_SHIMMER_SLOTS = 3;
 const DEFAULT_AMBIENT_SEED = 0x5b0bb7;
 const DEFAULT_SNOW_DENSITY = 65 / 4;
 const DEFAULT_BUTTERFLY_DENSITY = 1;
-const BUTTERFLY_SIZE = 48;
 
 export interface AmbientVisualOptions {
   seed?: number;
@@ -112,7 +111,7 @@ export class AmbientVisualRuntime {
         )
         : this.pureSky === true
           ? []
-          : this.butterflies(mapBounds, elapsedMs),
+          : this.butterflies(mapBounds, camera, elapsedMs),
     };
   }
 
@@ -185,16 +184,18 @@ export class AmbientVisualRuntime {
 
   private butterflies(
     bounds: AmbientScreenRect,
+    camera: Camera,
     elapsedMs: number,
   ): ScreenOverlayItem[] {
-    if (bounds.width < BUTTERFLY_SIZE || bounds.height < BUTTERFLY_SIZE)
+    const renderSize = camera.tileScreenSize;
+    if (bounds.width < renderSize || bounds.height < renderSize)
       return [];
     const count = densityCount(
       bounds.width,
       bounds.height,
       this.butterflyDensity,
     );
-    const inset = insetRect(bounds, BUTTERFLY_SIZE / 2);
+    const inset = insetRect(bounds, renderSize / 2);
     return Array.from({ length: count }, (_, index) => {
       const segmentMs = 9000 + hash01(this.seed, index, 11) * 8000;
       const shiftedMs = elapsedMs + hash01(this.seed, index, 13) * segmentMs;
@@ -209,9 +210,9 @@ export class AmbientVisualRuntime {
       ) % 6;
       const frame = frameStep < 3 ? frameStep : 5 - frameStep;
       return {
-        x: point.x - BUTTERFLY_SIZE / 2,
-        y: point.y - BUTTERFLY_SIZE / 2,
-        size: BUTTERFLY_SIZE,
+        x: point.x - renderSize / 2,
+        y: point.y - renderSize / 2,
+        size: renderSize,
         composition: {
           layers: [{
             kind: "image",

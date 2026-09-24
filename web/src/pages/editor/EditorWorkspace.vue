@@ -58,6 +58,7 @@ defineProps<{
   deletionTargetIndex: number | null;
   rules: readonly EditorRuleCapability[];
   ruleMode: EditorRuleMode;
+  musicPreviewing: boolean;
   palette: readonly ResolvedPaletteGroup[];
   paletteSize: number;
   leftOpen: boolean;
@@ -101,6 +102,7 @@ const emit = defineEmits<{
   maxTime: [value: number | null];
   metadataField: [field: EditorMetadataField, value: string];
   music: [value: MapMusic | undefined];
+  musicPreviewToggle: [];
   playRestart: [];
   playStop: [];
 }>();
@@ -243,8 +245,10 @@ const emit = defineEmits<{
       :note-value="noteValue"
       :rules="rules"
       :rule-mode="ruleMode"
+      :music-previewing="musicPreviewing"
       @metadata-field="(field, value) => emit('metadataField', field, value)"
       @music="emit('music', $event)"
+      @music-preview-toggle="emit('musicPreviewToggle')"
       @rule="(kind, enabled) => emit('rule', kind, enabled)"
       @rule-mode="emit('ruleMode', $event)"
       @max-moves="emit('maxMoves', $event)"

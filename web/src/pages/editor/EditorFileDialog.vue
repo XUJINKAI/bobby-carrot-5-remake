@@ -90,6 +90,7 @@ function textValue(event: Event): string {
     @pointerdown="backdropDismiss.pointerDown"
     @pointerup="backdropDismiss.pointerUp"
     @pointercancel="backdropDismiss.pointerCancel"
+    @click="backdropDismiss.click"
   >
     <section class="editor-dialog" role="dialog" aria-modal="true" :aria-label="webT('editor.mapFile')">
       <header>

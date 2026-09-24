@@ -90,7 +90,7 @@ if (original.filters.length === 0)
   throw new Error("Original collection 必须提供 Explore filters");
 assertOriginalExploreFilters(original);
 const novoban = collectionIndexes.find(
-  (collection) => collection.id === "novoban-pushbox",
+  (collection) => collection.id === "novoban",
 );
 if (novoban?.cardSize !== "medium")
   throw new Error("Novoban collection cardSize 必须为 medium");
@@ -208,7 +208,7 @@ for (const scene of adventure.specialScenes) {
 });
 
 function assertLomaCollection(collections) {
-  const loma = collections.find((collection) => collection.id === "loma-pushbox");
+  const loma = collections.find((collection) => collection.id === "loma");
   if (!loma) throw new Error("缺少 LOMA Pushbox collection");
   if (loma.cardSize !== "small")
     throw new Error("LOMA Pushbox collection cardSize 必须为 small");
@@ -227,7 +227,7 @@ function assertLomaCollection(collections) {
   for (const map of loma.maps) {
     if (map.chapter !== map.id.slice(0, 2))
       throw new Error(`${map.id}: LOMA chapter 与源 Title pattern 不一致`);
-    const relative = `assets/maps/loma-pushbox/${map.id}.json`;
+    const relative = `assets/maps/loma/${map.id}.json`;
     const document = readJson(relative);
     if (typeof document.meta.author !== "string" || !document.meta.author)
       throw new Error(`${relative}: 必须保留 LOMA Author`);
@@ -239,7 +239,7 @@ function assertLomaCollection(collections) {
 
 function assertNovobanCollection(collections) {
   const novoban = collections.find(
-    (collection) => collection.id === "novoban-pushbox",
+    (collection) => collection.id === "novoban",
   );
   if (!novoban) throw new Error("缺少 Novoban collection");
   if (novoban.cardSize !== "medium")
@@ -252,7 +252,7 @@ function assertNovobanCollection(collections) {
   for (const map of novoban.maps) {
     if (map.chapter !== undefined)
       throw new Error(`${map.id}: Novoban 不应生成 chapter`);
-    const relative = `assets/maps/novoban-pushbox/${map.id}.json`;
+    const relative = `assets/maps/novoban/${map.id}.json`;
     const document = readJson(relative);
     if (document.meta.author !== "François Marques")
       throw new Error(`${relative}: 必须保留 François Marques 作者信息`);
@@ -264,7 +264,7 @@ function assertNovobanCollection(collections) {
   if (boxCounts.size <= 1)
     throw new Error("Novoban 应保留不同关卡的可变箱子数量");
 
-  const surrounded = readJson("assets/maps/novoban-pushbox/07.json");
+  const surrounded = readJson("assets/maps/novoban/07.json");
   const bobby = surrounded.entities.find((entity) => entity.type === "bobby");
   if (
     !bobby ||

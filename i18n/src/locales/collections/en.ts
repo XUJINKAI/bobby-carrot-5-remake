@@ -43,14 +43,14 @@ const catalog = {
   "collections.robo2.description":
     "The 25 built-in levels from HeroCraft's 2004 J2ME puzzle game.",
 
-  "collections.novoban-pushbox.name": "Novoban",
-  "collections.novoban-pushbox.tag": "Sokoban",
-  "collections.novoban-pushbox.description":
+  "collections.novoban.name": "Novoban",
+  "collections.novoban.tag": "Sokoban",
+  "collections.novoban.description":
     "50 beginner-friendly Sokoban levels by François Marques with increasing difficulty.",
 
-  "collections.loma-pushbox.name": "LOMA",
-  "collections.loma-pushbox.tag": "Sokoban",
-  "collections.loma-pushbox.description":
+  "collections.loma.name": "LOMA",
+  "collections.loma.tag": "Sokoban",
+  "collections.loma.description":
     "Levels Of Many Authors: 137 Sokoban maps with three boxes each.",
 
   "collections.engine-lab.name": "Engine Lab",

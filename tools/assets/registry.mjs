@@ -96,7 +96,7 @@ export function createAssetRegistry({
     }),
     createRobo2ArtTask(repositoryRoot, stagingRoot),
     collectionTask({
-      id: "publish.collection.loma-pushbox",
+      id: "publish.collection.loma",
       dependencies: [],
       inputs: [
         ...collectionPublisherInputs(),
@@ -110,7 +110,7 @@ export function createAssetRegistry({
       mapsRoot,
     }),
     collectionTask({
-      id: "publish.collection.novoban-pushbox",
+      id: "publish.collection.novoban",
       dependencies: [],
       inputs: [
         ...collectionPublisherInputs(),

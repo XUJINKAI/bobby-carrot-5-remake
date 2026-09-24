@@ -23,8 +23,13 @@ export function movingSupportOccupiedAt(
     if (
       occupant.type === MapEntityTypeId.CLOUD ||
       occupant.type === MapEntityTypeId.LEAF
-    )
-      return occupant.direction !== direction || occupant.state?.moving !== true;
+    ) {
+      // 同向运行中的载体先作为候选路线交给 World；其持续目的格 reservation
+      // 会阻止后车追入。已经结算停止的载体则在对象规则中直接阻挡。
+      const occupantMotion = query.motionForEntity(occupant.id);
+      return occupant.direction !== direction ||
+        occupantMotion?.status !== "running";
+    }
     return false;
   });
 }

@@ -1,0 +1,41 @@
+{
+  "formatVersion": 1,
+  "meta": {
+    "id": "robo2/01",
+    "url": "https://bc5r.xujinkai.net/explore/play/robo2/01",
+    "note": ""
+  },
+  "runtime": {
+    "worldHz": 60,
+    "bobbyLocomotion": {
+      "moveMs": 350
+    }
+  },
+  "finalState": {
+    "status": "won",
+    "moves": 7,
+    "position": [
+      {
+        "x": 3,
+        "y": 0
+      }
+    ],
+    "elapsedMs": 5117,
+    "counters": {},
+    "completedConditions": [
+      {
+        "type": "exit"
+      }
+    ]
+  },
+  "endTick": 307,
+  "frames": [
+    {"tick":86,"groups":[{"intents":[{"type":"move","direction":"left"}]}]},
+    {"tick":114,"groups":[{"intents":[{"type":"move","direction":"up"}]}]},
+    {"tick":167,"groups":[{"intents":[{"type":"move","direction":"up"}]}]},
+    {"tick":200,"groups":[{"intents":[{"type":"move","direction":"up"}]}]},
+    {"tick":227,"groups":[{"intents":[{"type":"move","direction":"right"}]}]},
+    {"tick":256,"groups":[{"intents":[{"type":"move","direction":"right"}]}]},
+    {"tick":285,"groups":[{"intents":[{"type":"move","direction":"up"}]}]}
+  ]
+}

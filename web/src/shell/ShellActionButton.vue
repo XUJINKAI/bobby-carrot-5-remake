@@ -2,7 +2,11 @@
 import type { ShellAction } from "./shellBridge.js";
 import AppIcon from "../shared/icons/AppIcon.vue";
 
-const props = defineProps<{ action: ShellAction; overflow?: boolean }>();
+const props = defineProps<{
+  action: ShellAction;
+  overflow?: boolean;
+  domId?: string;
+}>();
 const emit = defineEmits<{ action: [id: string]; navigate: [path: string] }>();
 function activate(event?: MouseEvent): void {
   if (props.action.disabled) return;
@@ -19,11 +23,13 @@ function activate(event?: MouseEvent): void {
 <template>
   <a
     v-if="action.href"
-    :id="action.id"
+    :id="domId ?? action.id"
     :href="action.href"
     class="shell-action"
     :class="[
       `collapse-${action.collapse ?? 'keep'}`,
+      action.narrow?.placement ? `narrow-${action.narrow.placement}` : undefined,
+      { 'narrow-icon-only': action.narrow?.iconOnly },
       { 'in-overflow': overflow },
     ]"
     :title="action.title ?? action.label"
@@ -34,8 +40,12 @@ function activate(event?: MouseEvent): void {
     :rel="action.external ? 'noreferrer' : undefined"
     @click="activate($event)"
   >
-    <span v-if="action.icon" class="shell-action-icon">
-      <AppIcon :name="action.icon" />
+    <span
+      v-if="action.icon"
+      class="shell-action-icon"
+      :class="action.iconTone ? `tone-${action.iconTone}` : undefined"
+    >
+      <AppIcon :name="action.icon" :weight="action.iconWeight ?? 'bold'" />
     </span>
     <AppIcon v-if="action.cornerIcon" class="shell-action-corner-icon" :name="action.cornerIcon" weight="regular" />
     <span v-if="action.label" class="shell-action-label">{{ action.label }}</span>
@@ -44,11 +54,13 @@ function activate(event?: MouseEvent): void {
   </a>
   <button
     v-else
-    :id="action.id"
+    :id="domId ?? action.id"
     type="button"
     class="shell-action"
     :class="[
       `collapse-${action.collapse ?? 'keep'}`,
+      action.narrow?.placement ? `narrow-${action.narrow.placement}` : undefined,
+      { 'narrow-icon-only': action.narrow?.iconOnly },
       { 'in-overflow': overflow },
     ]"
     :title="action.title ?? action.label"
@@ -57,8 +69,12 @@ function activate(event?: MouseEvent): void {
     :disabled="action.disabled"
     @click="activate($event)"
   >
-    <span v-if="action.icon" class="shell-action-icon">
-      <AppIcon :name="action.icon" />
+    <span
+      v-if="action.icon"
+      class="shell-action-icon"
+      :class="action.iconTone ? `tone-${action.iconTone}` : undefined"
+    >
+      <AppIcon :name="action.icon" :weight="action.iconWeight ?? 'bold'" />
     </span>
     <AppIcon v-if="action.cornerIcon" class="shell-action-corner-icon" :name="action.cornerIcon" weight="regular" />
     <span v-if="action.label" class="shell-action-label">{{ action.label }}</span>
@@ -106,6 +122,10 @@ function activate(event?: MouseEvent): void {
   min-width: 18px;
   place-items: center;
   font-size: 18px;
+}
+
+.shell-action-icon.tone-danger {
+  color: #ff574d;
 }
 
 .shell-action-corner-icon {
@@ -169,6 +189,10 @@ function activate(event?: MouseEvent): void {
   :global(.shell-overflow-menu) .shell-action-label,
   :global(.app-bottom-bar) .shell-action-label {
     display: inline;
+  }
+
+  .shell-action.narrow-icon-only .shell-action-label {
+    display: none;
   }
 }
 </style>

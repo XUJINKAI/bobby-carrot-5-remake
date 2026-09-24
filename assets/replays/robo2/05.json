@@ -1,0 +1,62 @@
+{
+  "formatVersion": 1,
+  "meta": {
+    "id": "robo2/05",
+    "url": "https://bc5r.xujinkai.net/explore/play/robo2/05",
+    "note": ""
+  },
+  "runtime": {
+    "worldHz": 60,
+    "bobbyLocomotion": {
+      "moveMs": 350
+    }
+  },
+  "finalState": {
+    "status": "won",
+    "moves": 28,
+    "position": [
+      {
+        "x": 3,
+        "y": 9
+      }
+    ],
+    "elapsedMs": 16550,
+    "counters": {},
+    "completedConditions": [
+      {
+        "type": "exit"
+      }
+    ]
+  },
+  "endTick": 993,
+  "frames": [
+    {"tick":140,"groups":[{"intents":[{"type":"move","direction":"right"}]}]},
+    {"tick":161,"groups":[{"intents":[{"type":"move","direction":"right"}]}]},
+    {"tick":182,"groups":[{"intents":[{"type":"move","direction":"right"}]}]},
+    {"tick":220,"groups":[{"intents":[{"type":"move","direction":"up"}]}]},
+    {"tick":250,"groups":[{"intents":[{"type":"move","direction":"right"}]}]},
+    {"tick":278,"groups":[{"intents":[{"type":"move","direction":"down"}]}]},
+    {"tick":305,"groups":[{"intents":[{"type":"move","direction":"down"}]}]},
+    {"tick":368,"groups":[{"intents":[{"type":"move","direction":"down"}]}]},
+    {"tick":399,"groups":[{"intents":[{"type":"move","direction":"down"}]}]},
+    {"tick":424,"groups":[{"intents":[{"type":"move","direction":"down"}]}]},
+    {"tick":452,"groups":[{"intents":[{"type":"move","direction":"down"}]}]},
+    {"tick":485,"groups":[{"intents":[{"type":"move","direction":"down"}]}]},
+    {"tick":623,"groups":[{"intents":[{"type":"move","direction":"up"}]}]},
+    {"tick":644,"groups":[{"intents":[{"type":"move","direction":"up"}]}]},
+    {"tick":666,"groups":[{"intents":[{"type":"move","direction":"left"}]}]},
+    {"tick":687,"groups":[{"intents":[{"type":"move","direction":"left"}]}]},
+    {"tick":708,"groups":[{"intents":[{"type":"move","direction":"left"}]}]},
+    {"tick":729,"groups":[{"intents":[{"type":"move","direction":"left"}]}]},
+    {"tick":756,"groups":[{"intents":[{"type":"move","direction":"right"}]}]},
+    {"tick":777,"groups":[{"intents":[{"type":"move","direction":"right"}]}]},
+    {"tick":798,"groups":[{"intents":[{"type":"move","direction":"right"}]}]},
+    {"tick":821,"groups":[{"intents":[{"type":"move","direction":"down"}]}]},
+    {"tick":842,"groups":[{"intents":[{"type":"move","direction":"down"}]}]},
+    {"tick":863,"groups":[{"intents":[{"type":"move","direction":"down"}]}]},
+    {"tick":884,"groups":[{"intents":[{"type":"move","direction":"down"}]}]},
+    {"tick":915,"groups":[{"intents":[{"type":"move","direction":"left"}]}]},
+    {"tick":936,"groups":[{"intents":[{"type":"move","direction":"left"}]}]},
+    {"tick":971,"groups":[{"intents":[{"type":"move","direction":"up"}]}]}
+  ]
+}
