@@ -392,16 +392,18 @@ async function expectStatus(url, expectedStatus, typePrefix) {
   if (expectedStatus === 404 && body.includes('<div id="app">'))
     throw new Error(`404 request ${url} incorrectly received SPA HTML`);
 }
-async function verifyRouteMigration(url, expectedPathname, readySelector) {
+async function verifyRouteMigration(navigateUrl, expectedPathname, readySelector) {
+  const readyUrl = new URL(navigateUrl);
+  readyUrl.pathname = expectedPathname;
   const result = await runBrowserEval(
-    url,
+    navigateUrl,
     `(async () => {
       const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
       for (let i = 0; i < 120; i += 1) {
         if (
           location.pathname === ${JSON.stringify(expectedPathname)} &&
           location.search === "?source=legacy" &&
-          location.hash === ${JSON.stringify(new URL(url).hash)} &&
+          location.hash === ${JSON.stringify(readyUrl.hash)} &&
           document.querySelector(${JSON.stringify(readySelector)})
         ) {
           return JSON.stringify({
@@ -418,6 +420,7 @@ async function verifyRouteMigration(url, expectedPathname, readySelector) {
         hash: location.hash,
       });
     })()`,
+    readyUrl.href,
   );
   if (result.status !== 0)
     throw new Error(`历史路由迁移检查失败：${result.stderr || result.stdout}`);
@@ -425,7 +428,7 @@ async function verifyRouteMigration(url, expectedPathname, readySelector) {
   if (
     actual.pathname !== expectedPathname ||
     actual.search !== "?source=legacy" ||
-    actual.hash !== new URL(url).hash
+    actual.hash !== readyUrl.hash
   ) {
     throw new Error(`历史路由迁移结果异常：${JSON.stringify(actual)}`);
   }
@@ -603,7 +606,7 @@ async function interactiveDataExchangeSmoke(url) {
     throw new Error(`Unexpected home import smoke result: ${JSON.stringify(payload)}`);
 }
 
-async function runBrowserEval(url, script) {
+async function runBrowserEval(navigateUrl, script, readyUrl = navigateUrl) {
   if (!browserRuntime)
     return { status: 1, stdout: "", stderr: "Chromium runtime 未启动" };
   let context = null;
@@ -649,10 +652,14 @@ addEventListener("unhandledrejection", (event) => {
           },
           sessionId,
         );
-        const navigation = await cdp.send("Page.navigate", { url }, sessionId);
+        const navigation = await cdp.send(
+          "Page.navigate",
+          { url: navigateUrl },
+          sessionId,
+        );
         if (navigation.errorText)
           throw new Error(`Chromium navigation failed: ${navigation.errorText}`);
-        await waitForPageReady(cdp, sessionId, url);
+        await waitForPageReady(cdp, sessionId, readyUrl);
         const evaluation = await cdp.send(
           "Runtime.evaluate",
           { expression: script, awaitPromise: true, returnByValue: true },
@@ -670,7 +677,7 @@ addEventListener("unhandledrejection", (event) => {
         };
       })(),
       40_000,
-      `Chromium timed out while loading ${url}`,
+      `Chromium timed out while loading ${navigateUrl} (ready URL ${readyUrl})`,
     );
   } catch (error) {
     return {
@@ -748,8 +755,8 @@ function startBrowserRuntime(browserPath) {
   };
 }
 
-async function waitForPageReady(cdp, sessionId, url) {
-  const expected = new URL(url);
+async function waitForPageReady(cdp, sessionId, readyUrl) {
+  const expected = new URL(readyUrl);
   const expectedDocumentUrl = `${expected.origin}${expected.pathname}${expected.search}`;
   const deadline = Date.now() + 12_000;
   while (Date.now() < deadline) {
@@ -773,7 +780,7 @@ async function waitForPageReady(cdp, sessionId, url) {
     }
     await delay(50);
   }
-  throw new Error(`Chromium page did not become ready: ${url}`);
+  throw new Error(`Chromium page did not become ready: ${readyUrl}`);
 }
 
 function isNavigationContextError(error) {
