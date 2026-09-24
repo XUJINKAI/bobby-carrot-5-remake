@@ -112,6 +112,11 @@ durationMs
 
 VisualRuntime 使用 `PresentationFrame.nowMs` 做 Tween/Lerp。动画完成只是表现事实，**不得通过 animation-complete callback 再修改 World**。
 
+Ice 在移动中点接管角色表现：步行进入时只播放前半格行走动画，随后使用固定滑行姿势；
+驾驶 Mower 进入时始终保留载具外观，中点后冻结 Mower 的两帧震动。连续 Ice 强制移动
+以权威 `WorldMotion` 完成与下一段启动为交接边界，Presentation 到达格末时保持当前移动
+姿势，避免在相邻冰格之间短暂插入站姿。
+
 玩家下一次是否能行动、forced movement 何时继续等 gameplay sequencing 由 RuntimeActionScheduler 决定，而不是由 VisualRuntime `isAnimating` 决定。
 
 ## 4. RuntimeAction 与原版阻塞过程

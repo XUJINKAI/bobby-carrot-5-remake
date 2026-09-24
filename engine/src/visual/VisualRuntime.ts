@@ -47,6 +47,9 @@ interface VisualMotion {
   moving: boolean;
   animation?: string;
   direction?: Direction;
+  /** World-backed motion 在权威完成事实到达前保持末端移动姿势。 */
+  worldMotionId?: number;
+  worldCompleted?: boolean;
 }
 
 interface VisualMovementGroup {
@@ -245,6 +248,12 @@ export class VisualRuntime {
           false,
           "death",
         );
+        continue;
+      }
+      if (delta.type === "motion-completed") {
+        const motion = this.motions.get(delta.motion.entityId);
+        if (motion?.worldMotionId === delta.motion.id)
+          motion.worldCompleted = true;
         continue;
       }
       if (delta.type === "motion-cleared") {
@@ -495,6 +504,7 @@ export class VisualRuntime {
         motion.cause.type === "carry" ? undefined : motion.direction,
         timeline,
         { startPx: startElevationPx, endPx: endElevationPx },
+        motion.id,
       );
     }
   }
@@ -527,6 +537,7 @@ export class VisualRuntime {
     direction?: Direction,
     timeline?: VisualTimeline,
     elevation?: { startPx: number; endPx: number },
+    worldMotionId?: number,
   ): void {
     const currentElevationPx = this.entityRuntime.get(entityId)?.elevationPx ?? 0;
     const motion: VisualMotion = {
@@ -544,6 +555,9 @@ export class VisualRuntime {
       moving,
       ...(animation ? { animation } : {}),
       ...(direction ? { direction } : {}),
+      ...(worldMotionId === undefined
+        ? {}
+        : { worldMotionId, worldCompleted: false }),
     };
     this.motions.set(entityId, motion);
     this.activeMotionIds.add(entityId);
@@ -649,6 +663,11 @@ export class VisualRuntime {
     progress: TimelineProgress,
   ): void {
     if (progress.raw >= 1) {
+      if (motion.worldMotionId !== undefined && !motion.worldCompleted) {
+        this.activeMotionIds.add(motion.entityId);
+        this.setMotionState(motion, 1, 1);
+        return;
+      }
       // Completed motions stay in `motions` for presentation-clock rewind. Only the
       // active -> stationary transition may stamp stationarySinceMs; later frames
       // must not keep resetting the idle timer.

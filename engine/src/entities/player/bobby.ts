@@ -161,28 +161,19 @@ const bobbyVisual = {
       });
     }
 
-    // Ice 的滑动姿势只属于正在进行的空间运动；停在 Ice 上时仍使用普通站姿。
-    if (
-      context.runtime?.animation === "ice" &&
-      context.runtime.moving === true
-    ) {
-      return composition(context, {
-        asset: BOBBY_VISUAL_ASSETS.move[direction],
-        frameColumns: 8,
-        frameRows: 1,
-        frameIndex: BOBBY_ICE_FRAME,
-      });
-    }
-
+    const iceSlidePose = usesIceSlidePose(context, rawProgress);
     const mountId = bobbyMountId(context.entity.state);
     const mount = mountId === null ? undefined : context.query.entity(mountId);
     if (mount?.type === MapEntityTypeId.MOWER) {
       const accelerated = readBobbySpeedBoost(context.entity.state) !== null;
-      const row = timedFrame(
-        context,
-        accelerated ? SPEED_MOWER_FRAME_MS : MOWER_FRAME_MS,
-        2,
-      );
+      // Ice 在移动中点接管后保留载具外观，但冻结 Mower 的两帧震动。
+      const row = iceSlidePose
+        ? 0
+        : timedFrame(
+          context,
+          accelerated ? SPEED_MOWER_FRAME_MS : MOWER_FRAME_MS,
+          2,
+        );
       const source = MOWER_SOURCE_RECT[direction];
       return composition(
         context,
@@ -196,6 +187,16 @@ const bobbyVisual = {
         },
         speedTrail(context, direction),
       );
+    }
+
+    // 步行进入 Ice 时只播放前半格行走动画，中点后切到固定滑行姿势。
+    if (iceSlidePose) {
+      return composition(context, {
+        asset: BOBBY_VISUAL_ASSETS.move[direction],
+        frameColumns: 8,
+        frameRows: 1,
+        frameIndex: BOBBY_ICE_FRAME,
+      });
     }
 
     // Carry is a passive positional movement. The carrier and every carried
@@ -283,6 +284,18 @@ export const bobby: EntityModule = originalModule(definition, bobbyVisual, [
 function isStandingOnClimbable(context: VisualResolveContext): boolean {
   return context.query.presencesAt(context.entity.anchor).some((presence) =>
     presence.facts.includes("climbable")
+  );
+}
+
+function usesIceSlidePose(
+  context: VisualResolveContext,
+  progress: number,
+): boolean {
+  if (context.runtime?.moving !== true) return false;
+  if (context.runtime.animation === "ice") return true;
+  if (progress < 0.5) return false;
+  return context.query.presencesAt(context.entity.anchor).some((presence) =>
+    context.query.entity(presence.entityId)?.type === MapEntityTypeId.ICE
   );
 }
 
