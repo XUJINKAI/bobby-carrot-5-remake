@@ -610,8 +610,18 @@ function gameShellConfig(
       ],
       commands: explore
         ? [
-            { id: "undo", icon: "undo" as const, title: webT("shell.undo") },
-            { id: "redo", icon: "redo" as const, title: webT("shell.redo") },
+            {
+              id: "undo",
+              icon: "undo" as const,
+              title: webT("shell.undo"),
+              narrow: { placement: "bottom-trailing" as const },
+            },
+            {
+              id: "redo",
+              icon: "redo" as const,
+              title: webT("shell.redo"),
+              narrow: { placement: "bottom-trailing" as const },
+            },
           ]
         : [],
       actions: [
@@ -658,6 +668,7 @@ function gameShellConfig(
           id: "screen-control",
           icon: "joystick",
           label: webT("shell.screenJoystick"),
+          narrow: { iconOnly: true },
           pressed: screenControlEnabled,
         },
       ],

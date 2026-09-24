@@ -117,12 +117,14 @@ export function editorShellConfig(
               id: "editor-undo",
               icon: "undo",
               title: webT("editor.undoPlay"),
+              narrow: { placement: "bottom-trailing" },
               disabled: !playState.canUndo,
             },
             {
               id: "editor-redo",
               icon: "redo",
               title: webT("editor.redoPlay"),
+              narrow: { placement: "bottom-trailing" },
               disabled: !playState.canRedo,
             },
             {
@@ -205,6 +207,7 @@ export function editorShellConfig(
               id: "screen-control",
               icon: "joystick",
               label: webT("shell.screenJoystick"),
+              narrow: { iconOnly: true },
               pressed: playState.screenControlEnabled,
             },
           ]

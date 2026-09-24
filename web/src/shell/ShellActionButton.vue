@@ -2,7 +2,11 @@
 import type { ShellAction } from "./shellBridge.js";
 import AppIcon from "../shared/icons/AppIcon.vue";
 
-const props = defineProps<{ action: ShellAction; overflow?: boolean }>();
+const props = defineProps<{
+  action: ShellAction;
+  overflow?: boolean;
+  domId?: string;
+}>();
 const emit = defineEmits<{ action: [id: string]; navigate: [path: string] }>();
 function activate(event?: MouseEvent): void {
   if (props.action.disabled) return;
@@ -19,11 +23,13 @@ function activate(event?: MouseEvent): void {
 <template>
   <a
     v-if="action.href"
-    :id="action.id"
+    :id="domId ?? action.id"
     :href="action.href"
     class="shell-action"
     :class="[
       `collapse-${action.collapse ?? 'keep'}`,
+      action.narrow?.placement ? `narrow-${action.narrow.placement}` : undefined,
+      { 'narrow-icon-only': action.narrow?.iconOnly },
       { 'in-overflow': overflow },
     ]"
     :title="action.title ?? action.label"
@@ -48,11 +54,13 @@ function activate(event?: MouseEvent): void {
   </a>
   <button
     v-else
-    :id="action.id"
+    :id="domId ?? action.id"
     type="button"
     class="shell-action"
     :class="[
       `collapse-${action.collapse ?? 'keep'}`,
+      action.narrow?.placement ? `narrow-${action.narrow.placement}` : undefined,
+      { 'narrow-icon-only': action.narrow?.iconOnly },
       { 'in-overflow': overflow },
     ]"
     :title="action.title ?? action.label"
@@ -181,6 +189,10 @@ function activate(event?: MouseEvent): void {
   :global(.shell-overflow-menu) .shell-action-label,
   :global(.app-bottom-bar) .shell-action-label {
     display: inline;
+  }
+
+  .shell-action.narrow-icon-only .shell-action-label {
+    display: none;
   }
 }
 </style>

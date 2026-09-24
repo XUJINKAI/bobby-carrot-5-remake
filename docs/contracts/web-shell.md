@@ -38,7 +38,7 @@ TopBar 使用固定三列：
 Identity + Back + Leading | Commands | Actions / Overflow
 ```
 
-三列分别使用 `minmax(0, 1fr) auto minmax(0, 1fr)`，保证 Commands 在桌面视觉居中。移动端仍使用同一套 DOM 和三列结构。
+三列分别使用 `minmax(0, 1fr) auto minmax(0, 1fr)`，保证 Commands 在桌面视觉居中。窄屏保持同一套动作配置，按左侧、中央、右侧的视觉顺序收敛为 Flex 布局。
 
 `ShellIdentity` 可以声明 icon、产品名、可选状态文字、上下文名、首页链接和导航 menu。页面可以通过 `productNameVisible` 与 `contextNameVisible` 显式隐藏对应文字；CSS 在窄屏依次收敛产品名和上下文名，不由页面判断 viewport。首页使用状态文字显示当前开发状态，并在窄屏保持外露；其它页面不提供该字段。
 
@@ -54,6 +54,10 @@ interface ShellAction {
   title?: string;
   href?: string;
   collapse?: "keep" | "overflow" | "hide";
+  narrow?: {
+    placement?: "bottom-trailing";
+    iconOnly?: boolean;
+  };
   disabled?: boolean;
   pressed?: boolean;
   badge?: ShellBadge;
@@ -61,6 +65,10 @@ interface ShellAction {
 ```
 
 Shell 只派发 action ID 或执行声明式导航。`collapse=keep` 在移动端保留，`overflow` 收入自动生成的菜单，`hide` 在移动端隐藏。Overflow 菜单由当前配置自动派生。
+
+`narrow.placement="bottom-trailing"` 在宽屏保留 Action 的原始 TopBar 位置，在窄屏把同一语义
+Action 呈现在 BottomBar 右侧；Shell 继续派发原始 action ID。`narrow.iconOnly` 只在窄屏隐藏
+Action label，并保留 `title` / `aria-label`。页面只声明响应式意图，不读取 viewport。
 
 `iconWeight` 选择图标线条或填充形态；`iconTone="danger"` 只把 Action 图标显示为危险色。
 录制入口用普通圆形表示待机状态，用红色实心圆表示正在录制；按钮背景和文字仍遵循普通
@@ -81,6 +89,10 @@ Leading | Info | Trailing
 ```
 
 `leading` 和 `trailing` 使用普通 `ShellAction`；`info` 使用文本或链接，并可带语义图标。Palette、Inspector、Screen Control 等 action 的结果由页面或 App 层处理，Shell 不创建业务 Drawer、Dialog 或 Engine 控件。
+
+Gameplay 的 Undo / Redo 在窄屏从 TopBar Commands 移至 BottomBar `trailing`，排列在 Screen
+Control 之前；三个入口使用纯图标显示。宽屏继续在 TopBar 显示 Undo / Redo，并在 BottomBar
+显示带标签的 Screen Control。
 
 `leadingIndicators` 紧随左侧 action 显示静态状态图标，包含语义图标、提示文字、可选的
 结构化详情和 `success / muted` 颜色语义。详情由页面提供稳定 ID、标签、文本与可选的长注记

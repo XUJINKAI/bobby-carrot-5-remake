@@ -32,6 +32,10 @@ export interface ShellAction {
   href?: string;
   external?: boolean;
   collapse?: "keep" | "overflow" | "hide";
+  narrow?: {
+    placement?: "bottom-trailing";
+    iconOnly?: boolean;
+  };
   disabled?: boolean;
   pressed?: boolean;
   tip?: string;

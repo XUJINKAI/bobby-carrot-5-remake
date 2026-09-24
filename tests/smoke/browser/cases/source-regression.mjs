@@ -17,6 +17,7 @@ import {
 } from "./source/locale-browser-checks.mjs";
 import {
   replayLayout,
+  verifyNarrowGameActions,
   verifyReplayPanelShortcut,
 } from "./source/replay-browser-checks.mjs";
 import { verifySettingsPage } from "./source/settings-browser-checks.mjs";
@@ -692,6 +693,7 @@ async function verifyReplayPanel(cdp, url) {
     20_000,
   );
   const mobileLayout = await replayLayout(cdp, sessionId);
+  await verifyNarrowGameActions(cdp, sessionId);
   if (Math.abs(mobileLayout.canvasLeft - mobileLayout.stageLeft) > 1)
     throw new Error("Replay mobile panel changed the canvas layout");
   if (mobileLayout.panelLeft < mobileLayout.stageLeft + 9)

@@ -5,6 +5,7 @@ import {
   musicActionIcon,
   repositoryAction,
 } from "../../../web/src/app/pageChrome.ts";
+import { narrowBottomTrailingActions } from "../../../web/src/shell/responsiveActions.ts";
 
 test("音乐操作根据开关状态使用扬声器图标", () => {
   assert.equal(musicActionIcon(true), "sound-on");
@@ -100,6 +101,53 @@ test("Explore 前后关在移动端保持显示", () => {
     gameSource,
     /id: "previous-level"[\s\S]*?collapse: "keep"[\s\S]*?id: "next-level"[\s\S]*?collapse: "keep"/,
   );
+});
+
+test("窄屏把游戏 Undo 和 Redo 移到摇杆左侧", () => {
+  const gameSource = readFileSync(
+    new URL("../../../web/src/pages/game/mountGamePage.ts", import.meta.url),
+    "utf8",
+  );
+  const editorSource = readFileSync(
+    new URL("../../../web/src/pages/editor/editorShell.ts", import.meta.url),
+    "utf8",
+  );
+  const bottomBarSource = readFileSync(
+    new URL("../../../web/src/shell/AppBottomBar.vue", import.meta.url),
+    "utf8",
+  );
+  const actionSource = readFileSync(
+    new URL("../../../web/src/shell/ShellActionButton.vue", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(
+    gameSource,
+    /id: "undo"[\s\S]*?narrow: \{ placement: "bottom-trailing" as const \}[\s\S]*?id: "redo"[\s\S]*?narrow: \{ placement: "bottom-trailing" as const \}/,
+  );
+  assert.match(
+    editorSource,
+    /id: "editor-undo"[\s\S]*?narrow: \{ placement: "bottom-trailing" \}[\s\S]*?id: "editor-redo"[\s\S]*?narrow: \{ placement: "bottom-trailing" \}/,
+  );
+  const relocated = narrowBottomTrailingActions({
+    topBar: {
+      leading: [{ id: "previous" }],
+      commands: [
+        { id: "undo", narrow: { placement: "bottom-trailing" } },
+        { id: "redo", narrow: { placement: "bottom-trailing" } },
+      ],
+      actions: [{ id: "settings" }],
+    },
+  });
+  assert.deepEqual(relocated.map((action) => action.id), ["undo", "redo"]);
+  assert.ok(
+    bottomBarSource.indexOf("narrowTrailing ?? []")
+      < bottomBarSource.indexOf("config.trailing ?? []"),
+  );
+  assert.match(bottomBarSource, /:dom-id="`narrow-\$\{item\.id\}`"/);
+  assert.match(actionSource, /narrow-icon-only/);
+  assert.match(gameSource, /id: "screen-control"[\s\S]*?narrow: \{ iconOnly: true \}/);
+  assert.match(editorSource, /id: "screen-control"[\s\S]*?narrow: \{ iconOnly: true \}/);
 });
 
 test("移动端顶栏按左侧、中央、右侧顺序排列", () => {

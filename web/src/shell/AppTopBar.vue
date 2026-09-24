@@ -164,7 +164,10 @@ function action(id: string): void {
   .shell-topbar-center > .collapse-overflow,
   .shell-topbar-left > .collapse-hide,
   .shell-topbar-right > .collapse-hide,
-  .shell-topbar-center > .collapse-hide {
+  .shell-topbar-center > .collapse-hide,
+  .shell-topbar-left > .narrow-bottom-trailing,
+  .shell-topbar-right > .narrow-bottom-trailing,
+  .shell-topbar-center > .narrow-bottom-trailing {
     display: none;
   }
 
