@@ -62,11 +62,17 @@ export class MovementRuntime {
     request: EntityMotionRequest,
     durationMs: number,
     lifecycle?: MovementLifecycle,
+    initialProgress = 0,
   ): WorldMotion {
     const resolvedDurationMs = this.resolveDuration(request, durationMs);
+    const resolvedInitialProgress = this.resolveInitialProgress(
+      request,
+      initialProgress,
+    );
     const motion = this.motions.start({
       ...request,
       durationMs: resolvedDurationMs,
+      initialProgress: resolvedInitialProgress,
     });
     this.plans.set(motion.id, {
       motionId: motion.id,
@@ -130,6 +136,19 @@ export class MovementRuntime {
         `Carry companion ${request.entityId} 缺少进行中的 carrier motion ${request.cause.carrierId}`,
       );
     return carrier.durationMs;
+  }
+
+  private resolveInitialProgress(
+    request: EntityMotionRequest,
+    initialProgress: number,
+  ): number {
+    if (request.cause.type !== "carry") return initialProgress;
+    const carrier = this.motions.forEntity(request.cause.carrierId);
+    if (!carrier || carrier.status !== "running")
+      throw new Error(
+        `Carry companion ${request.entityId} 缺少进行中的 carrier motion ${request.cause.carrierId}`,
+      );
+    return carrier.progress;
   }
 
   private advanceOne(

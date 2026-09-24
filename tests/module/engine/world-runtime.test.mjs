@@ -12,6 +12,7 @@ function registry({ grassBehaviors = [] } = {}) {
   entities.registerAll([
     { type: "floor", presenceFacts: ["walkable"] },
     { type: "player", presenceFacts: ["player"] },
+    { type: "mover", presenceFacts: [] },
     { type: "wall", presenceFacts: ["blocking"] },
     { type: "box", presenceFacts: ["blocking", "pushable"] },
     { type: "push-goal", presenceFacts: ["walkable"] },
@@ -186,6 +187,42 @@ test("同一 intent group 的两个 actor 争用同一目标格时全部拒绝",
   assert.deepEqual(world.entity(left).anchor, { x: 0, y: 0 });
   assert.deepEqual(world.entity(right).anchor, { x: 2, y: 0 });
   assert.equal(world.state.moves, 0);
+});
+
+test("运行中的 WorldMotion 持续预留尚未抵达的目的格", () => {
+  const entities = registry();
+  const world = new World(
+    {
+      schemaVersion: 1,
+      width: 3,
+      height: 1,
+      entities: [
+        floor(0, 0),
+        floor(1, 0),
+        floor(2, 0),
+        { type: "mover", x: 0, y: 0 },
+        { type: "mover", x: 2, y: 0 },
+      ],
+    },
+    {
+      entities,
+      behaviors: new BehaviorRegistry(),
+      facts,
+      motionDurationMs: 100,
+    },
+  );
+  const movers = world.query.entitiesMatching({
+    kind: "type",
+    value: "mover",
+  });
+
+  assert.equal(move(world, movers[0].id, "right").moves[0].moved, true);
+  const conflict = move(world, movers[1].id, "left").moves[0];
+
+  assert.equal(conflict.moved, false);
+  assert.equal(conflict.passage.reason, "destination-conflict");
+  assert.deepEqual(world.entity(movers[0].id).anchor, { x: 1, y: 0 });
+  assert.deepEqual(world.entity(movers[1].id).anchor, { x: 2, y: 0 });
 });
 
 test("clear-and-pass removes blocking cover and completes the same movement", () => {

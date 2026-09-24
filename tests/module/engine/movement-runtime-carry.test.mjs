@@ -57,3 +57,28 @@ test("carry companion inherits carrier duration and progress", () => {
     assert.equal(movement.motions.forEntity(passengerId), undefined);
   }
 });
+
+test("carry companion inherits an already synchronized carrier timeline", () => {
+  const movement = new MovementRuntime();
+  const carrierId = 7;
+  const passengerId = 8;
+
+  movement.start(
+    moveRequest(carrierId, {
+      type: "forced",
+      mechanism: "leaf",
+      cadenceMs: 400,
+    }),
+    400,
+    undefined,
+    0.25,
+  );
+  movement.start(
+    moveRequest(passengerId, { type: "carry", carrierId }),
+    350,
+  );
+
+  assert.equal(movement.motions.forEntity(carrierId).progress, 0.25);
+  assert.equal(movement.motions.forEntity(passengerId).progress, 0.25);
+  assert.equal(movement.motions.forEntity(passengerId).durationMs, 400);
+});

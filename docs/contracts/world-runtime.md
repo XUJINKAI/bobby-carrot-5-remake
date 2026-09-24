@@ -49,13 +49,17 @@ Entity Behavior 使用纯查询的 `planMovement()` 提出特殊移动规则，W
 - Mower 等对象特例可用 `contacts` 为标准 passage 提供完整 source / target Presence 栈；
 - primary 是否随方向更新；
 - 本次 movement 的 lifecycle 与 markers；
-- 与 primary 同一事务移动的 companions，例如载具或乘客。
+- 与 primary 同一事务移动的 companions，例如载具或乘客；
+- 接触连续移动时提供 `timingSourceEntityId`，继承另一条运行中 WorldMotion 的时长与进度。
 
 同一 plan 的参与者拥有共同 reservation identity，因此可以有意共享目的格；不同 plan 仍会发生 destination conflict。World 只实现这套通用规则，不识别 Flight、Fireball、Leaf、Cloud、Mower 或 Entity 私有 relation 字段。
+已经开始的 WorldMotion 在完成或中断前持续预留其 `to` 格；后续独立 plan 不能因 Entity
+anchor 已提前提交到该格，就把仍在进行的连续移动误判为已经让出目的格。
+同一事务内的 Push 以推动者为 cadence 源，使被推动物至少跟上推动者；后车进入前车刚离开的格时，可以前车的运行中 WorldMotion 为 timing 源，使后车从当前进度直接接入同一时间线。两种关系都由发生接触的领域规则声明速度源，World 只负责传播权威时长与进度。
 
 特殊规则的职责边界为：Entity 决定 policy，World 校验边界、busy 状态与 reservation，并提交 Grid Fact 和 WorldMotion。Behavior 不能借助 policy 直接修改 EntityStore 或推进时间。
 
-Cloud / Leaf 的对象规则在格边界规划下一格：静态阻挡按 Plank、Ice Block、Crumbly Rock、Fence 的对象身份判断；风或水流改向受阻时尝试原方向，停在潮流或瀑布上的 Leaf 继续等待下一次规划。World 对每个提案执行统一的边界、运动状态和目的格预留检查。Fireball 的地形域、对象阻挡、Mirror 入射和 Ice Block 融化同样由 Entity 领域完成。
+Cloud / Leaf 的对象规则在格边界规划下一格：静态阻挡按 Plank、Ice Block、Crumbly Rock、Fence 的对象身份判断；风或水流改向受阻时尝试原方向，停在潮流或瀑布上的 Leaf 继续等待下一次规划。同向后车自身不慢于前车且即将追上时保持运行，并把前车声明为 timing 源；后车的整格 motion 与前车保持相同进度和速度，前车停止后两者保持分格。World 对每个提案执行统一的边界、运动状态和目的格预留检查。Fireball 的地形域、对象阻挡、Mirror 入射和 Ice Block 融化同样由 Entity 领域完成。
 
 ## Marker
 

@@ -47,6 +47,12 @@ export class WorldMovementResolver {
     private readonly push: PushPipelineMechanism,
   ) {}
 
+  /** 运行中的连续移动在抵达前持续占有自己的权威目的格。 */
+  reserveActiveMotionDestinations(transaction: MovementTransaction): void {
+    for (const motion of this.movement.running)
+      transaction.reserveDestination(motion.entityId, motion.to);
+  }
+
   /**
    * 同组 intent 先声明目的格，使冲突裁决与 intent 的遍历顺序无关。
    * 即使其中一个移动后来被地形阻止，两个 actor 同 tick 争用同格仍会一起被拒绝。
@@ -277,6 +283,7 @@ export class WorldMovementResolver {
           (presence) => presence.entityId !== ignoredEntity,
         ),
       },
+      plan.timingSourceEntityId,
     );
     this.appendCompanions(plan, local);
     this.reservePlan(plan, group);
@@ -297,6 +304,12 @@ export class WorldMovementResolver {
       return "player-occupied";
     if (!group.canReserveDestination(plan.actorId, plan.to))
       return "destination-conflict";
+    if (
+      plan.timingSourceEntityId !== undefined &&
+      this.movement.motions.forEntity(plan.timingSourceEntityId)?.status !==
+        "running"
+    )
+      return "timing-source-unavailable";
     for (const companion of plan.companions) {
       const entity = this.entities.get(companion.entityId);
       if (!entity) return "missing-companion";
@@ -343,6 +356,7 @@ export class WorldMovementResolver {
       plan.cause,
       plan.updateDirection,
       plan.lifecycle,
+      plan.timingSourceEntityId,
     );
     this.appendCompanions(plan, local);
     this.reservePlan(plan, group);

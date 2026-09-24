@@ -26,6 +26,7 @@ test("MovementPolicy 合并为单一 MovementPlan", () => {
       reason: "test-passage",
     },
     {
+      timingSourceEntityId: 3,
       companions: [
         {
           entityId: 2,
@@ -39,6 +40,7 @@ test("MovementPolicy 合并为单一 MovementPlan", () => {
   assert.equal(plan.passage, "unrestricted");
   assert.equal(plan.updateDirection, false);
   assert.equal(plan.reason, "test-passage");
+  assert.equal(plan.timingSourceEntityId, 3);
   assert.deepEqual(plan.contacts, fullContacts);
   assert.deepEqual(plan.lifecycle, fullContacts);
   assert.deepEqual(plan.companions, [
@@ -58,5 +60,13 @@ test("MovementPolicy 拒绝相互冲突的规则", () => {
         { passage: "unrestricted" },
       ]),
     /passage.*冲突/,
+  );
+  assert.throws(
+    () =>
+      createMovementPlan(context, [
+        { timingSourceEntityId: 2 },
+        { timingSourceEntityId: 3 },
+      ]),
+    /timingSourceEntityId.*冲突/,
   );
 });

@@ -33,6 +33,8 @@ export interface MovementPolicy {
   updateDirection?: boolean;
   lifecycle?: MovementLifecycle;
   companions?: readonly MovementCompanion[];
+  /** 继承另一条运行中 WorldMotion 的时长与进度，用于连续接触后的同速移动。 */
+  timingSourceEntityId?: EntityId;
   reason?: string;
 }
 
@@ -65,6 +67,7 @@ export interface MovementPlan {
   updateDirection: boolean;
   lifecycle: MovementLifecycle;
   companions: readonly MovementCompanion[];
+  timingSourceEntityId?: EntityId;
   reason: string;
 }
 
@@ -82,6 +85,8 @@ export function createMovementPlan(
   let contactsOwner: number | null = null;
   let directionOwner: number | null = null;
   let lifecycleOwner: number | null = null;
+  let timingSourceEntityId: EntityId | undefined;
+  let timingSourceOwner: number | null = null;
   const companions = new Map<EntityId, MovementCompanion>();
 
   policies.forEach((policy, index) => {
@@ -114,6 +119,16 @@ export function createMovementPlan(
       lifecycle = cloneLifecycle(policy.lifecycle);
       lifecycleOwner = index;
     }
+    if (policy.timingSourceEntityId !== undefined) {
+      assertCompatible(
+        "timingSourceEntityId",
+        timingSourceOwner,
+        timingSourceEntityId,
+        policy.timingSourceEntityId,
+      );
+      timingSourceEntityId = policy.timingSourceEntityId;
+      timingSourceOwner = index;
+    }
     if (policy.reason !== undefined) reason = policy.reason;
     for (const companion of policy.companions ?? []) {
       const normalized = cloneCompanion(companion);
@@ -141,6 +156,7 @@ export function createMovementPlan(
     updateDirection,
     lifecycle: lifecycle ?? cloneLifecycle(contacts),
     companions: [...companions.values()],
+    ...(timingSourceEntityId === undefined ? {} : { timingSourceEntityId }),
     reason,
   };
 }

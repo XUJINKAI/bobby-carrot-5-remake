@@ -24,8 +24,8 @@ export function movingSupportOccupiedAt(
       occupant.type === MapEntityTypeId.CLOUD ||
       occupant.type === MapEntityTypeId.LEAF
     ) {
-      // Action 在 motion 到达后的同一 tick 才会结算停止状态。这里必须读取
-      // WorldMotion，否则后车会在该阶段窗口里把已经到站的载体误判为仍在前进。
+      // 同向运行中的载体先作为候选路线交给 World；其持续目的格 reservation
+      // 会阻止后车追入。已经结算停止的载体则在对象规则中直接阻挡。
       const occupantMotion = query.motionForEntity(occupant.id);
       return occupant.direction !== direction ||
         occupantMotion?.status !== "running";

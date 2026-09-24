@@ -16,6 +16,7 @@ export interface EntityMotionRequest {
   direction: Direction;
   cause: MoveCause;
   lifecycle?: MovementLifecycle;
+  timingSourceEntityId?: EntityId;
 }
 
 export interface WorldMutationSummary {

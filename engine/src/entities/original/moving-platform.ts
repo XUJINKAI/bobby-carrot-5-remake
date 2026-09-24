@@ -138,18 +138,22 @@ export const movingEntityAction: RuntimeActionDefinition = {
           entity,
           directionState(entity.state?.launchDirection),
         );
-    if (!route)
+    if (!route) {
+      if (
+        !isCloud(entity.type) &&
+        leafRouteAwaitsMovingSupportSettlement(
+          query,
+          entity,
+          directionState(entity.state?.launchDirection),
+        )
+      )
+        return "running";
       return stopMovingEntity(
         entity,
         commands,
-        hasAutomaticCurrent(query, entity) ||
-          (!isCloud(entity.type) &&
-            leafRouteAwaitsMovingSupportSettlement(
-              query,
-              entity,
-              directionState(entity.state?.launchDirection),
-            )),
+        hasAutomaticCurrent(query, entity),
       );
+    }
 
     if (!consumeActionDeadline(action, route.movement.cellMs, time.stepMs / 2))
       return "running";
