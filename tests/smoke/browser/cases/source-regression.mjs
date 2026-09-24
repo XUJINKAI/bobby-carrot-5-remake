@@ -71,7 +71,7 @@ export async function runSourceBrowserRegression(cdp) {
       );
       await verifyNarrowExploreTabs(
         cdp,
-        await openPage(cdp, `${origin}/explore/loma-pushbox`),
+        await openPage(cdp, `${origin}/explore/loma`),
       );
       await verifyNarrowExploreGameNavigation(
         cdp,

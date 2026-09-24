@@ -29,7 +29,7 @@ https://aymericdupeloux.wixsite.com/sokoban/post/_loma
 
 该页面明确说明 LOMA collection 可以在任何地方自由发布，不需要另行取得作者许可。本仓库据此保存原始文本，并在生成的语义地图中继续保留对应作者信息。
 
-LOMA 关卡文本及由它生成的 `assets/maps/loma-pushbox/` runtime MapDocument 均属于第三方关卡内容，**不属于本项目 `LICENSE` 的授权范围**；各关卡的著作权仍归原作者所有。本项目的生成工具代码本身仍按根目录 `LICENSE` 授权。
+LOMA 关卡文本及由它生成的 `assets/maps/loma/` runtime MapDocument 均属于第三方关卡内容，**不属于本项目 `LICENSE` 的授权范围**；各关卡的著作权仍归原作者所有。本项目的生成工具代码本身仍按根目录 `LICENSE` 授权。
 
 ## Novoban Sokoban 关卡
 
@@ -49,7 +49,7 @@ http://sokoban.online.fr/levels/novoban/novoban.txt
 
 公开 collection 页面将 Novoban 描述为 50 张面向初学者、难度逐渐增加的关卡，并标明 Copyright 为 François Marques。本仓库未找到像 LOMA 那样明确的额外自由再发布授权文本，因此**不把“公开提供下载”解释为宽松许可证**。
 
-Novoban 原始文本及由它生成的 `assets/maps/novoban-pushbox/` runtime MapDocument 均属于第三方关卡内容，**不属于本项目 `LICENSE` 的授权范围**。本仓库保留原始 copyright/source 信息；任何进一步分发仍应自行确认 François Marques 对相应关卡内容的授权条件。本项目的生成工具代码本身仍按根目录 `LICENSE` 授权。
+Novoban 原始文本及由它生成的 `assets/maps/novoban/` runtime MapDocument 均属于第三方关卡内容，**不属于本项目 `LICENSE` 的授权范围**。本仓库保留原始 copyright/source 信息；任何进一步分发仍应自行确认 François Marques 对相应关卡内容的授权条件。本项目的生成工具代码本身仍按根目录 `LICENSE` 授权。
 
 ## Robo 2: Saving Eny 关卡
 
@@ -107,8 +107,8 @@ Jersey 10 字体文件继续适用其随附的 `OFL.txt`，不属于本项目根
 tmp/assets/bc5/
 tmp/assets/robo2/
 assets/maps/original/
-assets/maps/loma-pushbox/
-assets/maps/novoban-pushbox/
+assets/maps/loma/
+assets/maps/novoban/
 assets/maps/robo2/
 assets/art/hd/
 assets/art/robo2/

@@ -88,7 +88,7 @@ export async function verifyNarrowExploreTabs(cdp, sessionId) {
   );
 
   if (
-    result.activeHref !== "/explore/loma-pushbox" ||
+    result.activeHref !== "/explore/loma" ||
     result.scrollLeft <= 0 ||
     result.activeLeft < result.tabsLeft ||
     result.activeRight > result.tabsRight

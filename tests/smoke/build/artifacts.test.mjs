@@ -9,10 +9,10 @@ test("production build 保持最终产物合同", () => {
     "dist/assets/maps/original/index.json",
     "dist/assets/maps/original/1-1.json",
     "dist/assets/maps/original/1-bonus-1.json",
-    "dist/assets/maps/loma-pushbox/index.json",
-    "dist/assets/maps/loma-pushbox/01-01.json",
-    "dist/assets/maps/novoban-pushbox/index.json",
-    "dist/assets/maps/novoban-pushbox/01.json",
+    "dist/assets/maps/loma/index.json",
+    "dist/assets/maps/loma/01-01.json",
+    "dist/assets/maps/novoban/index.json",
+    "dist/assets/maps/novoban/01.json",
     "dist/assets/adventure/index.json",
   ])
     if (!fs.existsSync(path.join(root, file)))

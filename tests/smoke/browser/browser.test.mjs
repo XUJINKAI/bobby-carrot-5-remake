@@ -126,7 +126,7 @@ try {
   );
   await exploreDifficultySmoke(`${origin}/explore`);
   await interactiveFilterSmoke(`${origin}/explore`);
-  await smoke(`${origin}/explore/novoban-pushbox`, [
+  await smoke(`${origin}/explore/novoban`, [
     'class="explore-tabs"',
     'class="explore-ungrouped-maps"',
     'data-card-size="medium"',
@@ -134,14 +134,14 @@ try {
     "01 · Be ban 10",
   ]);
   await smoke(
-    `${origin}/explore/loma-pushbox`,
+    `${origin}/explore/loma`,
     [
       'class="explore-tabs"',
       'class="chapter-card"',
       'class="chapter-name"',
       'data-card-size="small"',
       "LOMA",
-      'href="/explore/play/loma-pushbox/01-01"',
+      'href="/explore/play/loma/01-01"',
     ],
     ['class="chapter-id"', 'class="chapter-separator"'],
   );
@@ -165,7 +165,7 @@ try {
     'href="/explore/play/robo2/01"',
     'href="/explore/play/robo2/25"',
   ]);
-  await smoke(`${origin}/explore/play/loma-pushbox/01-01`, [
+  await smoke(`${origin}/explore/play/loma/01-01`, [
     'class="game-page"',
     'id="game"',
     'id="map-status"',
@@ -174,13 +174,13 @@ try {
     "01-01",
   ]);
   await interactiveMapStatusSmoke(
-    `${origin}/explore/play/loma-pushbox/01-01`,
+    `${origin}/explore/play/loma/01-01`,
     {
       icon: "map-details",
       tone: "muted",
       details: {
         verification: ["未验证", "Not verified"],
-        "map-id": "loma-pushbox/01-01",
+        "map-id": "loma/01-01",
         "map-name": "01-01",
         author: "Aymeric du Peloux",
       },
@@ -225,7 +225,7 @@ try {
       "map-name": "1",
     },
   });
-  await smoke(`${origin}/explore/play/novoban-pushbox/01`, [
+  await smoke(`${origin}/explore/play/novoban/01`, [
     'class="game-page"',
     'id="game"',
     "01 · Be ban 10",
@@ -342,7 +342,17 @@ try {
   ]);
   await expectStatus(`${origin}/robots.txt`, 200, "text/plain");
   await expectStatus(`${origin}/sitemap.xml`, 200, "application/xml");
-  await expectStatus(`${origin}/edit/novoban-pushbox/01`, 404, "text/plain");
+  await verifyRouteMigration(
+    `${origin}/explore/loma-pushbox?source=legacy#tabs`,
+    "/explore/loma",
+    ".explore-tabs",
+  );
+  await verifyRouteMigration(
+    `${origin}/explore/play/novoban-pushbox/01?source=legacy#game`,
+    "/explore/play/novoban/01",
+    ".game-page",
+  );
+  await expectStatus(`${origin}/edit/novoban/01`, 404, "text/plain");
   await expectStatus(`${origin}/explore/original`, 404, "text/plain");
   await expectStatus(`${origin}/this-route-does-not-exist`, 404, "text/plain");
   await expectStatus(`${origin}/assets/does-not-exist.png`, 404, "text/plain");
@@ -381,6 +391,44 @@ async function expectStatus(url, expectedStatus, typePrefix) {
   const body = await response.text();
   if (expectedStatus === 404 && body.includes('<div id="app">'))
     throw new Error(`404 request ${url} incorrectly received SPA HTML`);
+}
+async function verifyRouteMigration(url, expectedPathname, readySelector) {
+  const result = await runBrowserEval(
+    url,
+    `(async () => {
+      const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+      for (let i = 0; i < 120; i += 1) {
+        if (
+          location.pathname === ${JSON.stringify(expectedPathname)} &&
+          location.search === "?source=legacy" &&
+          location.hash === ${JSON.stringify(new URL(url).hash)} &&
+          document.querySelector(${JSON.stringify(readySelector)})
+        ) {
+          return JSON.stringify({
+            pathname: location.pathname,
+            search: location.search,
+            hash: location.hash,
+          });
+        }
+        await delay(50);
+      }
+      return JSON.stringify({
+        pathname: location.pathname,
+        search: location.search,
+        hash: location.hash,
+      });
+    })()`,
+  );
+  if (result.status !== 0)
+    throw new Error(`历史路由迁移检查失败：${result.stderr || result.stdout}`);
+  const actual = lastJsonLine(result.stdout);
+  if (
+    actual.pathname !== expectedPathname ||
+    actual.search !== "?source=legacy" ||
+    actual.hash !== new URL(url).hash
+  ) {
+    throw new Error(`历史路由迁移结果异常：${JSON.stringify(actual)}`);
+  }
 }
 async function smoke(url, expected, forbidden = []) {
   const result = await runBrowser(url, expected);

@@ -8,7 +8,7 @@ const levels = parseLoma(
   fs.readFileSync(`${root}/tools/assets/loma/LOMA.txt`, "utf8"),
 );
 
-test("LOMA source parses into 137 maps grouped by the ten source patterns", () => {
+test("LOMA source parses into 137 maps grouped by ten source patterns", () => {
   assert.equal(levels.length, 137);
   const counts = Object.fromEntries(
     Array.from({ length: 10 }, (_, index) => {

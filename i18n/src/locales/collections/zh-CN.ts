@@ -40,14 +40,14 @@ const catalog = {
   "collections.robo2.description":
     "HeroCraft 2004 年 J2ME 益智游戏的 25 张内置关卡。",
 
-  "collections.novoban-pushbox.name": "Novoban",
-  "collections.novoban-pushbox.tag": "推箱子",
-  "collections.novoban-pushbox.description":
+  "collections.novoban.name": "Novoban",
+  "collections.novoban.tag": "推箱子",
+  "collections.novoban.description":
     "François Marques 的 50 张入门 Sokoban 关卡，难度逐渐增加。",
 
-  "collections.loma-pushbox.name": "LOMA",
-  "collections.loma-pushbox.tag": "推箱子",
-  "collections.loma-pushbox.description":
+  "collections.loma.name": "LOMA",
+  "collections.loma.tag": "推箱子",
+  "collections.loma.description":
     "Levels Of Many Authors：137 张三箱 Sokoban 地图。",
 
   "collections.engine-lab.name": "Engine Lab",

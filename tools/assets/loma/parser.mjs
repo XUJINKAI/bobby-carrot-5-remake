@@ -42,7 +42,7 @@ export function parseLoma(text) {
       board,
       level: convertXsbBoard(board, title, {
         expectedBoxes: 3,
-        mapKey: `loma-pushbox/${id}`,
+        mapKey: `loma/${id}`,
       }),
     });
   }

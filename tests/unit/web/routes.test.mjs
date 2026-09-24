@@ -9,10 +9,29 @@ import {
   parseEditorMapHash,
   replayAssetUrl,
 } from "../../../web/src/app/routes.ts";
+import {
+  legacyRoutePaths,
+  resolveRouteMigration,
+} from "../../../web/src/app/routeMigrations.js";
 
 test("original collection uses the canonical explore path", () => {
   assert.equal(exploreCollectionPath("original"), "/explore");
-  assert.equal(exploreCollectionPath("novoban-pushbox"), "/explore/novoban-pushbox");
+  assert.equal(exploreCollectionPath("novoban"), "/explore/novoban");
+});
+
+test("历史 Explore URL 通过集中迁移表解析为正式路径", () => {
+  assert.equal(
+    resolveRouteMigration("/explore/novoban-pushbox"),
+    "/explore/novoban",
+  );
+  assert.equal(
+    resolveRouteMigration("/explore/play/loma-pushbox/01-01"),
+    "/explore/play/loma/01-01",
+  );
+  assert.equal(resolveRouteMigration("/explore/loma"), null);
+  assert.deepEqual(legacyRoutePaths("/explore/play/novoban/01"), [
+    "/explore/play/novoban-pushbox/01",
+  ]);
 });
 
 test("replay asset mirrors the map collection and id", () => {

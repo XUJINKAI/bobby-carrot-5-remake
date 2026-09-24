@@ -74,7 +74,7 @@ test("直达 Play 保留 canonical Bobby Entity 与 push-goal 规则", async () 
 
   try {
     const resolved = await resolveMapDocument({
-      collection: "loma-pushbox",
+      collection: "loma",
       id: "01-01",
     });
     assert.ok(

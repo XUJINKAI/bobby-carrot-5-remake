@@ -527,11 +527,11 @@ Adventure 在桌面也限制为原版式 portrait viewport，并设置 Camera �
 
 ```text
 /explore
-/explore/novoban-pushbox
-/explore/loma-pushbox
+/explore/novoban
+/explore/loma
 /explore/engine-lab
 /explore/play/original/1-1
-/explore/play/novoban-pushbox/01
+/explore/play/novoban/01
 /explore/play/engine-lab/portal
 /adventure
 /adventure/chapters
@@ -546,6 +546,11 @@ Adventure 在桌面也限制为原版式 portrait viewport，并设置 Camera �
 `/explore/play/<collection>/<map-id>`。Editor clone 通过 `/edit#map=<collection>/<map-id>`
 读取来源后立即消费 fragment；Play Test 使用 `/edit/test` 读取 autosave 副本。
 路径由 Web 的集中 route builder 生成。
+
+已发布路径迁移由 `web/src/app/routeMigrations.js` 的单向映射表统一声明。运行时在页面
+解析前使用 `history.replaceState()` 切换到正式路径，并保留 query 与 fragment；构建流程
+根据同一张表为历史路径生成 route shell，其 canonical metadata 指向正式路径。地图、
+collection 与存档始终只使用当前 ID，不把历史别名带入产品数据合同。
 
 服务器负责 app-route fallback；静态资源路径按真实文件提供。
 

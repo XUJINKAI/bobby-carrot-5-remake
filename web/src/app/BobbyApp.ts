@@ -23,6 +23,7 @@ import {
   parseMapPlayUrl,
   type ExploreMapRef,
 } from "./routes.js";
+import { resolveRouteMigration } from "./routeMigrations.js";
 import { setWebI18nRouteScopes } from "../i18n/webI18n.js";
 import { errorDisplayText } from "../errors/errorPresentation.js";
 import {
@@ -161,6 +162,13 @@ export class BobbyApp {
     this.controller = NOOP_CONTROLLER;
     this.clearIdleTasks();
     const path = localRoutePath();
+    const migratedPath = resolveRouteMigration(path);
+    if (migratedPath) {
+      this.navigate(`${migratedPath}${location.search}${location.hash}`, {
+        replace: true,
+      });
+      return;
+    }
 
     if (path === "/") {
       const { renderHome } = await loadHomePage();

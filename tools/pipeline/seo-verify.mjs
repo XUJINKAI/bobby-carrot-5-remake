@@ -33,6 +33,14 @@ export function verifySeoArtifacts() {
     robots: "index,follow",
     canonical: `${siteOrigin}/explore/play/original/1-1`,
   });
+  assertShell("explore/loma-pushbox/index.html", {
+    robots: "index,follow",
+    canonical: `${siteOrigin}/explore/loma`,
+  });
+  assertShell("explore/play/novoban-pushbox/01/index.html", {
+    robots: "index,follow",
+    canonical: `${siteOrigin}/explore/play/novoban/01`,
+  });
   assertShell("edit/index.html", {
     robots: "index,follow",
     canonical: `${siteOrigin}/edit`,
@@ -79,6 +87,8 @@ export function verifySeoArtifacts() {
       throw new Error(`sitemap is missing canonical URL: ${expected}`);
   for (const excluded of [
     "/explore/original",
+    "/explore/loma-pushbox",
+    "/explore/play/novoban-pushbox/01",
     "/settings",
     "/import/v1",
     "/adventure/play/1-1",
