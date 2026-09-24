@@ -113,5 +113,5 @@ function effectiveAxis(
 }
 
 function clampDimension(value: number): number {
-  return Math.min(128, Math.max(3, Math.trunc(value)));
+  return Math.min(128, Math.max(1, Math.trunc(value)));
 }
