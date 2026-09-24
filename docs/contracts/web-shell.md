@@ -49,6 +49,8 @@ interface ShellAction {
   id: string;
   label?: string;
   icon?: ShellIcon;
+  iconWeight?: AppIconWeight;
+  iconTone?: "danger";
   title?: string;
   href?: string;
   collapse?: "keep" | "overflow" | "hide";
@@ -59,6 +61,10 @@ interface ShellAction {
 ```
 
 Shell 只派发 action ID 或执行声明式导航。`collapse=keep` 在移动端保留，`overflow` 收入自动生成的菜单，`hide` 在移动端隐藏。Overflow 菜单由当前配置自动派生。
+
+`iconWeight` 选择图标线条或填充形态；`iconTone="danger"` 只把 Action 图标显示为危险色。
+录制入口用普通圆形表示待机状态，用红色实心圆表示正在录制；按钮背景和文字仍遵循普通
+Action 状态。
 
 `href` 可以声明站内路径或外部链接；外部链接使用 `external=true`，由浏览器按原生链接语义打开。`leading` 用于紧邻 Back 的同组导航动作，例如同一 collection 内的前后关切换和 Restart。左侧 `leading` action 同样支持 `collapse=hide`，用于收敛移动端导航。
 

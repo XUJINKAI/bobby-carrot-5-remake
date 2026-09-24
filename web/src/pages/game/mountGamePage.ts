@@ -196,21 +196,27 @@ export async function renderGamePage(
     capabilities.replayPanel && loadReplayPanelOpen();
   const statusMapId = `${replayTarget.collection}/${replayTarget.id}`;
   const statusMapName = mapMeta?.name ?? identity.title;
-  configureShell(
-    gameShellConfig(
-      mode,
-      source,
-      screenControlEnabled,
-      statusMapId,
-      statusMapName,
-      explorePreviousMapId,
-      exploreNextMapId,
-      replayPanelInitiallyOpen,
-      capabilities.replayPanel,
-      verified,
-      mapMeta,
-    ),
-  );
+  let replayPanelOpen = replayPanelInitiallyOpen;
+  let replayRecording = false;
+  const syncShell = (): void => {
+    configureShell(
+      gameShellConfig(
+        mode,
+        source,
+        getWebSettings().controls.screenControlEnabled,
+        statusMapId,
+        statusMapName,
+        explorePreviousMapId,
+        exploreNextMapId,
+        replayPanelOpen,
+        capabilities.replayPanel,
+        verified,
+        mapMeta,
+        replayRecording,
+      ),
+    );
+  };
+  syncShell();
   app.replaceChildren();
   const gamePage = createApp(GamePage, {
     mode,
@@ -306,7 +312,6 @@ export async function renderGamePage(
   let completionRecorded = false;
   let completionNextId: string | undefined;
   let completionNavigationStarted = false;
-  let replayPanelOpen = replayPanelInitiallyOpen;
   const adventureRewards = new AdventureRewardSession();
   const updateAdventureToolLayout = (): void => {
     adventureViewport?.classList.toggle(
@@ -334,21 +339,11 @@ export async function renderGamePage(
           replayPanelOpen = open;
           updateAdventureToolLayout();
           storeReplayPanelOpen(open);
-          configureShell(
-            gameShellConfig(
-              mode,
-              source,
-              getWebSettings().controls.screenControlEnabled,
-              statusMapId,
-              statusMapName,
-              explorePreviousMapId,
-              exploreNextMapId,
-              open,
-              capabilities.replayPanel,
-              verified,
-              mapMeta,
-            ),
-          );
+          syncShell();
+        },
+        onRecordingChange(recording) {
+          replayRecording = recording;
+          syncShell();
         },
         onTimelineRestart() {
           adventureRewards.discard();
@@ -529,21 +524,7 @@ export async function renderGamePage(
 
   return {
     localeChanged(): void {
-      configureShell(
-        gameShellConfig(
-          mode,
-          source,
-          getWebSettings().controls.screenControlEnabled,
-          statusMapId,
-          statusMapName,
-          explorePreviousMapId,
-          exploreNextMapId,
-          replayPanelOpen,
-          capabilities.replayPanel,
-          verified,
-          mapMeta,
-        ),
-      );
+      syncShell();
       visibleResult = null;
       renderResult();
       replayPanel.update();
@@ -581,6 +562,7 @@ function gameShellConfig(
   replayEnabled = mode === "explore",
   verified = false,
   mapMeta?: MapMeta,
+  replayRecording = false,
 ): ShellConfig {
   const explore = mode === "explore";
   const shellIdentity = source === "import"
@@ -655,9 +637,11 @@ function gameShellConfig(
             {
               id: "replay-record",
               icon: "record",
+              iconWeight: replayRecording ? "fill" : "regular",
               label: webT("shell.record"),
               title: webT("shell.recordReplay"),
               pressed: replayOpen,
+              ...(replayRecording ? { iconTone: "danger" as const } : {}),
             },
           ]
         : [],

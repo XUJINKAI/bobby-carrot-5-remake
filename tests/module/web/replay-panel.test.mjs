@@ -31,6 +31,18 @@ const replayBindingSource = fs.readFileSync(
   new URL("../../../web/src/pages/game/bindReplayPanel.ts", import.meta.url),
   "utf8",
 );
+const gamePageSource = fs.readFileSync(
+  new URL("../../../web/src/pages/game/mountGamePage.ts", import.meta.url),
+  "utf8",
+);
+const shellActionSource = fs.readFileSync(
+  new URL("../../../web/src/shell/ShellActionButton.vue", import.meta.url),
+  "utf8",
+);
+const appIconSource = fs.readFileSync(
+  new URL("../../../web/src/shared/icons/AppIcon.vue", import.meta.url),
+  "utf8",
+);
 
 test("Replay 面板提示复跑终局与记录不一致", () => {
   const presentation = replayVerificationPresentation(
@@ -149,12 +161,61 @@ test("Replay 面板使用一帧一行的统一序列化", () => {
   assert.match(replayBindingSource, /output\.value = serializeReplay\(replay\)/);
 });
 
-test("关卡通关后自动结束 Replay 录制", () => {
+test("关卡通关或失败后自动结束 Replay 录制", () => {
   assert.match(
     replayBindingSource,
     /options\.game\.on\(\s*"level-complete",\s*stopRecording/,
   );
+  assert.match(
+    replayBindingSource,
+    /options\.game\.on\("death", stopRecording\)/,
+  );
   assert.match(replayBindingSource, /unsubscribeLevelComplete\(\)/);
+  assert.match(replayBindingSource, /unsubscribeDeath\(\)/);
+});
+
+test("Replay 底栏使用圆形图标并在录制时显示为红色实心", () => {
+  assert.match(appIconSource, /record: PhCircle/);
+  assert.doesNotMatch(appIconSource, /PhRecord/);
+  assert.match(
+    replayBindingSource,
+    /options\.onRecordingChange\?\.\(recording\)/,
+  );
+  assert.match(
+    gamePageSource,
+    /iconWeight: replayRecording \? "fill" : "regular"/,
+  );
+  assert.match(
+    gamePageSource,
+    /replayRecording \? \{ iconTone: "danger" as const \} : \{\}/,
+  );
+  assert.match(
+    shellActionSource,
+    /<AppIcon :name="action\.icon" :weight="action\.iconWeight \?\? 'bold'" \/>/,
+  );
+  assert.match(
+    shellActionSource,
+    /action\.iconTone \? `tone-\$\{action\.iconTone\}` : undefined/,
+  );
+  assert.match(
+    shellActionSource,
+    /\.shell-action-icon\.tone-danger\s*\{[\s\S]*?color:\s*#ff574d/,
+  );
+});
+
+test("Replay 面板只在窄屏随录制开始和停止自动收放", () => {
+  assert.match(
+    replayBindingSource,
+    /const NARROW_REPLAY_PANEL_QUERY = "\(max-width: 620px\)"/,
+  );
+  assert.match(
+    replayBindingSource,
+    /update\(\);\s*if \(isNarrowReplayPanel\(\)\) setOpen\(false\)/,
+  );
+  assert.match(
+    replayBindingSource,
+    /verifyReplay\(\);\s*update\(\);\s*if \(isNarrowReplayPanel\(\)\) setOpen\(true\)/,
+  );
 });
 
 test("Replay 面板在播放按钮上方提供跳过思考时间选项", () => {

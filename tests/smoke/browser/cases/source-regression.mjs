@@ -387,6 +387,15 @@ async function verifyReplayPanel(cdp, url) {
       ),
     ),
   );
+  await waitFor(async () =>
+    Boolean(
+      await cdp.evaluate(
+        sessionId,
+        `!document.querySelector('[data-replay-panel]')?.hidden &&
+          document.querySelector('#replay-record .tone-danger')`,
+      ),
+    ),
+  );
   await new Promise((resolve) => setTimeout(resolve, 1_000));
   await dispatchKey(cdp, sessionId, "keyDown", "ArrowRight", 39);
   await new Promise((resolve) => setTimeout(resolve, 200));
@@ -415,6 +424,15 @@ async function verifyReplayPanel(cdp, url) {
             verification.textContent?.includes('ticks')
           );
         })()`,
+      ),
+    ),
+  );
+  await waitFor(async () =>
+    Boolean(
+      await cdp.evaluate(
+        sessionId,
+        `!document.querySelector('[data-replay-panel]')?.hidden &&
+          !document.querySelector('#replay-record .tone-danger')`,
       ),
     ),
   );
@@ -678,6 +696,34 @@ async function verifyReplayPanel(cdp, url) {
     throw new Error("Replay mobile panel changed the canvas layout");
   if (mobileLayout.panelLeft < mobileLayout.stageLeft + 9)
     throw new Error("Replay mobile panel did not float inside the game stage");
+
+  await cdp.evaluate(
+    sessionId,
+    "document.querySelector('[data-replay-action=\"record\"]')?.click(); true",
+  );
+  await waitFor(async () =>
+    Boolean(
+      await cdp.evaluate(
+        sessionId,
+        `document.querySelector('[data-replay-panel]')?.hidden &&
+          document.querySelector('#replay-record .tone-danger')`,
+      ),
+    ),
+  );
+  await cdp.evaluate(
+    sessionId,
+    "document.querySelector('[data-replay-action=\"record\"]')?.click(); true",
+  );
+  await waitFor(async () =>
+    Boolean(
+      await cdp.evaluate(
+        sessionId,
+        `!document.querySelector('[data-replay-panel]')?.hidden &&
+          !document.querySelector('#replay-record .tone-danger') &&
+          document.querySelector('[data-replay-output]')?.value`,
+      ),
+    ),
+  );
 }
 
 async function verifyReplaySaveButton(cdp, sessionId) {

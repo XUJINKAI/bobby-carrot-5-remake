@@ -123,6 +123,8 @@ test("Editor 默认打开 Palette 并使用 Select 语义", () => {
 test("Editor Play 保持编辑器顶栏并切换为游戏底栏", () => {
   assert.match(shell, /commands: playing[\s\S]*id: "editor-play"/);
   assert.match(shell, /leading: playing[\s\S]*id: "editor-replay-record"/);
+  assert.match(shell, /iconWeight: playState\.replayRecording \? "fill" : "regular"/);
+  assert.match(shell, /playState\.replayRecording[\s\S]*?iconTone: "danger" as const/);
   assert.match(shell, /trailing: playing[\s\S]*id: "screen-control"/);
   assert.match(page, /bindReplayPanel/);
   assert.match(page, /bindGameplayShell/);

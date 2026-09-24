@@ -58,6 +58,7 @@ const rightPanel = ref<"inspector" | "level" | null>(
 );
 const playResult = ref<"complete" | "death" | null>(null);
 const replayOpen = ref(false);
+const replayRecording = ref(false);
 const screenControlEnabled = ref(
   getWebSettings().controls.screenControlEnabled,
 );
@@ -84,6 +85,7 @@ function syncShell(): void {
       canRedo: session?.game.canRedo ?? false,
       replayReady: replayPanel !== null,
       replayOpen: replayOpen.value,
+      replayRecording: replayRecording.value,
       screenControlEnabled: screenControlEnabled.value,
       mapIndicator: page.playing.value
         ? editorMapStatusIndicator()
@@ -180,6 +182,10 @@ async function togglePlay(): Promise<void> {
         replayOpen.value = open;
         syncShell();
       },
+      onRecordingChange(recording) {
+        replayRecording.value = recording;
+        syncShell();
+      },
       onTimelineRestart() {
         playResult.value = null;
         playResultLease?.release();
@@ -251,6 +257,7 @@ function stopPlay(): void {
   replayPanel?.destroy();
   replayPanel = null;
   replayOpen.value = false;
+  replayRecording.value = false;
   playResult.value = null;
   playResultLease?.release();
   playResultLease = null;

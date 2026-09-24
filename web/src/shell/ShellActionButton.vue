@@ -34,8 +34,12 @@ function activate(event?: MouseEvent): void {
     :rel="action.external ? 'noreferrer' : undefined"
     @click="activate($event)"
   >
-    <span v-if="action.icon" class="shell-action-icon">
-      <AppIcon :name="action.icon" />
+    <span
+      v-if="action.icon"
+      class="shell-action-icon"
+      :class="action.iconTone ? `tone-${action.iconTone}` : undefined"
+    >
+      <AppIcon :name="action.icon" :weight="action.iconWeight ?? 'bold'" />
     </span>
     <AppIcon v-if="action.cornerIcon" class="shell-action-corner-icon" :name="action.cornerIcon" weight="regular" />
     <span v-if="action.label" class="shell-action-label">{{ action.label }}</span>
@@ -57,8 +61,12 @@ function activate(event?: MouseEvent): void {
     :disabled="action.disabled"
     @click="activate($event)"
   >
-    <span v-if="action.icon" class="shell-action-icon">
-      <AppIcon :name="action.icon" />
+    <span
+      v-if="action.icon"
+      class="shell-action-icon"
+      :class="action.iconTone ? `tone-${action.iconTone}` : undefined"
+    >
+      <AppIcon :name="action.icon" :weight="action.iconWeight ?? 'bold'" />
     </span>
     <AppIcon v-if="action.cornerIcon" class="shell-action-corner-icon" :name="action.cornerIcon" weight="regular" />
     <span v-if="action.label" class="shell-action-label">{{ action.label }}</span>
@@ -106,6 +114,10 @@ function activate(event?: MouseEvent): void {
   min-width: 18px;
   place-items: center;
   font-size: 18px;
+}
+
+.shell-action-icon.tone-danger {
+  color: #ff574d;
 }
 
 .shell-action-corner-icon {

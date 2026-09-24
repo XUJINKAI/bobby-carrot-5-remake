@@ -20,6 +20,7 @@ export interface EditorPlayShellState {
   canRedo: boolean;
   replayReady: boolean;
   replayOpen: boolean;
+  replayRecording: boolean;
   screenControlEnabled: boolean;
   mapIndicator: ShellIndicator | null;
 }
@@ -29,6 +30,7 @@ const EMPTY_PLAY_STATE: EditorPlayShellState = {
   canRedo: false,
   replayReady: false,
   replayOpen: false,
+  replayRecording: false,
   screenControlEnabled: false,
   mapIndicator: null,
 };
@@ -170,10 +172,14 @@ export function editorShellConfig(
             {
               id: "editor-replay-record",
               icon: "record",
+              iconWeight: playState.replayRecording ? "fill" : "regular",
               label: webT("shell.record"),
               title: webT("shell.recordReplay"),
               disabled: !playState.replayReady,
               pressed: playState.replayOpen,
+              ...(playState.replayRecording
+                ? { iconTone: "danger" as const }
+                : {}),
             },
           ]
         : [
