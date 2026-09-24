@@ -19,7 +19,7 @@ const catalog = {
   "shell.screenJoystick": "屏幕摇杆",
   "nav.home": "首页",
   "nav.adventure": "冒险模式",
-  "nav.explore": "自由探索",
+  "nav.explore": "全部关卡",
   "nav.editor": "地图编辑器",
   "context.import": "导入数据",
   "context.embed": "网页内嵌",

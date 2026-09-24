@@ -27,11 +27,11 @@ test("首页模式入口使用同级样式并说明各自能力", async () => {
   assert.match(menu, /\.home-embed-link\s*\{[\s\S]*font-size: 0\.86rem/);
   assert.match(
     zhCatalog,
-    /"home\.adventureDescription": "强制竖屏，禁止撤销，原版关卡体验"/,
+    /"home\.adventureDescription": "强制竖屏，禁止撤销，还原原版体验"/,
   );
   assert.match(
     zhCatalog,
-    /"home\.exploreDescription": "任意选关，扩展关卡，录像调试"/,
+    /"home\.exploreDescription": "任意选关，扩展关卡，录像回放"/,
   );
   assert.match(
     zhCatalog,
