@@ -27,7 +27,8 @@ Page、Global、Gameplay。模态作用域高于普通层，最后激活的模�
 - 每次 keydown 记录原接收者，keyup 交还原接收者；注销后不再回调已销毁对象。
 - 作用域变化、焦点移动和输入法组合开始时取消持续键盘输入。物理记录保留到 keyup，
   防止按住 Enter 打开新页面后再次激活新按钮。
-- 窗口 blur 清理物理状态；重新获得焦点后收到的孤立 repeat 不会重启动作。
+- 窗口 blur 先清理物理状态，再对每个作用域调用一次 cancel，随后通知该作用域的 blur；
+  重新获得焦点后收到的孤立 repeat 不会重启动作。
 - Gameplay 的 Keyboard、Pointer 与外部方向输入分别维护状态；键盘取消只清理键盘方向。
   窗口失焦通过 blur 同时释放 Engine 的指针与外部方向状态。
 - Engine 对话使用方向键、Enter、Esc；Tab 在 Engine 模态输入期间被消费，保持地图对话输入归属。

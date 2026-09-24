@@ -124,6 +124,33 @@ test("失焦清理按键，新窗口焦点下的孤立 repeat 不会恢复移动
   runtime.destroy();
 });
 
+test("一次失焦对每个作用域只调用一次 cancel，并在其后通知 blur", (t) => {
+  const { target, runtime } = fixture();
+  t.after(() => runtime.destroy());
+  let cancelCount = 0;
+  let idleCancelCount = 0;
+  const calls = [];
+  runtime.register({
+    active: false,
+    keydown: () => false,
+    cancel: () => idleCancelCount++,
+  });
+  runtime.register({
+    keydown: () => true,
+    cancel: () => {
+      cancelCount++;
+      calls.push("cancel");
+    },
+    blur: () => calls.push("blur"),
+  });
+  key(target, "keydown", "ArrowLeft");
+  key(target, "keydown", "w");
+  target.dispatchEvent(new Event("blur"));
+  assert.equal(cancelCount, 1);
+  assert.equal(idleCancelCount, 1);
+  assert.deepEqual(calls, ["cancel", "blur"]);
+});
+
 test("焦点范围可以由 runtime 默认，也可以由注册项覆盖为全局", () => {
   let focused = false;
   const root = {

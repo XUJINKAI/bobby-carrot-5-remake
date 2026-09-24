@@ -238,7 +238,7 @@ export class KeyboardRuntime {
   };
 
   private readonly onBlur = (): void => {
-    this.cancelPressed();
+    // 失焦按作用域统一取消，先清空按键避免持键者被重复通知。
     this.pressed.clear();
     for (const entry of this.scopes) {
       entry.options.cancel?.();
