@@ -122,7 +122,7 @@ try {
       "Dreamland Reward",
       'href="/explore/play/original/campaign-intro"',
     ],
-    ['class="adventure-menu"'],
+    ['class="adventure-menu"', 'class="recording-indicator"'],
   );
   await exploreDifficultySmoke(`${origin}/explore`);
   await interactiveFilterSmoke(`${origin}/explore`);

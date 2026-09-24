@@ -6,6 +6,7 @@ import { verifyButtonFocusPolicy } from "./source/button-focus-browser-checks.mj
 import { waitForBrowserState } from "./source/browser-regression-wait.mjs";
 import { verifyEditorExperience } from "./source/editor-browser-checks.mjs";
 import {
+  verifyExploreRecordingIndicators,
   verifyNarrowExploreTabs,
   verifyNarrowExploreGameNavigation,
 } from "./source/game-navigation-browser-checks.mjs";
@@ -55,6 +56,10 @@ export async function runSourceBrowserRegression(cdp) {
       await verifyImportErrorFollowsLocale(
         cdp,
         await openPage(cdp, `${origin}/import/v1#%`),
+      );
+      await verifyExploreRecordingIndicators(
+        cdp,
+        await openPage(cdp, `${origin}/explore/robo2`),
       );
       await verifyNarrowExploreTabs(
         cdp,

@@ -1,5 +1,51 @@
 import { waitForBrowserState } from "./browser-regression-wait.mjs";
 
+export async function verifyExploreRecordingIndicators(cdp, sessionId) {
+  await waitForBrowserState(async () =>
+    Boolean(
+      await cdp.evaluate(
+        sessionId,
+        "document.querySelector('.explore-map-card')",
+      ),
+    ),
+  );
+  await cdp.evaluate(
+    sessionId,
+    `fetch('/assets/maps/robo2/index.json')
+      .then((response) => response.json())
+      .then((index) => {
+        globalThis.__expectedRecordedMapIds = index.maps
+          .filter((map) => map.verified === true)
+          .map((map) => map.id)
+          .sort();
+      })`,
+  );
+  await waitForBrowserState(async () =>
+    Array.isArray(
+      await cdp.evaluate(sessionId, "globalThis.__expectedRecordedMapIds"),
+    ),
+  );
+
+  const result = await cdp.evaluate(
+    sessionId,
+    `(() => {
+      const actual = [...document.querySelectorAll('.recording-indicator')]
+        .map((indicator) => indicator.closest('.explore-map-card')?.dataset.mapId ?? '')
+        .sort();
+      const expected = globalThis.__expectedRecordedMapIds;
+      return { actual, expected };
+    })()`,
+  );
+  if (
+    result.expected.length === 0 ||
+    JSON.stringify(result.actual) !== JSON.stringify(result.expected)
+  ) {
+    throw new Error(
+      `Explore 录像标记与 collection index 不一致：${JSON.stringify(result)}`,
+    );
+  }
+}
+
 export async function verifyNarrowExploreTabs(cdp, sessionId) {
   await cdp.send(
     "Emulation.setDeviceMetricsOverride",

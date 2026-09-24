@@ -13,6 +13,7 @@ defineProps<{
   cardSize: MapCollectionCardSize;
 }>();
 const emit = defineEmits<{ navigate: [path: string] }>();
+const showRecordingIndicator = import.meta.env.DEV;
 </script>
 
 <template>
@@ -27,6 +28,13 @@ const emit = defineEmits<{ navigate: [path: string] }>();
     :title="map.description || map.name"
     @click.prevent="emit('navigate', explorePlayPath({ collection: collectionId, id: map.id }))"
   >
+    <span
+      v-if="showRecordingIndicator && map.verified"
+      class="recording-indicator"
+      role="img"
+      aria-label="Replay available"
+      title="Replay available"
+    ></span>
     <span class="explore-map-card-label">{{ map.name }}</span>
     <span v-if="completed" class="done-mark" title="自由浏览中已通关">
       <AppIcon name="check" />
@@ -106,6 +114,16 @@ const emit = defineEmits<{ navigate: [path: string] }>();
   top: 4px;
   color: var(--bc-highlight);
   font-size: 0.72rem;
+}
+
+.recording-indicator {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #f23838;
 }
 
 @media (max-width: 700px) {
