@@ -149,6 +149,13 @@ Engine 允许一张地图包含多个 Bobby Actor。每个 Bobby 的背包和生
 
 ### 输入边界
 
+Engine 的 `KeyboardRuntime` 管理浏览器键盘监听、输入范围、作用域与按键生命周期。
+`InputController` 注册游戏按键；Web 注册页面、全局命令与弹窗。共享实例由 `BobbyApp`
+持有并通过上下文及 Vue 注入传递，Game Session 和 Embed 预览借用同一实例。
+Engine 独立运行时由 `InputController` 创建并销毁自己的实例。
+Web 的 `WebKeyboard` 只定义产品层次和 DOM 焦点；配置与完整行为见
+[`键盘与焦点`](features/keyboard.md)。
+
 `InputController` 与 `ScreenJoystick` 是 Engine 提供的通用浏览器 gameplay 输入能力：
 
 ```text

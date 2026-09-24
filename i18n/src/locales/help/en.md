@@ -1,24 +1,37 @@
 ## Game
 
 - **Swipe screen / Arrow keys / WASD**: Move
-- **Tab**: Replay panel (Explore)
-- **~**: Debug mode (Explore)
-  - Double-click the map to teleport Bobby while Debug mode is enabled
-
-## General
-
-- **M**: Toggle music
+- **Wheel / +/- / pinch**: Zoom and pan the map
+- **Z**: Toggle Replay panel
+- **X**: Toggle on-screen joystick
+- **[ / ]**: Previous/next level
+- **Shift+R**: Restart
 - **Ctrl+Z**: Undo
 - **Ctrl+Y**: Redo
-- **Wheel / +/- / pinch**: Zoom and pan the map
+- **~**: Debug mode
+  - Double-click the map to teleport Bobby while Debug mode is enabled
+
+## Pages
+
+- **Arrow keys**: Select
+- **Enter**: Confirm
+- **Escape**: Return to the previous page
+- **Tab / Shift+Tab**: Switch collections
+- **P**: Continue playing
+- **Shift+S**: Random level
+- **M**: Toggle music
+- **?**: Help
 
 ## Editor
 
-- **Tab**: Switch Palette / Surface
 - **1**: Select
 - **2**: Brush
 - **3**: Smart Surface fill
 - **4**: Palette erase tool
+- **Z**: Switch Palette / Surface
+- **X**: Switch Inspector / Level
+- **Ctrl+Z**: Undo
+- **Ctrl+Y**: Redo
 - **Ctrl+A**: Select the whole map
 - **Ctrl+C / X / V**: Copy / Cut / Paste
 - **Delete / Backspace**: Delete selected Entity

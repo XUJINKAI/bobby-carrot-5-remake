@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { WEB_SHORTCUTS, matchesShortcut } from "./keyboard/shortcuts.js";
 import type { AudioRuntime } from "@bobby/engine";
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useGlobalSettings } from "./settings/useGlobalSettings.js";
@@ -12,6 +13,7 @@ import { createBackdropDismissHandlers } from "../shared/dialog/backdropDismiss.
 import type { Navigate } from "./pageContracts.js";
 import type { ShellViewState } from "../shell/shellBridge.js";
 import { openWebI18nScope, type WebI18nScope, webT } from "../i18n/webI18n.js";
+import { useKeyboardDialog, useWebKeyboard } from "./keyboard/vueKeyboard.js";
 
 const props = defineProps<{
   shell: ShellViewState;
@@ -19,6 +21,8 @@ const props = defineProps<{
   navigate: Navigate;
   onContentReady: (element: HTMLDivElement) => void;
 }>();
+const keyboard = useWebKeyboard();
+const vKeyboardDialog = useKeyboardDialog();
 const content = ref<HTMLDivElement | null>(null);
 const quickSettingsOpen = ref(false);
 const helpOpen = ref(false);
@@ -80,6 +84,7 @@ function dismissHelp(): void {
 }
 
 function notifySurfaceOpen(): void {
+  keyboard.runtime.cancelPressed();
   window.dispatchEvent(new CustomEvent("shell-dialog-open"));
 }
 
@@ -106,26 +111,30 @@ function dispatchAction(action: string): void {
   }
 }
 
-function handleGlobalKeydown(event: KeyboardEvent): void {
-  if (
-    event.defaultPrevented ||
-    event.repeat ||
-    event.ctrlKey ||
-    event.metaKey ||
-    event.altKey ||
-    event.key.toLowerCase() !== "m" ||
-    isTextEditingTarget(event.target)
-  )
-    return;
-  event.preventDefault();
-  settings.toggleMusic();
-}
-
-function isTextEditingTarget(target: EventTarget | null): boolean {
-  return (
-    target instanceof Element &&
-    target.closest("input, textarea, select, [contenteditable='true']") !== null
-  );
+function handleGlobalKeydown(event: KeyboardEvent): boolean {
+  if (event.ctrlKey || event.metaKey || event.altKey) return false;
+  if (matchesShortcut(event, WEB_SHORTCUTS.help)) {
+    void openHelp();
+    return true;
+  }
+  if (matchesShortcut(event, WEB_SHORTCUTS.rightPanel) &&
+      shellActions().some((action) => action.id === "screen-control")) {
+    dispatchAction("screen-control");
+    return true;
+  }
+  if (event.shiftKey) return false;
+  if (matchesShortcut(event, WEB_SHORTCUTS.music)) {
+    settings.toggleMusic();
+    return true;
+  }
+  if (event.key === "Escape" && !document.querySelector(".home-page")) {
+    const back = props.shell.config.topBar?.back;
+    if (back?.href) props.navigate(back.href);
+    else if (back) dispatchAction(back.id);
+    else props.navigate("/");
+    return true;
+  }
+  return false;
 }
 
 function shellActions() {
@@ -181,13 +190,19 @@ watch(
 );
 
 defineExpose({ openSettings });
+let disposeGlobalKeyboard: (() => void) | null = null;
 onBeforeUnmount(() => {
   helpScope?.dispose();
   disposeMusicInteraction();
-  window.removeEventListener("keydown", handleGlobalKeydown);
+  disposeGlobalKeyboard?.();
 });
 onMounted(() => {
-  window.addEventListener("keydown", handleGlobalKeydown);
+  const scope = keyboard.runtime.register({
+    layer: "global",
+    modifiers: "any",
+    keydown: handleGlobalKeydown,
+  });
+  disposeGlobalKeyboard = () => scope.dispose();
   if (content.value) props.onContentReady(content.value);
 });
 </script>
@@ -230,6 +245,7 @@ onMounted(() => {
 
     <div
       v-if="quickSettingsOpen"
+      v-keyboard-dialog="{ close: closeSettings }"
       class="quick-settings-layer"
       data-quick-settings-layer
       @pointerdown="settingsBackdropDismiss.pointerDown"

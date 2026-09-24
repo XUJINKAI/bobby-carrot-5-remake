@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { shortcutTitle } from "../app/keyboard/shortcuts.js";
 import type { ShellAction } from "./shellBridge.js";
 import AppIcon from "../shared/icons/AppIcon.vue";
 
@@ -24,6 +25,7 @@ function activate(event?: MouseEvent): void {
   <a
     v-if="action.href"
     :id="domId ?? action.id"
+    tabindex="-1"
     :href="action.href"
     class="shell-action"
     :class="[
@@ -32,7 +34,7 @@ function activate(event?: MouseEvent): void {
       { 'narrow-icon-only': action.narrow?.iconOnly },
       { 'in-overflow': overflow },
     ]"
-    :title="action.title ?? action.label"
+    :title="shortcutTitle(action.title ?? action.label ?? action.id, action.shortcut)"
     :aria-label="action.title ?? action.label ?? action.id"
     :aria-pressed="action.pressed"
     :aria-disabled="action.disabled"
@@ -55,6 +57,7 @@ function activate(event?: MouseEvent): void {
   <button
     v-else
     :id="domId ?? action.id"
+    tabindex="-1"
     type="button"
     class="shell-action"
     :class="[
@@ -63,7 +66,7 @@ function activate(event?: MouseEvent): void {
       { 'narrow-icon-only': action.narrow?.iconOnly },
       { 'in-overflow': overflow },
     ]"
-    :title="action.title ?? action.label"
+    :title="shortcutTitle(action.title ?? action.label ?? action.id, action.shortcut)"
     :aria-label="action.title ?? action.label ?? action.id"
     :aria-pressed="action.pressed"
     :disabled="action.disabled"

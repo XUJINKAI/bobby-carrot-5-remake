@@ -222,11 +222,12 @@ Replay 文本较大，编辑时在输入停止后延迟解析 JSON；播放与�
 输入阻塞过程、世界事件和终局表现会恢复正常展示。该设置只影响浏览器播放耗时，不改变
 Replay 输入、`endTick` 或无头复跑结果。
 
-Explore 游戏页使用 `Tab` 开关录制面板；焦点位于链接、按钮、输入框、Textarea、Select
-或其它可交互元素时保留浏览器原有的焦点导航。面板开关写入当前标签页的
+Explore 游戏页使用 `Z` 开关录制面板，`X` 切换屏幕摇杆；输入框、Textarea、Select
+或 contenteditable 中保留原生编辑行为。Tab 按页面配置移动焦点，详见
+[`键盘与焦点`](../features/keyboard.md)。面板开关写入当前标签页的
 `sessionStorage`，因此地图导航与刷新会恢复同一状态。
 
-通过 `npm run dev` 启动时，Adventure 游戏页可以提供相同的底栏入口与 `Tab` 快捷键，用于
+通过 `npm run dev` 启动时，Adventure 游戏页可以提供相同的底栏入口与 `Z` 快捷键，用于
 调试底层单关时间线；正式构建保持 Adventure 玩家界面。该入口不会把 Adventure Save、
 全局奖励、永久商品或动态补丁纳入动作回放。仓库 Replay fixture 以 Explore 的纯 LevelMap URL
 加载并验证。

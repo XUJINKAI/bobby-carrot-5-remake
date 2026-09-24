@@ -135,11 +135,10 @@ test("输入门禁内的模态消费者仍接收 WASD、方向键与 Swipe", () 
     ]);
     assert.deepEqual(view.input.update({ tick: 0, stepMs: 16 }).moves, []);
 
+    // 作用域切换取消物理键盘长按；独立的外部方向源继续按自身生命周期工作。
     consumer.release();
     block.release();
     assert.deepEqual(view.input.update({ tick: 1, stepMs: 16 }).moves, [
-      { source: "wasd", direction: "up" },
-      { source: "arrows", direction: "left" },
       { source: "external", direction: "down" },
     ]);
   } finally {
@@ -197,6 +196,7 @@ test("游戏撤销与重做只响应 Ctrl+Z 和 Ctrl+Y", () => {
       keyboard("z", { ctrlKey: true, shiftKey: true }),
     ]) {
       globalThis.window.dispatch("keydown", event);
+      globalThis.window.dispatch("keyup", event);
     }
 
     assert.equal(view.calls.restart, 0);

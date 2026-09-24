@@ -1,130 +1,129 @@
+import { holdDirection } from "./keyboard-navigation-browser-checks.mjs";
 import { waitForBrowserState } from "./browser-regression-wait.mjs";
 
 export async function verifyButtonFocusPolicy(cdp, sessionId) {
-  await waitForBrowserState(async () =>
-    Boolean(
-      await cdp.evaluate(
-        sessionId,
-        `Boolean(
-          document.querySelector('.home-page') &&
-          [...document.querySelectorAll('button')]
-            .every((button) => button.tabIndex === -1)
-        )`,
-      ),
-    ),
-  );
-
-  const initial = await cdp.evaluate(
-    sessionId,
-    `(() => {
-      const button = document.querySelector('#settings');
-      button.focus();
-      return {
-        focusedTag: document.activeElement?.tagName,
-        tabIndexes: [...document.querySelectorAll('button')].map((item) => ({
-          id: item.id,
-          text: item.textContent?.trim(),
-          value: item.tabIndex,
-        })),
-      };
-    })()`,
-  );
-  if (initial.focusedTag === "BUTTON")
-    throw new Error("程序化聚焦后按钮仍保留焦点");
-  const tabbableButtons = initial.tabIndexes.filter((item) => item.value !== -1);
-  if (tabbableButtons.length > 0)
-    throw new Error(
-      `初始按钮仍在 Tab 焦点顺序中：${JSON.stringify(tabbableButtons)}`,
-    );
-
-  const center = await cdp.evaluate(
-    sessionId,
-    `(() => {
-      const rect = document.querySelector('#settings').getBoundingClientRect();
-      return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
-    })()`,
-  );
-  await cdp.send(
-    "Input.dispatchMouseEvent",
-    {
-      type: "mousePressed",
-      x: center.x,
-      y: center.y,
-      button: "left",
-      clickCount: 1,
-    },
-    sessionId,
-  );
-  await cdp.send(
-    "Input.dispatchMouseEvent",
-    {
-      type: "mouseReleased",
-      x: center.x,
-      y: center.y,
-      button: "left",
-      clickCount: 1,
-    },
-    sessionId,
-  );
-  await waitForBrowserState(async () =>
-    Boolean(
-      await cdp.evaluate(
-        sessionId,
-        "document.querySelector('[data-quick-settings-layer]')",
-      ),
-    ),
-  );
-  const pointerFocusedTag = await cdp.evaluate(
-    sessionId,
-    "document.activeElement?.tagName",
-  );
-  if (pointerFocusedTag === "BUTTON")
-    throw new Error("指针点击后按钮仍保留焦点");
-
-  const formFocusedTag = await cdp.evaluate(
-    sessionId,
-    `(() => {
-      const input = document.querySelector('.quick-settings-panel input');
-      input.focus();
-      return document.activeElement?.tagName;
-    })()`,
-  );
-  if (formFocusedTag !== "INPUT")
-    throw new Error("按钮焦点策略影响了表单输入焦点");
-
-  await cdp.evaluate(
-    sessionId,
-    `(() => {
-      const layer = document.querySelector('[data-quick-settings-layer]');
-      const dynamicButton = document.createElement('button');
-      dynamicButton.textContent = 'dynamic';
-      layer.append(dynamicButton);
-      document.body.focus();
-    })()`,
-  );
-  const key = { key: "Tab", code: "Tab", windowsVirtualKeyCode: 9 };
-  await cdp.send(
-    "Input.dispatchKeyEvent",
-    { type: "keyDown", ...key },
-    sessionId,
-  );
-  await cdp.send(
-    "Input.dispatchKeyEvent",
-    { type: "keyUp", ...key },
-    sessionId,
-  );
-  const afterTab = await cdp.evaluate(
-    sessionId,
-    `(() => ({
-      dynamicTabIndex: [...document.querySelectorAll('button')]
-        .find((item) => item.textContent === 'dynamic')?.tabIndex,
-      focusedTag: document.activeElement?.tagName,
-    }))()`,
-  );
-  if (afterTab.dynamicTabIndex !== -1 || afterTab.focusedTag === "BUTTON")
-    throw new Error("动态按钮进入了 Tab 焦点顺序");
-
+  await waitForBrowserState(async () => cdp.evaluate(sessionId,
+    "document.activeElement?.matches('.home-mode-card')"));
+  const initialOutline = await cdp.evaluate(sessionId,
+    "getComputedStyle(document.activeElement).outlineStyle");
+  if (initialOutline !== "none") throw new Error("页面初次加载显示了焦点框");
+  await waitForBrowserState(async () => cdp.evaluate(sessionId,
+    "document.querySelector('.home-demo-panel .engine-screen-joystick-layer')?.hidden === false"));
+  await cdp.evaluate(sessionId, "document.querySelector('.home-demo-screen-control').click(); true");
+  await waitForBrowserState(async () => cdp.evaluate(sessionId,
+    "document.querySelector('.home-demo-panel .engine-screen-joystick-layer')?.hidden === true && document.querySelector('.home-demo-screen-control')?.getAttribute('aria-pressed') === 'false'"));
+  await cdp.evaluate(sessionId, "document.querySelector('.home-demo-screen-control').click(); true");
+  await waitForBrowserState(async () => cdp.evaluate(sessionId,
+    "document.querySelector('.home-demo-panel .engine-screen-joystick-layer')?.hidden === false && document.querySelector('.home-demo-screen-control')?.getAttribute('aria-pressed') === 'true'"));
+  const initial = await cdp.evaluate(sessionId, `(() => {
+    document.querySelector('#music').focus();
+    return {
+      musicFocused: document.activeElement?.id === 'music',
+      musicTabIndex: document.querySelector('#music').tabIndex,
+      modeStops: [...document.querySelectorAll('.home-mode-card')].filter((item) => item.tabIndex === 0).length,
+      settingsTabIndex: document.querySelector('#settings').tabIndex,
+    };
+  })()`);
+  if (initial.musicFocused || initial.musicTabIndex !== -1 || initial.modeStops !== 1 || initial.settingsTabIndex !== -1)
+    throw new Error(`声明式焦点配置异常：${JSON.stringify(initial)}`);
+  await cdp.evaluate(sessionId, "document.querySelector('.home-mode-card').focus(); true");
+  await holdDirection(cdp, sessionId, "ArrowDown", 40);
+  if (!(await cdp.evaluate(sessionId, "document.activeElement?.matches('[data-home-import]')")))
+    throw new Error("首页长按方向键未连续选择模式");
+  await cdp.evaluate(sessionId, "document.querySelector('.home-mode-card').focus(); true");
+  await press(cdp, sessionId, "Tab", 9);
+  if (!(await cdp.evaluate(sessionId, "document.activeElement?.matches('.home-demo-panel canvas')")))
+    throw new Error("首页 Tab 未从模式组进入试玩画布");
+  const demoOutline = await cdp.evaluate(sessionId,
+    "getComputedStyle(document.querySelector('.home-demo-panel')).outlineStyle");
+  if (demoOutline === "none") throw new Error("Demo 焦点未标记整个面板");
+  await press(cdp, sessionId, "ArrowDown", 40);
+  if (await cdp.evaluate(sessionId,
+    "getComputedStyle(document.querySelector('.home-demo-panel')).outlineStyle") === "none")
+    throw new Error("Tab 进入 Demo 后方向键游玩丢失了焦点框");
+  const demoPoint = await cdp.evaluate(sessionId, `(() => {
+    const rect = document.querySelector('.home-demo-panel canvas').getBoundingClientRect();
+    return { x: rect.left + rect.width / 4, y: rect.top + rect.height / 4 };
+  })()`);
+  await cdp.send("Input.dispatchMouseEvent", {
+    type: "mousePressed", button: "left", clickCount: 1, ...demoPoint,
+  }, sessionId);
+  await cdp.send("Input.dispatchMouseEvent", {
+    type: "mouseReleased", button: "left", clickCount: 1, ...demoPoint,
+  }, sessionId);
+  await holdDirection(cdp, sessionId, "ArrowDown", 40);
+  if (!(await cdp.evaluate(sessionId, "document.activeElement?.matches('.home-demo-panel canvas')")))
+    throw new Error("鼠标进入 Demo 后方向键游玩丢失了画布焦点");
+  if (await cdp.evaluate(sessionId,
+    "getComputedStyle(document.querySelector('.home-demo-panel')).outlineStyle") !== "none")
+    throw new Error("鼠标进入 Demo 后方向键游玩显示了焦点框");
+  await press(cdp, sessionId, "Tab", 9, { modifiers: 8 });
+  await press(cdp, sessionId, "Tab", 9, { modifiers: 8 });
+  if (!(await cdp.evaluate(sessionId, "document.activeElement?.matches('.home-demo-panel canvas')")) ||
+    await cdp.evaluate(sessionId,
+      "getComputedStyle(document.querySelector('.home-demo-panel')).outlineStyle") === "none")
+    throw new Error("Shift+Tab 重新进入 Demo 未显示面板焦点框");
+  await cdp.evaluate(sessionId, "document.activeElement.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerType: 'touch' })); document.activeElement.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerType: 'touch' })); true");
+  await press(cdp, sessionId, "ArrowDown", 40);
+  if (await cdp.evaluate(sessionId,
+    "getComputedStyle(document.querySelector('.home-demo-panel')).outlineStyle") !== "none")
+    throw new Error("触屏操作后 Demo 焦点框仍然显示");
+  await press(cdp, sessionId, "Tab", 9);
+  if (!(await cdp.evaluate(sessionId, "document.activeElement?.matches('.home-mode-card')")))
+    throw new Error("首页 Tab 没有在模式菜单和 Demo 之间循环");
+  await press(cdp, sessionId, "ArrowUp", 38);
+  if (!(await cdp.evaluate(sessionId, "document.activeElement?.matches('.home-embed-link')")))
+    throw new Error("内嵌链接未加入模式菜单方向键选择");
+  await press(cdp, sessionId, "ArrowUp", 38);
+  if (!(await cdp.evaluate(sessionId, "document.activeElement?.matches('[data-home-import]')")))
+    throw new Error("首页方向键未选中导入按钮");
+  await cdp.evaluate(sessionId, "document.activeElement.blur(); true");
+  await press(cdp, sessionId, "ArrowDown", 40);
+  if (!(await cdp.evaluate(sessionId, "document.activeElement?.matches('[data-home-import]')")))
+    throw new Error("首页失去焦点后方向键未恢复上次模式选择");
+  await press(cdp, sessionId, "Enter", 13);
+  await waitForBrowserState(async () => cdp.evaluate(sessionId,
+    "document.querySelector('.home-import-dialog-layer')?.contains(document.activeElement)"));
+  await cdp.evaluate(sessionId, "document.querySelector('.home-import-dialog textarea').focus(); true");
+  const music = await cdp.evaluate(sessionId, "document.querySelector('#music').getAttribute('aria-pressed')");
+  await press(cdp, sessionId, "m", 77);
+  if (music !== await cdp.evaluate(sessionId, "document.querySelector('#music').getAttribute('aria-pressed')"))
+    throw new Error("文本框输入触发了全局音乐快捷键");
+  for (let index = 0; index < 12; index++) {
+    await press(cdp, sessionId, "Tab", 9);
+    if (!(await cdp.evaluate(sessionId,
+      "document.querySelector('.home-import-dialog-layer')?.contains(document.activeElement)")))
+      throw new Error("Tab 焦点离开了当前弹窗");
+  }
+  await press(cdp, sessionId, "Escape", 27);
+  await waitForBrowserState(async () => cdp.evaluate(sessionId,
+    "!document.querySelector('.home-import-dialog-layer') && document.activeElement?.matches('[data-home-import]')"));
+  await cdp.evaluate(sessionId, `(() => {
+    const button = document.createElement('button');
+    button.id = 'unregistered-focus-probe';
+    document.querySelector('.home-page').append(button);
+    button.focus();
+  })()`);
+  await press(cdp, sessionId, "Tab", 9);
+  const dynamic = await cdp.evaluate(sessionId, `({
+    tabIndex: document.querySelector('#unregistered-focus-probe').tabIndex,
+    focused: document.activeElement?.id === 'unregistered-focus-probe',
+  })`);
+  if (dynamic.tabIndex !== -1 || dynamic.focused)
+    throw new Error("未登记的动态按钮进入了键盘焦点顺序");
+  await press(cdp, sessionId, "?", 191, { code: "Slash", modifiers: 8 });
+  await waitForBrowserState(async () => cdp.evaluate(sessionId,
+    "Boolean(document.querySelector('[data-dialog-layer]'))"));
+  await press(cdp, sessionId, "Escape", 27);
+  await waitForBrowserState(async () => cdp.evaluate(sessionId,
+    "!document.querySelector('[data-dialog-layer]')"));
   await verifyTouchBackdropDoesNotClickThrough(cdp, sessionId);
+}
+
+async function press(cdp, sessionId, key, windowsVirtualKeyCode, extra = {}) {
+  const options = { key, code: key.length === 1 ? `Key${key.toUpperCase()}` : key, windowsVirtualKeyCode, ...extra };
+  await cdp.send("Input.dispatchKeyEvent", { type: "keyDown", ...options, ...(key === "Enter" ? { text: "\r" } : {}) }, sessionId);
+  await cdp.send("Input.dispatchKeyEvent", { type: "keyUp", ...options }, sessionId);
 }
 
 async function verifyTouchBackdropDoesNotClickThrough(cdp, sessionId) {

@@ -1,3 +1,4 @@
+import { provideWebKeyboard } from "../../app/keyboard/vueKeyboard.js";
 import {
   createBlankLevel,
   fromLevelMap,
@@ -59,6 +60,7 @@ export async function renderEditorPage(
     images,
     navigate,
   });
+  provideWebKeyboard(editorPage, context.keyboard);
   editorPage.mount(app);
   return {
     destroy(): void {
@@ -83,6 +85,7 @@ export async function renderEditorTestPage(
     navigate,
     playRoute: true,
   });
+  provideWebKeyboard(editorPage, context.keyboard);
   editorPage.mount(app);
   return {
     destroy(): void {

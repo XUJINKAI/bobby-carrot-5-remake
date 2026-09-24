@@ -37,7 +37,7 @@ function action(id: string): void {
     <div class="shell-topbar-right">
       <ShellActionButton v-for="item in config.actions ?? []" :key="item.id" :action="item" @action="emit('action', $event)" @navigate="emit('navigate', $event)" />
       <details v-if="overflowActions.length" class="shell-overflow" :open="overflowOpen">
-        <summary :title="webT('shell.moreActions')" :aria-label="webT('shell.moreActions')" @click.prevent="overflowOpen = !overflowOpen">
+        <summary tabindex="-1" :title="webT('shell.moreActions')" :aria-label="webT('shell.moreActions')" @click.prevent="overflowOpen = !overflowOpen">
           <AppIcon name="menu" />
         </summary>
         <div class="shell-overflow-menu">

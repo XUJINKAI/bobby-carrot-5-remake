@@ -1,3 +1,7 @@
+import { RESULT_FOCUS_PLAN } from "../../app/keyboard/focusPlans.js";
+import { WEB_SHORTCUTS, matchesShortcut } from "../../app/keyboard/shortcuts.js";
+import type { WebKeyboard } from "../../app/keyboard/WebKeyboard.js";
+import { provideWebKeyboard } from "../../app/keyboard/vueKeyboard.js";
 import {
   adventureAugmentationFor,
   isAdventureLevelUnlocked,
@@ -97,6 +101,7 @@ export type GamePageSource = "adventure" | "explore" | "import";
 
 export interface GamePageContext {
   app: HTMLDivElement;
+  keyboard: WebKeyboard;
   adventure: AdventureIndex;
   audio: AudioRuntime;
   images: ImageManager;
@@ -222,6 +227,7 @@ export async function renderGamePage(
     mode,
     replayPanelEnabled: capabilities.replayPanel,
   });
+  provideWebKeyboard(gamePage, context.keyboard);
   gamePage.mount(app);
   const adventureViewport = app.querySelector<HTMLElement>(
     ".adventure-game-viewport",
@@ -234,6 +240,7 @@ export async function renderGamePage(
     "[data-result-card-content]",
   );
   const session = await createGameSession({
+    keyboard: context.keyboard,
     canvas,
     level: sessionLevel,
     gameOptions: {
@@ -306,6 +313,7 @@ export async function renderGamePage(
     sessionPlan,
   );
 
+  let disposeResultKeyboard: (() => void) | null = null;
   let visibleResult: "death" | "complete" | null = null;
   let capturedResult: "death" | "complete" | null = null;
   let resultElapsedMs = 0;
@@ -322,6 +330,7 @@ export async function renderGamePage(
   updateAdventureToolLayout();
   const replayPanel: ReplayPanelController = capabilities.replayPanel
     ? bindReplayPanel({
+        keyboard: context.keyboard,
         root: app,
         game,
         filename: `${replayTarget.collection}-${replayTarget.id}`,
@@ -353,12 +362,14 @@ export async function renderGamePage(
           completionRecorded = false;
           completionNextId = undefined;
           completionNavigationStarted = false;
-          gameResult.hidden = true;
+          closeResult();
         },
       })
     : NOOP_REPLAY_PANEL_CONTROLLER;
 
   const closeResult = (): void => {
+    disposeResultKeyboard?.();
+    disposeResultKeyboard = null;
     visibleResult = null;
     gameResult.hidden = true;
   };
@@ -430,6 +441,15 @@ export async function renderGamePage(
       resultContent.innerHTML = failedResultHtml();
     }
     gameResult.hidden = false;
+    gameResult.setAttribute("aria-label", webT(kind === "complete" ? "game.complete" : "game.failed"));
+    disposeResultKeyboard?.();
+    const resultAction = (selector: string): void => {
+      gameResult.querySelector<HTMLButtonElement>(selector)?.click();
+    };
+    disposeResultKeyboard = context.keyboard.openDialog(gameResult, {
+      focus: RESULT_FOCUS_PLAN,
+      close: () => resultAction("[data-result='levels']"),
+    });
   };
 
   const update = (): void => {
@@ -487,8 +507,7 @@ export async function renderGamePage(
     }
   });
 
-  const onGameShellAction = (event: Event): void => {
-    const action = (event as CustomEvent<{ action: string }>).detail.action;
+  const performGameAction = (action: string): void => {
     if (action === "back") {
       navigate(backPath(identity, mode, adventureBackPath));
     } else if (action === "previous-level" && explorePreviousMapId) {
@@ -514,6 +533,25 @@ export async function renderGamePage(
     else if (action === "restart") void askRestart();
     else if (action === "replay-record") replayPanel.toggle();
   };
+  const onGameShellAction = (event: Event): void => {
+    performGameAction((event as CustomEvent<{ action: string }>).detail.action);
+  };
+  const pageKeyboard = context.keyboard.runtime.register({
+    layer: "page",
+    modifiers: "any",
+    keydown: (event) => {
+      if (matchesShortcut(event, WEB_SHORTCUTS.restart)) {
+        performGameAction("restart");
+        return true;
+      }
+      if (event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) return false;
+      if (event.key === "Escape") performGameAction("back");
+      else if (mode === "explore" && event.key === "[") performGameAction("previous-level");
+      else if (mode === "explore" && event.key === "]") performGameAction("next-level");
+      else return false;
+      return true;
+    },
+  });
   window.addEventListener("game-shell-action", onGameShellAction);
   const disposeGameShell = bindGameplayShell(session, {
     initialScreenControlEnabled: screenControlEnabled,
@@ -530,6 +568,8 @@ export async function renderGamePage(
       replayPanel.update();
     },
     destroy(): void {
+      disposeResultKeyboard?.();
+      pageKeyboard.dispose();
       window.removeEventListener("game-shell-action", onGameShellAction);
       disposeAdventureSessionEffects();
       disposeGameShell();
@@ -582,6 +622,7 @@ function gameShellConfig(
         icon: "back",
         label: webT("shell.back"),
         title: webT("shell.back"),
+        shortcut: "Esc",
       },
       leading: [
         ...(explore
@@ -590,6 +631,7 @@ function gameShellConfig(
                 id: "previous-level",
                 icon: "previous-track" as const,
                 title: webT("shell.previousLevel"),
+                shortcut: "[",
                 disabled: !explorePreviousMapId,
                 collapse: "keep" as const,
               },
@@ -597,6 +639,7 @@ function gameShellConfig(
                 id: "next-level",
                 icon: "next-track" as const,
                 title: webT("shell.nextLevel"),
+                shortcut: "]",
                 disabled: !exploreNextMapId,
                 collapse: "keep" as const,
               },
@@ -606,6 +649,7 @@ function gameShellConfig(
           id: "restart",
           icon: "restart" as const,
           title: webT("shell.restart"),
+          shortcut: WEB_SHORTCUTS.restart.label,
         },
       ],
       commands: explore
@@ -614,12 +658,14 @@ function gameShellConfig(
               id: "undo",
               icon: "undo" as const,
               title: webT("shell.undo"),
+              shortcut: "Ctrl+Z",
               narrow: { placement: "bottom-trailing" as const },
             },
             {
               id: "redo",
               icon: "redo" as const,
               title: webT("shell.redo"),
+              shortcut: "Ctrl+Y",
               narrow: { placement: "bottom-trailing" as const },
             },
           ]
@@ -646,6 +692,7 @@ function gameShellConfig(
         ? [
             {
               id: "replay-record",
+              shortcut: WEB_SHORTCUTS.leftPanel.label,
               icon: "record",
               iconWeight: replayRecording ? "fill" : "regular",
               label: webT("shell.record"),
@@ -666,6 +713,7 @@ function gameShellConfig(
       trailing: [
         {
           id: "screen-control",
+          shortcut: WEB_SHORTCUTS.rightPanel.label,
           icon: "joystick",
           label: webT("shell.screenJoystick"),
           narrow: { iconOnly: true },

@@ -1,3 +1,4 @@
+import { verifyGameKeyboard, verifyExploreKeyboard, verifyEditorKeyboard } from "./source/keyboard-navigation-browser-checks.mjs";
 import path from "node:path";
 import { gzipSync } from "node:zlib";
 import { createServer } from "vite";
@@ -44,14 +45,15 @@ export async function runSourceBrowserRegression(cdp) {
 
     try {
       await verifyButtonFocusPolicy(cdp, await openPage(cdp, `${origin}/`));
+      await verifyGameKeyboard(cdp, await openPage(cdp, `${origin}/`));
+      await verifyExploreKeyboard(cdp, await openPage(cdp, `${origin}/explore`));
       await verifyNarrowHomeProductName(cdp, await openPage(cdp, `${origin}/`));
       await verifyMusicInteractionTip(cdp, `${origin}/`);
       await verifyQuickSettings(cdp, `${origin}/`);
       await verifySettingsPage(cdp, await openPage(cdp, `${origin}/settings`));
-      await verifyEditorExperience(
-        cdp,
-        await openPage(cdp, `${origin}/edit`),
-      );
+      const editorSession = await openPage(cdp, `${origin}/edit`);
+      await verifyEditorKeyboard(cdp, editorSession);
+      await verifyEditorExperience(cdp, editorSession);
       await verifyNarrowEditorStartsWithoutPanels(
         cdp,
         await openPage(cdp, `${origin}/edit`),

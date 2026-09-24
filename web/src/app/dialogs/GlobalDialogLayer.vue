@@ -1,14 +1,17 @@
 <script setup lang="ts">
+import { useKeyboardDialog } from "../keyboard/vueKeyboard.js";
 import HelpDialog from "./HelpDialog.vue";
 import { createBackdropDismissHandlers } from "../../shared/dialog/backdropDismiss.js";
 
 defineProps<{ helpHtml: string }>();
 const emit = defineEmits<{ close: [] }>();
+const vKeyboardDialog = useKeyboardDialog();
 const backdropDismiss = createBackdropDismissHandlers(() => emit("close"));
 </script>
 
 <template>
   <div
+    v-keyboard-dialog="{ close: () => emit('close') }"
     class="global-dialog-layer"
     data-dialog-layer
     @pointerdown="backdropDismiss.pointerDown"

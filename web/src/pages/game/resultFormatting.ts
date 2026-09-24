@@ -1,3 +1,4 @@
+import { shortcutTitle } from "../../app/keyboard/shortcuts.js";
 import { webT } from "../../i18n/webI18n.js";
 
 export function escapeHtml(value: string): string {
@@ -43,8 +44,8 @@ export function completedResultHtml(details: CompletedResultDetails): string {
     totalCoins,
     "</div>",
     '<div class="result-actions">',
-    `<button class="ghost-btn" data-result="levels">${escapeHtml(webT("game.back"))}</button>`,
-    `<button class="primary-btn" data-result="next"${nextAttributes}>${escapeHtml(webT("game.next"))}</button>`,
+    `<button class="ghost-btn" data-result="levels" title="${escapeHtml(shortcutTitle(webT("game.back"), "Esc / Enter"))}">${escapeHtml(webT("game.back"))}</button>`,
+    `<button class="primary-btn" data-result="next"${nextAttributes} title="${escapeHtml(shortcutTitle(webT("game.next"), details.nextId ? "Enter" : undefined))}">${escapeHtml(webT("game.next"))}</button>`,
     "</div>",
   ].join("");
 }
@@ -53,8 +54,8 @@ export function failedResultHtml(): string {
   return [
     `<h2>${escapeHtml(webT("game.failed"))}</h2>`,
     '<div class="result-actions">',
-    `<button class="ghost-btn" data-result="levels">${escapeHtml(webT("game.back"))}</button>`,
-    `<button class="primary-btn" data-result="retry">${escapeHtml(webT("game.retry"))}</button>`,
+    `<button class="ghost-btn" data-result="levels" title="${escapeHtml(shortcutTitle(webT("game.back"), "Esc / Enter"))}">${escapeHtml(webT("game.back"))}</button>`,
+    `<button class="primary-btn" data-result="retry" title="${escapeHtml(shortcutTitle(webT("game.retry"), "Enter"))}">${escapeHtml(webT("game.retry"))}</button>`,
     "</div>",
   ].join("");
 }

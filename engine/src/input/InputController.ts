@@ -1,3 +1,4 @@
+import { KeyboardRuntime, type KeyboardScope, type KeyboardRange } from "./KeyboardRuntime.js";
 import type { Direction } from "@bobby/model";
 import type { Game } from "../core/Game.js";
 import type { WorldTick } from "../time/WorldClock.js";
@@ -25,6 +26,8 @@ interface PointerState {
 
 export interface InputControllerOptions {
   keyboard?: boolean;
+  keyboardRuntime?: KeyboardRuntime;
+  keyboardRange?: KeyboardRange;
   pointer?: boolean;
   movement?: boolean;
   undo?: boolean;
@@ -151,6 +154,9 @@ export class InputController {
   private readonly keyboardRepeatDelayMs: number;
   private readonly joystickRepeatDelayMs: number;
   private readonly externalRepeatDelayMs: number;
+  private readonly keyboardRuntime: KeyboardRuntime;
+  private readonly ownsKeyboardRuntime: boolean;
+  private readonly keyboardScope: KeyboardScope;
   private externalDirection: Direction | null = null;
   private joystickDirection: Direction | null = null;
   private pinchStartDistance = 0;
@@ -199,9 +205,18 @@ export class InputController {
         DEFAULT_SCREEN_JOYSTICK_OPTIONS.initialRepeatDelayMs,
     );
 
-    window.addEventListener("keydown", this.onKeyDown, { passive: false });
-    window.addEventListener("keyup", this.onKeyUp, { passive: false });
-    window.addEventListener("blur", this.onBlur);
+    this.ownsKeyboardRuntime = !options.keyboardRuntime;
+    this.keyboardRuntime = options.keyboardRuntime ?? new KeyboardRuntime();
+    this.keyboardScope = this.keyboardRuntime.register({
+      active: this.capabilities.keyboard,
+      ...(options.keyboardRange ? { range: options.keyboardRange } : {}),
+      repeat: true,
+      modifiers: "any",
+      keydown: this.onKeyDown,
+      keyup: this.onKeyUp,
+      cancel: this.onKeyboardCancel,
+      blur: this.onBlur,
+    });
     this.canvas.addEventListener("pointerdown", this.onPointerDown);
     this.canvas.addEventListener("pointermove", this.onPointerMove);
     this.canvas.addEventListener("pointerup", this.onPointerUp);
@@ -336,11 +351,16 @@ export class InputController {
       this.clearPointerState();
     }
     if (changed && enabled) this.syncContinuousInputs();
+    this.keyboardScope.setModal(this.consumers.size > 0);
+    this.keyboardScope.setActive(
+      this.capabilities.keyboard && this.acceptsLogicalInput,
+    );
   }
 
   setKeyboardEnabled(value: boolean): void {
     this.capabilities.keyboard = value;
     if (!value) this.heldMovementKeys.length = 0;
+    this.syncEnabled();
     this.syncContinuousInputs();
   }
 
@@ -398,9 +418,8 @@ export class InputController {
 
   destroy(): void {
     this.clearHeldMovement();
-    window.removeEventListener("keydown", this.onKeyDown);
-    window.removeEventListener("keyup", this.onKeyUp);
-    window.removeEventListener("blur", this.onBlur);
+    this.keyboardScope.dispose();
+    if (this.ownsKeyboardRuntime) this.keyboardRuntime.destroy();
     this.canvas.removeEventListener("pointerdown", this.onPointerDown);
     this.canvas.removeEventListener("pointermove", this.onPointerMove);
     this.canvas.removeEventListener("pointerup", this.onPointerUp);
@@ -410,90 +429,76 @@ export class InputController {
     this.screenJoystick?.destroy();
   }
 
-  private readonly onKeyDown = (event: KeyboardEvent): void => {
+  private readonly onKeyDown = (event: KeyboardEvent): boolean => {
     if (
       !this.acceptsLogicalInput ||
       !this.capabilities.keyboard ||
       !this.game.hasLevel
-    )
-      return;
+    ) return false;
     const key = event.key.toLowerCase();
-    const movement = KEY_INPUT[key];
-    if (
-      movement &&
-      (this.capabilities.movement || this.consumers.size > 0)
-    ) {
-      event.preventDefault();
-      if (event.repeat && this.consumers.size > 0) return;
+    if (this.consumers.size > 0 && key === "tab") return true;
+    const modified = event.ctrlKey || event.metaKey || event.altKey;
+    const movement = modified || event.shiftKey ? undefined : KEY_INPUT[key];
+    if (movement && (this.capabilities.movement || this.consumers.size > 0)) {
+      if (event.repeat && this.consumers.size > 0) return true;
       if (!event.repeat && !this.heldMovementKeys.includes(key)) {
         this.heldMovementKeys.push(key);
         this.syncContinuousInputs();
       }
-      if (
-        this.dispatchLogicalInput({
-          type: "direction",
-          source: movement.source,
-          direction: movement.direction,
-        })
-      ) {
-        this.repeaters.get(movement.source)?.markHeldActionObserved();
-        return;
-      }
-      if (!this.enabled || this.game.presentationBlocksInput) return;
-      return;
+      if (this.dispatchLogicalInput({
+        type: "direction",
+        source: movement.source,
+        direction: movement.direction,
+      })) this.repeaters.get(movement.source)?.markHeldActionObserved();
+      return true;
     }
-    const dialogAction = key === "enter"
+    const dialogAction = modified || event.shiftKey ? null : key === "enter"
       ? { type: "confirm" as const, source: "keyboard" }
       : key === "escape"
         ? { type: "cancel" as const, source: "keyboard" }
         : null;
-    if (dialogAction && event.repeat && this.consumers.size > 0) {
-      event.preventDefault();
-      return;
+    if (dialogAction && this.consumers.size > 0) {
+      if (!event.repeat) this.dispatchLogicalInput(dialogAction);
+      return true;
     }
-    if (dialogAction && this.dispatchLogicalInput(dialogAction)) {
-      event.preventDefault();
-      return;
-    }
-    if (!this.enabled) return;
-    if (event.repeat) return;
-    if (
-      key === "z" &&
-      event.ctrlKey &&
-      !event.shiftKey &&
-      this.capabilities.undo
-    ) {
-      event.preventDefault();
+    if (!this.enabled || event.repeat || event.altKey) return false;
+    const command = event.ctrlKey && !event.metaKey;
+    if (key === "z" && command && !event.shiftKey && this.capabilities.undo) {
       this.game.undo();
     } else if (
-      key === "y" &&
-      event.ctrlKey &&
-      !event.shiftKey &&
-      this.capabilities.redo
+      command && this.capabilities.redo &&
+      key === "y" && !event.shiftKey
     ) {
-      event.preventDefault();
       this.game.redo();
-    } else if ((key === "=" || key === "+") && this.capabilities.zoom)
+    } else if (!modified && (key === "=" || key === "+") && this.capabilities.zoom) {
       this.game.zoomBy(1.1);
-    else if ((key === "-" || key === "_") && this.capabilities.zoom)
+    } else if (!modified && (key === "-" || key === "_") && this.capabilities.zoom) {
       this.game.zoomBy(1 / 1.1);
-    else if (
-      this.capabilities.debug &&
+    } else if (
+      !modified && this.capabilities.debug &&
       (event.code === "Backquote" || key === "`" || key === "~")
-    )
+    ) {
       this.game.toggleDebug();
+    } else {
+      return false;
+    }
+    return true;
   };
 
   private readonly onKeyUp = (event: KeyboardEvent): void => {
-    if (!this.capabilities.keyboard) return;
     const key = event.key.toLowerCase();
-    if (!KEY_INPUT[key] || !this.capabilities.movement) return;
+    if (!KEY_INPUT[key]) return;
     event.preventDefault();
     const index = this.heldMovementKeys.lastIndexOf(key);
     if (index >= 0) {
       this.heldMovementKeys.splice(index, 1);
       this.syncContinuousInputs();
     }
+  };
+
+  private readonly onKeyboardCancel = (): void => {
+    this.heldMovementKeys.length = 0;
+    this.syncContinuousInputs();
   };
 
   private readonly onBlur = (): void => {

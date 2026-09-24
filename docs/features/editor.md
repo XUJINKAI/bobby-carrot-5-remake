@@ -81,7 +81,7 @@ Palette 和 Surface 使用一致的基础工具语义：
 
 Surface 基础地貌通过 Brush 画成另一种 Terrain 来替换。Palette 的 Delete 工具用于逐格删除，Selection + Delete/Backspace 用于删除当前单格或矩形选区的目标层。
 
-`Ctrl+A` 选择整张地图。`Tab` 在编辑状态直接切换 Palette / Surface，并打开对应左侧面板；文本输入和 Play Test 不拦截这些编辑快捷键。
+`Ctrl+A` 选择整张地图。`Z` 切换 Palette / Surface 并打开左侧面板，`X` 切换 Inspector / Level 并打开右侧面板；Editor 通过快捷键操作，Tab / Shift+Tab 不轮换控件焦点；表单字段通过指针选择。Play Test 使用 Engine 输入，结算默认选中重试，左右键选择按钮，Enter 确认、Esc 返回编辑。完整焦点配置见 [`键盘与焦点`](keyboard.md)。
 
 Editor 首次打开时，宽屏显示 Palette 与 Inspector；620px 及以下的窄屏只显示地图画布，
 Palette、Surface、Inspector 与 Level 面板均由用户通过 Bottom Bar 主动打开。用户打开一侧面板时，
@@ -225,7 +225,8 @@ Camera、Gameplay HUD、Engine Input 与地图音乐选曲。BottomBar 切换为
 Editor 底图通过 Engine 的纯语义光路投影器派生激光 beam，仅把结果加入只读绘制空间。选择、Inspector、放置和 JSON 仍使用原始地图空间，因此 beam 不会成为可编辑 Entity，也不会进入 Draft 或堆叠角标；Play Test Runtime 与 Editor Canvas 共用同一套直线、反射和遮挡计算。
 
 - Bottom Bar 的 Palette / Surface 在两种 authoring UX 之间即时切换；
-- Tab：Palette / Surface 快速切换；
+- Z：Palette / Surface 快速切换；
+- X：Inspector / Level 快速切换；
 - Select：单选或矩形多选，不直接绘制；
 - Brush：单格/连续绘制；点入已有 Selection 时整块填充；
 - Surface：额外提供 Smart Fill；

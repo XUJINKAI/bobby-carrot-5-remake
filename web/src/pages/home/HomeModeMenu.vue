@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref } from "vue";
+import { useKeyboardDialog } from "../../app/keyboard/vueKeyboard.js";
 import type {
   ImportedData,
   ImportedSaveData,
@@ -16,6 +17,7 @@ const emit = defineEmits<{
 }>();
 const importOpen = ref(false);
 const pendingSave = ref<ImportedSaveData | null>(null);
+const vKeyboardDialog = useKeyboardDialog();
 let importScope: WebI18nScope | null = null;
 const toolbar = computed(() => ({
   left: [
@@ -82,7 +84,11 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <nav class="home-mode-panel" :aria-label="webT('home.modeAria')">
+  <nav
+    class="home-mode-panel"
+    :aria-label="webT('home.modeAria')"
+    :title="`${webT('home.modeTitle')} (↑ / ↓ · Enter)`"
+  >
     <header>
       <span class="eyebrow">PLAY YOUR WAY</span>
       <span>{{ webT("home.modeTitle") }}</span>
@@ -137,6 +143,7 @@ onBeforeUnmount(() => {
     <Teleport to="body">
       <div
         v-if="importOpen"
+        v-keyboard-dialog="{ close: () => pendingSave ? cancelPendingSave() : closeImport() }"
         class="home-import-dialog-layer"
         role="presentation"
         @pointerdown="backdropDismiss.pointerDown"

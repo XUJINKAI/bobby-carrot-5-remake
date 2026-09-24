@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useWebKeyboard } from "../../app/keyboard/vueKeyboard.js";
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import type {
   BC5RGlobal,
@@ -23,6 +24,7 @@ import {
   parseEmbedCode,
 } from "./embedCode.js";
 
+const keyboardManager = useWebKeyboard();
 const props = defineProps<{ publicBaseUrl: string }>();
 
 type EmbedMount = BC5RMount;
@@ -133,7 +135,7 @@ async function refreshPreview(): Promise<void> {
   previewError.value = null;
   previewReady.value = false;
   try {
-    const next = embedMount({ ...parsed.options, target });
+    const next = embedMount({ ...parsed.options, target, keyboardRuntime: keyboardManager.runtime });
     handle = next;
     await next.ready;
     if (serial !== renderSerial) {

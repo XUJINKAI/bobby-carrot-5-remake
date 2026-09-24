@@ -120,3 +120,10 @@ Generic Shell
 ```
 
 页面负责配置和 action 语义；Shell 负责布局、响应式、菜单呈现、固定滚动区域和 Bobby Carrot 5 视觉主题。
+
+## 键盘焦点
+
+Shell 按钮使用指针与已注册的全局快捷键：`M` 控制 Music，`?` 打开 Help。
+ShellAction 的 `shortcut` 字段在悬停 tooltip 中显示对应按键，按钮标签保持操作名称。
+Tab 顺序由页面内容的 FocusPlan 定义。完整配置见
+[`键盘与焦点`](../features/keyboard.md)。

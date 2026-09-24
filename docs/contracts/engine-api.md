@@ -326,6 +326,42 @@ game.renderer.camera.zoom;
 
 对应能力必须使用稳定 façade 或 DebugRuntime。
 
+## KeyboardRuntime
+
+`KeyboardRuntime` 是 Engine 提供的通用浏览器键盘运行时。宿主可创建共享实例：
+
+```ts
+const keyboard = new KeyboardRuntime({
+  range: { mode: "global" },
+  layers: ["page", "global", "gameplay"],
+});
+const command = keyboard.register({
+  layer: "page",
+  keydown(event) {
+    if (event.key !== "]") return false;
+    openNextLevel();
+    return true;
+  },
+});
+```
+
+`layers` 由宿主按高到低声明；省略时只有 `default` 层，注册项省略 `layer` 时进入最后一层。
+注册项可声明 `range`、`active`、`modal`、`repeat`、`modifiers`、`editable` 以及
+`keydown / keyup / cancel / blur`。`keydown` 返回是否消费该事件；`KeyboardScope` 提供
+`setActive()`、`setModal()`、`dispose()`。Runtime 提供 `cancelPressed()` 与 `destroy()`。
+开启 `repeat` 后可通过 `repeatIntervalMs` 限制重复间隔；`retainOnFocusChange` 只保留自身
+keydown 回调同步移动焦点时的物理按键，便于长按导航。外部焦点变化与作用域切换仍取消按键。
+
+`range` 支持 `{ mode: "global" }` 和 `{ mode: "focus", root: HTMLElement }`，注册项
+可覆盖 Runtime 的默认范围。焦点范围包含 root 及其后代，并支持 Shadow DOM。
+
+宿主通过 `runtime.input.keyboardRuntime` 注入实例，通过 `runtime.input.keyboardRange`
+指定 Gameplay 的范围。`InputController` 只注销自己的作用域；共享实例的生命周期由宿主持有。
+省略 `keyboardRuntime` 时，`InputController` 创建自有实例，仍使用同一注册路径。
+模态 Gameplay consumer 将其键盘作用域提升为模态，释放租约时恢复。
+
+物理按键所有权、取消规则与 Web 焦点配置见 [`键盘与焦点`](../features/keyboard.md)。
+
 ## Runtime Config
 
 基础运行配置覆盖输入、Gameplay HUD、Camera、timing 与 presentation tuning：

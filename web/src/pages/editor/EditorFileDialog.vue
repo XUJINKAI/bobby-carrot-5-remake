@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { parseEditorLevel, serializeEditorLevel, type EditorMap } from "@bobby/editor";
+import { useKeyboardDialog } from "../../app/keyboard/vueKeyboard.js";
 import { computed } from "vue";
 import { publicBaseUrl } from "../../services/assets/gameAssets.js";
 import DataExchangePanel from "../../shared/data-exchange/DataExchangePanel.vue";
@@ -66,6 +67,7 @@ function close(): void {
   emit("close");
 }
 
+const vKeyboardDialog = useKeyboardDialog();
 const backdropDismiss = createBackdropDismissHandlers(close);
 
 function downloaded(): void {
@@ -85,6 +87,7 @@ function textValue(event: Event): string {
 <template>
   <div
     v-if="open"
+    v-keyboard-dialog="{ close }"
     class="editor-dialog-layer"
     role="presentation"
     @pointerdown="backdropDismiss.pointerDown"

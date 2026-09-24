@@ -1,3 +1,4 @@
+import type { WebKeyboard } from "./keyboard/WebKeyboard.js";
 import type { AudioRuntime, ImageManager } from "@bobby/engine";
 import type {
   AdventureIndex,
@@ -25,6 +26,7 @@ export type { ResolvedMapCollection };
 
 export interface PageContext {
   app: HTMLDivElement;
+  keyboard: WebKeyboard;
   collectionsIndex: MapCollectionsIndex;
   loadCollectionsIndex(): Promise<MapCollectionsIndex>;
   collections: ResolvedMapCollection[];

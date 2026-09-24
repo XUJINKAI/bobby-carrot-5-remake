@@ -1,3 +1,5 @@
+import { WEB_SHORTCUTS, matchesShortcut } from "../../app/keyboard/shortcuts.js";
+import { provideWebKeyboard } from "../../app/keyboard/vueKeyboard.js";
 import { createApp, nextTick } from "vue";
 import type { PageContext, PageController } from "../../app/pageContracts.js";
 import type { MapCollectionMap } from "../../services/catalog/catalog.js";
@@ -7,7 +9,7 @@ import {
 } from "../../storage/exploreProgressStorage.js";
 import { configureShell } from "../../shell/shellBridge.js";
 import ExplorePage from "./ExplorePage.vue";
-import { explorePlayPath } from "../../app/routes.js";
+import { exploreCollectionPath, explorePlayPath } from "../../app/routes.js";
 import {
   hasActiveLevelFilters,
   mountLevelFilters,
@@ -52,6 +54,30 @@ export async function renderLevels(
   });
   syncShell();
   app.replaceChildren();
+  const playRandom = (): void => {
+    const chosen = hasActiveLevelFilters()
+      ? randomFilteredMap()
+      : collection.maps[Math.floor(Math.random() * collection.maps.length)];
+    if (chosen) navigate(explorePlayPath({ collection: collection.id, id: chosen.id }));
+  };
+  const keyboardScope = context.keyboard.runtime.register({
+    layer: "page",
+    modifiers: "any",
+    keydown: (event) => {
+      if (context.keyboard.matchesTabAction(event, "cycle-collection")) {
+        const entries = collectionsIndex.collections;
+        const index = entries.findIndex((entry) => entry.id === collection.id);
+        const next = entries[(index + (event.shiftKey ? -1 : 1) + entries.length) % entries.length];
+        if (next) navigate(exploreCollectionPath(next.id));
+        return true;
+      }
+      if (matchesShortcut(event, WEB_SHORTCUTS.random)) playRandom();
+      else if (matchesShortcut(event, WEB_SHORTCUTS.continue))
+        navigate(explorePlayPath({ collection: collection.id, id: lastMap.id }));
+      else return false;
+      return true;
+    },
+  });
   const exploreApp = createApp(ExplorePage, {
     activeCollection: collection,
     collections: collectionsIndex.collections,
@@ -60,16 +86,9 @@ export async function renderLevels(
     lastMapId: lastMap.id,
     lastMapLabel: lastMap.name,
     onNavigate: navigate,
-    onRandom: () => {
-      const chosen = hasActiveLevelFilters()
-        ? randomFilteredMap()
-        : collection.maps[Math.floor(Math.random() * collection.maps.length)];
-      if (chosen)
-        navigate(
-          explorePlayPath({ collection: collection.id, id: chosen.id }),
-        );
-    },
+    onRandom: playRandom,
   });
+  provideWebKeyboard(exploreApp, context.keyboard);
   exploreApp.mount(app);
   await nextTick();
   const filters = collection.filters.length > 0
@@ -81,6 +100,7 @@ export async function renderLevels(
       filters?.localeChanged();
     },
     destroy(): void {
+      keyboardScope.dispose();
       filters?.destroy();
       exploreApp.unmount();
     },
