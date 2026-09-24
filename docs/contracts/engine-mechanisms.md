@@ -355,7 +355,8 @@ Presentation 使用 WorldDelta、WorldMotion、Entity state 和只读 Fact 选�
 `butterflyDensity` 按 CSS 视窗面积计算；Snow 由 `snowDensity` 按 `zoom=1` 时的可见面积
 计算，使粒子数量随当前可见格数变化。默认雪花密度为每百万基准像素 16.25 粒。雪花复用
 `hud.png` 原版切片，并以约 31ms 的固定步长在 `zoom=1` 时每次下落 3px、横向随机移动
--1/0/+1px；尺寸与每步位移均随格子屏幕尺寸缩放。存在 Snow 的关卡固定使用雪花天气，
+-1/0/+1px；Snow 与 Butterfly 的尺寸随格子屏幕尺寸缩放，雪花每步位移使用相同缩放。
+存在 Snow 的关卡固定使用雪花天气，
 雪花在整个 Canvas viewport 中连续模拟，再按当前地图屏幕矩形裁剪；Camera pan 只移动
 裁剪边界，不改变已有粒子的屏幕坐标。其余关卡使用 Butterfly；视窗或缩放变化只重算
 表现数量和位置，不写入 World。
