@@ -19,6 +19,7 @@ import {
   verifyReplayPanelShortcut,
 } from "./source/replay-browser-checks.mjs";
 import { verifySettingsPage } from "./source/settings-browser-checks.mjs";
+import { verifyNarrowHomeProductName } from "./source/topbar-browser-checks.mjs";
 
 export async function runSourceBrowserRegression(cdp) {
     const vite = await createServer({
@@ -38,6 +39,7 @@ export async function runSourceBrowserRegression(cdp) {
 
     try {
       await verifyButtonFocusPolicy(cdp, await openPage(cdp, `${origin}/`));
+      await verifyNarrowHomeProductName(cdp, await openPage(cdp, `${origin}/`));
       await verifyMusicInteractionTip(cdp, `${origin}/`);
       await verifyQuickSettings(cdp, `${origin}/`);
       await verifySettingsPage(cdp, await openPage(cdp, `${origin}/settings`));

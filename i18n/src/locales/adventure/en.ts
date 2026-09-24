@@ -3,6 +3,7 @@ const catalog = {
   "adventure.homeAria": "Adventure",
   "adventure.homeTitle": "Adventure",
   "adventure.continue": "Continue Adventure",
+  "adventure.continueLevel": "Continue Level: {id}",
   "adventure.chapters": "Chapter Select",
   "adventure.chaptersDescription": "Choose a chapter and unlocked level",
   "adventure.shop": "Beaver Shop",

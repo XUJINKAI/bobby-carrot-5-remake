@@ -238,7 +238,9 @@ try {
   await smoke(`${origin}/adventure`, [
     "adventure-viewport-auto",
     'class="adventure-menu"',
+    'class="shell-product-name"',
     'class="shell-context-name"',
+    'class="adventure-resume-level"',
   ]);
   await smoke(`${origin}/adventure/chapters`, [
     'class="adventure-chapters"',
@@ -258,6 +260,7 @@ try {
     [
       "original-adventure-game",
       'id="game"',
+      'class="shell-product-name"',
       'id="map-status"',
       'data-icon="map-status"',
       'class="shell-indicator-button tone-success"',

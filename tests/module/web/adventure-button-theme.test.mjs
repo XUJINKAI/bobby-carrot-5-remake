@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { test } from "vitest";
+import adventureEn from "../../../i18n/src/locales/adventure/en.ts";
+import adventureZhCN from "../../../i18n/src/locales/adventure/zh-CN.ts";
 
 const components = [
   "AdventureHomePage.vue",
@@ -31,7 +33,7 @@ test("Adventure 入口复用首页按钮主题色", async () => {
   }
 });
 
-test("Adventure 首页入口使用同级样式并只显示继续关卡名", async () => {
+test("Adventure 首页入口使用同级样式并标明继续关卡", async () => {
   const source = await readFile(
     new URL("../../../web/src/pages/adventure/AdventureHomePage.vue", import.meta.url),
     "utf8",
@@ -39,6 +41,9 @@ test("Adventure 首页入口使用同级样式并只显示继续关卡名", asyn
 
   assert.doesNotMatch(source, /adventure-menu-card primary/);
   assert.doesNotMatch(source, /\.adventure-menu-card\.primary/);
-  assert.match(source, /<span>\{\{ view\.resumeLevelId\.toUpperCase\(\) \}\}<\/span>/);
+  assert.match(source, /webT\("adventure\.continueLevel"/);
+  assert.match(source, /id:\s*view\.resumeLevelId\.toUpperCase\(\)/);
+  assert.equal(adventureZhCN["adventure.continueLevel"], "继续关卡: {id}");
+  assert.equal(adventureEn["adventure.continueLevel"], "Continue Level: {id}");
   assert.doesNotMatch(source, /resumeChapterTitle/);
 });

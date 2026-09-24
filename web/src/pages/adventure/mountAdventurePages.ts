@@ -177,7 +177,7 @@ function adventureShell(backPath?: string): ShellConfig {
     topBar: {
       visible: true,
       fixed: true,
-      identity: pageIdentity(webT("nav.adventure"), "/adventure", false),
+      identity: pageIdentity(webT("nav.adventure"), "/adventure"),
       ...(backPath
         ? {
             back: {

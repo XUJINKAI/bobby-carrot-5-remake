@@ -588,7 +588,7 @@ function gameShellConfig(
     : pageIdentity(
         source === "explore" ? webT("nav.explore") : webT("nav.adventure"),
         source === "explore" ? "/explore" : "/adventure",
-        false,
+        source === "adventure",
       );
   return {
     topBar: {

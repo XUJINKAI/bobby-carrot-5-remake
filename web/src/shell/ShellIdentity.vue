@@ -26,7 +26,11 @@ onBeforeUnmount(() => document.removeEventListener("pointerdown", dismissOutside
   <details v-if="identity.menu?.length" ref="root" class="shell-identity has-menu" :open="open">
     <summary @click.prevent="open = !open">
       <img :src="identity.icon" alt="">
-      <span v-if="identity.productName && identity.productNameVisible !== false" class="shell-product-name">{{ identity.productName }}</span>
+      <span
+        v-if="identity.productName && identity.productNameVisible !== false"
+        class="shell-product-name"
+        :class="{ 'narrow-visible': identity.productNameVisibleOnNarrow }"
+      >{{ identity.productName }}</span>
       <span v-if="identity.statusText" class="shell-status-text">{{ identity.statusText }}</span>
       <span v-if="identity.contextName && identity.contextNameVisible !== false" class="shell-context-name">{{ identity.contextName }}</span>
       <AppIcon name="dropdown" />
@@ -37,7 +41,11 @@ onBeforeUnmount(() => document.removeEventListener("pointerdown", dismissOutside
   </details>
   <a v-else class="shell-identity" :href="identity.href ?? '/'" @click.prevent="navigate(identity.href ?? '/')">
     <img :src="identity.icon" alt="">
-    <span v-if="identity.productName && identity.productNameVisible !== false" class="shell-product-name">{{ identity.productName }}</span>
+    <span
+      v-if="identity.productName && identity.productNameVisible !== false"
+      class="shell-product-name"
+      :class="{ 'narrow-visible': identity.productNameVisibleOnNarrow }"
+    >{{ identity.productName }}</span>
     <span v-if="identity.statusText" class="shell-status-text">{{ identity.statusText }}</span>
     <span v-if="identity.contextName && identity.contextNameVisible !== false" class="shell-context-name">{{ identity.contextName }}</span>
   </a>
@@ -126,7 +134,7 @@ onBeforeUnmount(() => document.removeEventListener("pointerdown", dismissOutside
 }
 
 @media (max-width: 900px) {
-  .shell-product-name {
+  .shell-product-name:not(.narrow-visible) {
     display: none;
   }
 }

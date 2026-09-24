@@ -15,6 +15,7 @@ export interface ShellIdentity {
   statusText?: string;
   contextName?: string;
   productNameVisible?: boolean;
+  productNameVisibleOnNarrow?: boolean;
   contextNameVisible?: boolean;
   href?: string;
   menu?: ShellMenuItem[];
@@ -138,4 +139,3 @@ export function mergeShellRuntimeWarnings(
     },
   };
 }
-

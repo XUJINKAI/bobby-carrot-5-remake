@@ -13,6 +13,7 @@ export function renderSettingsPage(context: PageContext): PageController {
       identity: {
         ...homeIdentity(),
         contextName: webT("shell.settings"),
+        productNameVisibleOnNarrow: false,
       },
       actions: globalActions(),
     },

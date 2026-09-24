@@ -35,16 +35,30 @@ test("首页与顶栏共用模式文案，并把 Explore 排在 Adventure 前", 
   assert.doesNotMatch(home, /webT\("home\.(?:explore|adventure|editor)"\)/);
 });
 
-test("首页开发状态在移动端保持显示", () => {
-  const source = readFileSync(
+test("仅首页应用名在窄屏保持显示", () => {
+  const identitySource = readFileSync(
     new URL("../../../web/src/shell/ShellIdentity.vue", import.meta.url),
     "utf8",
   );
-  const compactRule = source.match(
+  const chromeSource = readFileSync(
+    new URL("../../../web/src/app/pageChrome.ts", import.meta.url),
+    "utf8",
+  );
+  const settingsSource = readFileSync(
+    new URL(
+      "../../../web/src/pages/settings/mountSettingsPage.ts",
+      import.meta.url,
+    ),
+    "utf8",
+  );
+  const compactRule = identitySource.match(
     /@media \(max-width: 900px\) \{([\s\S]*?)\n\}/,
   )?.[1] ?? "";
 
-  assert.match(compactRule, /\.shell-product-name/);
+  assert.match(identitySource, /identity\.productNameVisibleOnNarrow/);
+  assert.match(compactRule, /\.shell-product-name:not\(\.narrow-visible\)/);
+  assert.match(chromeSource, /productNameVisibleOnNarrow: true/);
+  assert.match(settingsSource, /productNameVisibleOnNarrow: false/);
   assert.doesNotMatch(compactRule, /\.shell-status-text/);
 });
 
@@ -106,15 +120,26 @@ test("移动端顶栏按左侧、中央、右侧顺序排列", () => {
   assert.doesNotMatch(compactRule, /grid-template-columns/);
 });
 
-test("Adventure 隐藏产品名并统一返回文案", () => {
-  const source = readFileSync(
+test("Adventure 在宽屏显示产品名并统一返回文案", () => {
+  const adventureSource = readFileSync(
     new URL(
       "../../../web/src/pages/adventure/mountAdventurePages.ts",
       import.meta.url,
     ),
     "utf8",
   );
+  const gameSource = readFileSync(
+    new URL("../../../web/src/pages/game/mountGamePage.ts", import.meta.url),
+    "utf8",
+  );
 
-  assert.match(source, /pageIdentity\(webT\("nav\.adventure"\), "\/adventure", false\)/);
-  assert.match(source, /back:\s*\{[\s\S]*?label: webT\("shell\.back"\)/);
+  assert.match(
+    adventureSource,
+    /pageIdentity\(webT\("nav\.adventure"\), "\/adventure"\)/,
+  );
+  assert.match(
+    adventureSource,
+    /back:\s*\{[\s\S]*?label: webT\("shell\.back"\)/,
+  );
+  assert.match(gameSource, /source === "adventure"/);
 });
