@@ -13,14 +13,16 @@ test("Help 文案集中在 i18n 并提供中英文", async () => {
     zh["help.html"],
     /<li><strong>滑动屏幕\/方向键\/WASD<\/strong>: 控制移动<\/li>/,
   );
-  assert.match(zh["help.html"], /<h2>Editor<\/h2>/);
-  assert.match(zh["help.html"], /<h2>通用<\/h2>\s*<ul>\s*<li><strong>M<\/strong>：音乐开关<\/li>/);
+  assert.match(zh["help.html"], /<h2>编辑器<\/h2>/);
+  assert.match(zh["help.html"], /<h2>页面<\/h2>\s*<ul>\s*<li><strong>方向键<\/strong>: 选择<\/li>/);
+  assert.match(zh["help.html"], /<li><strong>M<\/strong>：音乐开关<\/li>/);
   assert.match(en["help.html"], /<h2>Game<\/h2>/);
   assert.match(
     en["help.html"],
     /<li><strong>Swipe screen \/ Arrow keys \/ WASD<\/strong>: Move<\/li>/,
   );
-  assert.match(en["help.html"], /<h2>General<\/h2>\s*<ul>\s*<li><strong>M<\/strong>: Toggle music<\/li>/);
+  assert.match(en["help.html"], /<h2>Pages<\/h2>\s*<ul>\s*<li><strong>Arrow keys<\/strong>: Select<\/li>/);
+  assert.match(en["help.html"], /<li><strong>M<\/strong>: Toggle music<\/li>/);
   assert.match(en["help.html"], /<strong>Ctrl\+Z<\/strong>/);
 });
 

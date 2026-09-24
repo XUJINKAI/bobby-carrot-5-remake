@@ -1,41 +1,37 @@
-## Pages and focus
-
-- **↑↓**: Select a home mode or the embed link; **Enter**: Open the selected entry
-- Home **Tab**: Cycle between the mode menu and Demo
-- **Arrow keys**: Select entries in level lists
-- Explore **Tab / Shift+Tab**: Next/previous collection; **Arrow keys**: Select a level
-- Explore **Shift+S**: Random level; **P**: Continue playing
-- **Tab / Shift+Tab**: Move forward/backward through the page's focus order
-- **Esc**: Close the current dialog or return to the parent page
-- **[ / ]**: Previous/next level in Explore
-- Result **Left / Right**: Select a button; **Enter**: Confirm, with next level or retry selected by default
-- **Esc**: Return to the list from results, or to the editor from Play Test
-
 ## Game
 
 - **Swipe screen / Arrow keys / WASD**: Move
-- **Z**: Toggle Replay panel (Explore)
+- **Wheel / +/- / pinch**: Zoom and pan the map
+- **Z**: Toggle Replay panel
 - **X**: Toggle on-screen joystick
+- **[ / ]**: Previous/next level
 - **Shift+R**: Restart
-- **~**: Debug mode (Explore)
-  - Double-click the map to teleport Bobby while Debug mode is enabled
-
-## General
-
-- **M**: Toggle music
-- **?**: Help
 - **Ctrl+Z**: Undo
 - **Ctrl+Y**: Redo
-- **Wheel / +/- / pinch**: Zoom and pan the map
+- **~**: Debug mode
+  - Double-click the map to teleport Bobby while Debug mode is enabled
+
+## Pages
+
+- **Arrow keys**: Select
+- **Enter**: Confirm
+- **Escape**: Return to the previous page
+- **Tab / Shift+Tab**: Switch collections
+- **P**: Continue playing
+- **Shift+S**: Random level
+- **M**: Toggle music
+- **?**: Help
 
 ## Editor
 
-- **Z**: Switch Palette / Surface
-- **X**: Switch Inspector / Level
 - **1**: Select
 - **2**: Brush
 - **3**: Smart Surface fill
 - **4**: Palette erase tool
+- **Z**: Switch Palette / Surface
+- **X**: Switch Inspector / Level
+- **Ctrl+Z**: Undo
+- **Ctrl+Y**: Redo
 - **Ctrl+A**: Select the whole map
 - **Ctrl+C / X / V**: Copy / Cut / Paste
 - **Delete / Backspace**: Delete selected Entity
