@@ -1,3 +1,5 @@
+import { WEB_SHORTCUTS, matchesShortcut } from "../../app/keyboard/shortcuts.js";
+import { provideWebKeyboard } from "../../app/keyboard/vueKeyboard.js";
 import { createApp, reactive } from "vue";
 import type { PageContext, PageController } from "../../app/pageContracts.js";
 import {
@@ -63,15 +65,16 @@ export async function renderHome(
   const canvasReady = new Promise<HTMLCanvasElement>((resolve) => {
     resolveCanvas = resolve;
   });
+  const restartDemo = (): void => {
+    session?.game.restart();
+  };
   const homeApp = createApp(HomePage, {
     state: view,
     images,
     repositoryUrl: PROJECT_REPOSITORY_URL,
     onReady: (canvas: HTMLCanvasElement) => resolveCanvas(canvas),
     onNavigate: navigate,
-    onRestart: () => {
-      session?.game.restart();
-    },
+    onRestart: restartDemo,
     onScreenControl: () => {
       const enabled = !view.screenControlEnabled;
       updateWebSettings((settings) => ({
@@ -85,6 +88,7 @@ export async function renderHome(
     onImportData: (data: ImportedData) =>
       importHomeData(data, view, context),
   });
+  provideWebKeyboard(homeApp, context.keyboard);
   homeApp.mount(app);
 
   const [{ createGameSession }, demo, canvas] = await Promise.all([
@@ -94,6 +98,7 @@ export async function renderHome(
   ]);
   try {
     session = await createGameSession({
+      keyboard: context.keyboard,
       canvas,
       level: createHomeDemoLevel(demo.level),
       gameOptions: {
@@ -105,6 +110,7 @@ export async function renderHome(
         outcomeMusic: { won: false },
         hud: { timer: false, steps: false },
         input: {
+          keyboardRange: { mode: "focus", root: canvas.closest<HTMLElement>(".game-stage") ?? canvas },
           undo: false,
           zoom: false,
           debug: false,
@@ -119,6 +125,16 @@ export async function renderHome(
     throw error;
   }
 
+  const keyboardScope = context.keyboard.runtime.register({
+    layer: "page",
+    modifiers: "any",
+    range: { mode: "focus", root: canvas.closest<HTMLElement>(".game-stage") ?? canvas },
+    keydown: (event) => {
+      if (!matchesShortcut(event, WEB_SHORTCUTS.restart)) return false;
+      restartDemo();
+      return true;
+    },
+  });
   const updateDemo = (): void => {
     if (!session?.game.hasLevel) return;
     const state = session.game.state;
@@ -171,6 +187,7 @@ export async function renderHome(
       window.removeEventListener("shell-dialog-open", onDialogOpen);
       window.removeEventListener("shell-dialog-close", onDialogClose);
       window.removeEventListener("screen-control-change", onScreenControlChange);
+      keyboardScope.dispose();
       session?.destroy();
       homeApp.unmount();
     },

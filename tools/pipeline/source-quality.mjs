@@ -74,6 +74,17 @@ for (const sourceRoot of SOURCE_ROOTS) {
     const relative = path.relative(root, file);
     const normalized = path.normalize(relative);
 
+    if (relative.startsWith("web/src/")) {
+      const observers = text.match(/addEventListener\(\s*["']key(?:down|up)["'][^;]+/g) ?? [];
+      const allowed = relative === "web/src/app/BobbyApp.ts"
+        ? '"keydown", this.resumeAudio)'
+        : relative === "web/src/app/keyboard/WebKeyboard.ts"
+          ? '"keydown", this.observeKeyboardFocus, true)'
+          : null;
+      if (observers.some((observer) => !allowed || !observer.includes(allowed)))
+        errors.push(`${relative}: Web 键盘命令必须注册到共享 KeyboardRuntime，仅允许音频恢复与焦点可视性 observer`);
+    }
+
     if (lineCount > MAX_SOURCE_LINES) {
       errors.push(
         `${relative}: ${lineCount} 行，超过 ${MAX_SOURCE_LINES} 行硬限制`,

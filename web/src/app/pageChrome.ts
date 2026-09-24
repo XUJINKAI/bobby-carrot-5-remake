@@ -1,3 +1,4 @@
+import { WEB_SHORTCUTS } from "./keyboard/shortcuts.js";
 import { siteUrl } from "../services/assets/gameAssets.js";
 import { webT, type WebTranslationKey } from "../i18n/webI18n.js";
 import type {
@@ -97,6 +98,7 @@ function translatedGlobalAction(
     icon,
     label,
     title: label,
+    ...(id === "music" || id === "help" ? { shortcut: WEB_SHORTCUTS[id].label } : {}),
     collapse: id === "music" ? "keep" : "overflow",
   };
 }

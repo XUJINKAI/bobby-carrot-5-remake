@@ -22,6 +22,7 @@ export interface ShellIdentity {
 }
 
 export interface ShellAction {
+  shortcut?: string;
   id: string;
   label?: string;
   icon?: ShellIcon;

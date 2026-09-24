@@ -1,3 +1,4 @@
+import { provideWebKeyboard } from "../../app/keyboard/vueKeyboard.js";
 import {
   hasAdventureItem,
   isAdventureChapterCompleted,
@@ -36,7 +37,7 @@ export function renderAdventureHome(context: PageContext): PageController {
   const resume = findAdventureLevel(adventure, save.campaign.resumeLevelId);
   audio.playMusic("title");
   return mountAdventure(
-    app,
+    context,
     AdventureHomePage,
     {
       view: {
@@ -64,7 +65,7 @@ export function renderAdventureChapters(context: PageContext): PageController {
     };
   });
   return mountAdventure(
-    app,
+    context,
     AdventureChaptersPage,
     { rows, images, onNavigate: navigate },
     () => adventureShell("/adventure"),
@@ -91,7 +92,7 @@ export function renderAdventureChapter(
     unlocked: isAdventureLevelUnlocked(save, level.id),
   }));
   return mountAdventure(
-    app,
+    context,
     AdventureChapterPage,
     {
       chapterNumber,
@@ -133,7 +134,7 @@ export function renderAdventureNightTrain(context: PageContext): PageController 
   ];
   audio.playMusic("train");
   return mountAdventure(
-    app,
+    context,
     AdventureNightTrainPage,
     { images, destinations, onNavigate: navigate },
     () => adventureShell("/adventure"),
@@ -154,15 +155,17 @@ export function findAdventureLevel(
 }
 
 function mountAdventure(
-  root: HTMLDivElement,
+  context: PageContext,
   component: Component,
   props: Record<string, unknown>,
   shell: () => ShellConfig,
 ): PageController {
+  const root = context.app;
   const syncShell = (): void => configureShell(shell());
   syncShell();
   root.replaceChildren();
   const app = createApp(component, props);
+  provideWebKeyboard(app, context.keyboard);
   app.mount(root);
   return {
     localeChanged: syncShell,

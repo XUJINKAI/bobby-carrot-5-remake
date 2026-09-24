@@ -43,9 +43,11 @@ export const embedHudSmokeScript = `
   const toggledJoystick = joystick.getAttribute('aria-pressed') === 'true';
   const initialGlobalMusic = globalMusic.getAttribute('aria-pressed');
   window.dispatchEvent(new KeyboardEvent('keydown', { key: 'm' }));
+  window.dispatchEvent(new KeyboardEvent('keyup', { key: 'm' }));
   await delay(30);
   const toggledGlobalMusic = globalMusic.getAttribute('aria-pressed');
   window.dispatchEvent(new KeyboardEvent('keydown', { key: 'm' }));
+  window.dispatchEvent(new KeyboardEvent('keyup', { key: 'm' }));
   await delay(30);
   const restoredGlobalMusic = globalMusic.getAttribute('aria-pressed');
   restart.click();
@@ -112,6 +114,7 @@ export const embedHudSmokeScript = `
   if (editableCode) {
     code.focus();
     code.dispatchEvent(new KeyboardEvent('keydown', { key: 'm', bubbles: true }));
+    code.dispatchEvent(new KeyboardEvent('keyup', { key: 'm', bubbles: true }));
     await delay(30);
     focusedGlobalMusic = globalMusic.getAttribute('aria-pressed');
     code.value = code.value

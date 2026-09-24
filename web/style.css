@@ -100,10 +100,19 @@ button {
   cursor: pointer;
 }
 
-/* 按钮由指针和应用快捷键触发，不显示浏览器的键盘焦点框。 */
-button:focus,
-button:focus-visible {
-  outline: none;
+/* 初始与指针操作保持触屏外观，键盘选择后才显示配置内的焦点。 */
+html[data-keyboard-focus="false"] :focus-visible {
+  outline: none !important;
+}
+:where(button, a, canvas, summary, input, select, textarea):focus-visible {
+  outline: 3px solid var(--bc-highlight);
+  outline-offset: 3px;
+}
+
+/* 结算默认选中主要操作，触屏触发的结算也明确展示当前确认目标。 */
+html .result-overlay button:focus {
+  outline: 3px solid var(--bc-highlight) !important;
+  outline-offset: 3px;
 }
 
 .primary-btn,

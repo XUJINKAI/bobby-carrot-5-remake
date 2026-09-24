@@ -31,10 +31,10 @@ test("Help 只在打开时加载对应 scope", async () => {
   );
   assert.match(source, /openWebI18nScope\(\["help"\]\)/);
   assert.match(source, /webT\("help\.html"\)/);
-  assert.match(source, /event\.key\.toLowerCase\(\) !== "m"/);
+  assert.match(source, /matchesShortcut\(event, WEB_SHORTCUTS\.music\)/);
   assert.match(source, /settings\.toggleMusic\(\)/);
-  assert.match(source, /window\.addEventListener\("keydown", handleGlobalKeydown\)/);
-  assert.match(source, /window\.removeEventListener\("keydown", handleGlobalKeydown\)/);
+  assert.match(source, /keyboard\.runtime\.register\(\{[\s\S]*layer: "global",[\s\S]*keydown: handleGlobalKeydown/);
+  assert.match(source, /disposeGlobalKeyboard = \(\) => scope\.dispose\(\)/);
 });
 
 test("页面配置不维护完整快捷键清单", async () => {

@@ -1,3 +1,4 @@
+import { provideWebKeyboard } from "../../app/keyboard/vueKeyboard.js";
 import { createApp, defineAsyncComponent } from "vue";
 import type { PageContext, PageController } from "../../app/pageContracts.js";
 import { globalActions, pageIdentity } from "../../app/pageChrome.js";
@@ -21,6 +22,7 @@ export function renderEmbedPage(context: PageContext): PageController {
   syncShell();
   context.app.replaceChildren();
   const app = createApp(EmbedPage, { publicBaseUrl: publicBaseUrl() });
+  provideWebKeyboard(app, context.keyboard);
   app.mount(context.app);
   return { localeChanged: syncShell, destroy: () => app.unmount() };
 }

@@ -1,3 +1,4 @@
+import { WEB_SHORTCUTS } from "../../app/keyboard/shortcuts.js";
 import type {
   EditorTool,
   LevelValidationIssue,
@@ -129,6 +130,7 @@ export function editorShellConfig(
             },
             {
               id: "editor-restart",
+              shortcut: WEB_SHORTCUTS.restart.label,
               icon: "restart",
               title: webT("editor.restartPlay"),
             },
@@ -173,6 +175,7 @@ export function editorShellConfig(
         ? [
             {
               id: "editor-replay-record",
+              shortcut: WEB_SHORTCUTS.leftPanel.label,
               icon: "record",
               iconWeight: playState.replayRecording ? "fill" : "regular",
               label: webT("shell.record"),
@@ -187,12 +190,14 @@ export function editorShellConfig(
         : [
             {
               id: "editor-palette",
+              shortcut: WEB_SHORTCUTS.leftPanel.label,
               icon: "palette",
               label: webT("editor.palette"),
               pressed: leftPanel === "palette",
             },
             {
               id: "editor-surface",
+              shortcut: WEB_SHORTCUTS.leftPanel.label,
               icon: "palette",
               label: webT("editor.surface"),
               pressed: leftPanel === "surface",
@@ -205,6 +210,7 @@ export function editorShellConfig(
         ? [
             {
               id: "screen-control",
+              shortcut: WEB_SHORTCUTS.rightPanel.label,
               icon: "joystick",
               label: webT("shell.screenJoystick"),
               narrow: { iconOnly: true },
@@ -212,8 +218,8 @@ export function editorShellConfig(
             },
           ]
         : [
-            { id: "editor-inspector", icon: "inspector", label: webT("editor.inspector") },
-            { id: "editor-level-info", icon: "info", label: webT("editor.level") },
+            { id: "editor-inspector", shortcut: WEB_SHORTCUTS.rightPanel.label, icon: "inspector", label: webT("editor.inspector") },
+            { id: "editor-level-info", shortcut: WEB_SHORTCUTS.rightPanel.label, icon: "info", label: webT("editor.level") },
           ],
     },
   };

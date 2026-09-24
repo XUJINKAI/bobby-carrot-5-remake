@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { WEB_SHORTCUTS, shortcutTitle } from "../../app/keyboard/shortcuts.js";
 import type { HomeViewState } from "./types.js";
 import AppIcon from "../../shared/icons/AppIcon.vue";
 import { webT } from "../../i18n/webI18n.js";
@@ -22,7 +23,7 @@ function reportCanvas(element: unknown): void {
       <button
         class="home-demo-restart"
         type="button"
-        :title="webT('shell.restart')"
+        :title="shortcutTitle(webT('shell.restart'), WEB_SHORTCUTS.restart.label)"
         :aria-label="webT('shell.restart')"
         @click="emit('restart')"
       >
@@ -73,6 +74,15 @@ function reportCanvas(element: unknown): void {
 </template>
 
 <style scoped>
+:global(html[data-keyboard-focus="true"] .home-demo-panel:has(canvas:focus-visible)) {
+  outline: 3px solid var(--bc-highlight);
+  outline-offset: 3px;
+}
+
+.home-demo-panel :deep(canvas:focus-visible) {
+  outline: none;
+}
+
 .home-demo-panel {
   position: relative;
   width: min(100%, 378px);

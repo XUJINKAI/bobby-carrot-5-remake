@@ -1,3 +1,5 @@
+import type { KeyboardRuntime } from "@bobby/engine";
+
 export type EmbedKeyboardMode = "focus" | "global";
 export type EmbedJoystickMode = boolean | "auto";
 export type EmbedMusicStyle = "modern" | "8bit";
@@ -9,6 +11,8 @@ export interface EmbedHudOptions {
 
 export interface BC5RMountOptions {
   target: string | HTMLElement;
+  /** 同页宿主可提供共享键盘运行时，并保留其生命周期所有权。 */
+  keyboardRuntime?: KeyboardRuntime;
   map?: string;
   mapUrl?: string;
   lang?: string;

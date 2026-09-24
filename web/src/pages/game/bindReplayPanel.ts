@@ -1,3 +1,5 @@
+import { WEB_SHORTCUTS, matchesShortcut } from "../../app/keyboard/shortcuts.js";
+import type { WebKeyboard } from "../../app/keyboard/WebKeyboard.js";
 import {
   serializeReplay,
   type Game,
@@ -68,6 +70,7 @@ export interface ReplayPanelController {
 
 export function bindReplayPanel(options: {
   root: HTMLElement;
+  keyboard: WebKeyboard;
   game: Game;
   filename: string;
   builtinReplayUrl?: string;
@@ -128,6 +131,8 @@ export function bindReplayPanel(options: {
     panel.hidden = !value;
     stage.classList.toggle("replay-panel-open", value);
     if (notify) options.onVisibilityChange(value);
+    options.keyboard.refresh();
+    if (!value && panel.contains(document.activeElement)) options.keyboard.focus("#game, #editor-game");
     window.dispatchEvent(new Event("resize"));
   };
 
@@ -396,20 +401,15 @@ export function bindReplayPanel(options: {
     options.game.setTimeScale(speed);
   };
 
-  const onKeyDown = (event: KeyboardEvent): void => {
-    if (
-      event.key !== "Tab" ||
-      event.repeat ||
-      event.ctrlKey ||
-      event.metaKey ||
-      event.altKey ||
-      event.shiftKey ||
-      isInteractiveTarget(event.target)
-    )
-      return;
-    event.preventDefault();
-    setOpen(!open);
-  };
+  const keyboardScope = options.keyboard.runtime.register({
+    layer: "page",
+    keydown: (event) => {
+      if (!matchesShortcut(event, WEB_SHORTCUTS.leftPanel)) return false;
+      setOpen(!open);
+      options.keyboard.refresh();
+      return true;
+    },
+  });
 
   const onClick = (event: Event): void => {
     const button = (event.target as HTMLElement).closest<HTMLButtonElement>(
@@ -432,7 +432,6 @@ export function bindReplayPanel(options: {
   panel.addEventListener("click", onClick);
   output.addEventListener("input", onOutputInput);
   speedInput.addEventListener("input", onSpeedInput);
-  window.addEventListener("keydown", onKeyDown);
 
   const update = (): void => {
     renderVerification();
@@ -523,7 +522,7 @@ export function bindReplayPanel(options: {
       panel.removeEventListener("click", onClick);
       output.removeEventListener("input", onOutputInput);
       speedInput.removeEventListener("input", onSpeedInput);
-      window.removeEventListener("keydown", onKeyDown);
+      keyboardScope.dispose();
       unsubscribeRecordingAbort();
       unsubscribeLevelComplete();
       unsubscribeDeath();
@@ -552,15 +551,5 @@ function safeFilename(value: string): string {
       .trim()
       .replace(/[^a-z0-9._-]+/gi, "-")
       .replace(/^-+|-+$/g, "") || "level"
-  );
-}
-
-
-function isInteractiveTarget(target: EventTarget | null): boolean {
-  return (
-    target instanceof Element &&
-    target.closest(
-      "a, button, input, select, textarea, [contenteditable], [tabindex]",
-    ) !== null
   );
 }

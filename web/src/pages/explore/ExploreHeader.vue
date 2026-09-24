@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { WEB_SHORTCUTS, shortcutTitle } from "../../app/keyboard/shortcuts.js";
 import { explorePlayPath } from "../../app/routes.js";
 import AppIcon from "../../shared/icons/AppIcon.vue";
 import { webT } from "../../i18n/webI18n.js";
@@ -27,11 +28,21 @@ const emit = defineEmits<{
       <p>{{ description }}</p>
     </div>
     <div class="level-browser-actions">
-      <button id="random-level" class="ghost-btn" @click="emit('random')">
+      <button
+        id="random-level"
+        class="ghost-btn"
+        :title="shortcutTitle(webT('explore.random'), WEB_SHORTCUTS.random.label)"
+        @click="emit('random')"
+      >
         <AppIcon name="shuffle" />
         {{ webT("explore.random") }}
       </button>
-      <button class="primary-btn" @click="emit('navigate', explorePlayPath({ collection, id: lastMapId }))">
+      <button
+        id="continue-level"
+        class="primary-btn"
+        :title="shortcutTitle(webT('explore.continue', { label: lastMapLabel }), WEB_SHORTCUTS.continue.label)"
+        @click="emit('navigate', explorePlayPath({ collection, id: lastMapId }))"
+      >
         <AppIcon name="play" weight="fill" />
         {{ webT("explore.continue", { label: lastMapLabel }) }}
       </button>

@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import { RESULT_FOCUS_PLAN } from "../../app/keyboard/focusPlans.js";
+import { shortcutTitle } from "../../app/keyboard/shortcuts.js";
+import { useKeyboardDialog } from "../../app/keyboard/vueKeyboard.js";
+const vKeyboardDialog = useKeyboardDialog();
 import type {
   Cell,
   EditorDefinition,
@@ -177,7 +181,14 @@ const emit = defineEmits<{
         :show-builtin-replay="false"
       >
         <template #result>
-          <div v-if="playResult" class="result-overlay editor-play-result">
+          <div
+            v-if="playResult"
+            v-keyboard-dialog="{ close: () => emit('playStop'), focus: RESULT_FOCUS_PLAN }"
+            class="result-overlay editor-play-result"
+            role="dialog"
+            aria-modal="true"
+            :aria-label="webT(playResult === 'complete' ? 'editor.playCompleted' : 'editor.playFailed')"
+          >
             <div class="result-card">
               <div
                 class="result-kicker"
@@ -197,11 +208,13 @@ const emit = defineEmits<{
                 <button
                   class="primary-btn"
                   type="button"
+                  :title="shortcutTitle(webT('editor.retryPlay'), 'Enter')"
                   @click="emit('playRestart')"
                 >{{ webT("editor.retryPlay") }}</button>
                 <button
                   class="ghost-btn"
                   type="button"
+                  :title="shortcutTitle(webT('editor.returnToEdit'), 'Esc / Enter')"
                   @click="emit('playStop')"
                 >{{ webT("editor.returnToEdit") }}</button>
               </div>

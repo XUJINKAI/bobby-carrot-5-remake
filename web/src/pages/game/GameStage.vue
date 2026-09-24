@@ -16,7 +16,7 @@ withDefaults(defineProps<{
     <div class="game-canvas-layer">
       <canvas :id="canvasId" />
       <slot name="result">
-        <div class="result-overlay" data-result-overlay hidden>
+        <div class="result-overlay" data-result-overlay role="dialog" aria-modal="true" hidden>
           <div class="result-card" data-result-card>
             <div data-result-card-content />
           </div>

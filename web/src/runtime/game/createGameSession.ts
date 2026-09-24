@@ -9,6 +9,7 @@ import {
   type ObjectInteractionEvent,
 } from "@bobby/engine";
 import { setShellRuntimeWarnings } from "../../shell/shellBridge.js";
+import type { WebKeyboard } from "../../app/keyboard/WebKeyboard.js";
 import { GameplayGateManager } from "./GameplayGateManager.js";
 
 export interface GameSession {
@@ -21,6 +22,7 @@ export interface GameSession {
 
 export interface CreateGameSessionOptions {
   canvas: HTMLCanvasElement;
+  keyboard: WebKeyboard;
   level: LevelMap;
   gameOptions: Omit<GameOptions, "canvas" | "runtime">;
   runtime?: GameSessionRuntimeConfig;
@@ -47,7 +49,14 @@ export async function createGameSession(
     canvas: options.canvas,
     level: options.level,
     ...options.gameOptions,
-    ...(options.runtime ? { runtime: options.runtime } : {}),
+    runtime: {
+      ...options.runtime,
+      input: {
+        ...options.runtime?.input,
+        keyboardRuntime: options.keyboard.runtime,
+        keyboardRange: options.runtime?.input?.keyboardRange ?? { mode: "global" },
+      },
+    },
   });
   setShellRuntimeWarnings(runtime.warnings.map((warning) => warning.message));
   const { game, input, dialog } = runtime;

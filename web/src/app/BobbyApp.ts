@@ -9,10 +9,6 @@ import {
 } from "../shell/shellBridge.js";
 import AppRoot from "./AppRoot.vue";
 import {
-  installButtonFocusPolicy,
-  type ButtonFocusPolicy,
-} from "./buttonFocusPolicy.js";
-import {
   NOOP_CONTROLLER,
   type NavigateOptions,
   type PageContext,
@@ -26,6 +22,8 @@ import {
 import { resolveRouteMigration } from "./routeMigrations.js";
 import { setWebI18nRouteScopes } from "../i18n/webI18n.js";
 import { errorDisplayText } from "../errors/errorPresentation.js";
+import { WebKeyboard } from "./keyboard/WebKeyboard.js";
+import { provideWebKeyboard } from "./keyboard/vueKeyboard.js";
 import {
   localizedPageScopes,
   type LocalizedPageLoader,
@@ -46,6 +44,7 @@ interface AppRootHandle {
 export class BobbyApp {
   private readonly mount: HTMLDivElement;
   private readonly audio = new AudioRuntime();
+  private readonly keyboard: WebKeyboard;
   private readonly images = createImageManager();
   private readonly catalog = new CatalogRuntime();
   private readonly shell = reactive<ShellViewState>(defaultShellState());
@@ -54,12 +53,12 @@ export class BobbyApp {
   private controller: PageController = NOOP_CONTROLLER;
   private vueApp: VueApp<Element> | null = null;
   private vueRoot: AppRootHandle | null = null;
-  private buttonFocusPolicy: ButtonFocusPolicy | null = null;
   private routeGeneration = 0;
   private routeRenderQueue: Promise<void> = Promise.resolve();
 
   constructor(mount: HTMLDivElement) {
     this.mount = mount;
+    this.keyboard = new WebKeyboard(mount);
   }
 
   async start(): Promise<void> {
@@ -76,9 +75,9 @@ export class BobbyApp {
           resolve();
         },
       });
+      provideWebKeyboard(this.vueApp, this.keyboard);
       this.vueRoot = this.vueApp.mount(this.mount) as unknown as AppRootHandle;
     });
-    this.buttonFocusPolicy = installButtonFocusPolicy(this.mount);
     document.addEventListener("pointerdown", this.resumeAudio, { passive: true });
     document.addEventListener("keydown", this.resumeAudio);
     window.addEventListener("popstate", this.onPopState);
@@ -90,7 +89,7 @@ export class BobbyApp {
   destroy(): void {
     this.controller.destroy();
     this.clearIdleTasks();
-    this.buttonFocusPolicy?.destroy();
+    this.keyboard.destroy();
     document.removeEventListener("pointerdown", this.resumeAudio);
     document.removeEventListener("keydown", this.resumeAudio);
     window.removeEventListener("popstate", this.onPopState);
@@ -101,7 +100,6 @@ export class BobbyApp {
     this.images.destroy();
     this.vueApp = null;
     this.vueRoot = null;
-    this.buttonFocusPolicy = null;
   }
 
   private applyShell(config: ShellConfig): void {
@@ -122,6 +120,7 @@ export class BobbyApp {
     path: string,
     options: NavigateOptions = {},
   ): void => {
+    this.keyboard.runtime.cancelPressed();
     const target = new URL(path.replace(/^\/+/, ""), document.baseURI);
     const url = `${target.pathname}${target.search}${target.hash}`;
     if (options.replace) history.replaceState(options.state ?? null, "", url);
@@ -132,6 +131,7 @@ export class BobbyApp {
   private pageContext(): PageContext {
     return {
       app: this.content,
+      keyboard: this.keyboard,
       collectionsIndex: this.catalog.collectionsIndex,
       loadCollectionsIndex: () => this.catalog.loadCollectionsIndex(),
       collections: this.catalog.collections,
@@ -150,7 +150,7 @@ export class BobbyApp {
         await this.renderCurrentRoute(generation);
       } finally {
         await nextTick();
-        this.buttonFocusPolicy?.refresh();
+        if (generation === this.routeGeneration) this.keyboard.setPage(localRoutePath());
       }
     };
     this.routeRenderQueue = this.routeRenderQueue.then(render, render);

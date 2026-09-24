@@ -5,14 +5,14 @@ export async function verifyReplayPanelShortcut(cdp, sessionId) {
     sessionId,
     "document.querySelector('[data-replay-output]')?.focus(); true",
   );
-  await dispatchTab(cdp, sessionId);
+  await dispatchPanelKey(cdp, sessionId);
   if (await replayPanelHidden(cdp, sessionId))
-    throw new Error("Replay Tab shortcut replaced textarea focus navigation");
+    throw new Error("Replay Z shortcut intercepted textarea input");
 
   await cdp.evaluate(sessionId, "document.activeElement?.blur(); true");
-  await dispatchTab(cdp, sessionId);
+  await dispatchPanelKey(cdp, sessionId);
   await waitForPanelState(cdp, sessionId, true);
-  await dispatchTab(cdp, sessionId);
+  await dispatchPanelKey(cdp, sessionId);
   await waitForPanelState(cdp, sessionId, false);
 }
 
@@ -83,8 +83,8 @@ export async function verifyNarrowGameActions(cdp, sessionId) {
   }
 }
 
-async function dispatchTab(cdp, sessionId) {
-  const key = { key: "Tab", code: "Tab", windowsVirtualKeyCode: 9 };
+async function dispatchPanelKey(cdp, sessionId) {
+  const key = { key: "z", code: "KeyZ", windowsVirtualKeyCode: 90 };
   await cdp.send("Input.dispatchKeyEvent", { type: "keyDown", ...key }, sessionId);
   await cdp.send("Input.dispatchKeyEvent", { type: "keyUp", ...key }, sessionId);
 }

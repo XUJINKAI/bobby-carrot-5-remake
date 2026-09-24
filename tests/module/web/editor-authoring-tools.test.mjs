@@ -105,7 +105,7 @@ test("Palette 和 Surface 发布工具动作与简洁标题", () => {
   assert.match(shell, /id: "editor-surface-fill"[\s\S]*icon: "fill"[\s\S]*title: webT\("editor\.fill"\)/);
   assert.match(page, /key === "3"[\s\S]*setSurfaceTool\("fill"\)/);
   assert.match(page, /key === "4"[\s\S]*setTool\("erase"\)/);
-  assert.match(page, /event\.key === "Tab"[\s\S]*switchAuthoringPanel\(\)/);
+  assert.match(page, /matchesShortcut\(event, WEB_SHORTCUTS\.leftPanel\)[\s\S]*switchAuthoringPanel\(\)/);
 });
 
 test("Editor 宽屏默认打开 Palette，窄屏默认关闭全部面板", () => {

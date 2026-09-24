@@ -1,3 +1,4 @@
+import { provideWebKeyboard } from "../../app/keyboard/vueKeyboard.js";
 import { createApp } from "vue";
 import type { PageContext, PageController } from "../../app/pageContracts.js";
 import { globalActions, pageIdentity } from "../../app/pageChrome.js";
@@ -41,6 +42,7 @@ export function renderImportMessage(
     onCancel: () => context.navigate("/"),
     onHome: () => context.navigate("/"),
   });
+  provideWebKeyboard(app, context.keyboard);
   app.mount(context.app);
   return { localeChanged: syncShell, destroy: () => app.unmount() };
 }

@@ -78,15 +78,10 @@ const showRecordingIndicator = import.meta.env.DEV;
 }
 
 .explore-map-card:hover,
-.explore-map-card:focus-visible {
+:global(html[data-keyboard-focus="true"] .explore-map-card:focus-visible) {
   transform: translateY(-2px);
   border-color: var(--bc-panel-border);
   background: var(--bc-active);
-}
-
-.explore-map-card.completed {
-  border-color: var(--bc-highlight);
-  background: #07518f;
 }
 
 .explore-map-card-label {

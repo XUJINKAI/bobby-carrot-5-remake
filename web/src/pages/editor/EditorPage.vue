@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { WEB_SHORTCUTS, matchesShortcut } from "../../app/keyboard/shortcuts.js";
+import { useWebKeyboard } from "../../app/keyboard/vueKeyboard.js";
 import {
   validateEditorLevel,
   type EditorMap,
@@ -43,6 +45,8 @@ const props = defineProps<{
   navigate: Navigate;
   playRoute?: boolean;
 }>();
+const keyboard = useWebKeyboard();
+let disposeKeyboard = (): void => {};
 const page = useEditorPage(props.initialLevel);
 page.surfaceTool.value = "rect";
 let session: GameSession | null = null;
@@ -140,6 +144,7 @@ async function togglePlay(): Promise<void> {
     const canvas = document.querySelector<HTMLCanvasElement>("#editor-game");
     if (!canvas) throw new Error("Editor Play Test 舞台挂载失败");
     session = await createGameSession({
+      keyboard,
       canvas,
       level: page.levelMap.value,
       gameOptions: {
@@ -170,6 +175,7 @@ async function togglePlay(): Promise<void> {
     const root = editorRoot.value;
     if (!root) throw new Error("Editor Play Test 页面挂载失败");
     replayPanel = bindReplayPanel({
+      keyboard,
       root,
       game: session.game,
       filename: `editor-${page.nameValue.value || "map"}`,
@@ -334,13 +340,28 @@ function switchAuthoringPanel(): void {
 }
 
 function handleKeydown(event: KeyboardEvent): void {
-  if (isTextInput(event.target)) return;
   const modifier = event.ctrlKey || event.metaKey;
   const key = event.key.toLowerCase();
-  if (page.playing.value) return;
-  if (event.key === "Tab" && !modifier && !event.altKey) {
+  if (page.playing.value) {
+    if (matchesShortcut(event, WEB_SHORTCUTS.restart)) {
+      event.preventDefault();
+      restartPlay();
+      return;
+    }
+    if (event.key === "Escape" && !modifier && !event.shiftKey) {
+      event.preventDefault();
+      exitPlayRoute();
+    }
+    return;
+  }
+  if (matchesShortcut(event, WEB_SHORTCUTS.leftPanel)) {
     event.preventDefault();
     switchAuthoringPanel();
+    return;
+  }
+  if (matchesShortcut(event, WEB_SHORTCUTS.rightPanel)) {
+    event.preventDefault();
+    toggleRightPanel(rightPanel.value === "inspector" ? "level" : "inspector");
     return;
   }
   if (modifier && key === "a") {
@@ -362,6 +383,8 @@ function handleKeydown(event: KeyboardEvent): void {
     event.preventDefault();
     const origin = page.hover.value ?? page.mapSelection.value?.anchor;
     if (origin) page.paste(origin);
+  } else if (modifier || event.shiftKey) {
+    return;
   } else if (event.key === "Delete" || event.key === "Backspace") {
     event.preventDefault();
     page.deleteSelection();
@@ -431,25 +454,27 @@ function onBeforeUnload(event: BeforeUnloadEvent): void {
 
 onMounted(() => {
   syncShell();
-  window.addEventListener("keydown", handleKeydown);
+  const scope = keyboard.runtime.register({
+    layer: "page",
+    modifiers: "any",
+    keydown: (event) => {
+      if (event.altKey) return false;
+      handleKeydown(event);
+      return event.defaultPrevented;
+    },
+  });
+  disposeKeyboard = () => scope.dispose();
   window.addEventListener("game-shell-action", onShellAction);
   window.addEventListener("beforeunload", onBeforeUnload);
   if (props.playRoute) void togglePlay();
 });
 onBeforeUnmount(() => {
   stopPlay();
-  window.removeEventListener("keydown", handleKeydown);
+  disposeKeyboard();
   window.removeEventListener("game-shell-action", onShellAction);
   window.removeEventListener("beforeunload", onBeforeUnload);
 });
 
-function isTextInput(target: EventTarget | null): boolean {
-  return (
-    target instanceof HTMLInputElement ||
-    target instanceof HTMLTextAreaElement ||
-    target instanceof HTMLSelectElement
-  );
-}
 function isMobileEditor(): boolean {
   return window.matchMedia("(max-width: 620px)").matches;
 }

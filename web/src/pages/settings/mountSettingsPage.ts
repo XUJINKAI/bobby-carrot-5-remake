@@ -1,3 +1,4 @@
+import { provideWebKeyboard } from "../../app/keyboard/vueKeyboard.js";
 import { createApp } from "vue";
 import type { PageContext, PageController } from "../../app/pageContracts.js";
 import { globalActions, homeIdentity } from "../../app/pageChrome.js";
@@ -23,6 +24,7 @@ export function renderSettingsPage(context: PageContext): PageController {
   const page = createApp(SettingsPage, {
     collections: context.collectionsIndex.collections,
   });
+  provideWebKeyboard(page, context.keyboard);
   page.mount(context.app);
   return {
     localeChanged: syncShell,

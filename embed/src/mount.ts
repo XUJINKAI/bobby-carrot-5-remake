@@ -24,11 +24,6 @@ import type { BC5RHandle, BC5RMountOptions } from "./types.js";
 
 const homePageUrl = "https://bc5r.xujinkai.net/";
 
-interface ActiveFocusEmbed {
-  token: symbol;
-  deactivate(): void;
-}
-
 interface TerminalOverlay {
   root: HTMLDivElement;
   title: HTMLElement;
@@ -53,11 +48,8 @@ interface AudioLevels {
   soundGain: number;
 }
 
-let activeFocusEmbed: ActiveFocusEmbed | null = null;
-
 export function mount(options: BC5RMountOptions): BC5RHandle {
   const target = resolveTarget(options.target);
-  const token = Symbol("bc5r-embed");
   let runtime: GameplayRuntime | null = null;
   let images: ImageManager | null = null;
   let destroyed = false;
@@ -99,29 +91,13 @@ export function mount(options: BC5RMountOptions): BC5RHandle {
   const pinchZoom = options.camera?.pinchZoom ?? true;
   const wheelZoom = options.camera?.wheelZoom ?? false;
 
-  const suspendFocusInput = (): void => runtime?.input.setKeyboardEnabled(false);
   const activate = (): void => {
-    if (keyboard !== "focus") return;
-    if (activeFocusEmbed?.token !== token) activeFocusEmbed?.deactivate();
-    activeFocusEmbed = { token, deactivate: suspendFocusInput };
-    runtime?.input.setKeyboardEnabled(true);
-    canvasWrap.focus({ preventScroll: true });
-  };
-  const deactivate = (event: FocusEvent): void => {
-    if (keyboard !== "focus" || activeFocusEmbed?.token !== token) return;
-    const next = event.relatedTarget;
-    if (next instanceof Node && root.contains(next)) return;
-    activeFocusEmbed = null;
-    suspendFocusInput();
+    if (keyboard === "focus") canvasWrap.focus({ preventScroll: true });
   };
   root.addEventListener("pointerdown", activate, { capture: true });
-  root.addEventListener("focusin", activate);
-  root.addEventListener("focusout", deactivate);
   cleanup.push(() =>
     root.removeEventListener("pointerdown", activate, { capture: true }),
   );
-  cleanup.push(() => root.removeEventListener("focusin", activate));
-  cleanup.push(() => root.removeEventListener("focusout", deactivate));
 
   const ready = (async (): Promise<void> => {
     status.loading();
@@ -157,6 +133,10 @@ export function mount(options: BC5RMountOptions): BC5RHandle {
             },
             input: {
               keyboard: true,
+              ...(options.keyboardRuntime ? { keyboardRuntime: options.keyboardRuntime } : {}),
+              keyboardRange: keyboard === "focus"
+                ? { mode: "focus", root }
+                : { mode: "global" },
               pointer,
               movement: true,
               pan: true,
@@ -180,8 +160,6 @@ export function mount(options: BC5RMountOptions): BC5RHandle {
         imageManager.destroy();
         return;
       }
-      if (keyboard === "focus" && activeFocusEmbed?.token !== token)
-        runtime.input.setKeyboardEnabled(false);
       const audioLevels = applyAudio(runtime, audio);
       installRestartButton(runtime, frameControls.restart, canvasWrap, cleanup);
       installSoundToggle(
@@ -215,7 +193,6 @@ export function mount(options: BC5RMountOptions): BC5RHandle {
     destroy(): void {
       if (destroyed) return;
       destroyed = true;
-      if (activeFocusEmbed?.token === token) activeFocusEmbed = null;
       for (const dispose of cleanup.splice(0)) dispose();
       if (runtime) {
         runtime.destroy();

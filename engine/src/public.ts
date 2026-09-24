@@ -343,3 +343,13 @@ export type {
   VisualRenderPass,
   VisualResolveContext,
 } from "./visual/VisualDefinition.js";
+
+export {
+  KeyboardRuntime,
+  isKeyboardEditableTarget,
+  hasKeyboardModifier,
+  type KeyboardScope,
+  type KeyboardScopeOptions,
+  type KeyboardRange,
+  type KeyboardRuntimeOptions,
+} from "./input/KeyboardRuntime.js";
