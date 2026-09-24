@@ -52,7 +52,7 @@ let disposeGameplayShell = (): void => {};
 let playResultLease: ReturnType<GameSession["gates"]["acquire"]> | null = null;
 const startsMobile = window.matchMedia("(max-width: 620px)").matches;
 const editorRoot = ref<HTMLElement | null>(null);
-const leftOpen = ref(true);
+const leftOpen = ref(!startsMobile);
 const rightPanel = ref<"inspector" | "level" | null>(
   startsMobile ? null : "inspector",
 );

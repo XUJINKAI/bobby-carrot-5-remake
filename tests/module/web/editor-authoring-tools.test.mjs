@@ -108,7 +108,9 @@ test("Palette 和 Surface 发布工具动作与简洁标题", () => {
   assert.match(page, /event\.key === "Tab"[\s\S]*switchAuthoringPanel\(\)/);
 });
 
-test("Editor 默认打开 Palette 并使用 Select 语义", () => {
+test("Editor 宽屏默认打开 Palette，窄屏默认关闭全部面板", () => {
+  assert.match(page, /const leftOpen = ref\(!startsMobile\)/);
+  assert.match(page, /startsMobile \? null : "inspector"/);
   assert.match(pageState, /leftPanel = ref<EditorLeftPanel>\("palette"\)/);
   assert.match(shell, /leftPanel: "palette" \| "surface" = "palette"/);
   assert.match(pageState, /paletteTool = ref<EditorTool>\("select"\)/);

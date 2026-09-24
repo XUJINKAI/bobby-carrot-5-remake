@@ -4,7 +4,10 @@ import { createServer } from "vite";
 import { root } from "../../../../tools/lib/fs.mjs";
 import { verifyButtonFocusPolicy } from "./source/button-focus-browser-checks.mjs";
 import { waitForBrowserState } from "./source/browser-regression-wait.mjs";
-import { verifyEditorExperience } from "./source/editor-browser-checks.mjs";
+import {
+  verifyEditorExperience,
+  verifyNarrowEditorStartsWithoutPanels,
+} from "./source/editor-browser-checks.mjs";
 import {
   verifyExploreRecordingIndicators,
   verifyNarrowExploreTabs,
@@ -46,6 +49,10 @@ export async function runSourceBrowserRegression(cdp) {
       await verifyQuickSettings(cdp, `${origin}/`);
       await verifySettingsPage(cdp, await openPage(cdp, `${origin}/settings`));
       await verifyEditorExperience(
+        cdp,
+        await openPage(cdp, `${origin}/edit`),
+      );
+      await verifyNarrowEditorStartsWithoutPanels(
         cdp,
         await openPage(cdp, `${origin}/edit`),
       );
