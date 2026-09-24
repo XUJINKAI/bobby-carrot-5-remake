@@ -141,6 +141,7 @@ onBeforeUnmount(() => {
       @pointerdown="backdropDismiss.pointerDown"
       @pointerup="backdropDismiss.pointerUp"
       @pointercancel="backdropDismiss.pointerCancel"
+      @click="backdropDismiss.click"
     >
       <section class="home-import-dialog" role="dialog" aria-modal="true" :aria-label="webT('home.importDialog')">
         <header>

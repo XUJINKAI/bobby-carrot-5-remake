@@ -123,4 +123,83 @@ export async function verifyButtonFocusPolicy(cdp, sessionId) {
   );
   if (afterTab.dynamicTabIndex !== -1 || afterTab.focusedTag === "BUTTON")
     throw new Error("动态按钮进入了 Tab 焦点顺序");
+
+  await verifyTouchBackdropDoesNotClickThrough(cdp, sessionId);
+}
+
+async function verifyTouchBackdropDoesNotClickThrough(cdp, sessionId) {
+  await cdp.send(
+    "Emulation.setDeviceMetricsOverride",
+    { width: 390, height: 760, deviceScaleFactor: 1, mobile: true },
+    sessionId,
+  );
+  await cdp.evaluate(
+    sessionId,
+    "window.__backdropReloadProbe = true; true",
+  );
+  await cdp.send("Page.reload", {}, sessionId);
+  await waitForBrowserState(async () =>
+    Boolean(
+      await cdp.evaluate(
+        sessionId,
+        `window.__backdropReloadProbe !== true &&
+          document.querySelector('.home-page') &&
+          document.querySelector('#settings') &&
+          document.querySelector('#music')`,
+      ),
+    ),
+  );
+  const point = await cdp.evaluate(
+    sessionId,
+    `(() => {
+      const button = document.querySelector('#music');
+      window.__backdropLeakClicks = 0;
+      button.addEventListener('click', () => window.__backdropLeakClicks++);
+      const rect = button.getBoundingClientRect();
+      return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+    })()`,
+  );
+  await cdp.evaluate(
+    sessionId,
+    "document.querySelector('#settings').click(); true",
+  );
+  await waitForBrowserState(async () =>
+    Boolean(
+      await cdp.evaluate(
+        sessionId,
+        "document.querySelector('[data-quick-settings-layer]')",
+      ),
+    ),
+  );
+  await cdp.evaluate(sessionId, "window.__backdropLeakClicks = 0; true");
+  await cdp.send(
+    "Input.dispatchTouchEvent",
+    {
+      type: "touchStart",
+      touchPoints: [{ x: point.x, y: point.y }],
+    },
+    sessionId,
+  );
+  await cdp.send(
+    "Input.dispatchTouchEvent",
+    { type: "touchEnd", touchPoints: [] },
+    sessionId,
+  );
+  await waitForBrowserState(async () =>
+    !(await cdp.evaluate(
+      sessionId,
+      "document.querySelector('[data-quick-settings-layer]')",
+    )),
+  );
+  await new Promise((resolve) => setTimeout(resolve, 150));
+  const result = await cdp.evaluate(
+    sessionId,
+    `({
+      clicks: window.__backdropLeakClicks,
+      layerOpen: Boolean(document.querySelector('[data-quick-settings-layer]')),
+    })`,
+  );
+  if (result.clicks !== 0 || result.layerOpen) {
+    throw new Error(`触屏关闭遮罩时点击了后方按钮：${JSON.stringify(result)}`);
+  }
 }

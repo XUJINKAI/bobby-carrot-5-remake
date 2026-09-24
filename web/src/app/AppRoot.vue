@@ -235,6 +235,7 @@ onMounted(() => {
       @pointerdown="settingsBackdropDismiss.pointerDown"
       @pointerup="settingsBackdropDismiss.pointerUp"
       @pointercancel="settingsBackdropDismiss.pointerCancel"
+      @click="settingsBackdropDismiss.click"
     >
       <QuickSettingsPanel
         :state="settings.state"
