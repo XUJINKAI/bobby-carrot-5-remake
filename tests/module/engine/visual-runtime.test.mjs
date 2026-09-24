@@ -173,6 +173,24 @@ test("Bobby uses the Up strip while standing or moving on Beanstalk", () => {
   assert.equal(moving.layers[0].frameIndex, 7);
 });
 
+test("Bobby 横向进入 Beanstalk Base 时在中点切换为攀爬姿势", () => {
+  const walking = bobbyVisual({
+    surfaceType: RuntimeEntityTypeId.BEANSTALK_BASE,
+    direction: "right",
+    runtime: { moving: true, progress: 0.25 },
+  });
+  const climbing = bobbyVisual({
+    surfaceType: RuntimeEntityTypeId.BEANSTALK_BASE,
+    direction: "right",
+    runtime: { moving: true, progress: 0.75 },
+  });
+
+  assert.equal(walking.layers[0].asset, "bobby-right");
+  assert.equal(walking.layers[0].frameIndex, 5);
+  assert.equal(climbing.layers[0].asset, "bobby-up");
+  assert.equal(climbing.layers[0].frameIndex, 1);
+});
+
 test("Bobby idle starts after five seconds and advances every 50ms", () => {
   const runtime = { moving: false, progress: 1, stationarySinceMs: 1000 };
   const before = bobbyVisual({

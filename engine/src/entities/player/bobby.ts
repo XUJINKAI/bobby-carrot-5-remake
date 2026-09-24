@@ -10,6 +10,7 @@ import type {
   EntityModule,
   EntityModuleDefinition,
 } from "../EntityModule.js";
+import { RuntimeEntityTypeId } from "../runtime-types.js";
 import {
   clampProgress,
   originalModule,
@@ -235,8 +236,8 @@ const bobbyVisual = {
       });
     }
 
-    // 藤蔓的攀爬姿势始终使用背面人物 strip，朝向状态本身仍由 World 持有。
-    if (isStandingOnClimbable(context)) {
+    // 横向踏入藤蔓基座时，中点前仍位于相邻地面；跨过中点后才显示攀爬姿势。
+    if (usesClimbingPose(context, direction, rawProgress)) {
       return composition(context, {
         asset: BOBBY_VISUAL_ASSETS.move.up,
         frameColumns: 8,
@@ -281,10 +282,27 @@ export const bobby: EntityModule = originalModule(definition, bobbyVisual, [
   { behavior: bobbyMovementPolicy },
 ]);
 
-function isStandingOnClimbable(context: VisualResolveContext): boolean {
-  return context.query.presencesAt(context.entity.anchor).some((presence) =>
-    presence.facts.includes("climbable")
+function usesClimbingPose(
+  context: VisualResolveContext,
+  direction: Direction,
+  progress: number,
+): boolean {
+  const presences = context.query.presencesAt(context.entity.anchor);
+  if (!presences.some((presence) => presence.facts.includes("climbable"))) {
+    return false;
+  }
+  if (
+    context.runtime?.moving !== true ||
+    direction === "up" ||
+    direction === "down"
+  ) {
+    return true;
+  }
+  const onBase = presences.some((presence) =>
+    context.query.entity(presence.entityId)?.type ===
+      RuntimeEntityTypeId.BEANSTALK_BASE
   );
+  return !onBase || progress >= 0.5;
 }
 
 function usesIceSlidePose(
