@@ -16,11 +16,14 @@ import {
 } from "./pageContracts.js";
 import { scheduleIdleTask, type CancelIdleTask } from "./idleTasks.js";
 import {
+  localRoutePath,
   parseMapPlayUrl,
   type ExploreMapRef,
 } from "./routes.js";
 import { resolveRouteMigration } from "./routeMigrations.js";
-import { setWebI18nRouteScopes } from "../i18n/webI18n.js";
+import { getWebLocale, setWebLocale, setWebI18nRouteScopes } from "../i18n/webI18n.js";
+import { homeLocale, homePath } from "./homeRoutes.js";
+import { updateWebSettings } from "../storage/settingsStorage.js";
 import { errorDisplayText } from "../errors/errorPresentation.js";
 import { WebKeyboard } from "./keyboard/WebKeyboard.js";
 import { provideWebKeyboard } from "./keyboard/vueKeyboard.js";
@@ -62,6 +65,12 @@ export class BobbyApp {
   }
 
   async start(): Promise<void> {
+    // Shell 同步挂载时迁移已有首页节点，随后由 HomePage 原位 hydration。
+    const prerendered = this.mount.dataset.homePrerendered;
+    const homeNodes = prerendered === homeLocale(localRoutePath())
+      ? [...this.mount.childNodes]
+      : [];
+    this.mount.removeAttribute("data-home-prerendered");
     installShellBridge({
       apply: (config) => this.applyShell(config),
     });
@@ -72,6 +81,10 @@ export class BobbyApp {
         navigate: this.navigate,
         onContentReady: (element: HTMLDivElement) => {
           this.content = element;
+          if (homeNodes.length) {
+            element.append(...homeNodes);
+            element.setAttribute("data-home-prerendered", prerendered!);
+          }
           resolve();
         },
       });
@@ -113,6 +126,12 @@ export class BobbyApp {
   };
 
   private readonly onLocaleChange = (): void => {
+    const path = localRoutePath();
+    const localizedHome = homePath(getWebLocale());
+    if (homeLocale(path) && path !== localizedHome) {
+      const target = new URL(localizedHome.slice(1), document.baseURI);
+      history.replaceState(history.state, "", `${target.pathname}${location.search}${location.hash}`);
+    }
     this.controller.localeChanged?.();
   };
 
@@ -121,7 +140,8 @@ export class BobbyApp {
     options: NavigateOptions = {},
   ): void => {
     this.keyboard.runtime.cancelPressed();
-    const target = new URL(path.replace(/^\/+/, ""), document.baseURI);
+    const destination = path === "/" ? homePath(getWebLocale()) : path;
+    const target = new URL(destination.replace(/^\/+/, ""), document.baseURI);
     const url = `${target.pathname}${target.search}${target.hash}`;
     if (options.replace) history.replaceState(options.state ?? null, "", url);
     else history.pushState(options.state ?? null, "", url);
@@ -170,7 +190,11 @@ export class BobbyApp {
       return;
     }
 
-    if (path === "/") {
+    const locale = homeLocale(path);
+    if (locale) {
+      await setWebLocale(locale);
+      if (!this.canCommitRoute(generation)) return;
+      updateWebSettings((settings) => ({ ...settings, locale }));
       const { renderHome } = await loadHomePage();
       if (!this.canCommitRoute(generation)) return;
       if (!(await this.activateI18nRoute(generation, loadHomePage))) return;
@@ -600,13 +624,4 @@ function defaultShellState(): ShellViewState {
   return {
     config: {},
   };
-}
-
-function localRoutePath(): string {
-  const basePath = new URL(document.baseURI).pathname.replace(/\/+$/, "");
-  const localPath =
-    basePath && basePath !== "/" && location.pathname.startsWith(basePath)
-      ? location.pathname.slice(basePath.length)
-      : location.pathname;
-  return localPath.replace(/\/+$/, "") || "/";
 }

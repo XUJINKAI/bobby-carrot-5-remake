@@ -25,7 +25,7 @@ const emit = defineEmits<{
 }>();
 
 const page = ref<HTMLElement | null>(null);
-const theme = ref<WebTheme>(getWebTheme());
+const theme = ref<WebTheme>("bobby");
 let scrollRegion: HTMLElement | null = null;
 let fadeFrame = 0;
 
@@ -47,6 +47,7 @@ function scheduleStarfieldFade(): void {
 }
 
 onMounted(() => {
+  theme.value = getWebTheme();
   scrollRegion = page.value?.closest<HTMLElement>(".app-scroll-region") ?? null;
   scrollRegion?.addEventListener("scroll", scheduleStarfieldFade, { passive: true });
   window.addEventListener("resize", scheduleStarfieldFade, { passive: true });
@@ -97,7 +98,7 @@ onBeforeUnmount(() => {
           />
         </div>
       </section>
-      <ProjectIntro :images="images" />
+      <ProjectIntro />
     </div>
   </div>
 </template>

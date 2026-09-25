@@ -4,6 +4,7 @@ import {
   normalizeLocale,
   type Locale,
   type TranslationKey,
+  type TranslationArrayKey,
   type TranslationParams,
   type TranslationScope,
 } from "@bobby/i18n";
@@ -23,6 +24,7 @@ let desiredLocale: Locale = FALLBACK_LOCALE;
 let localeTransition: { locale: Locale; promise: Promise<void> } | null = null;
 
 export type WebTranslationKey = TranslationKey;
+export type WebArrayTranslationKey = TranslationArrayKey;
 
 export interface WebLocalizedText {
   readonly key: WebTranslationKey;
@@ -141,6 +143,14 @@ export function webT(
 ): string {
   locale.value;
   return translator.t(key, params);
+}
+
+export function webTArray(
+  key: WebArrayTranslationKey,
+  params?: TranslationParams,
+): readonly string[] {
+  locale.value;
+  return translator.tArray(key, params);
 }
 
 export function webHasTranslation(key: WebTranslationKey): boolean {

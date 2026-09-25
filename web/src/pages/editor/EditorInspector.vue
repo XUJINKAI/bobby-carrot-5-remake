@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { webT } from "../../i18n/webI18n.js";
 import {
   type EditorDefinition,
   type EditorTool,
@@ -95,8 +96,8 @@ const showSurfaceTool = computed(
       v-else-if="model.mode === 'none'"
       class="editor-inspector-section editor-empty-selection editor-inspector-summary"
     >
-      <strong>选择工具</strong>
-      <span class="editor-muted">点选一个格子，或拖动框选多个格子。</span>
+      <strong>{{ webT("editor.selectTool") }}</strong>
+      <span class="editor-muted">{{ webT("editor.selectHint") }}</span>
     </section>
     <EditorCellInspector
       v-else-if="model.mode === 'cell'"

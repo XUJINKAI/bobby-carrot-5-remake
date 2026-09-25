@@ -47,7 +47,7 @@ export function renderAdventureHome(context: PageContext): PageController {
       images,
       onNavigate: navigate,
     },
-    () => adventureShell(),
+    () => adventureShell({ languageSwitch: true }),
   );
 }
 
@@ -68,7 +68,7 @@ export function renderAdventureChapters(context: PageContext): PageController {
     context,
     AdventureChaptersPage,
     { rows, images, onNavigate: navigate },
-    () => adventureShell("/adventure"),
+    () => adventureShell({ backPath: "/adventure" }),
   );
 }
 
@@ -102,7 +102,7 @@ export function renderAdventureChapter(
       rows,
       onNavigate: navigate,
     },
-    () => adventureShell("/adventure/chapters"),
+    () => adventureShell({ backPath: "/adventure/chapters" }),
   );
 }
 
@@ -137,7 +137,7 @@ export function renderAdventureNightTrain(context: PageContext): PageController 
     context,
     AdventureNightTrainPage,
     { images, destinations, onNavigate: navigate },
-    () => adventureShell("/adventure"),
+    () => adventureShell({ backPath: "/adventure" }),
   );
 }
 
@@ -175,7 +175,12 @@ function mountAdventure(
   };
 }
 
-function adventureShell(backPath?: string): ShellConfig {
+function adventureShell(
+  { backPath, languageSwitch = false }: {
+    backPath?: string;
+    languageSwitch?: boolean;
+  } = {},
+): ShellConfig {
   return {
     topBar: {
       visible: true,
@@ -192,7 +197,7 @@ function adventureShell(backPath?: string): ShellConfig {
             },
           }
         : {}),
-      actions: globalActions(),
+      actions: globalActions({ languageSwitch }),
     },
     bottomBar: {
       visible: false,

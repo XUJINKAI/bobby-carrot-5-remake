@@ -1,55 +1,130 @@
 <script setup lang="ts">
-import type { ImageManager } from "@bobby/engine";
-import NightTrainScene from "../../shared/original-scenes/NightTrainScene.vue";
-import EmbedFeaturePreview from "./EmbedFeaturePreview.vue";
-import PushboxFeaturePreview from "./PushboxFeaturePreview.vue";
+import AppIcon from "../../shared/icons/AppIcon.vue";
 import { webT } from "../../i18n/webI18n.js";
-
-defineProps<{ images: ImageManager }>();
 </script>
 
 <template>
   <section class="home-about" aria-labelledby="home-about-title">
     <header class="home-about-heading">
-      <span class="eyebrow">BOBBY CARROT 5 REMAKE</span>
-      <h2 id="home-about-title">{{ webT("home.intro.title") }}</h2>
+      <h1 id="home-about-title">{{ webT("home.intro.title") }}</h1>
       <p>{{ webT("home.intro.lead") }}</p>
     </header>
 
-    <article class="feature-story feature-story-train">
-      <div class="feature-visual">
-        <NightTrainScene :images="images" />
-      </div>
-      <div class="feature-copy">
-        <span>CLASSIC REMAKE</span>
-        <h3>{{ webT("home.intro.classicTitle") }}</h3>
+    <section class="intro-group" aria-labelledby="home-classic-title">
+      <header class="feature-copy">
+        <h2 id="home-classic-title">{{ webT("home.intro.classicTitle") }}</h2>
         <p>{{ webT("home.intro.classicDescription") }}</p>
+      </header>
+      <div class="game-cards">
+        <article class="intro-card">
+          <AppIcon class="card-icon" name="star" :size="28" />
+          <h3>{{ webT("home.intro.adventureTitle") }}</h3>
+          <p>{{ webT("home.intro.adventureDescription") }}</p>
+        </article>
+        <article class="intro-card">
+          <AppIcon class="card-icon" name="map-details" :size="28" />
+          <h3>{{ webT("home.intro.exploreTitle") }}</h3>
+          <p>{{ webT("home.intro.exploreDescription") }}</p>
+        </article>
       </div>
-    </article>
+    </section>
 
-    <article class="feature-story reverse">
-      <div class="feature-visual">
-        <PushboxFeaturePreview />
+    <section class="intro-group" aria-labelledby="home-maps-title">
+      <header class="feature-copy">
+        <h2 id="home-maps-title">{{ webT("home.intro.mapsTitle") }}</h2>
+        <p>{{ webT("home.intro.mapsDescription") }}</p>
+      </header>
+      <div class="game-cards">
+        <article class="intro-card">
+          <h3>{{ webT("home.intro.roboTitle") }}</h3>
+          <p>{{ webT("home.intro.roboDescription") }}</p>
+        </article>
+        <article class="intro-card">
+          <h3>{{ webT("home.intro.sokobanTitle") }}</h3>
+          <p>{{ webT("home.intro.sokobanDescription") }}</p>
+        </article>
       </div>
-      <div class="feature-copy">
-        <span>MAP EDITOR</span>
-        <h3>{{ webT("home.intro.editorTitle") }}</h3>
+    </section>
+
+    <section class="intro-group" aria-labelledby="home-editor-title">
+      <header class="feature-copy">
+        <h2 id="home-editor-title">{{ webT("home.intro.editorTitle") }}</h2>
         <p>{{ webT("home.intro.editorDescription") }}</p>
+      </header>
+      <div class="feature-cards">
+        <article class="intro-card">
+          <AppIcon class="card-icon" name="palette" :size="28" />
+          <h3>{{ webT("home.intro.layoutTitle") }}</h3>
+          <p>{{ webT("home.intro.layoutDescription") }}</p>
+        </article>
+        <article class="intro-card">
+          <AppIcon class="card-icon" name="settings" :size="28" />
+          <h3>{{ webT("home.intro.mechanicsTitle") }}</h3>
+          <p>{{ webT("home.intro.mechanicsDescription") }}</p>
+        </article>
+        <article class="intro-card">
+          <AppIcon class="card-icon" name="play" :size="28" />
+          <h3>{{ webT("home.intro.playtestTitle") }}</h3>
+          <p>{{ webT("home.intro.playtestDescription") }}</p>
+        </article>
       </div>
-    </article>
+    </section>
 
-    <article class="feature-story">
-      <div class="feature-visual">
-        <EmbedFeaturePreview />
-      </div>
-      <div class="feature-copy">
-        <span>SHARE &amp; EMBED</span>
-        <h3>{{ webT("home.intro.shareTitle") }}</h3>
+    <section class="intro-group" aria-labelledby="home-share-title">
+      <header class="feature-copy">
+        <h2 id="home-share-title">{{ webT("home.intro.shareTitle") }}</h2>
         <p>{{ webT("home.intro.shareDescription") }}</p>
+      </header>
+      <div class="feature-cards">
+        <article class="intro-card">
+          <AppIcon class="card-icon" name="share" :size="28" />
+          <h3>{{ webT("home.intro.linkTitle") }}</h3>
+          <p>{{ webT("home.intro.linkDescription") }}</p>
+        </article>
+        <article class="intro-card">
+          <AppIcon class="card-icon" name="copy" :size="28" />
+          <h3>{{ webT("home.intro.fileTitle") }}</h3>
+          <p>{{ webT("home.intro.fileDescription") }}</p>
+        </article>
+        <article class="intro-card">
+          <AppIcon class="card-icon" name="external" :size="28" />
+          <h3>{{ webT("home.intro.embedTitle") }}</h3>
+          <p>{{ webT("home.intro.embedDescription") }}</p>
+        </article>
       </div>
-    </article>
+    </section>
 
-    <p class="home-about-note">{{ webT("home.intro.legalNote") }}</p>
+    <section class="intro-group" aria-labelledby="home-tools-title">
+      <header class="feature-copy">
+        <h2 id="home-tools-title">{{ webT("home.intro.toolsTitle") }}</h2>
+        <p>{{ webT("home.intro.toolsDescription") }}</p>
+      </header>
+      <div class="feature-cards">
+        <article class="intro-card">
+          <AppIcon class="card-icon" name="play" :size="28" />
+          <h3>{{ webT("home.intro.replayTitle") }}</h3>
+          <p>{{ webT("home.intro.replayDescription") }}</p>
+        </article>
+        <article class="intro-card">
+          <AppIcon class="card-icon" name="undo" :size="28" />
+          <h3>{{ webT("home.intro.undoTitle") }}</h3>
+          <p>{{ webT("home.intro.undoDescription") }}</p>
+        </article>
+        <article class="intro-card">
+          <AppIcon class="card-icon" name="joystick" :size="28" />
+          <h3>{{ webT("home.intro.controlsTitle") }}</h3>
+          <p>{{ webT("home.intro.controlsDescription") }}</p>
+        </article>
+      </div>
+    </section>
+
+    <footer class="intro-footer">
+      <div class="engine-note">
+        <h2>{{ webT("home.intro.engineTitle") }}</h2>
+        <p>{{ webT("home.intro.engineDescription") }}</p>
+      </div>
+      <p class="home-about-note">{{ webT("home.intro.legalNote") }}</p>
+    </footer>
   </section>
 </template>
 
@@ -58,84 +133,125 @@ defineProps<{ images: ImageManager }>();
   width: min(900px, calc(100% - 48px));
   margin: 0 auto;
   display: grid;
-  gap: clamp(64px, 10vw, 120px);
+  gap: clamp(32px, 5vw, 48px);
   padding: clamp(90px, 12vw, 150px) 0 96px;
 }
 
 .home-about-heading {
-  width: min(720px, 100%);
+  width: min(760px, 100%);
   display: grid;
-  gap: 12px;
+  gap: 16px;
 }
 
-.home-about-heading h2 {
+.home-about-heading h1 {
   margin: 0;
-  max-width: 680px;
-  font-size: clamp(2rem, 4vw, 3.7rem);
-  letter-spacing: -0.04em;
-  line-height: 1.05;
+  font-size: clamp(1.65rem, 3vw, 2.2rem);
+  letter-spacing: -0.025em;
+  line-height: 1.3;
 }
 
 .home-about-heading p,
-.feature-copy p {
+.feature-copy p,
+.intro-card p,
+.engine-note p {
   margin: 0;
   color: var(--bc-text-muted);
-  line-height: 1.75;
+  line-height: 1.85;
 }
 
 .home-about-heading p {
   font-size: clamp(1rem, 1.7vw, 1.22rem);
 }
 
-.feature-story {
+.intro-group {
   display: grid;
-  grid-template-columns: minmax(0, 1.25fr) minmax(280px, 0.75fr);
-  gap: clamp(36px, 6vw, 78px);
-  align-items: center;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 28px;
 }
 
-.feature-story.reverse .feature-visual {
-  order: 2;
-}
-
-.feature-story.reverse .feature-copy {
-  order: 1;
-}
-
-.feature-visual {
-  min-width: 0;
-}
-
-.feature-story-train .feature-visual {
-  border-radius: var(--bc-panel-radius);
-  overflow: hidden;
-  border: 1px solid var(--bc-panel-border);
-  box-shadow: var(--bc-panel-shadow);
+.intro-group + .intro-group {
+  padding-top: clamp(32px, 5vw, 48px);
+  border-top: 1px solid var(--bc-panel-border);
 }
 
 .feature-copy {
   display: grid;
+  align-content: start;
   gap: 13px;
 }
 
-.feature-copy > span {
-  color: var(--bc-highlight);
-  font-size: 0.7rem;
-  font-weight: 800;
-  letter-spacing: 0.14em;
+.feature-copy h2 {
+  margin: 0;
+  font-size: clamp(1.35rem, 2.5vw, 1.75rem);
+  letter-spacing: -0.035em;
+  line-height: 1.35;
+  text-wrap: balance;
 }
 
-.feature-copy h3 {
+.game-cards,
+.feature-cards {
+  display: grid;
+  gap: 20px;
+}
+
+.game-cards {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.feature-cards {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.intro-card {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: start;
+  align-items: center;
+  gap: 12px;
+  padding: 24px;
+  border: 1px solid var(--bc-panel-border);
+  border-radius: var(--bc-panel-radius);
+  background: rgb(255 255 255 / 3%);
+}
+
+.intro-card h3 {
+  flex: 1;
+  min-width: 0;
   margin: 0;
-  font-size: clamp(1.7rem, 3vw, 2.7rem);
-  letter-spacing: -0.035em;
-  line-height: 1.1;
+  font-size: 1.15rem;
+  line-height: 1.4;
+}
+
+.intro-card p {
+  flex-basis: 100%;
+}
+
+.card-icon {
+  flex: none;
+  color: var(--bc-highlight);
+}
+
+.intro-footer {
+  display: grid;
+  gap: 32px;
+  padding-top: 32px;
+  border-top: 1px solid var(--bc-panel-border);
+}
+
+.engine-note {
+  display: grid;
+  gap: 12px;
+  max-width: 720px;
+}
+
+.engine-note h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  line-height: 1.4;
 }
 
 .home-about-note {
   margin: 0;
-  padding-top: 12px;
-  border-top: 1px solid var(--bc-panel-border);
   color: var(--bc-text-muted);
   font-size: 0.7rem;
   line-height: 1.6;
@@ -144,18 +260,18 @@ defineProps<{ images: ImageManager }>();
 @media (max-width: 820px) {
   .home-about {
     width: min(100% - 28px, 680px);
-    gap: 76px;
     padding-top: 90px;
   }
 
-  .feature-story {
+  .feature-cards {
     grid-template-columns: 1fr;
     gap: 28px;
   }
+}
 
-  .feature-story.reverse .feature-visual,
-  .feature-story.reverse .feature-copy {
-    order: initial;
+@media (max-width: 560px) {
+  .game-cards {
+    grid-template-columns: 1fr;
   }
 }
 </style>

@@ -9,6 +9,7 @@ import type { MapMusic } from "@bobby/model";
 import { computed } from "vue";
 import { EDITOR_MUSIC_OPTIONS } from "./editorMusicOptions.js";
 import type { EditorMetadataField } from "./useEditorPage.js";
+import { webT } from "../../i18n/webI18n.js";
 
 const props = defineProps<{
   level: Readonly<EditorMap>;
@@ -28,13 +29,13 @@ const emit = defineEmits<{
   rule: [kind: EditorRuleKind, enabled: boolean];
   ruleMode: [mode: EditorRuleMode];
 }>();
-const labels: Record<EditorRuleKind, string> = {
-  carrots: "收集胡萝卜",
-  eggs: "放置彩蛋",
-  pushbox: "推箱子",
-  exit: "到达终点",
-  "golden-carrot": "取得金胡萝卜",
-};
+const labelKeys = {
+  carrots: "editor.ruleCarrots",
+  eggs: "editor.ruleEggs",
+  pushbox: "editor.rulePushbox",
+  exit: "editor.ruleExit",
+  "golden-carrot": "editor.ruleGoldenCarrot",
+} as const satisfies Record<EditorRuleKind, Parameters<typeof webT>[0]>;
 const selectedMusic = computed(() => props.level.music ?? "random");
 const knownMusic = computed(() =>
   EDITOR_MUSIC_OPTIONS.some((option) => option.value === selectedMusic.value),
@@ -70,9 +71,9 @@ function textValue(event: Event): string {
   <aside class="editor-inspector editor-level-info">
     <div class="editor-panel-title">Level</div>
     <section class="editor-inspector-section">
-      <strong>地图信息</strong>
+      <strong>{{ webT('editor.mapInfo') }}</strong>
       <label class="editor-field">
-        <span>名称</span>
+        <span>{{ webT('editor.mapName') }}</span>
         <input
           :value="nameValue"
           data-editor-metadata="name"
@@ -80,7 +81,7 @@ function textValue(event: Event): string {
         >
       </label>
       <label class="editor-field">
-        <span>作者</span>
+        <span>{{ webT('editor.mapAuthor') }}</span>
         <input
           :value="authorValue"
           data-editor-metadata="author"
@@ -88,7 +89,7 @@ function textValue(event: Event): string {
         >
       </label>
       <label class="editor-field">
-        <span>注记</span>
+        <span>{{ webT('editor.mapNote') }}</span>
         <textarea
           :value="noteValue"
           data-editor-metadata="note"
@@ -98,7 +99,7 @@ function textValue(event: Event): string {
         />
       </label>
       <label class="editor-field">
-        <span>背景音乐</span>
+        <span>{{ webT('editor.backgroundMusic') }}</span>
         <span class="editor-music-control">
           <select
             data-editor-music
@@ -123,18 +124,18 @@ function textValue(event: Event): string {
             :disabled="selectedMusic === 'none'"
             :aria-pressed="musicPreviewing"
             @click="emit('musicPreviewToggle')"
-          >{{ musicPreviewing ? "Stop" : "Preview" }}</button>
+          >{{ webT(musicPreviewing ? 'editor.musicStop' : 'editor.musicPreview') }}</button>
         </span>
       </label>
     </section>
     <section class="editor-inspector-section editor-level-rules">
       <div class="editor-rule-title">
-        <strong>关卡规则</strong>
+        <strong>{{ webT('editor.rules') }}</strong>
         <span
           class="editor-rule-mode"
           :class="`mode-${ruleMode}`"
           role="group"
-          aria-label="关卡规则组合方式"
+          :aria-label="webT('editor.ruleMode')"
         >
           <span class="editor-rule-mode-thumb" />
           <button
@@ -142,13 +143,13 @@ function textValue(event: Event): string {
             data-rule-mode="any"
             :aria-pressed="ruleMode === 'any'"
             @click="emit('ruleMode', 'any')"
-          >任一</button>
+          >{{ webT('editor.ruleAny') }}</button>
           <button
             type="button"
             data-rule-mode="all"
             :aria-pressed="ruleMode === 'all'"
             @click="emit('ruleMode', 'all')"
-          >全部</button>
+          >{{ webT('editor.ruleAll') }}</button>
         </span>
       </div>
       <div
@@ -156,7 +157,7 @@ function textValue(event: Event): string {
         :key="rule.kind"
         class="editor-rule-row"
       >
-        <span>{{ labels[rule.kind] }}</span>
+        <span>{{ webT(labelKeys[rule.kind]) }}</span>
         <button
           type="button"
           class="editor-rule-toggle"
@@ -164,28 +165,28 @@ function textValue(event: Event): string {
           :aria-pressed="rule.enabled"
           @click="emit('rule', rule.kind, !rule.enabled)"
         >
-          {{ rule.enabled ? "启用" : "停用" }}
+          {{ webT(rule.enabled ? 'editor.enabled' : 'editor.disabled') }}
         </button>
       </div>
       <label class="editor-rule-row editor-rule-limit">
-        <span>最大步数</span>
+        <span>{{ webT('editor.maxMoves') }}</span>
         <input
           type="number"
           min="1"
           step="1"
           :value="limit('max-moves') ?? ''"
-          placeholder="不限"
+          :placeholder="webT('editor.unlimited')"
           @change="emit('maxMoves', numberValue($event))"
         >
       </label>
       <label class="editor-rule-row editor-rule-limit">
-        <span>最大时间（秒）</span>
+        <span>{{ webT('editor.maxTime') }}</span>
         <input
           type="number"
           min="1"
           step="1"
           :value="limit('max-time-seconds') ?? ''"
-          placeholder="不限"
+          :placeholder="webT('editor.unlimited')"
           @change="emit('maxTime', numberValue($event))"
         >
       </label>

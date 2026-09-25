@@ -197,7 +197,7 @@ export class ScreenJoystick {
     this.activationArea = document.createElement("div");
     this.activationArea.className = "engine-screen-joystick-activation";
     this.activationArea.setAttribute("role", "application");
-    this.activationArea.setAttribute("aria-label", "屏幕摇杆识别区域");
+    this.activationArea.setAttribute("aria-label", "Screen joystick activation area");
     Object.assign(this.activationArea.style, {
       position: "absolute",
       right: `calc(env(safe-area-inset-right) + ${this.layout.activationInsetRight}px)`,

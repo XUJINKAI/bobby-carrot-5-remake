@@ -50,6 +50,7 @@ function action(id: string): void {
 
 <style>
 .app-topbar {
+  min-width: 0;
   min-height: 58px;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
@@ -158,6 +159,10 @@ function action(id: string): void {
 
   .shell-topbar-right {
     margin-left: auto;
+  }
+
+  .shell-topbar-left {
+    flex-shrink: 1;
   }
 
   .shell-topbar-right > .collapse-overflow,

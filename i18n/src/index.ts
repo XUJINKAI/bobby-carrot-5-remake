@@ -2,7 +2,8 @@ export type Locale = "zh-CN" | "en";
 
 export type TranslationPrimitive = string | number;
 export type TranslationParams = Readonly<Record<string, TranslationPrimitive>>;
-export type TranslationCatalog = Readonly<Record<string, string>>;
+export type TranslationValue = string | readonly string[];
+export type TranslationCatalog = Readonly<Record<string, TranslationValue>>;
 
 export interface TranslatorOptions {
   locale: Locale;
@@ -17,6 +18,7 @@ export interface Translator {
   registerCatalog(locale: Locale, catalog: TranslationCatalog): void;
   has(key: string): boolean;
   t(key: string, params?: TranslationParams): string;
+  tArray(key: string, params?: TranslationParams): readonly string[];
 }
 
 export function normalizeLocale(value: string | null | undefined): Locale | null {
@@ -30,7 +32,7 @@ export function normalizeLocale(value: string | null | undefined): Locale | null
 
 export function createTranslator(options: TranslatorOptions): Translator {
   let locale = options.locale;
-  const catalogs: Partial<Record<Locale, Record<string, string>>> = {};
+  const catalogs: Partial<Record<Locale, Record<string, TranslationValue>>> = {};
 
   for (const candidate of ["zh-CN", "en"] as const) {
     const catalog = options.catalogs?.[candidate];
@@ -62,7 +64,17 @@ export function createTranslator(options: TranslatorOptions): Translator {
         catalogs[locale]?.[key] ??
         catalogs[options.fallbackLocale]?.[key] ??
         key;
+      if (typeof template !== "string")
+        throw new TypeError(`翻译键 ${key} 对应字符串数组`);
       return interpolate(template, params);
+    },
+    tArray(key: string, params?: TranslationParams): readonly string[] {
+      const template =
+        catalogs[locale]?.[key] ??
+        catalogs[options.fallbackLocale]?.[key];
+      if (!Array.isArray(template))
+        throw new TypeError(`翻译键 ${key} 未对应字符串数组`);
+      return template.map((line) => interpolate(line, params));
     },
   };
 }
@@ -89,5 +101,6 @@ export {
   EMBED_RUNTIME_CATALOGS,
   loadTranslationCatalog,
   type TranslationKey,
+  type TranslationArrayKey,
   type TranslationScope,
 } from "./catalogs.js";

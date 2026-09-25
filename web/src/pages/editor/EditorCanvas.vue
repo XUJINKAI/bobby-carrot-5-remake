@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { webT } from "../../i18n/webI18n.js";
 import {
   EDITOR_TILE_SIZE,
   EditorCanvasInput,
@@ -216,7 +217,7 @@ onBeforeUnmount(() => {
 
 <template>
   <div ref="stage" class="editor-canvas-stage">
-    <canvas ref="canvas" class="editor-canvas" aria-label="地图编辑画布" />
+    <canvas ref="canvas" class="editor-canvas" :aria-label="webT('editor.canvasLabel')" />
     <canvas ref="interactionCanvas" class="editor-canvas-interaction" aria-hidden="true" />
     <div
       v-if="resizePreview"
@@ -226,13 +227,13 @@ onBeforeUnmount(() => {
     >
       <span class="editor-resize-label">
         {{ resizePreview.map.width }} × {{ resizePreview.map.height }}
-        <template v-if="resizePreview.removedCount > 0"> · 将删除 {{ resizePreview.removedCount }} 个对象</template>
+        <template v-if="resizePreview.removedCount > 0"> · {{ webT("editor.resizeRemoved", { count: resizePreview.removedCount }) }}</template>
       </span>
     </div>
-    <button class="editor-resize-handle nw" type="button" title="调整左上边界" @pointerdown="startResize('nw', $event)" @pointermove="moveResize" @pointerup="endResize" @pointercancel="endResize" />
-    <button class="editor-resize-handle ne" type="button" title="调整右上边界" @pointerdown="startResize('ne', $event)" @pointermove="moveResize" @pointerup="endResize" @pointercancel="endResize" />
-    <button class="editor-resize-handle sw" type="button" title="调整左下边界" @pointerdown="startResize('sw', $event)" @pointermove="moveResize" @pointerup="endResize" @pointercancel="endResize" />
-    <button class="editor-resize-handle se" type="button" title="调整右下边界" @pointerdown="startResize('se', $event)" @pointermove="moveResize" @pointerup="endResize" @pointercancel="endResize" />
+    <button class="editor-resize-handle nw" type="button" :title="webT('editor.resizeNW')" @pointerdown="startResize('nw', $event)" @pointermove="moveResize" @pointerup="endResize" @pointercancel="endResize" />
+    <button class="editor-resize-handle ne" type="button" :title="webT('editor.resizeNE')" @pointerdown="startResize('ne', $event)" @pointermove="moveResize" @pointerup="endResize" @pointercancel="endResize" />
+    <button class="editor-resize-handle sw" type="button" :title="webT('editor.resizeSW')" @pointerdown="startResize('sw', $event)" @pointermove="moveResize" @pointerup="endResize" @pointercancel="endResize" />
+    <button class="editor-resize-handle se" type="button" :title="webT('editor.resizeSE')" @pointerdown="startResize('se', $event)" @pointermove="moveResize" @pointerup="endResize" @pointercancel="endResize" />
   </div>
 </template>
 

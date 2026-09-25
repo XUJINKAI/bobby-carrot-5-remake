@@ -10,6 +10,7 @@ import {
   mapStatusSmokeScript,
 } from "./cases/map-status.mjs";
 import { runEmbedHudSmoke } from "./cases/embed-hud.mjs";
+import { runHomePrerenderSmoke } from "./cases/home-prerender.mjs";
 import {
   runStandaloneEmbedSmoke,
   startStandaloneEmbedHost,
@@ -69,6 +70,12 @@ try {
   if (!address || typeof address === "string")
     throw new Error("Failed to determine smoke-test server port");
   const origin = `http://127.0.0.1:${address.port}`;
+  const homeContext = await createBrowserContext(browserRuntime.cdp);
+  try {
+    await runHomePrerenderSmoke(homeContext.cdp, origin);
+  } finally {
+    await homeContext.dispose();
+  }
   await smoke(
     `${origin}/`,
     [
@@ -110,6 +117,7 @@ try {
   await smoke(
     `${origin}/explore`,
     [
+      'id="language"',
       'class="explore-tabs"',
       'class="level-browser-head"',
       'class="level-filter-shell"',
@@ -143,7 +151,7 @@ try {
       "LOMA",
       'href="/explore/play/loma/01-01"',
     ],
-    ['class="chapter-id"', 'class="chapter-separator"'],
+    ['id="language"', 'class="chapter-id"', 'class="chapter-separator"'],
   );
   await smoke(
     `${origin}/explore/engine-lab`,
@@ -238,6 +246,7 @@ try {
   await smoke(`${origin}/adventure`, [
     "adventure-viewport-auto",
     'class="adventure-menu"',
+    'id="language"',
     'class="shell-product-name"',
     'class="shell-context-name"',
     'class="adventure-resume-level"',
@@ -249,12 +258,12 @@ try {
     'href="/adventure/chapter/1"',
     'href="/adventure/chapter/5"',
     'href="/adventure/chapter/37"',
-  ]);
+  ], ['id="language"']);
   await smoke(`${origin}/adventure/chapter/1`, [
     'class="adventure-level-list"',
     "1-BONUS-1",
     'class="adventure-level-row locked"',
-  ]);
+  ], ['id="language"']);
   await smoke(
     `${origin}/adventure/play/1-1`,
     [
@@ -265,7 +274,7 @@ try {
       'data-icon="map-status"',
       'class="shell-indicator-button tone-success"',
     ],
-    ['id="undo"', 'id="replay-record"', "data-replay-panel"],
+    ['id="language"', 'id="undo"', 'id="replay-record"', "data-replay-panel"],
   );
   await smoke(`${origin}/edit`, [
     "bobby-editor",

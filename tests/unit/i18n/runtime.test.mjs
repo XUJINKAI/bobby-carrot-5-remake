@@ -37,6 +37,27 @@ test("translator resolves registered catalogs, fallback and interpolation", () =
   assert.equal(translator.locale, "zh-CN");
 });
 
+test("translator reads ordered dialogue arrays without changing string lookup", () => {
+  const translator = createTranslator({
+    locale: "en",
+    fallbackLocale: "zh-CN",
+    catalogs: {
+      en: { sequence: ["Hello {name}", "Good luck"] },
+      "zh-CN": { sequence: ["你好，{name}", "祝你好运"] },
+    },
+  });
+  assert.deepEqual(translator.tArray("sequence", { name: "Bobby" }), [
+    "Hello Bobby",
+    "Good luck",
+  ]);
+  assert.throws(() => translator.t("sequence"), /字符串数组/);
+  translator.setLocale("zh-CN");
+  assert.deepEqual(translator.tArray("sequence", { name: "Bobby" }), [
+    "你好，Bobby",
+    "祝你好运",
+  ]);
+});
+
 test("scoped catalogs load independently by locale", async () => {
   const [zh, en] = await Promise.all([
     loadTranslationCatalog("shell", "zh-CN"),
@@ -44,6 +65,22 @@ test("scoped catalogs load independently by locale", async () => {
   ]);
   assert.equal(zh["shell.settings"], "设置");
   assert.equal(en["shell.settings"], "Settings");
+});
+
+test("multi-page dialogue catalogs keep key, shape and page parity", async () => {
+  for (const scope of ["home", "adventure"]) {
+    const [zh, en] = await Promise.all([
+      loadTranslationCatalog(scope, "zh-CN"),
+      loadTranslationCatalog(scope, "en"),
+    ]);
+    const keys = Object.keys(zh).filter((key) => key.includes(".dialogue."));
+    assert.deepEqual(keys, Object.keys(en).filter((key) => key.includes(".dialogue.")));
+    for (const key of keys) {
+      assert.equal(Array.isArray(en[key]), Array.isArray(zh[key]), key);
+      if (Array.isArray(zh[key]))
+        assert.equal(en[key].length, zh[key].length, key);
+    }
+  }
 });
 
 test("collection catalogs use manifest IDs and keep optional tag parity", async () => {

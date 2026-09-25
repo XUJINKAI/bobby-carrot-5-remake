@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { webT } from "../../i18n/webI18n.js";
 import {
   editorCatalogEntry,
   type EditorDefinition,
@@ -49,7 +50,7 @@ const warningSummaries = computed(() => [
 <template>
   <div class="editor-placement-inspector">
     <section class="editor-inspector-section editor-tool-summary editor-inspector-summary">
-      <span class="editor-tool-kicker">画笔 · 当前素材</span>
+      <span class="editor-tool-kicker">{{ webT("editor.brush") }} · {{ webT("editor.currentMaterial") }}</span>
       <div class="editor-placement-current">
         <EditorEntityPreview
           :source="placement.previewPreset"
@@ -75,7 +76,7 @@ const warningSummaries = computed(() => [
         :environment="environment"
         :catalog="catalog"
         :editor="editor"
-        empty-text="该素材没有可编辑字段或 variant。"
+        :empty-text="webT('editor.emptyMaterialFields')"
         @field="(key, value) => emit('field', key, value)"
         @variant="emit('variant', $event)"
       />
@@ -84,26 +85,26 @@ const warningSummaries = computed(() => [
       <template v-if="hoverPreview.cell">
         <header class="editor-placement-hover-head">
           <span>
-            <strong>放置结果</strong>
-            <small>格子 {{ hoverPreview.cell.x }}, {{ hoverPreview.cell.y }}</small>
+            <strong>{{ webT("editor.placementResult") }}</strong>
+            <small>{{ webT("editor.cellAt", { x: hoverPreview.cell.x, y: hoverPreview.cell.y }) }}</small>
           </span>
           <span v-if="hoverPreview.replacedCount > 0" class="editor-replace-count">
-            替换 {{ hoverPreview.replacedCount }} 个 Entity
+            {{ webT("editor.replacedCount", { count: hoverPreview.replacedCount }) }}
           </span>
           <span v-else-if="!hoverPreview.valid" class="editor-invalid-placement">
-            无法放置
+            {{ webT("editor.cannotPlace") }}
           </span>
         </header>
         <div v-if="warningSummaries.length" class="editor-stack-warning">
-          <strong>非推荐堆叠</strong>
+          <strong>{{ webT("editor.stackWarning") }}</strong>
           <span>{{ warningSummaries.join("；") }}</span>
         </div>
         <div class="editor-placement-stack-result">
           <EditorInspectorStack
-            title="放置后"
+            :title="webT('editor.afterPlacement')"
             :model="hoverPreview.after"
             :highlight-index="hoverPreview.placedIndex"
-            highlight-label="新增"
+            :highlight-label="webT('editor.added')"
             :images="images"
             :environment="environment"
             :catalog="catalog"
@@ -112,7 +113,7 @@ const warningSummaries = computed(() => [
         </div>
       </template>
       <p v-else class="editor-muted editor-placement-hover-empty">
-        将指针移到画布格子上，查看放置后的完整堆叠。
+        {{ webT("editor.placementHoverHint") }}
       </p>
     </section>
   </div>

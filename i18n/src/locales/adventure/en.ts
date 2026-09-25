@@ -1,4 +1,7 @@
-import type { AdventureTranslationKey } from "./zh-CN.js";
+import type {
+  AdventureTranslationKey,
+  AdventureArrayTranslationKey,
+} from "./zh-CN.js";
 const catalog = {
   "adventure.homeAria": "Adventure",
   "adventure.homeTitle": "Adventure",
@@ -16,5 +19,37 @@ const catalog = {
   "adventure.bonusKey.trialGranted": "Your first trial key is free. The countdown starts only after you open the lock.",
   "adventure.bonusKey.purchased": "Deal! This key opens one lock.",
   "adventure.bonusKey.insufficient": "Not enough Bonus Coins; a level key costs {price}.",
-} satisfies Record<AdventureTranslationKey, string>;
+  "adventure.dialogue.superKeyAlreadyOwned": "You already own this Super Key.",
+  "adventure.dialogue.superKeyPurchased": "Deal! The Super Key is yours.",
+  "adventure.dialogue.superKeyInsufficientFunds": "Not enough coins. Come back when you have one.",
+  "adventure.dialogue.bonusWithoutKey": "If you want to open the lock, maybe you should visit the shop.",
+  "adventure.dialogue.bonusWithKey": "You already have a key. Touch the lock to open it.",
+  "adventure.dialogue.beaverShop": [
+    "The shop is still being renovated, but feel free to look around...",
+    "By the way, do you know how I got here?",
+    "One day, someone named XUJINKAI showed up and said he was moving my shop. Before I could object, he packed the whole place up...",
+    "I couldn't stop him, and somehow I ended up here.",
+    "He seemed nice enough. He said my items weren't very useful anymore and offered to turn the shop into an exhibition hall.",
+    "You don't think he was just making empty promises, do you?",
+    "Oh well, take a look around...",
+  ],
+  "adventure.dialogue.displayDreamMachineTicket": "A Dream Machine ticket is on display. Apparently, you don't need to buy one anymore.",
+  "adventure.dialogue.displayCloud9Ticket": "A Cloud 9 ticket is on display. Apparently, you don't need to buy one anymore.",
+  "adventure.dialogue.displayStereoSystem": "A stereo system is on display. Apparently, everyone uses wireless headphones now.",
+  "adventure.dialogue.displayExtraMusic": "Extra music is on display. Apparently, everyone streams music now.",
+  "adventure.dialogue.displaySpeedShoes": "Speed Shoes are on display. They don't seem useful anymore.",
+  "adventure.dialogue.displayCoinRadar": "A Coin Radar is on display. It doesn't seem useful anymore.",
+  "adventure.dialogue.shopMachine": [
+    "Beep beep~ I found these portals somewhere else, beep beep~",
+    "Beep beep~ I'm a hardworking research machine, beep beep~",
+  ],
+  "adventure.dialogue.dreamMachineBeaver": "I'm still adjusting the equipment.",
+  "adventure.dialogue.dreamMachineMachine": "Beep beep~ Have you seen my brother, beep beep~?",
+  "adventure.dialogue.cloud9Sandman": "I heard XUJINKAI put a lot of work into moving Mr. Beaver's shop...",
+  "adventure.dialogue.dreamlandSandman": "Cough... I... how did I get here...?",
+  "adventure.dialogue.purchaseQuestion": "I'm not sure the key still works after the move. You can have it for one coin if you want.",
+  "adventure.dialogue.purchaseConfirm": "Buy",
+  "adventure.dialogue.purchaseCancel": "Never mind",
+} satisfies Record<Exclude<AdventureTranslationKey, AdventureArrayTranslationKey>, string> &
+  Record<AdventureArrayTranslationKey, readonly string[]>;
 export default catalog;

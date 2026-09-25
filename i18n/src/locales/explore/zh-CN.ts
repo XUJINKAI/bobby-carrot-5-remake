@@ -10,6 +10,9 @@ const catalog = {
   "explore.filterStatus": "匹配 {count} 张地图；已选条件需同时满足。",
   "explore.filterHint": "所有已选条件需同时满足。",
   "explore.filterEmpty": "没有符合这些条件的地图。",
+  "explore.chapterDifficulty": "章节难度 {count} 星",
+  "explore.replayAvailable": "有可用 Replay",
+  "explore.completedTitle": "自由浏览中已通关",
 } as const;
 export type ExploreTranslationKey = keyof typeof catalog;
 export default catalog;

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { test } from "vitest";
+import seoZhCN from "../../../i18n/src/locales/seo/zh-CN.ts";
 
 test("Home 首屏按路由加载页面代码和非关键数据", async () => {
   const [app, entry, loaders] = await Promise.all([
@@ -61,7 +62,7 @@ test("Home Save 导入按需加载 import scope", async () => {
   assert.match(source, /openWebI18nScope\(\["import"\]\)/);
 });
 
-test("运行时与构建期 SEO 共用 descriptor，静态 metadata 提供单份双语 fallback", async () => {
+test("运行时与构建期 SEO 共用 descriptor，首页模板突出在线游玩", async () => {
   const [runtimeSeo, descriptors, buildSeo, html] = await Promise.all([
     readFile(new URL("../../../web/src/seo/runtimeSeo.ts", import.meta.url), "utf8"),
     readFile(new URL("../../../web/src/seo/seoDescriptors.js", import.meta.url), "utf8"),
@@ -74,8 +75,9 @@ test("运行时与构建期 SEO 共用 descriptor，静态 metadata 提供单份
   assert.match(buildSeo, /from "\.\.\/\.\.\/web\/src\/seo\/seoDescriptors\.js"/);
   assert.match(buildSeo, /bilingualSeoDescriptor\(descriptor\)/);
   assert.match(descriptors, /SEO_CATALOGS/);
-  assert.match(html, /兔子波比5重制版 \| Bobby Carrot 5 Remake/);
-  assert.match(html, /A modern web remake of Bobby Carrot 5/);
+  assert.match(html, /兔子波比5重制版 - 在线玩/);
+  const description = seoZhCN["seo.home.description"];
+  assert.equal(html.split(`content="${description}"`).length - 1, 2);
 });
 
 

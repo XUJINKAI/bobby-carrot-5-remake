@@ -93,6 +93,28 @@ Overflow 和窄屏 Action 迁移；页面与 App Root 继续解释 action ID。�
 - 页面配置代码不读取 viewport；响应式呈现继续由 Shell 统一负责。
 - Shell renderer 不识别页面、模式、Gameplay、Editor 或具体 action ID。
 
+## Presentation
+
+### Adaptive Camera Framing
+
+目前 Gameplay 的初始 zoom 只按 Adventure / Explore 区分，未考虑地图大小和实际 viewport，
+在不同地图、设备和屏幕方向下可能出现不合理的初始构图。
+
+目标：
+
+- 根据实际 viewport 宽高与地图 `width / height` 计算初始 zoom，不按 mobile / desktop 分类。
+- 小地图可适当展示更多全貌；大地图展示合理局部，不强制适配整张地图。
+- 为地图边缘保留少量 padding，避免内容刚好贴满屏幕。
+- Adventure / Explore 继续使用各自的 `minZoom / maxZoom / panBounds` 策略。
+
+允许地图提供 `close / normal / wide` 三档构图偏好，未配置时使用 `normal`。
+该字段表达 Camera framing 偏好，不保存具体 zoom；优先放在 `MapDocument`，
+保持纯 `LevelMap` 的 gameplay 语义边界。计算时结合 viewport 大小、地图尺寸、构图偏好
+以及期望可见的最小/最大行列范围。具体范围和三档倍率留待实现时确定。
+
+第一版只在进入地图时计算初始 zoom。用户手动缩放后不自动覆盖，也不随 resize 或横竖屏
+切换持续重算。Camera framing 属于 Presentation 配置。
+
 ## Testing
 
 ### 测试覆盖清单与价值审计

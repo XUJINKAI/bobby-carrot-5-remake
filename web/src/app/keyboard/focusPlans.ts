@@ -95,7 +95,7 @@ export const MODAL_FOCUS_PLAN: FocusPlan = {
 };
 
 export function pageFocusPlan(path: string): FocusPlan {
-  if (path === "/") return PAGE_FOCUS_PLANS.home;
+  if (path === "/" || path === "/en") return PAGE_FOCUS_PLANS.home;
   if (path.includes("/play/") || path === "/edit/test" || path === "/import/v1")
     return path === "/import/v1" ? PAGE_FOCUS_PLANS.import : PAGE_FOCUS_PLANS.play;
   if (path.startsWith("/explore")) return PAGE_FOCUS_PLANS.explore;

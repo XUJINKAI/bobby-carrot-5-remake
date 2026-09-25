@@ -9,7 +9,11 @@ import {
 } from "../../storage/exploreProgressStorage.js";
 import { configureShell } from "../../shell/shellBridge.js";
 import ExplorePage from "./ExplorePage.vue";
-import { exploreCollectionPath, explorePlayPath } from "../../app/routes.js";
+import {
+  exploreCollectionPath,
+  explorePlayPath,
+  localRoutePath,
+} from "../../app/routes.js";
 import {
   hasActiveLevelFilters,
   mountLevelFilters,
@@ -48,7 +52,7 @@ export async function renderLevels(
       visible: true,
       fixed: true,
       identity: pageIdentity(webT("nav.explore"), "/explore"),
-      actions: globalActions(),
+      actions: globalActions({ languageSwitch: localRoutePath() === "/explore" }),
     },
     bottomBar: { visible: false },
   });

@@ -5,6 +5,15 @@ export interface ExploreMapRef {
 
 const REPLAY_SITE_ORIGIN = "https://bc5r.xujinkai.net";
 
+export function localRoutePath(): string {
+  const basePath = new URL(document.baseURI).pathname.replace(/\/+$/, "");
+  const localPath =
+    basePath && basePath !== "/" && location.pathname.startsWith(basePath)
+      ? location.pathname.slice(basePath.length)
+      : location.pathname;
+  return localPath.replace(/\/+$/, "") || "/";
+}
+
 export function mapAssetUrl(collection: string, id: string): string {
   return `/assets/maps/${encodeURIComponent(collection)}/${encodeURIComponent(id)}.json`;
 }

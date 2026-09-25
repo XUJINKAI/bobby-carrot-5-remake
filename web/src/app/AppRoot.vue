@@ -12,7 +12,7 @@ import { narrowBottomTrailingActions } from "../shell/responsiveActions.js";
 import { createBackdropDismissHandlers } from "../shared/dialog/backdropDismiss.js";
 import type { Navigate } from "./pageContracts.js";
 import type { ShellViewState } from "../shell/shellBridge.js";
-import { openWebI18nScope, type WebI18nScope, webT } from "../i18n/webI18n.js";
+import { getWebLocale, openWebI18nScope, type WebI18nScope, webT } from "../i18n/webI18n.js";
 import { useKeyboardDialog, useWebKeyboard } from "./keyboard/vueKeyboard.js";
 
 const props = defineProps<{
@@ -99,6 +99,8 @@ function openSettingsPage(): void {
 
 function dispatchAction(action: string): void {
   if (action === "music") settings.toggleMusic();
+  else if (action === "language")
+    void settings.setLocale(getWebLocale() === "zh-CN" ? "en" : "zh-CN");
   else if (action === "settings") openSettings();
   else if (action === "help") void openHelp();
   else if (action === "screen-control") {

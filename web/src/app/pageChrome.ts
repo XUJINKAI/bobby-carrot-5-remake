@@ -50,8 +50,11 @@ export function pageIdentity(
   };
 }
 
-export function globalActions(): ShellAction[] {
+export function globalActions(options: { languageSwitch?: boolean } = {}): ShellAction[] {
   return [
+    ...(options.languageSwitch
+      ? [translatedGlobalAction("language", "language", "shell.switchLanguage")]
+      : []),
     translatedGlobalAction("music", "sound-on", "shell.music"),
     translatedGlobalAction("settings", "settings", "shell.settings"),
     translatedGlobalAction("help", "help", "shell.help"),
@@ -81,30 +84,31 @@ export function localizeGlobalActions(actions: readonly ShellAction[]): void {
   for (const action of actions) {
     const key = globalActionTranslationKey(action.id);
     if (!key) continue;
-    const label = webT(key);
-    action.label = label;
-    action.title = label;
+    const title = webT(key);
+    action.label = action.id === "language" ? webT("shell.languageTarget") : title;
+    action.title = title;
   }
 }
 
 function translatedGlobalAction(
-  id: "music" | "settings" | "help",
+  id: "music" | "language" | "settings" | "help",
   icon: NonNullable<ShellAction["icon"]>,
   key: WebTranslationKey,
 ): ShellAction {
-  const label = webT(key);
+  const title = webT(key);
   return {
     id,
     icon,
-    label,
-    title: label,
+    label: id === "language" ? webT("shell.languageTarget") : title,
+    title,
     ...(id === "music" || id === "help" ? { shortcut: WEB_SHORTCUTS[id].label } : {}),
-    collapse: id === "music" ? "keep" : "overflow",
+    collapse: id === "music" || id === "language" ? "keep" : "overflow",
   };
 }
 
 function globalActionTranslationKey(id: string): WebTranslationKey | null {
   if (id === "music") return "shell.music";
+  if (id === "language") return "shell.switchLanguage";
   if (id === "settings") return "shell.settings";
   if (id === "help") return "shell.help";
   return null;

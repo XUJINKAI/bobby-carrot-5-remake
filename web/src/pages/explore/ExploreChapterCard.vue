@@ -6,6 +6,7 @@ import type {
 } from "../../services/catalog/catalog.js";
 import ExploreMapGrid from "./ExploreMapGrid.vue";
 import AppIcon from "../../shared/icons/AppIcon.vue";
+import { webT } from "../../i18n/webI18n.js";
 
 defineProps<{
   collectionId: string;
@@ -28,7 +29,7 @@ const emit = defineEmits<{ navigate: [path: string] }>();
         <span
           v-if="chapter.difficulty"
           class="chapter-stars"
-          :title="`章节难度 ${chapter.difficulty} 星`"
+          :title="webT('explore.chapterDifficulty', { count: chapter.difficulty })"
         >
           <AppIcon
             v-for="star in chapter.difficulty"
@@ -37,7 +38,7 @@ const emit = defineEmits<{ navigate: [path: string] }>();
             weight="fill"
           />
         </span>
-        <span class="muted chapter-count">{{ maps.length }} 关</span>
+        <span class="muted chapter-count">{{ webT('explore.levelCount', { count: maps.length }) }}</span>
       </div>
     </header>
     <ExploreMapGrid

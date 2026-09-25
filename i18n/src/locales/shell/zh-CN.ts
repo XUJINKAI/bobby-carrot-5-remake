@@ -1,6 +1,8 @@
 const catalog = {
   "brand.name": "兔子波比5重制版",
   "shell.music": "音乐",
+  "shell.languageTarget": "English",
+  "shell.switchLanguage": "Switch to English",
   "shell.musicInteractionTip": "点击页面即可播放音乐",
   "shell.settings": "设置",
   "shell.help": "帮助",

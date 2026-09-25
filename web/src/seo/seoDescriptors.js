@@ -1,7 +1,9 @@
 import { COLLECTION_CATALOGS, SEO_CATALOGS } from "@bobby/i18n";
+import { homeLocale } from "../app/homeRoutes.js";
 
 const STATIC_ROUTES = {
   "/": ["seo.home.title", "seo.home.description", true],
+  "/en": ["seo.home.title", "seo.home.description", true],
   "/adventure": ["seo.adventure.title", "seo.adventure.description", true],
   "/adventure/chapters": [
     "seo.adventureChapters.title",
@@ -175,15 +177,18 @@ export function notFoundSeoDescriptor(path) {
 }
 
 export function localizedSeoDescriptor(value, locale) {
+  const resolvedLocale = homeLocale(value.canonicalPath) ?? locale;
   return {
-    title: value.title[locale],
-    description: value.description[locale],
+    title: value.title[resolvedLocale],
+    description: value.description[resolvedLocale],
     canonicalPath: value.canonicalPath,
     index: value.index,
   };
 }
 
 export function bilingualSeoDescriptor(value) {
+  const locale = homeLocale(value.canonicalPath);
+  if (locale) return localizedSeoDescriptor(value, locale);
   return {
     title: combineFallback(value.title["zh-CN"], value.title.en),
     description: combineFallback(

@@ -9,14 +9,19 @@ const siteOrigin = (
 
 export function verifySeoArtifacts() {
   assertShell("index.html", {
-    title: "Bobby Carrot 5 Remake",
+    title: "兔子波比5重制版 - 在线玩",
+    description: "在线游玩《兔子波比5》重制版，无需下载安装。包含原版 40 章 400 个关卡，并支持自由选关、地图编辑器、自定义地图、录像回放和网页内嵌。",
     robots: "index,follow",
     canonical: `${siteOrigin}/`,
-    contains: [
-      "Bobby Carrot 5 Remake",
-      "Play Bobby Carrot 5 Remake in your browser",
-    ],
   });
+  assertShell("en/index.html", {
+    title: "Bobby Carrot 5 Remake - Play Online",
+    description: "Play Bobby Carrot 5 Remake online, with no download or installation required. Explore 40 original chapters and 400 levels, choose any level, create custom maps with the editor, watch replays, and embed maps on your website.",
+    robots: "index,follow",
+    canonical: `${siteOrigin}/en`,
+  });
+  assertHomePage("index.html", "zh-CN", "兔子波比5重制版", "无需下载或安装");
+  assertHomePage("en/index.html", "en", "Bobby Carrot 5 Remake", "no download or installation");
   assertShell("adventure/chapter/1/index.html", {
     robots: "index,follow",
     canonical: `${siteOrigin}/adventure/chapter/1`,
@@ -77,6 +82,7 @@ export function verifySeoArtifacts() {
   const sitemap = read("sitemap.xml");
   for (const expected of [
     `${siteOrigin}/`,
+    `${siteOrigin}/en`,
     `${siteOrigin}/adventure/chapter/1`,
     `${siteOrigin}/explore`,
      `${siteOrigin}/explore/play/original/1-1`,
@@ -103,6 +109,38 @@ export function verifySeoArtifacts() {
     throw new Error("Editor map source uses a fragment, not a route shell");
 }
 
+function assertHomePage(relative, locale, name, lead) {
+  const html = read(relative);
+  const body = html.split("<body>")[1] ?? "";
+  if (!html.includes(`<html lang="${locale}"`))
+    throw new Error(`${relative}: 首页语言标记错误`);
+  if (!body.includes(`data-home-prerendered="${locale}"`) ||
+      !new RegExp(`<h1[^>]*>${name}</h1>`).test(body) ||
+      !body.includes(lead))
+    throw new Error(`${relative}: 首页必须预渲染对应语言的标题和正文`);
+  for (const [language, route] of [["zh-CN", "/"], ["en", "/en"]]) {
+    if (!html.includes(`hreflang="${language}" href="${siteOrigin}${route}"`))
+      throw new Error(`${relative}: 缺少首页语言关联 ${language}`);
+  }
+  for (const route of ["/explore", "/adventure", "/edit", "/embed"]) {
+    if (!body.includes(`href="${route}"`))
+      throw new Error(`${relative}: 预渲染正文缺少导航 ${route}`);
+  }
+  const styles = [...html.matchAll(/<link\b[^>]*rel="stylesheet"[^>]*href="([^"]+)"/g)];
+  if (!styles.some((match) => match[1].includes("mountHomePage")))
+    throw new Error(`${relative}: 首屏必须直接加载首页样式`);
+  for (const [, href] of styles) {
+    if (!fs.existsSync(path.join(dist, href)))
+      throw new Error(`${relative}: 首页样式不存在 ${href}`);
+  }
+  const scripts = [...html.matchAll(/<script type="application\/ld\+json"[^>]*>(.*?)<\/script>/g)];
+  if (scripts.length !== 1)
+    throw new Error(`${relative}: 首页应提供一份结构化数据`);
+  const data = JSON.parse(scripts[0][1]);
+  if (data.name !== name || data.inLanguage !== locale)
+    throw new Error(`${relative}: 首页结构化数据语言或名称错误`);
+}
+
 function assertShell(relative, expected) {
   const file = path.join(dist, relative);
   if (!fs.existsSync(file))
@@ -126,6 +164,13 @@ function assertShell(relative, expected) {
     throw new Error(`${relative}: missing GA4`);
   if (expected.title && !html.includes(expected.title))
     throw new Error(`${relative}: wrong title`);
+  if (expected.description) {
+    for (const attribute of ['name="description"', 'property="og:description"']) {
+      if (!html.includes(`<meta ${attribute} content="${expected.description}"`)) {
+        throw new Error(`${relative}: wrong ${attribute}`);
+      }
+    }
+  }
   for (const text of expected.contains ?? [])
     if (!html.includes(text))
       throw new Error(`${relative}: missing SEO fallback text: ${text}`);

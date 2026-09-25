@@ -8,7 +8,12 @@ test("首页 Demo 状态区提供基础移动引导", async () => {
     "utf8",
   );
 
-  assert.match(source, /demoStatus: webT\("home\.demoMove"\)/);
+  const initialState = await readFile(
+    new URL("../../../web/src/pages/home/homeViewState.ts", import.meta.url),
+    "utf8",
+  );
+  assert.match(source, /reactive\(createHomeViewState\(\)\)/);
+  assert.match(initialState, /demoStatus: webT\("home\.demoMove"\)/);
   assert.doesNotMatch(source, /\{ text: "WASD \/ 方向键移动" \}/);
 });
 

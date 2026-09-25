@@ -17,3 +17,19 @@ function isNavigationInProgress(error) {
     error.message === "Inspected target navigated or closed"
   );
 }
+
+export async function clickWhenPresent(cdp, sessionId, selector) {
+  await waitForBrowserState(async () =>
+    Boolean(
+      await cdp.evaluate(
+        sessionId,
+        `(() => {
+          const element = document.querySelector(${JSON.stringify(selector)});
+          if (!element) return false;
+          element.click();
+          return true;
+        })()`,
+      ),
+    ),
+  );
+}

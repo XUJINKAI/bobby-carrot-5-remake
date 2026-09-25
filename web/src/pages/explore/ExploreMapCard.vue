@@ -5,6 +5,7 @@ import type {
 } from "../../services/catalog/catalog.js";
 import { explorePlayPath } from "../../app/routes.js";
 import AppIcon from "../../shared/icons/AppIcon.vue";
+import { webT } from "../../i18n/webI18n.js";
 
 defineProps<{
   collectionId: string;
@@ -32,11 +33,11 @@ const showRecordingIndicator = import.meta.env.DEV;
       v-if="showRecordingIndicator && map.verified"
       class="recording-indicator"
       role="img"
-      aria-label="Replay available"
-      title="Replay available"
+      :aria-label="webT('explore.replayAvailable')"
+      :title="webT('explore.replayAvailable')"
     ></span>
     <span class="explore-map-card-label">{{ map.name }}</span>
-    <span v-if="completed" class="done-mark" title="自由浏览中已通关">
+    <span v-if="completed" class="done-mark" :title="webT('explore.completedTitle')">
       <AppIcon name="check" />
     </span>
   </a>

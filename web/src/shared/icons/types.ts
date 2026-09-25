@@ -19,6 +19,7 @@ export type AppIconName =
   | "info"
   | "inspector"
   | "joystick"
+  | "language"
   | "lock"
   | "map-details"
   | "map-status"

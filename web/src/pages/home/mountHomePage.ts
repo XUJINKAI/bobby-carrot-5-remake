@@ -1,6 +1,6 @@
 import { WEB_SHORTCUTS, matchesShortcut } from "../../app/keyboard/shortcuts.js";
 import { provideWebKeyboard } from "../../app/keyboard/vueKeyboard.js";
-import { createApp, reactive } from "vue";
+import { createApp, createSSRApp, reactive } from "vue";
 import type { PageContext, PageController } from "../../app/pageContracts.js";
 import {
   globalActions,
@@ -18,6 +18,7 @@ import { createHomeDemoLevel } from "./homeDemoLevel.js";
 import type { HomeViewState } from "./types.js";
 import { resolveWebText, webT } from "../../i18n/webI18n.js";
 import { errorDisplayText } from "../../errors/errorPresentation.js";
+import { createHomeViewState } from "./homeViewState.js";
 
 export async function renderHome(
   context: PageContext,
@@ -30,7 +31,7 @@ export async function renderHome(
       visible: true,
       fixed: true,
       identity: homeIdentity(),
-      actions: [repositoryAction(), ...globalActions()],
+      actions: [repositoryAction(), ...globalActions({ languageSwitch: true })],
     },
     bottomBar: {
       visible: true,
@@ -47,15 +48,11 @@ export async function renderHome(
     },
   });
   syncShell();
-  app.replaceChildren();
-  const initialScreenControlEnabled = true;
-  const view = reactive<HomeViewState>({
-    demoStatus: webT("home.demoMove"),
-    demoResult: null,
-    deathReason: "",
-    importFeedback: "",
-    screenControlEnabled: initialScreenControlEnabled,
-  });
+  const hydrate = app.hasAttribute("data-home-prerendered");
+  app.removeAttribute("data-home-prerendered");
+  if (!hydrate) app.replaceChildren();
+  const view = reactive(createHomeViewState());
+  const initialScreenControlEnabled = view.screenControlEnabled;
   let session: GameSession | null = null;
   let resolveCanvas!: (canvas: HTMLCanvasElement) => void;
   const canvasReady = new Promise<HTMLCanvasElement>((resolve) => {
@@ -64,7 +61,7 @@ export async function renderHome(
   const restartDemo = (): void => {
     session?.game.restart();
   };
-  const homeApp = createApp(HomePage, {
+  const homeApp = (hydrate ? createSSRApp : createApp)(HomePage, {
     state: view,
     images,
     repositoryUrl: PROJECT_REPOSITORY_URL,

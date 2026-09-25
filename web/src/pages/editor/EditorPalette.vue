@@ -10,6 +10,8 @@ import EditorEntityPreview from "./EditorEntityPreview.vue";
 import EditorMaterialTooltip from "./EditorMaterialTooltip.vue";
 import { useEditorMaterialTooltip } from "./editorMaterialTooltip.js";
 import AppIcon from "../../shared/icons/AppIcon.vue";
+import { webT } from "../../i18n/webI18n.js";
+import { editorPaletteGroupLabel } from "./editorLabels.js";
 
 const props = defineProps<{
   groups: readonly ResolvedPaletteGroup[];
@@ -63,20 +65,20 @@ function tooltipContent(item: PaletteItem) {
 <template>
   <aside class="editor-palette">
     <div class="editor-palette-head">
-      <div class="editor-panel-title">素材</div>
+      <div class="editor-panel-title">{{ webT('editor.materials') }}</div>
       <div class="editor-palette-zoom">
-        <button class="editor-mini-btn" type="button" aria-label="缩小素材" @click="emit('resize', -1)">
+        <button class="editor-mini-btn" type="button" :aria-label="webT('editor.materialSmaller')" @click="emit('resize', -1)">
           <AppIcon name="minus" />
         </button>
         <span>{{ size }}</span>
-        <button class="editor-mini-btn" type="button" aria-label="放大素材" @click="emit('resize', 1)">
+        <button class="editor-mini-btn" type="button" :aria-label="webT('editor.materialLarger')" @click="emit('resize', 1)">
           <AppIcon name="place" />
         </button>
       </div>
     </div>
     <div class="editor-palette-groups">
       <section v-for="group in groups" :key="group.id" class="editor-palette-group">
-        <h3>{{ group.label }}</h3>
+        <h3>{{ editorPaletteGroupLabel(group.id, group.label) }}</h3>
         <div
           v-for="(row, rowIndex) in group.rows"
           :key="`${group.id}:${rowIndex}`"

@@ -56,6 +56,9 @@ run(binCommand("vue-tsc"), ["-b", "--force"], {
   cwd: path.join(root, "web"),
 });
 run(binCommand("vite"), ["build"], { cwd: path.join(root, "web") });
+run(binCommand("vite"), ["build", "--config", "vite.home-prerender.config.ts"], {
+  cwd: path.join(root, "web"),
+});
 run(binCommand("vite"), ["build"], { cwd: path.join(root, "embed") });
 
 copyTree(path.join(root, "model/dist"), path.join(dist, "model"));
@@ -68,5 +71,7 @@ copyTree(generatedAssets, path.join(dist, "assets"));
 
 const { generateSeoArtifacts } = await import("./seo.mjs");
 generateSeoArtifacts();
+const { prerenderHomePages } = await import("./home-prerender.mjs");
+await prerenderHomePages();
 
 console.log("Build complete: dist");

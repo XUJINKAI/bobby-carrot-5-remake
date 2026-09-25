@@ -63,6 +63,8 @@ Snowman、Sandman、Beaver、Dream Machine 与商店陈列物可以保存字面�
 重复打开冷却。该行为由 Engine 内部处理，不产生宿主 `object-interaction`，也没有进入
 Snapshot 的对白游标。Editor 为每页对白提供独立的可增删多行文本框。需要条件、分支或
 业务状态的对白必须省略 `dialogue`，由宿主通过通用交互请求和公共对话 Controller 实现。
+项目自有的场景对白在加载关卡时从当前语言的 i18n catalog 读取，再作为字面文本写入
+本次运行的地图；语言切换后重新进入关卡时生成新的运行地图。
 
 Lock 与关卡内钥匙组成可直接用于普通地图的组合机关：
 
