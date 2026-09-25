@@ -203,8 +203,10 @@ import { webT } from "../../i18n/webI18n.js";
 }
 
 .intro-card {
-  display: grid;
+  display: flex;
+  flex-wrap: wrap;
   align-content: start;
+  align-items: center;
   gap: 12px;
   padding: 24px;
   border: 1px solid var(--bc-panel-border);
@@ -213,13 +215,19 @@ import { webT } from "../../i18n/webI18n.js";
 }
 
 .intro-card h3 {
+  flex: 1;
+  min-width: 0;
   margin: 0;
   font-size: 1.15rem;
   line-height: 1.4;
 }
 
+.intro-card p {
+  flex-basis: 100%;
+}
+
 .card-icon {
-  margin-bottom: 6px;
+  flex: none;
   color: var(--bc-highlight);
 }
 
