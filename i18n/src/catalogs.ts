@@ -3,9 +3,9 @@ import { createCatalogStore } from "./catalogStore.js";
 import embedRuntimeZhCN from "./locales/embed-runtime/zh-CN.js";
 import embedRuntimeEn from "./locales/embed-runtime/en.js";
 import type { ShellTranslationKey } from "./locales/shell/zh-CN.js";
-import type { HomeTranslationKey } from "./locales/home/zh-CN.js";
+import type { HomeTranslationKey, HomeArrayTranslationKey } from "./locales/home/zh-CN.js";
 import type { ExploreTranslationKey } from "./locales/explore/zh-CN.js";
-import type { AdventureTranslationKey } from "./locales/adventure/zh-CN.js";
+import type { AdventureTranslationKey, AdventureArrayTranslationKey } from "./locales/adventure/zh-CN.js";
 import type { GameTranslationKey } from "./locales/game/zh-CN.js";
 import type { EditorTranslationKey } from "./locales/editor/zh-CN.js";
 import type { SettingsTranslationKey } from "./locales/settings/zh-CN.js";
@@ -28,7 +28,11 @@ export type TranslationScope =
   | "embed"
   | "help";
 
-export type TranslationKey =
+export type TranslationArrayKey =
+  | HomeArrayTranslationKey
+  | AdventureArrayTranslationKey;
+
+export type TranslationKey = Exclude<
   | ShellTranslationKey
   | HomeTranslationKey
   | ExploreTranslationKey
@@ -39,7 +43,9 @@ export type TranslationKey =
   | SettingsTranslationKey
   | ImportTranslationKey
   | EmbedTranslationKey
-  | HelpTranslationKey;
+  | HelpTranslationKey,
+  TranslationArrayKey
+>;
 
 type CatalogLoader = () => Promise<TranslationCatalog>;
 

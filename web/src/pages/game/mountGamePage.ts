@@ -79,6 +79,7 @@ import {
 import {
   prepareAdventureGameplayLevel,
 } from "./adventurePurchase.js";
+import { adventureDialogueCopy } from "./adventureDialogue.js";
 import { bindAdventureSessionEffects } from "./adventureSessionEffects.js";
 import { resolveGameplayHudConfig } from "./gameplayHudConfig.js";
 import { resolveGameplayOutcomeMusic } from "./gameplayMusicConfig.js";
@@ -178,7 +179,7 @@ export async function renderGamePage(
       : null;
   const adventureContentId = adventureLevel?.id ?? adventureScene?.id;
   const adventureAugmentation = adventureContentId
-    ? adventureAugmentationFor(adventureContentId)
+    ? adventureAugmentationFor(adventureContentId, adventureDialogueCopy())
     : { levelPatches: [] };
   const plan = adventureSave
     ? (sessionPlan ?? planAdventurePlayer(adventureSave))

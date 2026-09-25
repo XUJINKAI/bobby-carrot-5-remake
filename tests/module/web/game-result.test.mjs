@@ -74,11 +74,11 @@ test("Adventure 商品购买使用同级选项", async () => {
     "utf8",
   );
 
-  assert.match(source, /interaction: interactWithBeaverShop/);
+  assert.match(source, /interaction: \(context\) => interactWithBeaverShop\(context, copy\)/);
   assert.match(source, /context\.replaceInteractedEntity\(MapEntityTypeId\.SHOP_EMPTY\)/);
-  assert.match(source, /\{ id: "purchase", label: "购买" \}/);
+  assert.match(source, /\{ id: "purchase", label: copy\.purchaseConfirm \}/);
   assert.doesNotMatch(
     source,
-    /id: "purchase", label: "购买", primary: true/,
+    /id: "purchase", label: copy\.purchaseConfirm, primary: true/,
   );
 });

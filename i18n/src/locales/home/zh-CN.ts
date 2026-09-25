@@ -59,6 +59,21 @@ const catalog = {
   "home.intro.engineTitle": "为浏览器重新打造",
   "home.intro.engineDescription": "以重新编写的 Web 游戏引擎重现经典解谜玩法，同时支持更多地图与自定义机关。不论手机还是电脑，都可随时畅玩。",
   "home.intro.legalNote": "项目代码与原创文档遵循仓库许可证；原版 Bobby Carrot 资产的权利边界以 THIRD_PARTY_ASSETS.md 为准。",
+  "home.dialogue.sandman": [
+    "欢迎你，这里是 兔子波比5重制版 项目。引擎是重新写的，支持很多新玩意儿，想必你已经看到了。",
+    "冒险模式通过竖屏尽量还原原版冒险体验。自由探索和编辑器可以让你任意探索/编辑/分享地图。",
+    "目前还在开发中，遇到问题可以提交到 GitHub，喜欢就收藏、分享、给个 GitHub star 吧~",
+  ],
+  "home.dialogue.snowman": [
+    "嘿！你终于来了！",
+    "如你所见，我现在会说话了！",
+    "看到我身后的新玩意儿了没？哎呀妈呀老带劲儿了！",
+    "走进去，快，快进去试试！",
+  ],
+  "home.dialogue.snowmanUpper": "诶？你是怎么上来的？",
 } as const;
 export type HomeTranslationKey = keyof typeof catalog;
+export type HomeArrayTranslationKey = {
+  [K in HomeTranslationKey]: typeof catalog[K] extends readonly string[] ? K : never;
+}[HomeTranslationKey];
 export default catalog;

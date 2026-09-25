@@ -5,10 +5,28 @@ import {
   applyLevelPatches,
 } from "../../../model/dist/index.js";
 import {
+  ADVENTURE_DIALOGUE_ARRAY_KEYS,
+  ADVENTURE_DIALOGUE_STRING_KEYS,
   adventureAugmentationFor,
   createAdventureSave,
   grantAdventureItem,
 } from "../../../adventure/dist/index.js";
+import { loadTranslationCatalog } from "../../../i18n/dist/index.js";
+
+const chinese = await loadTranslationCatalog("adventure", "zh-CN");
+const english = await loadTranslationCatalog("adventure", "en");
+const copy = Object.fromEntries(
+  [
+    ...ADVENTURE_DIALOGUE_STRING_KEYS,
+    ...ADVENTURE_DIALOGUE_ARRAY_KEYS,
+  ].map((key) => [key, chinese[`adventure.dialogue.${key}`]]),
+);
+const englishCopy = Object.fromEntries(
+  [
+    ...ADVENTURE_DIALOGUE_STRING_KEYS,
+    ...ADVENTURE_DIALOGUE_ARRAY_KEYS,
+  ].map((key) => [key, english[`adventure.dialogue.${key}`]]),
+);
 
 function sandmanLevel() {
   return {
@@ -133,7 +151,7 @@ test("Adventure replace-type 补丁只保留新 Entity 的稳定位置字段", (
 });
 
 test("Beaver Shop 通过地图补丁增加场景内容与字面对白", () => {
-  const augmentation = adventureAugmentationFor("beaver-shop");
+  const augmentation = adventureAugmentationFor("beaver-shop", copy);
   const level = {
     schemaVersion: 1,
     width: 25,
@@ -198,8 +216,18 @@ test("Beaver Shop 通过地图补丁增加场景内容与字面对白", () => {
   assert.match(machine.dialogue[0], /传送门/);
 });
 
+test("Adventure 在关卡加载时接收当前语言的场景对白", () => {
+  const chineseScene = adventureAugmentationFor("beaver-shop", copy);
+  const englishScene = adventureAugmentationFor("beaver-shop", englishCopy);
+  const chineseLines = chineseScene.levelPatches[0].fields.dialogue;
+  const englishLines = englishScene.levelPatches[0].fields.dialogue;
+  assert.match(chineseLines[0], /商店/);
+  assert.match(englishLines[0], /shop/);
+  assert.notEqual(chineseLines, englishLines);
+});
+
 test("Beaver Shop interaction 回调直接完成 Super Key 购买", async () => {
-  const augmentation = adventureAugmentationFor("beaver-shop");
+  const augmentation = adventureAugmentationFor("beaver-shop", copy);
   const save = createAdventureSave();
   save.economy.bonusCoins = 1;
   let committed = null;
@@ -263,7 +291,7 @@ test("Beaver Shop interaction 回调直接完成 Super Key 购买", async () => 
 });
 
 test("Bonus 关卡根据永久钥匙准备 Beaver 对白与 Lock", () => {
-  const augmentation = adventureAugmentationFor("1-bonus-1");
+  const augmentation = adventureAugmentationFor("1-bonus-1", copy);
   const level = {
     schemaVersion: 1,
     width: 4,
@@ -322,7 +350,7 @@ test("Night Train 三张 Special Scene 都把角色对白写入地图", () => {
     };
     return applyLevelPatches(
       level,
-      adventureAugmentationFor(scene).levelPatches,
+      adventureAugmentationFor(scene, copy).levelPatches,
     ).entities[0].dialogue;
   });
 

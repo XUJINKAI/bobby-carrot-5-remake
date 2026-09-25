@@ -1,4 +1,4 @@
-import type { HomeTranslationKey } from "./zh-CN.js";
+import type { HomeTranslationKey, HomeArrayTranslationKey } from "./zh-CN.js";
 const catalog = {
   "home.startAria": "Start game",
   "home.modeAria": "Choose a mode",
@@ -60,5 +60,18 @@ const catalog = {
   "home.intro.engineTitle": "Rebuilt for the browser",
   "home.intro.engineDescription": "A newly written Web game engine recreates classic puzzle mechanics, with support for more maps and custom mechanisms. Play anytime, on your phone or computer.",
   "home.intro.legalNote": "Project code and original documentation follow the repository license. Rights to original Bobby Carrot assets are described in THIRD_PARTY_ASSETS.md.",
-} satisfies Record<HomeTranslationKey, string>;
+  "home.dialogue.sandman": [
+    "Welcome to Bobby Carrot 5 Remake. We rebuilt the engine and added plenty of new things, as you may have noticed.",
+    "Adventure recreates the original experience with a portrait view. Explore and the editor let you play, edit and share maps freely.",
+    "The project is still in development. If you run into trouble, let us know on GitHub. If you like it, save it, share it and give us a GitHub star!",
+  ],
+  "home.dialogue.snowman": [
+    "Hey! You're finally here!",
+    "As you can see, I can talk now!",
+    "See that new thing behind me? Pretty exciting, isn't it?",
+    "Go on, step inside and try it!",
+  ],
+  "home.dialogue.snowmanUpper": "Huh? How did you get up here?",
+} satisfies Record<Exclude<HomeTranslationKey, HomeArrayTranslationKey>, string> &
+  Record<HomeArrayTranslationKey, readonly string[]>;
 export default catalog;

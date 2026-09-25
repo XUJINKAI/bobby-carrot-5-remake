@@ -15,6 +15,40 @@ const catalog = {
   "adventure.bonusKey.trialGranted": "第一次免费送你一把体验钥匙。找到锁以后，倒计时才会开始！",
   "adventure.bonusKey.purchased": "成交！这把钥匙只够开一次锁。",
   "adventure.bonusKey.insufficient": "Bonus Coin 不足；这把关卡钥匙需要 {price} 枚。",
+  "adventure.dialogue.superKeyAlreadyOwned": "这把 Super Key 已经是你的了。",
+  "adventure.dialogue.superKeyPurchased": "成交，这把 Super Key 归你了。",
+  "adventure.dialogue.superKeyInsufficientFunds": "金币不够，攒到1枚再来吧。",
+  "adventure.dialogue.bonusWithoutKey": "想打开锁的话，也许你应该去商店看看",
+  "adventure.dialogue.bonusWithKey": "你已经有一把钥匙了，去接触锁就可以打开它",
+  "adventure.dialogue.beaverShop": [
+    "商店还在装修中，不过你可以随意逛逛...",
+    "话说，你知道我是怎么到这儿的吗？",
+    "那天，突然出现了一个家伙，他说他叫 XUJINKAI，说是要给我搬家，然后不由分说就把我的店铺打包带走了...",
+    "我都拦不住他，然后就稀里糊涂来到这儿了。",
+    "不过那家伙不错，说是我的道具用处不大了，想帮我把商店改成展览馆。",
+    "你说他不会是画饼吧...",
+    "算了，你随便逛吧...",
+  ],
+  "adventure.dialogue.displayDreamMachineTicket": "陈列着 Dream Machine 车票，听说现在不需要买票了。",
+  "adventure.dialogue.displayCloud9Ticket": "陈列着 Cloud 9 车票，听说现在不需要买票了。",
+  "adventure.dialogue.displayStereoSystem": "陈列着 立体声系统，听说现在大家都用无线耳机了。",
+  "adventure.dialogue.displayExtraMusic": "陈列着 附赠音乐，听说现在大家都喜欢在线听歌。",
+  "adventure.dialogue.displaySpeedShoes": "陈列着 速度鞋，现在似乎用不上了。",
+  "adventure.dialogue.displayCoinRadar": "陈列着 金币雷达，现在似乎用不上了。",
+  "adventure.dialogue.shopMachine": [
+    "哔哔~我从其他地方搞来了传送门，哔哔~",
+    "哔哔~我是勤奋的科研机器，哔哔~",
+  ],
+  "adventure.dialogue.dreamMachineBeaver": "我还在调试设备。",
+  "adventure.dialogue.dreamMachineMachine": "哔哔~你有见过我的兄弟吗？哔哔~",
+  "adventure.dialogue.cloud9Sandman": "听说，XUJINKAI 为了给海狸先生搬家，花了很大的精力...",
+  "adventure.dialogue.dreamlandSandman": "咳咳...我...我是怎么到这儿的...",
+  "adventure.dialogue.purchaseQuestion": "也不知搬家以后钥匙能不能用了，你要的话1块钱收走吧",
+  "adventure.dialogue.purchaseConfirm": "购买",
+  "adventure.dialogue.purchaseCancel": "算了",
 } as const;
 export type AdventureTranslationKey = keyof typeof catalog;
+export type AdventureArrayTranslationKey = {
+  [K in AdventureTranslationKey]: typeof catalog[K] extends readonly string[] ? K : never;
+}[AdventureTranslationKey];
 export default catalog;
