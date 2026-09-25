@@ -317,15 +317,18 @@ async function verifyLevelControls(cdp, sessionId) {
     `(() => ({
       music: document.querySelector('[data-editor-music]')?.value,
       musicPreview: document.querySelector('[data-editor-music-preview]')?.textContent?.trim(),
+      language: document.documentElement.lang,
       modes: [...document.querySelectorAll('[data-rule-mode]')]
         .map((button) => button.getAttribute('data-rule-mode')),
       active: document.querySelector('[data-rule-mode][aria-pressed="true"]')
         ?.getAttribute('data-rule-mode'),
     }))()`,
   );
+  const previewLabel = initial.language === "zh-CN" ? "试听" : "Preview";
+  const stopLabel = initial.language === "zh-CN" ? "停止试听" : "Stop";
   if (
     initial.music !== "random" ||
-    initial.musicPreview !== "Preview" ||
+    initial.musicPreview !== previewLabel ||
     JSON.stringify(initial.modes) !== JSON.stringify(["any", "all"]) ||
     initial.active !== "all"
   ) {
@@ -339,7 +342,7 @@ async function verifyLevelControls(cdp, sessionId) {
     (await cdp.evaluate(
       sessionId,
       "document.querySelector('[data-editor-music-preview]')?.textContent?.trim()",
-    )) === "Stop",
+    )) === stopLabel,
   );
   await cdp.evaluate(
     sessionId,
@@ -349,7 +352,7 @@ async function verifyLevelControls(cdp, sessionId) {
     (await cdp.evaluate(
       sessionId,
       "document.querySelector('[data-editor-music-preview]')?.textContent?.trim()",
-    )) === "Preview",
+    )) === previewLabel,
   );
   await cdp.evaluate(
     sessionId,
