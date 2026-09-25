@@ -75,7 +75,7 @@ test("运行时与构建期 SEO 共用 descriptor，首页模板突出在线游�
   assert.match(buildSeo, /bilingualSeoDescriptor\(descriptor\)/);
   assert.match(descriptors, /SEO_CATALOGS/);
   assert.match(html, /兔子波比5重制版 - 在线玩/);
-  assert.match(html, /免下载安装的网页解谜游戏/);
+  assert.match(html, /免下载的在线解谜游戏平台/);
 });
 
 

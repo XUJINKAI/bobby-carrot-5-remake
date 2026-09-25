@@ -13,14 +13,16 @@ export function verifySeoArtifacts() {
     robots: "index,follow",
     canonical: `${siteOrigin}/`,
     contains: [
-      "免下载安装",
-      "网页解谜游戏",
+      "免下载的在线解谜游戏平台",
+      "Robo 2 和推箱子",
+      "录像回放",
     ],
   });
   assertShell("en/index.html", {
     title: "Bobby Carrot 5 Remake - Play Online",
     robots: "index,follow",
     canonical: `${siteOrigin}/en`,
+    contains: ["no downloads required", "Robo 2 and Sokoban", "watch replays"],
   });
   assertHomePage("index.html", "zh-CN", "兔子波比5重制版", "免下载安装");
   assertHomePage("en/index.html", "en", "Bobby Carrot 5 Remake", "no download or installation");

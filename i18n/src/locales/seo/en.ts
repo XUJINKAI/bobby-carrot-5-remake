@@ -2,7 +2,7 @@ import type { SeoTranslationKey } from "./zh-CN.js";
 
 const catalog = {
   "seo.home.title": "Bobby Carrot 5 Remake - Play Online",
-  "seo.home.description": "Play Bobby Carrot 5 Remake online, a browser puzzle game for desktop and mobile with no download or installation required. Explore 40 chapters, 400 regular levels and 80 bonus levels, or create and share your own maps.",
+  "seo.home.description": "An online puzzle game platform with no downloads required. Play Bobby Carrot 5 Remake, Robo 2 and Sokoban in your browser. Choose levels freely, edit maps, watch replays, and share or embed your maps.",
   "seo.adventure.title": "Adventure | Bobby Carrot 5 Remake",
   "seo.adventure.description": "Play the Bobby Carrot 5 Adventure campaign with chapter progression, saves, rewards, the Beaver Shop, the Night Train, and other classic adventure systems.",
   "seo.adventureChapters.title": "Chapters | Adventure | Bobby Carrot 5 Remake",
