@@ -25,7 +25,10 @@ import {
   verifyReplayPanelShortcut,
 } from "./source/replay-browser-checks.mjs";
 import { verifySettingsPage } from "./source/settings-browser-checks.mjs";
-import { verifyNarrowHomeProductName } from "./source/topbar-browser-checks.mjs";
+import {
+  verifyAdventureHomeLanguageButton,
+  verifyNarrowHomeProductName,
+} from "./source/topbar-browser-checks.mjs";
 
 export async function runSourceBrowserRegression(cdp) {
     const vite = await createServer({
@@ -48,6 +51,10 @@ export async function runSourceBrowserRegression(cdp) {
       await verifyGameKeyboard(cdp, await openPage(cdp, `${origin}/`));
       await verifyExploreKeyboard(cdp, await openPage(cdp, `${origin}/explore`));
       await verifyNarrowHomeProductName(cdp, await openPage(cdp, `${origin}/`));
+      await verifyAdventureHomeLanguageButton(
+        cdp,
+        await openPage(cdp, `${origin}/adventure`),
+      );
       await verifyMusicInteractionTip(cdp, `${origin}/`);
       await verifyQuickSettings(cdp, `${origin}/`);
       await verifySettingsPage(cdp, await openPage(cdp, `${origin}/settings`));

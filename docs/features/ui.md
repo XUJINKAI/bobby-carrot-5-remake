@@ -87,7 +87,7 @@ Home 是产品入口页，承担品牌展示和快速进入模式两项职责。
 
 首页顶栏的 GitHub 仓库入口在桌面和移动端都保持外露，Settings 与 Help 在移动端进入更多菜单。
 
-首页与 Explore 选关页在音乐按钮左侧提供语言按钮，使用 `PhTranslate` 图标，桌面与移动端均保持外露。桌面按钮在中文界面显示 English，在英文界面显示中文；移动端仅显示图标，提示文字显示目标语言。点击直接切换语言，并共用设置中的语言状态及持久化逻辑；首页同步 `/` 与 `/en`，Explore 保持当前地图集和筛选状态。
+语言按钮只在 `/`、`/en`、`/adventure` 和 `/explore` 四个页面的音乐按钮左侧显示，使用 `PhTranslate` 图标，桌面与移动端均保持外露。桌面按钮在中文界面显示 English，在英文界面显示中文；移动端仅显示图标，提示文字显示目标语言。点击直接切换语言，并共用设置中的语言状态及持久化逻辑；首页同步 `/` 与 `/en`，Adventure 首页和 Explore 选关页保持当前路由。
 
 Welcome Demo 使用正式 Engine 运行 Campaign Intro 的演示副本，用于展示移动、角色对白、传送门和可推动箱子。它有独立 session，不写入 Adventure Save 或 Explore 完成记录。HUD 隐藏计时与计步，状态区只提供移动提示。通关后读取 Adventure Save 的继续关卡并直接进入 Adventure；死亡时在原 Stage 中展示重玩动作。
 
