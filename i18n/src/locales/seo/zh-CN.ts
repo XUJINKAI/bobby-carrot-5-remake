@@ -1,6 +1,6 @@
 const catalog = {
-  "seo.home.title": "兔子波比5重制版 | Bobby Carrot 5 Remake",
-  "seo.home.description": "在浏览器中游玩《兔子波比5》重制版：复刻原版 40 章 400 个关卡与 80 个奖励关，并提供自由探索、地图编辑器、分享与网页内嵌。",
+  "seo.home.title": "兔子波比5重制版 - 在线玩",
+  "seo.home.description": "兔子波比5重制版是一款免下载安装的网页解谜游戏，电脑和手机打开浏览器即可在线玩。挑战原版 40 章、400 个普通关卡与 80 个 Bonus 奖励关，还可自由选关、编辑和分享地图。",
   "seo.adventure.title": "冒险模式 | 兔子波比5重制版",
   "seo.adventure.description": "按原版章节结构体验《兔子波比5》冒险模式，推进关卡、保存进度、获得奖励，并体验海狸商店、夜间列车等经典冒险机制。",
   "seo.adventureChapters.title": "章节选择 | 冒险模式 | 兔子波比5重制版",

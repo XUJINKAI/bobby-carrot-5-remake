@@ -140,9 +140,8 @@ onBeforeUnmount(() => {
       <span>{{ webT("home.embed") }}</span>
       <AppIcon name="next" />
     </a>
-    <Teleport to="body">
+    <Teleport v-if="importOpen" to="body">
       <div
-        v-if="importOpen"
         v-keyboard-dialog="{ close: () => pendingSave ? cancelPendingSave() : closeImport() }"
         class="home-import-dialog-layer"
         role="presentation"

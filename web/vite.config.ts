@@ -76,6 +76,7 @@ export function createWebViteConfig(
       replayVerificationWatcher(),
     ],
     build: {
+      manifest: true,
       outDir: "../dist",
       assetsDir: "app",
       emptyOutDir: true,

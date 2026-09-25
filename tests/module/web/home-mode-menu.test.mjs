@@ -20,7 +20,7 @@ test("首页模式入口使用同级样式并说明各自能力", async () => {
 
   assert.doesNotMatch(menu, /home-mode-card primary/);
   assert.doesNotMatch(menu, /\.home-mode-card\.primary/);
-  assert.match(menu, /<Teleport to="body">[\s\S]*home-import-dialog-layer/);
+  assert.match(menu, /<Teleport\b[^>]*to="body"[^>]*>[\s\S]*home-import-dialog-layer/);
   assert.ok(
     menu.indexOf('href="/explore"') < menu.indexOf('href="/adventure"'),
     "首页应先显示 Explore，再显示 Adventure",

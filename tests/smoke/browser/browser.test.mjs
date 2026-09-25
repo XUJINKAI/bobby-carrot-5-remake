@@ -10,6 +10,7 @@ import {
   mapStatusSmokeScript,
 } from "./cases/map-status.mjs";
 import { runEmbedHudSmoke } from "./cases/embed-hud.mjs";
+import { runHomePrerenderSmoke } from "./cases/home-prerender.mjs";
 import {
   runStandaloneEmbedSmoke,
   startStandaloneEmbedHost,
@@ -69,6 +70,12 @@ try {
   if (!address || typeof address === "string")
     throw new Error("Failed to determine smoke-test server port");
   const origin = `http://127.0.0.1:${address.port}`;
+  const homeContext = await createBrowserContext(browserRuntime.cdp);
+  try {
+    await runHomePrerenderSmoke(homeContext.cdp, origin);
+  } finally {
+    await homeContext.dispose();
+  }
   await smoke(
     `${origin}/`,
     [

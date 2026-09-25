@@ -12,8 +12,12 @@ defineProps<{ images: ImageManager }>();
   <section class="home-about" aria-labelledby="home-about-title">
     <header class="home-about-heading">
       <span class="eyebrow">BOBBY CARROT 5 REMAKE</span>
-      <h2 id="home-about-title">{{ webT("home.intro.title") }}</h2>
+      <h1 id="home-about-title">{{ webT("home.intro.title") }}</h1>
       <p>{{ webT("home.intro.lead") }}</p>
+      <nav class="home-languages" aria-label="Language">
+        <a href="/" hreflang="zh-CN" lang="zh-CN">中文</a>
+        <a href="/en" hreflang="en" lang="en">English</a>
+      </nav>
     </header>
 
     <article class="feature-story feature-story-train">
@@ -68,7 +72,7 @@ defineProps<{ images: ImageManager }>();
   gap: 12px;
 }
 
-.home-about-heading h2 {
+.home-about-heading h1 {
   margin: 0;
   max-width: 680px;
   font-size: clamp(2rem, 4vw, 3.7rem);
@@ -85,6 +89,16 @@ defineProps<{ images: ImageManager }>();
 
 .home-about-heading p {
   font-size: clamp(1rem, 1.7vw, 1.22rem);
+}
+
+.home-languages {
+  display: flex;
+  gap: 18px;
+}
+
+.home-languages a {
+  color: inherit;
+  text-underline-offset: 4px;
 }
 
 .feature-story {

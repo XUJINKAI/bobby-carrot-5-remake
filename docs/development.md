@@ -67,7 +67,11 @@ npm run build
 dist/
 ```
 
-Web 仍使用同一套 SPA bundle。构建会根据 Map / Adventure Catalog 为合法公开路径生成静态 route shell，并同时生成 `sitemap.xml`、`robots.txt` 与 `404.html`。每个 route shell 只提供该 URL 对应的 HTML `<head>` 和 SPA 挂载入口，页面交互继续由 Web SPA 接管。
+Web 使用同一套 SPA bundle。首页 `/` 为中文，`/en` 为英文；构建使用 Vue 服务端渲染器从同一套 HomePage 组件生成两份首页正文，并直接引用首页样式。浏览器启动时把已有首页节点交给 HomePage hydration，再启动 Canvas 游戏与交互。构建期渲染入口和中间产物位于 `web/src/pages/home/prerenderHome.ts` 与 `tmp/home-prerender/`。
+
+两版首页分别提供单语标题、描述、自引用 canonical、互相对应的 `hreflang` 和 WebSite 结构化数据，均进入 sitemap。首页内容突出在线游玩、网页游戏和免下载安装。
+
+其他公开路径继续根据 Map / Adventure Catalog 生成包含 HTML `<head>` 和 SPA 挂载入口的 route shell；构建同时生成 `sitemap.xml`、`robots.txt` 与 `404.html`。
 
 Vercel 对 `/app/` 下带内容哈希的 JavaScript、CSS 与字体资源发送一年期 immutable 缓存头；HTML route shell 与路径稳定的 `/assets/` 内容继续按部署平台的更新策略获取。构建门禁会检查 Web 入口 chunk 不超过 500 kB。
 

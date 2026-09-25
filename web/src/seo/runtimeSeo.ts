@@ -1,4 +1,5 @@
-import { mapAssetUrl } from "../app/routes.js";
+import { localRoutePath, mapAssetUrl } from "../app/routes.js";
+import { HOME_ROUTES, homeLocale } from "../app/homeRoutes.js";
 import { siteUrl } from "../services/assets/gameAssets.js";
 import { getWebLocale } from "../i18n/webI18n.js";
 import {
@@ -137,6 +138,34 @@ function applySeo(value: SeoDescriptor): void {
   setMeta("name", "twitter:title", localized.title);
   setMeta("name", "twitter:description", localized.description);
   setMeta("name", "twitter:image", OG_IMAGE);
+  applyHomeAlternates(localized.canonicalPath);
+}
+
+function applyHomeAlternates(path: string): void {
+  document.head.querySelectorAll('link[rel="alternate"][hreflang]')
+    .forEach((element) => element.remove());
+  document.head.querySelector('script[data-home-structured-data]')?.remove();
+  const locale = homeLocale(path);
+  if (!locale) return;
+  for (const route of HOME_ROUTES) {
+    const link = document.createElement("link");
+    link.rel = "alternate";
+    link.hreflang = route.locale;
+    link.href = `${SITE_ORIGIN}${route.path}`;
+    document.head.append(link);
+  }
+  const data = document.createElement("script");
+  data.type = "application/ld+json";
+  data.setAttribute("data-home-structured-data", "");
+  data.textContent = JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: locale === "en" ? "Bobby Carrot 5 Remake" : "兔子波比5重制版",
+    alternateName: locale === "en" ? "兔子波比5重制版" : "Bobby Carrot 5 Remake",
+    url: `${SITE_ORIGIN}${path}`,
+    inLanguage: locale,
+  });
+  document.head.append(data);
 }
 
 function setMeta(attribute: "name" | "property", key: string, content: string): void {
@@ -165,13 +194,4 @@ async function fetchJson<T>(url: string): Promise<T> {
   const response = await fetch(url);
   if (!response.ok) throw new Error(`SEO metadata fetch failed: ${response.status}`);
   return response.json() as Promise<T>;
-}
-
-function localRoutePath(): string {
-  const basePath = new URL(document.baseURI).pathname.replace(/\/+$/, "");
-  const localPath =
-    basePath && basePath !== "/" && location.pathname.startsWith(basePath)
-      ? location.pathname.slice(basePath.length)
-      : location.pathname;
-  return localPath.replace(/\/+$/, "") || "/";
 }

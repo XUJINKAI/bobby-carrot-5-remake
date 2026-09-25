@@ -11,6 +11,7 @@ import {
   exploreMapSeoDescriptor,
   staticSeoDescriptor,
 } from "../../web/src/seo/seoDescriptors.js";
+import { HOME_ROUTES, homeLocale } from "../../web/src/app/homeRoutes.js";
 import { legacyRoutePaths } from "../../web/src/app/routeMigrations.js";
 
 const dist = path.join(root, "dist");
@@ -50,7 +51,7 @@ function buildPublicRoutes() {
   const adventure = readJson(path.join(assets, "adventure/index.json"));
 
   const routes = [
-    requireStaticRoute("/"),
+    ...HOME_ROUTES.map((route) => requireStaticRoute(route.path)),
     requireStaticRoute("/adventure"),
     requireStaticRoute("/adventure/chapters"),
     requireStaticRoute("/adventure/night-train"),
@@ -128,6 +129,7 @@ function writeRouteShell(
   const canonical =
     `${siteOrigin}${fallback.canonicalPath === "/" ? "/" : fallback.canonicalPath}`;
   const robots = fallback.index ? "index,follow" : "noindex,follow";
+  const locale = homeLocale(fallback.canonicalPath);
   const extraHead = [
     `<meta name="robots" content="${robots}" />`,
     `<link rel="canonical" href="${escapeAttribute(canonical)}" />`,
@@ -139,18 +141,23 @@ function writeRouteShell(
     `<meta name="twitter:title" content="${escapeAttribute(fallback.title)}" />`,
     `<meta name="twitter:description" content="${escapeAttribute(fallback.description)}" />`,
     `<meta name="twitter:image" content="${escapeAttribute(`${siteOrigin}${ogImagePath}`)}" />`,
-    fallback.canonicalPath === "/"
-      ? `<script type="application/ld+json">${JSON.stringify({
+    ...(locale ? HOME_ROUTES.map((route) =>
+      `<link rel="alternate" hreflang="${route.locale}" href="${escapeAttribute(`${siteOrigin}${route.path}`)}" />`,
+    ) : []),
+    locale
+      ? `<script type="application/ld+json" data-home-structured-data>${JSON.stringify({
           "@context": "https://schema.org",
           "@type": "WebSite",
-          name: "Bobby Carrot 5 Remake",
-          alternateName: "BC5R",
-          url: `${siteOrigin}/`,
+          name: locale === "en" ? "Bobby Carrot 5 Remake" : "兔子波比5重制版",
+          alternateName: locale === "en" ? "兔子波比5重制版" : "Bobby Carrot 5 Remake",
+          url: canonical,
+          inLanguage: locale,
         })}</script>`
       : "",
   ].filter(Boolean).join("\n    ");
 
   const html = replaceBaseSeo(sourceHtml, fallback)
+    .replace(/<html lang="[^"]*"/, `<html lang="${locale ?? "zh-CN"}"`)
     .replace("</head>", `    ${extraHead}\n  </head>`);
   const target = outputPath === "/"
     ? path.join(dist, "index.html")

@@ -9,14 +9,21 @@ const siteOrigin = (
 
 export function verifySeoArtifacts() {
   assertShell("index.html", {
-    title: "Bobby Carrot 5 Remake",
+    title: "兔子波比5重制版 - 在线玩",
     robots: "index,follow",
     canonical: `${siteOrigin}/`,
     contains: [
-      "Bobby Carrot 5 Remake",
-      "Play Bobby Carrot 5 Remake in your browser",
+      "免下载安装",
+      "网页解谜游戏",
     ],
   });
+  assertShell("en/index.html", {
+    title: "Bobby Carrot 5 Remake - Play Online",
+    robots: "index,follow",
+    canonical: `${siteOrigin}/en`,
+  });
+  assertHomePage("index.html", "zh-CN", "兔子波比5重制版", "免下载安装");
+  assertHomePage("en/index.html", "en", "Bobby Carrot 5 Remake", "no download or installation");
   assertShell("adventure/chapter/1/index.html", {
     robots: "index,follow",
     canonical: `${siteOrigin}/adventure/chapter/1`,
@@ -77,6 +84,7 @@ export function verifySeoArtifacts() {
   const sitemap = read("sitemap.xml");
   for (const expected of [
     `${siteOrigin}/`,
+    `${siteOrigin}/en`,
     `${siteOrigin}/adventure/chapter/1`,
     `${siteOrigin}/explore`,
      `${siteOrigin}/explore/play/original/1-1`,
@@ -101,6 +109,38 @@ export function verifySeoArtifacts() {
     throw new Error("/explore/original must not generate a route shell");
   if (fs.existsSync(path.join(dist, "edit/original/1-1/index.html")))
     throw new Error("Editor map source uses a fragment, not a route shell");
+}
+
+function assertHomePage(relative, locale, name, lead) {
+  const html = read(relative);
+  const body = html.split("<body>")[1] ?? "";
+  if (!html.includes(`<html lang="${locale}"`))
+    throw new Error(`${relative}: 首页语言标记错误`);
+  if (!body.includes(`data-home-prerendered="${locale}"`) ||
+      !new RegExp(`<h1[^>]*>${name}</h1>`).test(body) ||
+      !body.includes(lead))
+    throw new Error(`${relative}: 首页必须预渲染对应语言的标题和正文`);
+  for (const [language, route] of [["zh-CN", "/"], ["en", "/en"]]) {
+    if (!html.includes(`hreflang="${language}" href="${siteOrigin}${route}"`))
+      throw new Error(`${relative}: 缺少首页语言关联 ${language}`);
+  }
+  for (const route of ["/", "/en", "/explore", "/adventure", "/edit", "/embed"]) {
+    if (!body.includes(`href="${route}"`))
+      throw new Error(`${relative}: 预渲染正文缺少导航 ${route}`);
+  }
+  const styles = [...html.matchAll(/<link\b[^>]*rel="stylesheet"[^>]*href="([^"]+)"/g)];
+  if (!styles.some((match) => match[1].includes("mountHomePage")))
+    throw new Error(`${relative}: 首屏必须直接加载首页样式`);
+  for (const [, href] of styles) {
+    if (!fs.existsSync(path.join(dist, href)))
+      throw new Error(`${relative}: 首页样式不存在 ${href}`);
+  }
+  const scripts = [...html.matchAll(/<script type="application\/ld\+json"[^>]*>(.*?)<\/script>/g)];
+  if (scripts.length !== 1)
+    throw new Error(`${relative}: 首页应提供一份结构化数据`);
+  const data = JSON.parse(scripts[0][1]);
+  if (data.name !== name || data.inLanguage !== locale)
+    throw new Error(`${relative}: 首页结构化数据语言或名称错误`);
 }
 
 function assertShell(relative, expected) {
