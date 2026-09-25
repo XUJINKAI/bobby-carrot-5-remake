@@ -2,9 +2,21 @@ import assert from "node:assert/strict";
 import { waitForBrowserState } from "./source/browser-regression-wait.mjs";
 
 export async function runHomePrerenderSmoke(cdp, origin) {
-  for (const [path, locale, title] of [
-    ["/", "zh-CN", "兔子波比5重制版 - 在线玩"],
-    ["/en", "en", "Bobby Carrot 5 Remake - Play Online"],
+  for (const [path, locale, title, lead, shareTitle] of [
+    [
+      "/",
+      "zh-CN",
+      "兔子波比5重制版 - 在线玩",
+      "在浏览器中在线游玩《兔子波比5》重制版，无需下载或安装。包含原版 40 章 400 个关卡，并提供自由选关、地图编辑器、录像回放和自定义地图分享。",
+      "分享自制地图",
+    ],
+    [
+      "/en",
+      "en",
+      "Bobby Carrot 5 Remake - Play Online",
+      "Play Bobby Carrot 5 Remake online in your browser, with no download or installation required. Explore 40 original chapters and 400 levels, choose any level, create and share custom maps, and record or watch replays.",
+      "Share your custom maps",
+    ],
   ]) {
     const { targetId } = await cdp.send("Target.createTarget", { url: "about:blank" });
     const { sessionId } = await cdp.send("Target.attachToTarget", { targetId, flatten: true });
@@ -42,11 +54,20 @@ export async function runHomePrerenderSmoke(cdp, origin) {
         return {
           title: document.title,
           lang: document.documentElement.lang,
+          lead: document.querySelector('.home-about-heading p')?.textContent,
+          shareTitle: document.querySelector('#home-share-title')?.textContent,
           styled: getComputedStyle(window.__homeNode).position === 'relative',
           interactive: Boolean(document.querySelector('[data-shell]')),
         };
       })()`);
-      assert.deepEqual(initial, { title, lang: locale, styled: true, interactive: false });
+      assert.deepEqual(initial, {
+        title,
+        lang: locale,
+        lead,
+        shareTitle,
+        styled: true,
+        interactive: false,
+      });
 
       await cdp.send("Emulation.setScriptExecutionDisabled", { value: false }, sessionId);
       const loaded = await cdp.send("Runtime.evaluate", {

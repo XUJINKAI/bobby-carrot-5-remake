@@ -10,21 +10,17 @@ const siteOrigin = (
 export function verifySeoArtifacts() {
   assertShell("index.html", {
     title: "兔子波比5重制版 - 在线玩",
+    description: "在线游玩《兔子波比5》重制版，无需下载安装。包含原版 40 章 400 个关卡，并支持自由选关、地图编辑器、自定义地图、录像回放和网页内嵌。",
     robots: "index,follow",
     canonical: `${siteOrigin}/`,
-    contains: [
-      "免下载的在线解谜游戏平台",
-      "Robo 2 和推箱子",
-      "录像回放",
-    ],
   });
   assertShell("en/index.html", {
     title: "Bobby Carrot 5 Remake - Play Online",
+    description: "Play Bobby Carrot 5 Remake online, with no download or installation required. Explore 40 original chapters and 400 levels, choose any level, create custom maps with the editor, watch replays, and embed maps on your website.",
     robots: "index,follow",
     canonical: `${siteOrigin}/en`,
-    contains: ["no downloads required", "Robo 2 and Sokoban", "watch replays"],
   });
-  assertHomePage("index.html", "zh-CN", "兔子波比5重制版", "无需下载安装");
+  assertHomePage("index.html", "zh-CN", "兔子波比5重制版", "无需下载或安装");
   assertHomePage("en/index.html", "en", "Bobby Carrot 5 Remake", "no download or installation");
   assertShell("adventure/chapter/1/index.html", {
     robots: "index,follow",
@@ -168,6 +164,13 @@ function assertShell(relative, expected) {
     throw new Error(`${relative}: missing GA4`);
   if (expected.title && !html.includes(expected.title))
     throw new Error(`${relative}: wrong title`);
+  if (expected.description) {
+    for (const attribute of ['name="description"', 'property="og:description"']) {
+      if (!html.includes(`<meta ${attribute} content="${expected.description}"`)) {
+        throw new Error(`${relative}: wrong ${attribute}`);
+      }
+    }
+  }
   for (const text of expected.contains ?? [])
     if (!html.includes(text))
       throw new Error(`${relative}: missing SEO fallback text: ${text}`);

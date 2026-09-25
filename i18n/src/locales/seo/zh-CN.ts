@@ -1,6 +1,6 @@
 const catalog = {
   "seo.home.title": "兔子波比5重制版 - 在线玩",
-  "seo.home.description": "免下载的在线解谜游戏平台，打开浏览器即可畅玩兔子波比5重制版、Robo 2 和推箱子。支持自由选关、地图编辑、录像回放、地图分享与网页内嵌。",
+  "seo.home.description": "在线游玩《兔子波比5》重制版，无需下载安装。包含原版 40 章 400 个关卡，并支持自由选关、地图编辑器、自定义地图、录像回放和网页内嵌。",
   "seo.adventure.title": "冒险模式 | 兔子波比5重制版",
   "seo.adventure.description": "按原版章节结构体验《兔子波比5》冒险模式，推进关卡、保存进度、获得奖励，并体验海狸商店、夜间列车等经典冒险机制。",
   "seo.adventureChapters.title": "章节选择 | 冒险模式 | 兔子波比5重制版",

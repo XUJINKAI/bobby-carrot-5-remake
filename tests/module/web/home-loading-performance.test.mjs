@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { test } from "vitest";
+import seoZhCN from "../../../i18n/src/locales/seo/zh-CN.ts";
 
 test("Home 首屏按路由加载页面代码和非关键数据", async () => {
   const [app, entry, loaders] = await Promise.all([
@@ -75,7 +76,8 @@ test("运行时与构建期 SEO 共用 descriptor，首页模板突出在线游�
   assert.match(buildSeo, /bilingualSeoDescriptor\(descriptor\)/);
   assert.match(descriptors, /SEO_CATALOGS/);
   assert.match(html, /兔子波比5重制版 - 在线玩/);
-  assert.match(html, /免下载的在线解谜游戏平台/);
+  const description = seoZhCN["seo.home.description"];
+  assert.equal(html.split(`content="${description}"`).length - 1, 2);
 });
 
 
