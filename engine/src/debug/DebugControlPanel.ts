@@ -91,7 +91,7 @@ export class DebugControlPanel {
     this.worldHzSelect = rateSelect(HZ_OPTIONS, (value) =>
       this.actions.setWorldHz(value),
     );
-    this.worldHzSelect.title = "修改 World Hz 会从关卡起点重新运行";
+    this.worldHzSelect.title = "Changing World Hz restarts the level from the beginning";
     this.worldSpeedSelect = rateSelect(SPEED_OPTIONS, (value) => {
       this.actions.setWorldSpeed(value);
       if (this.speedsLinked) this.actions.setPresentationSpeed(value);

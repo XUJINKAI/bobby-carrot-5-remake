@@ -11,5 +11,8 @@ const catalog = {
   "explore.filterStatus": "{count} maps match; all selected conditions must match.",
   "explore.filterHint": "All selected conditions must match.",
   "explore.filterEmpty": "No maps match these conditions.",
+  "explore.chapterDifficulty": "Chapter difficulty: {count} stars",
+  "explore.replayAvailable": "Replay available",
+  "explore.completedTitle": "Completed in Explore",
 } satisfies Record<ExploreTranslationKey, string>;
 export default catalog;

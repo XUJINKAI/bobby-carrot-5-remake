@@ -65,7 +65,7 @@ export class GameplayHudView {
   ) {
     this.root = document.createElement("div");
     this.root.className = "engine-gameplay-hud";
-    this.root.setAttribute("aria-label", "游戏状态");
+    this.root.setAttribute("aria-label", "Game status");
     Object.assign(this.root.style, {
       position: "absolute",
       inset: "0",
@@ -98,7 +98,7 @@ export class GameplayHudView {
     this.steps = document.createElement("strong");
     this.steps.className =
       "engine-gameplay-hud-steps engine-gameplay-hud-value";
-    this.steps.setAttribute("aria-label", "本关步数");
+    this.steps.setAttribute("aria-label", "Level moves");
     Object.assign(this.steps.style, {
       display: "none",
       fontSize: "var(--engine-gameplay-hud-value-font-size, 26px)",
@@ -127,12 +127,12 @@ export class GameplayHudView {
       gap: "8px",
       justifyContent: "flex-end",
     });
-    this.objectiveCarrot = this.chip("目标胡萝卜", this.sprite("carrot"), {
+    this.objectiveCarrot = this.chip("Carrot objective", this.sprite("carrot"), {
       value: true,
       valueFirst: true,
       valueFontSize: "26px",
     });
-    this.objectiveEgg = this.chip("目标彩蛋", this.sprite("egg"), {
+    this.objectiveEgg = this.chip("Egg objective", this.sprite("egg"), {
       value: true,
       valueFirst: true,
       valueFontSize: "26px",
@@ -142,7 +142,7 @@ export class GameplayHudView {
     this.primaryInventory = this.inventoryRow("primary", "#ff665e");
     this.secondaryInventory = this.inventoryRow("secondary", "#5796ff");
     this.coins = this.chip(
-      "金币",
+      "Bonus coins",
       this.entitySprite(MapEntityTypeId.BONUS_COIN, 32),
       {
         value: true,
@@ -172,14 +172,14 @@ export class GameplayHudView {
       this.timer.setAttribute(
         "aria-label",
         model.timedChallengePhase === "waiting"
-          ? "挑战倒计时，等待开锁"
-          : "挑战剩余时间",
+          ? "Challenge countdown, waiting for the lock"
+          : "Challenge time remaining",
       );
       this.timer.textContent = formatGameplayCountdown(
         model.timedChallengeRemainingMs!,
       );
     } else if (showElapsedTime) {
-      this.timer.setAttribute("aria-label", "本关用时");
+      this.timer.setAttribute("aria-label", "Level elapsed time");
       this.timer.textContent = formatGameplayElapsed(model.elapsedMs);
     }
     const showSteps = this.options.steps !== false;
@@ -275,7 +275,7 @@ export class GameplayHudView {
     const marker = document.createElement("span");
     marker.setAttribute(
       "aria-label",
-      role === "primary" ? "主 Bobby" : "副 Bobby",
+      role === "primary" ? "Primary Bobby" : "Secondary Bobby",
     );
     Object.assign(marker.style, {
       display: "none",
@@ -284,15 +284,15 @@ export class GameplayHudView {
       lineHeight: "1",
     });
     marker.textContent = "●";
-    const kite = this.itemChip("风筝", "kite");
-    const bean = this.chip("魔豆", this.sprite("bean"), {
+    const kite = this.itemChip("Kite", "kite");
+    const bean = this.chip("Magic bean", this.sprite("bean"), {
       value: true,
       valueFirst: true,
       valueFontSize: "18px",
     });
-    const shovel = this.itemChip("雪铲", "shovel");
-    const gas = this.itemChip("汽油", "gas");
-    const lockKey = this.itemChip("钥匙", "lock-key");
+    const shovel = this.itemChip("Snow shovel", "shovel");
+    const gas = this.itemChip("Gas", "gas");
+    const lockKey = this.itemChip("Key", "lock-key");
     root.append(
       marker,
       bean.root,
