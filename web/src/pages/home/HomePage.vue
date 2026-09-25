@@ -98,7 +98,7 @@ onBeforeUnmount(() => {
           />
         </div>
       </section>
-      <ProjectIntro :images="images" />
+      <ProjectIntro />
     </div>
   </div>
 </template>

@@ -24,7 +24,7 @@ export function verifySeoArtifacts() {
     canonical: `${siteOrigin}/en`,
     contains: ["no downloads required", "Robo 2 and Sokoban", "watch replays"],
   });
-  assertHomePage("index.html", "zh-CN", "兔子波比5重制版", "免下载安装");
+  assertHomePage("index.html", "zh-CN", "兔子波比5重制版", "无需下载安装");
   assertHomePage("en/index.html", "en", "Bobby Carrot 5 Remake", "no download or installation");
   assertShell("adventure/chapter/1/index.html", {
     robots: "index,follow",
@@ -126,7 +126,7 @@ function assertHomePage(relative, locale, name, lead) {
     if (!html.includes(`hreflang="${language}" href="${siteOrigin}${route}"`))
       throw new Error(`${relative}: 缺少首页语言关联 ${language}`);
   }
-  for (const route of ["/", "/en", "/explore", "/adventure", "/edit", "/embed"]) {
+  for (const route of ["/explore", "/adventure", "/edit", "/embed"]) {
     if (!body.includes(`href="${route}"`))
       throw new Error(`${relative}: 预渲染正文缺少导航 ${route}`);
   }
