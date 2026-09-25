@@ -222,7 +222,7 @@ test("Editor mini button 显式居中图标", () => {
 });
 
 test("Level 最大时间把单位放在标签中", () => {
-  assert.match(levelInfo, /最大时间（秒）/);
+  assert.match(levelInfo, /webT\('editor\.maxTime'\)/);
   assert.doesNotMatch(levelInfo, /<small>秒<\/small>/);
 });
 
@@ -262,7 +262,7 @@ test("Level 音乐只列出循环曲目并用省略字段表达默认随机", ()
     );
   }
   assert.match(levelInfo, /data-editor-music-preview/);
-  assert.match(levelInfo, /musicPreviewing \? "Stop" : "Preview"/);
+  assert.match(levelInfo, /musicPreviewing \? 'editor\.musicStop' : 'editor\.musicPreview'/);
   assert.match(levelInfo, /value === "random" \? undefined : value/);
   assert.match(page, /resolveLevelMusic\(page\.snapshot\.value\.level\.music\)/);
   assert.match(page, /@music-preview-toggle="toggleMusicPreview"/);
@@ -273,7 +273,7 @@ test("Level 音乐只列出循环曲目并用省略字段表达默认随机", ()
 test("Level 规则模式开关左侧任一、右侧全部", () => {
   assert.match(
     levelInfo,
-    /data-rule-mode="any"[\s\S]*>任一<\/button>[\s\S]*data-rule-mode="all"[\s\S]*>全部<\/button>/,
+    /data-rule-mode="any"[\s\S]*webT\('editor\.ruleAny'\)[\s\S]*data-rule-mode="all"[\s\S]*webT\('editor\.ruleAll'\)/,
   );
   assert.match(levelInfo, /mode-all[\s\S]*translateX\(100%\)/);
 });
@@ -338,7 +338,7 @@ test("Inspector 为颜色合同提供调色板与颜色文本输入", () => {
   assert.match(entityFields, /field\.kind === "string-or-string-list"/);
   assert.match(entityFields, /normalizeColorHex/);
   assert.match(entityFields, /type="color"/);
-  assert.match(entityFields, /#rgb、#rrggbb 或颜色名/);
+  assert.match(entityFields, /webT\('editor\.colorPlaceholder'\)/);
 });
 
 test("Inspector 使用可增删的多行文本框编辑多轮对白", () => {
@@ -384,7 +384,7 @@ test("Inspector 按当前工具显示选择、素材、删除目标与 Surface �
   assert.match(placementInspector, /@field="\(key, value\) => emit\('field', key, value\)"/);
   assert.match(placementInspector, /@variant="emit\('variant', \$event\)"/);
   assert.match(eraseInspector, /layer\.ref\.index === targetIndex/);
-  assert.match(eraseInspector, /点击将删除/);
+  assert.match(eraseInspector, /webT\("editor\.clickToDelete"\)/);
   assert.match(surfaceToolInspector, /Auto ·/);
   assert.match(surfaceToolInspector, /Alternating · A\/B/);
   assert.match(cellInspector, /layer\.footprint\.width/);
@@ -409,11 +409,11 @@ test("Palette 画笔悬浮显示正式放置规则计算的结果堆叠", () => 
   );
   assert.match(pageState, /buildPlacementInspectorPreview/);
   assert.match(pageState, /placementInspectorPreview/);
-  assert.match(placementInspector, /放置结果/);
-  assert.match(placementInspector, /title="放置后"/);
+  assert.match(placementInspector, /webT\("editor\.placementResult"\)/);
+  assert.match(placementInspector, /:title="webT\('editor\.afterPlacement'\)"/);
   assert.match(placementInspector, /highlight-index="hoverPreview\.placedIndex"/);
   assert.match(placementInspector, /hoverPreview\.warnings/);
-  assert.match(placementInspector, /非推荐堆叠/);
+  assert.match(placementInspector, /webT\("editor\.stackWarning"\)/);
   assert.match(placementInspector, /const targets = computed/);
   assert.match(placementInspector, /:targets="targets"/);
 });

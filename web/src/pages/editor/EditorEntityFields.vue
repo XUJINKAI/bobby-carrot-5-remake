@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { webT } from "../../i18n/webI18n.js";
 import {
   applyEditorVariant,
   editorEntityDirection,
@@ -40,7 +41,6 @@ const props = withDefaults(defineProps<{
   emptyText?: string;
 }>(), {
   showMapFields: true,
-  emptyText: "该素材没有可编辑地图字段。",
 });
 const emit = defineEmits<{
   field: [key: string, value: LevelEntityFieldValue];
@@ -204,7 +204,7 @@ function addDialogueLine(
   key: string,
   fallback: LevelEntityFieldValue | undefined,
 ): void {
-  emitDialogue(key, [...dialogueLines(key, fallback), "新对白"]);
+  emitDialogue(key, [...dialogueLines(key, fallback), webT("editor.newDialogue")]);
 }
 
 function removeDialogueLine(
@@ -235,7 +235,7 @@ function colorInputValue(
 <template>
   <div class="editor-entity-fields">
     <section v-if="directionVariants.length" class="editor-fields-block">
-      <strong>方向</strong>
+      <strong>{{ webT("editor.direction") }}</strong>
       <div class="editor-variant-grid">
         <button
           v-for="entry in directionVariants"
@@ -260,7 +260,7 @@ function colorInputValue(
     </section>
 
     <section v-if="shapeVariants.length" class="editor-fields-block">
-      <strong>形态</strong>
+      <strong>{{ webT("editor.shape") }}</strong>
       <div class="editor-variant-grid">
         <button
           v-for="entry in shapeVariants"
@@ -313,7 +313,7 @@ function colorInputValue(
     </section>
 
     <section v-if="editableFields.length" class="editor-fields-block">
-      <strong>地图字段</strong>
+      <strong>{{ webT("editor.mapFields") }}</strong>
       <component
         :is="field.kind === 'string-or-string-list' ? 'div' : 'label'"
         v-for="field in editableFields"
@@ -333,7 +333,7 @@ function colorInputValue(
             value=""
             disabled
           >
-            多种值
+            {{ webT("editor.mixedValues") }}
           </option>
           <option
             v-for="value in field.values"
@@ -358,7 +358,7 @@ function colorInputValue(
           <input
             type="text"
             :value="fieldValue(field.key, field.default)"
-            :placeholder="fieldMixed(field.key, field.default) ? '多种值' : '#rgb、#rrggbb 或颜色名'"
+            :placeholder="fieldMixed(field.key, field.default) ? webT('editor.mixedValues') : webT('editor.colorPlaceholder')"
             @change="emit('field', field.key, ($event.target as HTMLInputElement).value)"
           />
         </span>
@@ -373,24 +373,24 @@ function colorInputValue(
           >
             <textarea
               :value="line"
-              :aria-label="`对白 ${index + 1}`"
+              :aria-label="webT('editor.dialogueLine', { index: index + 1 })"
               rows="3"
               @change="updateDialogueLine(field.key, field.default, index, ($event.target as HTMLTextAreaElement).value)"
             />
             <button
               type="button"
-              :aria-label="`删除对白 ${index + 1}`"
+              :aria-label="webT('editor.deleteDialogueLine', { index: index + 1 })"
               @click="removeDialogueLine(field.key, field.default, index)"
             >
-              删除
+              {{ webT("editor.delete") }}
             </button>
           </span>
-          <small v-if="fieldMixed(field.key, field.default)">当前选中的对白不同</small>
+          <small v-if="fieldMixed(field.key, field.default)">{{ webT("editor.mixedDialogue") }}</small>
           <button
             type="button"
             @click="addDialogueLine(field.key, field.default)"
           >
-            添加对白
+            {{ webT("editor.addDialogue") }}
           </button>
         </span>
         <input
@@ -400,13 +400,13 @@ function colorInputValue(
           :min="field.kind === 'number' || field.kind === 'integer' ? field.min : undefined"
           :max="field.kind === 'number' || field.kind === 'integer' ? field.max : undefined"
           :value="fieldValue(field.key, field.default)"
-          :placeholder="fieldMixed(field.key, field.default) ? '多种值' : ''"
+          :placeholder="fieldMixed(field.key, field.default) ? webT('editor.mixedValues') : ''"
           @change="emit('field', field.key, ($event.target as HTMLInputElement).value)"
         />
       </component>
     </section>
 
-    <p v-if="!hasFields" class="editor-muted">{{ emptyText }}</p>
+    <p v-if="!hasFields" class="editor-muted">{{ emptyText ?? webT("editor.emptyMapFields") }}</p>
   </div>
 </template>
 

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { webT } from "../../i18n/webI18n.js";
 import type {
   EditorDefinition,
   EngineEnvironment,
@@ -25,7 +26,7 @@ defineProps<{
   <section class="editor-compact-stack">
     <header>
       <strong>{{ title }}</strong>
-      <span>{{ model.entityCount }} 层 · 顶层在前</span>
+      <span>{{ webT("editor.layerCount", { count: model.entityCount }) }}</span>
     </header>
     <div v-if="model.mode === 'cell' && model.layers.length" class="editor-compact-layers">
       <article
@@ -54,7 +55,7 @@ defineProps<{
         </span>
       </article>
     </div>
-    <span v-else class="editor-muted">空</span>
+    <span v-else class="editor-muted">{{ webT("editor.emptyStack") }}</span>
   </section>
 </template>
 

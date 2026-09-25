@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { webT } from "../../i18n/webI18n.js";
 import {
   isSurfaceEntityType,
   type EditorDefinition,
@@ -23,12 +24,12 @@ defineProps<{
 <template>
   <div class="editor-erase-inspector">
     <section class="editor-inspector-section editor-delete-summary editor-inspector-summary">
-      <span class="editor-tool-kicker">删除工具</span>
+      <span class="editor-tool-kicker">{{ webT("editor.eraseTool") }}</span>
       <template v-if="model.mode === 'cell'">
-        <strong>格子 {{ model.rect?.left }}, {{ model.rect?.top }}</strong>
-        <span class="editor-muted">{{ model.entityCount }} 层 · 顶层在前</span>
+        <strong>{{ webT("editor.cellAt", { x: model.rect?.left ?? 0, y: model.rect?.top ?? 0 }) }}</strong>
+        <span class="editor-muted">{{ webT("editor.layerCount", { count: model.entityCount }) }}</span>
       </template>
-      <span v-else class="editor-muted">将指针移到画布格子上查看删除目标。</span>
+      <span v-else class="editor-muted">{{ webT("editor.eraseHoverHint") }}</span>
     </section>
     <div v-if="model.mode === 'cell' && model.layers.length" class="editor-delete-stack">
       <article
@@ -53,7 +54,7 @@ defineProps<{
           <code>{{ layer.entity.type }}</code>
         </span>
         <span v-if="layer.role" class="editor-layer-meta">{{ layer.role }}</span>
-        <span v-if="layer.ref.index === targetIndex" class="editor-delete-target">点击将删除</span>
+        <span v-if="layer.ref.index === targetIndex" class="editor-delete-target">{{ webT("editor.clickToDelete") }}</span>
         <span v-else-if="isSurfaceEntityType(layer.entity.type)" class="editor-layer-meta">Surface</span>
         <span v-else class="editor-layer-meta">z {{ layer.stackOrder }}</span>
       </article>
@@ -62,7 +63,7 @@ defineProps<{
       v-else-if="model.mode === 'cell'"
       class="editor-inspector-section editor-muted"
     >
-      这个格子没有可删除的 Entity。
+      {{ webT("editor.emptyEraseCell") }}
     </section>
   </div>
 </template>

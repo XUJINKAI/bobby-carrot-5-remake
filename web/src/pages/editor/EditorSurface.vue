@@ -19,6 +19,12 @@ import EditorEntityPreview from "./EditorEntityPreview.vue";
 import EditorMaterialTooltip from "./EditorMaterialTooltip.vue";
 import { useEditorMaterialTooltip } from "./editorMaterialTooltip.js";
 import AppIcon from "../../shared/icons/AppIcon.vue";
+import { webT } from "../../i18n/webI18n.js";
+import {
+  editorSurfaceGroupLabel,
+  editorTerrainLabel,
+  editorThemeLabel,
+} from "./editorLabels.js";
 
 const props = defineProps<{
   brush: SurfaceBrush;
@@ -66,7 +72,7 @@ const {
 
 function terrainTooltip(definition: SurfaceTerrainDefinition) {
   return {
-    title: definition.label,
+    title: editorTerrainLabel(definition.id),
     code: surfaceVariantPreset(definition.primary).type,
   };
 }
@@ -86,7 +92,7 @@ function variantTooltip(
   if (props.brush.pattern === "alternate" && alternateB.value === type)
     statuses.push("B");
   return {
-    title: `${definition.label} · ${label}`,
+    title: `${editorTerrainLabel(definition.id)} · ${label}`,
     code: surfaceVariantPreset(type).type,
     rows: [
       { label: "visual", value: type },
@@ -107,18 +113,18 @@ function variantTooltip(
     <div class="editor-palette-head">
       <div class="editor-panel-title">Surface</div>
       <div class="editor-palette-zoom">
-        <button class="editor-mini-btn" type="button" aria-label="缩小素材" @click="emit('resize', -1)">
+        <button class="editor-mini-btn" type="button" :aria-label="webT('editor.materialSmaller')" @click="emit('resize', -1)">
           <AppIcon name="minus" />
         </button>
         <span>{{ size }}</span>
-        <button class="editor-mini-btn" type="button" aria-label="放大素材" @click="emit('resize', 1)">
+        <button class="editor-mini-btn" type="button" :aria-label="webT('editor.materialLarger')" @click="emit('resize', 1)">
           <AppIcon name="place" />
         </button>
       </div>
     </div>
 
     <details class="surface-theme-section">
-      <summary>主题</summary>
+      <summary>{{ webT('editor.themes') }}</summary>
       <div class="surface-theme-grid">
         <button
           v-for="theme in SURFACE_THEMES"
@@ -126,7 +132,9 @@ function variantTooltip(
           class="surface-theme-card"
           :class="{ active: currentTheme === theme.id }"
           type="button"
-          :title="theme.id === 'mixed' ? '保留混合主题' : `将可识别地形切换为${theme.label}主题`"
+          :title="theme.id === 'mixed'
+            ? webT('editor.keepMixedTheme')
+            : webT('editor.applyTheme', { theme: editorThemeLabel(theme.id) })"
           @click="emit('theme', theme.id)"
         >
           <span class="surface-theme-preview" aria-hidden="true">
@@ -141,7 +149,7 @@ function variantTooltip(
               fallback-text=""
             />
           </span>
-          <span>{{ theme.label }}</span>
+          <span>{{ editorThemeLabel(theme.id) }}</span>
         </button>
       </div>
     </details>
@@ -152,7 +160,7 @@ function variantTooltip(
         :key="group.id"
         class="editor-palette-group"
       >
-        <h3>{{ group.label }}</h3>
+        <h3>{{ editorSurfaceGroupLabel(group.id, group.label) }}</h3>
         <div
           v-for="(row, rowIndex) in group.rows"
           :key="`${group.id}:${rowIndex}`"

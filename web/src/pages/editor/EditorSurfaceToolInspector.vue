@@ -11,6 +11,8 @@ import {
 import type { ImageManager } from "@bobby/engine";
 import { computed } from "vue";
 import EditorEntityPreview from "./EditorEntityPreview.vue";
+import { webT } from "../../i18n/webI18n.js";
+import { editorTerrainLabel } from "./editorLabels.js";
 
 const props = defineProps<{
   tool: SurfaceTool;
@@ -39,8 +41,8 @@ const patternLabel = computed(() => {
 <template>
   <div class="editor-surface-tool-inspector">
     <section class="editor-inspector-section editor-surface-tool-summary editor-inspector-summary">
-      <span class="editor-tool-kicker">{{ tool === 'fill' ? '填充' : '画笔' }} · Surface</span>
-      <strong>{{ terrain.label }}</strong>
+      <span class="editor-tool-kicker">{{ webT(tool === 'fill' ? 'editor.fill' : 'editor.brush') }} · Surface</span>
+      <strong>{{ editorTerrainLabel(terrain.id) }}</strong>
       <span class="editor-muted">{{ patternLabel }}</span>
     </section>
     <section class="editor-inspector-section">
@@ -58,7 +60,7 @@ const patternLabel = computed(() => {
         </div>
       </div>
       <p v-if="brush.pattern === 'auto'" class="editor-muted editor-surface-note">
-        实际单元由 Terrain 的 Auto 规则按目标坐标稳定决定。
+        {{ webT('editor.autoTerrainHint') }}
       </p>
     </section>
   </div>

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { webT } from "../../i18n/webI18n.js";
 import type {
   EditorDefinition,
   EngineEnvironment,
@@ -108,9 +109,9 @@ function dropClass(refIndex: number): string | undefined {
   <div class="editor-cell-inspector">
     <section class="editor-inspector-section editor-selection-summary editor-inspector-summary">
       <span class="editor-summary-text">
-        <span class="editor-tool-kicker">选择工具 · 单格</span>
-        <strong>格子 {{ model.rect?.left }}, {{ model.rect?.top }}</strong>
-        <span class="editor-muted">{{ model.entityCount }} 层 · 顶层在前</span>
+        <span class="editor-tool-kicker">{{ webT("editor.selectTool") }} · {{ webT("editor.singleCell") }}</span>
+        <strong>{{ webT("editor.cellAt", { x: model.rect?.left ?? 0, y: model.rect?.top ?? 0 }) }}</strong>
+        <span class="editor-muted">{{ webT("editor.layerCount", { count: model.entityCount }) }}</span>
       </span>
     </section>
 
@@ -127,7 +128,7 @@ function dropClass(refIndex: number): string | undefined {
             v-if="model.layers.length > 1"
             type="button"
             class="editor-layer-drag"
-            :aria-label="`拖动调整 ${layer.label} 的叠加顺序`"
+            :aria-label="webT('editor.reorderLayer', { label: layer.label })"
             @pointerdown="startDrag(layer.ref.index, $event)"
             @pointermove="moveDrag"
             @pointerup="finishDrag"
@@ -157,8 +158,8 @@ function dropClass(refIndex: number): string | undefined {
           <button
             type="button"
             class="editor-layer-delete"
-            title="删除这一层"
-            :aria-label="`删除 ${layer.label}`"
+            :title="webT('editor.deleteLayer')"
+            :aria-label="webT('editor.deleteNamedLayer', { label: layer.label })"
             @click="emit('delete', layer.ref.index)"
           >
             <AppIcon name="delete" />
@@ -179,7 +180,7 @@ function dropClass(refIndex: number): string | undefined {
       </article>
     </div>
     <div v-else class="editor-inspector-section editor-muted">
-      这个格子没有可见 Entity。
+      {{ webT("editor.emptyCell") }}
     </div>
   </div>
 </template>

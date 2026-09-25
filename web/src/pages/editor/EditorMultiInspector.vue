@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { webT } from "../../i18n/webI18n.js";
 import type {
   EditorDefinition,
   EngineEnvironment,
@@ -32,8 +33,8 @@ const emit = defineEmits<{
   <div class="editor-multi-inspector">
     <section class="editor-inspector-section editor-selection-summary editor-inspector-summary">
       <span class="editor-summary-text">
-        <span class="editor-tool-kicker">选择工具 · 框选</span>
-        <strong>{{ model.rect?.width }} × {{ model.rect?.height }} 选区</strong>
+        <span class="editor-tool-kicker">{{ webT("editor.selectTool") }} · {{ webT("editor.multiCell") }}</span>
+        <strong>{{ webT("editor.selectionSize", { width: model.rect?.width ?? 0, height: model.rect?.height ?? 0 }) }}</strong>
         <span class="editor-muted">{{ model.entityCount }} Entities</span>
       </span>
     </section>
@@ -68,8 +69,8 @@ const emit = defineEmits<{
             <button
               type="button"
               class="editor-batch-delete"
-              :title="`删除选区内全部 ${group.label}`"
-              :aria-label="`删除选区内全部 ${group.label}`"
+              :title="webT('editor.deleteGroup', { label: group.label })"
+              :aria-label="webT('editor.deleteGroup', { label: group.label })"
               @click="emit('deleteType', group.type)"
             >
               <AppIcon name="delete" />
@@ -91,7 +92,7 @@ const emit = defineEmits<{
       </template>
     </div>
     <div v-else class="editor-inspector-section editor-muted">
-      选区内没有可见 Entity。
+      {{ webT("editor.emptySelection") }}
     </div>
   </div>
 </template>
