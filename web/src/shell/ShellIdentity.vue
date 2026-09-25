@@ -140,6 +140,11 @@ onBeforeUnmount(() => document.removeEventListener("pointerdown", dismissOutside
 }
 
 @media (max-width: 700px) {
+  .shell-product-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
   .shell-context-name {
     display: none;
   }

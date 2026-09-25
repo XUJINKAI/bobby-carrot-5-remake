@@ -48,7 +48,7 @@ export async function renderLevels(
       visible: true,
       fixed: true,
       identity: pageIdentity(webT("nav.explore"), "/explore"),
-      actions: globalActions(),
+      actions: globalActions({ languageSwitch: true }),
     },
     bottomBar: { visible: false },
   });

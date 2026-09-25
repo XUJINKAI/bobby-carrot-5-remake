@@ -42,6 +42,7 @@ test("Editor 工具、地图编辑与 Replay 跳转使用指定的 Phosphor 图�
   assert.match(source, /"replay-end": PhArrowClockwise/);
   assert.match(source, /"map-details": PhCaretCircleUp/);
   assert.match(source, /"map-status": PhMinusCircle/);
+  assert.match(source, /language: PhTranslate/);
 });
 
 async function sourceFiles(url) {

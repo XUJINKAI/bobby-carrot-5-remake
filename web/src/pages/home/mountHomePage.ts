@@ -31,7 +31,7 @@ export async function renderHome(
       visible: true,
       fixed: true,
       identity: homeIdentity(),
-      actions: [repositoryAction(), ...globalActions()],
+      actions: [repositoryAction(), ...globalActions({ languageSwitch: true })],
     },
     bottomBar: {
       visible: true,

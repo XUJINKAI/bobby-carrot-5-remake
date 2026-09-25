@@ -2,10 +2,32 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "vitest";
 import {
+  globalActions,
+  localizeGlobalActions,
   musicActionIcon,
   repositoryAction,
 } from "../../../web/src/app/pageChrome.ts";
 import { narrowBottomTrailingActions } from "../../../web/src/shell/responsiveActions.ts";
+import { initializeWebI18n } from "../../../web/src/i18n/webI18n.ts";
+
+test("语言入口按页面启用，位于音乐左侧并随语言更新提示", async () => {
+  await initializeWebI18n("zh-CN");
+  assert.deepEqual(globalActions().map((action) => action.id), ["music", "settings", "help"]);
+  const actions = globalActions({ languageSwitch: true });
+  assert.deepEqual(actions.map((action) => action.id), ["language", "music", "settings", "help"]);
+  assert.equal(actions[0].icon, "language");
+  assert.equal(actions[0].collapse, "keep");
+  assert.equal(actions[0].label, "English");
+  assert.equal(actions[0].title, "Switch to English");
+  try {
+    await initializeWebI18n("en");
+    localizeGlobalActions(actions);
+    assert.equal(actions[0].label, "中文");
+    assert.equal(actions[0].title, "切换到中文");
+  } finally {
+    await initializeWebI18n("zh-CN");
+  }
+});
 
 test("音乐操作根据开关状态使用扬声器图标", () => {
   assert.equal(musicActionIcon(true), "sound-on");

@@ -76,6 +76,7 @@ export async function runHomePrerenderSmoke(cdp, origin) {
         title, lang: locale, samePage: true, sameHeading: true, sameCanvas: true,
         savedLocale: locale, errors: [],
       });
+      await verifyLanguageButton(cdp, sessionId, locale, path, ".home-demo-panel canvas");
 
       await cdp.evaluate(sessionId, "document.querySelector('.home-mode-panel a[href=\"/explore\"]').click()");
       await waitForBrowserState(async () => await cdp.evaluate(sessionId,
@@ -87,6 +88,7 @@ export async function runHomePrerenderSmoke(cdp, origin) {
         homeDataCount: document.querySelectorAll('script[data-home-structured-data]').length,
       })`);
       assert.deepEqual(interior, { lang: locale, alternateCount: 0, homeDataCount: 0 });
+      await verifyLanguageButton(cdp, sessionId, locale, "/explore", ".explore-tabs");
 
       await cdp.evaluate(sessionId, "history.back()");
       await waitForBrowserState(async () => await cdp.evaluate(sessionId,
@@ -114,4 +116,94 @@ export async function runHomePrerenderSmoke(cdp, origin) {
       await cdp.send("Target.closeTarget", { targetId });
     }
   }
+}
+
+async function verifyLanguageButton(cdp, sessionId, locale, path, preservedSelector) {
+  const nextLocale = locale === "en" ? "zh-CN" : "en";
+  const nextPath = path === "/explore" ? path : nextLocale === "en" ? "/en" : "/";
+  await cdp.send("Emulation.setDeviceMetricsOverride", {
+    width: 390, height: 760, deviceScaleFactor: 1, mobile: true,
+  }, sessionId);
+  const buttonState = await cdp.evaluate(sessionId, `(() => {
+    const button = document.querySelector('#language');
+    const actions = [...document.querySelectorAll('.shell-topbar-right > .shell-action')];
+    const index = actions.indexOf(button);
+    const rect = button?.getBoundingClientRect();
+    const label = button?.querySelector('.shell-action-label');
+    window.__languagePreservedNode = document.querySelector(${JSON.stringify(preservedSelector)});
+    return {
+      after: actions[index + 1]?.id,
+      nextAfter: actions[index + 2]?.id,
+      icon: button?.querySelector('[data-icon]')?.getAttribute('data-icon'),
+      title: button?.title,
+      label: label?.textContent,
+      labelVisible: Boolean(label?.getBoundingClientRect().width),
+      visible: Boolean(rect?.width && rect?.height && rect.left >= 0 && rect.right <= innerWidth),
+    };
+  })()`);
+  assert.deepEqual(buttonState, {
+    after: "music", nextAfter: "settings", icon: "language", visible: true,
+    label: locale === "en" ? "中文" : "English", labelVisible: false,
+    title: locale === "en" ? "切换到中文" : "Switch to English",
+  }, JSON.stringify(await cdp.evaluate(sessionId, `(() => ({
+    path: location.pathname,
+    width: innerWidth,
+    elements: ['.app-topbar', '.shell-topbar-left', '.shell-topbar-right', '.shell-identity', '#language']
+      .map((selector) => {
+        const element = document.querySelector(selector);
+        const rect = element.getBoundingClientRect();
+        const style = getComputedStyle(element);
+        return { selector, left: rect.left, right: rect.right, width: rect.width, flex: style.flex };
+      }),
+  }))()`)));
+  await cdp.evaluate(sessionId, "document.querySelector('#language').click()");
+  await waitForBrowserState(async () => await cdp.evaluate(sessionId, `
+    document.documentElement.lang === ${JSON.stringify(nextLocale)} &&
+    location.pathname === ${JSON.stringify(nextPath)} &&
+    JSON.parse(localStorage.getItem('bc5r:setting')).locale === ${JSON.stringify(nextLocale)}
+  `));
+  assert.equal(await cdp.evaluate(sessionId,
+    `window.__languagePreservedNode === document.querySelector(${JSON.stringify(preservedSelector)})`,
+  ), true);
+  assert.equal(await cdp.evaluate(sessionId,
+    "Boolean(document.querySelector('.quick-settings-panel'))",
+  ), false);
+
+  await cdp.send("Emulation.clearDeviceMetricsOverride", {}, sessionId);
+  assert.equal(await cdp.evaluate(sessionId,
+    "document.querySelector('#language .shell-action-label').getBoundingClientRect().width > 0",
+  ), true);
+  await cdp.evaluate(sessionId, "document.querySelector('#settings').click()");
+  await waitForBrowserState(async () => await cdp.evaluate(sessionId,
+    "Boolean(document.querySelector('.quick-settings-panel'))",
+  ));
+  const nextLabel = nextLocale === "en" ? "English" : "中文";
+  assert.equal(await cdp.evaluate(sessionId, `
+    [...document.querySelectorAll('.quick-settings-panel button[role=radio]')]
+      .find((button) => button.textContent.trim() === ${JSON.stringify(nextLabel)})
+      ?.getAttribute('aria-checked')
+  `), "true");
+
+  const originalLabel = locale === "en" ? "English" : "中文";
+  await cdp.evaluate(sessionId, `
+    [...document.querySelectorAll('.quick-settings-panel button[role=radio]')]
+      .find((button) => button.textContent.trim() === ${JSON.stringify(originalLabel)}).click()
+  `);
+  await waitForBrowserState(async () => await cdp.evaluate(sessionId, `
+    document.documentElement.lang === ${JSON.stringify(locale)} &&
+    location.pathname === ${JSON.stringify(path)} &&
+    JSON.parse(localStorage.getItem('bc5r:setting')).locale === ${JSON.stringify(locale)}
+  `));
+  assert.equal(await cdp.evaluate(sessionId,
+    "document.querySelector('#language').getAttribute('aria-label')",
+  ), locale === "en" ? "切换到中文" : "Switch to English");
+  await cdp.evaluate(sessionId, `(() => {
+    const layer = document.querySelector('[data-quick-settings-layer]');
+    layer.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+    layer.dispatchEvent(new PointerEvent('pointerup', { bubbles: true }));
+    layer.click();
+  })()`);
+  await waitForBrowserState(async () => await cdp.evaluate(sessionId,
+    "!document.querySelector('.quick-settings-panel')",
+  ));
 }

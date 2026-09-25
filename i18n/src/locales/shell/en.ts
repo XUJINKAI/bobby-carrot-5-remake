@@ -3,6 +3,8 @@ import type { ShellTranslationKey } from "./zh-CN.js";
 const catalog = {
   "brand.name": "Bobby Carrot 5 Remake",
   "shell.music": "Music",
+  "shell.languageTarget": "中文",
+  "shell.switchLanguage": "切换到中文",
   "shell.musicInteractionTip": "Click the page to play music",
   "shell.settings": "Settings",
   "shell.help": "Help",
