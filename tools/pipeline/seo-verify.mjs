@@ -8,6 +8,20 @@ const siteOrigin = (
 ).replace(/\/+$/, "");
 
 export function verifySeoArtifacts() {
+  for (const locale of ["zh-CN", "en"]) {
+    const relative = `assets/seo/og-preview-${locale}.png`;
+    const source = fs.readFileSync(path.join(root, relative));
+    const published = fs.readFileSync(path.join(dist, relative));
+    if (!source.equals(published))
+      throw new Error(`${relative}: 发布的分享图必须与源图片一致`);
+    if (
+      published.length < 24 ||
+      published.subarray(0, 8).toString("hex") !== "89504e470d0a1a0a" ||
+      published.readUInt32BE(16) !== 1200 ||
+      published.readUInt32BE(20) !== 630
+    )
+      throw new Error(`${relative}: 分享图必须为 1200 × 630 PNG`);
+  }
   assertShell("index.html", {
     title: "兔子波比5重制版 - 在线玩",
     description: "在线游玩《兔子波比5》重制版，无需下载安装。包含原版 40 章 400 个关卡，并支持自由选关、地图编辑器、自定义地图、录像回放和网页内嵌。",
@@ -153,8 +167,28 @@ function assertShell(relative, expected) {
     throw new Error(`${relative}: wrong robots value`);
   if (!html.includes(`rel="canonical" href="${expected.canonical}"`))
     throw new Error(`${relative}: wrong canonical URL`);
-  if (!html.includes('property="og:image"'))
-    throw new Error(`${relative}: missing og:image`);
+  const imageLocale = relative === "en/index.html" ? "en" : "zh-CN";
+  const imageUrl = `${siteOrigin}/assets/seo/og-preview-${imageLocale}.png`;
+  for (const [attribute, key, content] of [
+    ["property", "og:image", imageUrl],
+    ["property", "og:image:type", "image/png"],
+    ["property", "og:image:width", "1200"],
+    ["property", "og:image:height", "630"],
+    ["name", "twitter:image", imageUrl],
+    ["name", "twitter:card", "summary_large_image"],
+  ]) {
+    assertSingleMeta(html, relative, attribute, key);
+    if (!html.includes(`<meta ${attribute}="${key}" content="${content}"`))
+      throw new Error(`${relative}: ${key} 的分享图配置错误`);
+  }
+  for (const [attribute, key] of [
+    ["property", "og:image:alt"],
+    ["name", "twitter:image:alt"],
+  ]) {
+    assertSingleMeta(html, relative, attribute, key);
+    if (!new RegExp(`<meta ${attribute}="${key}" content="[^"]+"`).test(html))
+      throw new Error(`${relative}: ${key} 必须提供图片说明`);
+  }
   if (
     !html.includes(
       "https://www.googletagmanager.com/gtag/js?id=G-KZKWTSQXMP",

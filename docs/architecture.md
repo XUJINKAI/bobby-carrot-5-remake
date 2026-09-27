@@ -503,6 +503,12 @@ I18n catalog 的值可以是字符串或按展示顺序排列的字符串数组�
 Explore、Adventure、Editor 等页面沿用现有路径和语言设置机制。
 预渲染产物与 hydration 边界见 [`开发与构建`](development.md)。
 
+Open Graph 与 Twitter Card 共用 `web/src/seo/shareImage.js` 的分享图定义，图片保存于
+`assets/seo/og-preview-zh-CN.png` 与 `assets/seo/og-preview-en.png`，均为 1200 × 630 PNG。
+构建时首页按 URL 选择语言，其它页面使用中文分享图；浏览器运行时首页仍按 URL 选择，
+其它页面跟随当前语言。两条路径均输出绝对图片 URL、图片说明与 Open Graph 尺寸，
+Twitter 使用 `summary_large_image`。HTML 设计稿与原始游戏截图保存在 `tools/seo/`。
+
 页面相关的 TypeScript 与 `.vue` 文件共置在对应 `pages/<mode>/` 中。Web 根目录不承载页面实现、运行时服务或模糊的通用工具模块。
 
 Result 的“下一关 / 重玩 / 返回章节 / 编辑地图”等动作属于 Web，因为这些动作描述的是游戏结束后的产品流程。

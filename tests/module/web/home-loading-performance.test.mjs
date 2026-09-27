@@ -70,7 +70,8 @@ test("运行时与构建期 SEO 共用 descriptor，首页模板突出在线游�
     readFile(new URL("../../../web/index.html", import.meta.url), "utf8"),
   ]);
   assert.match(runtimeSeo, /addEventListener\("web-locale-change", sync\)/);
-  assert.match(runtimeSeo, /localizedSeoDescriptor\(value, getWebLocale\(\)\)/);
+  assert.match(runtimeSeo, /const locale = getWebLocale\(\);/);
+  assert.match(runtimeSeo, /localizedSeoDescriptor\(value, locale\)/);
   assert.match(runtimeSeo, /from "\.\/seoDescriptors\.js"/);
   assert.match(buildSeo, /from "\.\.\/\.\.\/web\/src\/seo\/seoDescriptors\.js"/);
   assert.match(buildSeo, /bilingualSeoDescriptor\(descriptor\)/);

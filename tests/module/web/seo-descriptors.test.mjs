@@ -7,6 +7,24 @@ import {
   staticSeoDescriptor,
 } from "../../../web/src/seo/seoDescriptors.js";
 import { homeLocale, homePath } from "../../../web/src/app/homeRoutes.js";
+import { shareImage } from "../../../web/src/seo/shareImage.js";
+
+test("分享图：首页按地址选择语言，内页按当前语言选择，构建默认中文", () => {
+  for (const [path, preference, expected] of [
+    ["/", "en", "zh-CN"],
+    ["/en", "zh-CN", "en"],
+    ["/en/", "zh-CN", "en"],
+    ["/explore", "en", "en"],
+    ["/edit", "zh-CN", "zh-CN"],
+    ["/adventure/play/1-1", undefined, "zh-CN"],
+  ]) {
+    const image = shareImage(path, preference);
+    assert.equal(image.path, `/assets/seo/og-preview-${expected}.png`);
+    assert.equal(image.width, 1200);
+    assert.equal(image.height, 630);
+    assert.ok(image.alt.includes(expected === "en" ? "Bobby Carrot 5 Remake" : "兔子波比5重制版"));
+  }
+});
 
 test("首页地址确定 metadata 语言，应用内页沿用当前语言", () => {
   for (const [path, locale, title] of [

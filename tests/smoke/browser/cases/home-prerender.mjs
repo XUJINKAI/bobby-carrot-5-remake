@@ -68,6 +68,7 @@ export async function runHomePrerenderSmoke(cdp, origin) {
         styled: true,
         interactive: false,
       });
+      await verifyShareImage(cdp, sessionId, locale);
 
       await cdp.send("Emulation.setScriptExecutionDisabled", { value: false }, sessionId);
       const loaded = await cdp.send("Runtime.evaluate", {
@@ -97,6 +98,7 @@ export async function runHomePrerenderSmoke(cdp, origin) {
         title, lang: locale, samePage: true, sameHeading: true, sameCanvas: true,
         savedLocale: locale, errors: [],
       });
+      await verifyShareImage(cdp, sessionId, locale);
       await verifyLanguageButton(cdp, sessionId, locale, path, ".home-demo-panel canvas");
 
       await cdp.evaluate(sessionId, "document.querySelector('.home-mode-panel a[href=\"/explore\"]').click()");
@@ -109,6 +111,7 @@ export async function runHomePrerenderSmoke(cdp, origin) {
         homeDataCount: document.querySelectorAll('script[data-home-structured-data]').length,
       })`);
       assert.deepEqual(interior, { lang: locale, alternateCount: 0, homeDataCount: 0 });
+      await verifyShareImage(cdp, sessionId, locale);
       await verifyLanguageButton(cdp, sessionId, locale, "/explore", ".explore-tabs");
 
       await cdp.evaluate(sessionId, "history.back()");
@@ -132,6 +135,7 @@ export async function runHomePrerenderSmoke(cdp, origin) {
       assert.equal(await cdp.evaluate(sessionId,
         "window.__switchCanvas === document.querySelector('.home-demo-panel canvas')",
       ), true);
+      await verifyShareImage(cdp, sessionId, nextLocale);
       assert.deepEqual(await cdp.evaluate(sessionId, "window.__homeErrors"), []);
     } finally {
       await cdp.send("Target.closeTarget", { targetId });
@@ -183,6 +187,7 @@ async function verifyLanguageButton(cdp, sessionId, locale, path, preservedSelec
     location.pathname === ${JSON.stringify(nextPath)} &&
     JSON.parse(localStorage.getItem('bc5r:setting')).locale === ${JSON.stringify(nextLocale)}
   `));
+  await verifyShareImage(cdp, sessionId, nextLocale);
   assert.equal(await cdp.evaluate(sessionId,
     `window.__languagePreservedNode === document.querySelector(${JSON.stringify(preservedSelector)})`,
   ), true);
@@ -215,6 +220,7 @@ async function verifyLanguageButton(cdp, sessionId, locale, path, preservedSelec
     location.pathname === ${JSON.stringify(path)} &&
     JSON.parse(localStorage.getItem('bc5r:setting')).locale === ${JSON.stringify(locale)}
   `));
+  await verifyShareImage(cdp, sessionId, locale);
   assert.equal(await cdp.evaluate(sessionId,
     "document.querySelector('#language').getAttribute('aria-label')",
   ), locale === "en" ? "切换到中文" : "Switch to English");
@@ -227,4 +233,34 @@ async function verifyLanguageButton(cdp, sessionId, locale, path, preservedSelec
   await waitForBrowserState(async () => await cdp.evaluate(sessionId,
     "!document.querySelector('.quick-settings-panel')",
   ));
+}
+
+async function verifyShareImage(cdp, sessionId, locale) {
+  const origin = (process.env.VITE_SITE_ORIGIN ?? "https://bc5r.xujinkai.net").replace(/\/+$/, "");
+  const url = `${origin}/assets/seo/og-preview-${locale}.png`;
+  await waitForBrowserState(async () => await cdp.evaluate(sessionId, `
+    document.querySelector('meta[property="og:image"]')?.content === ${JSON.stringify(url)} &&
+    document.querySelector('meta[name="twitter:image"]')?.content === ${JSON.stringify(url)}
+  `));
+  const metadata = await cdp.evaluate(sessionId, `(() => {
+    const content = (selector) => document.querySelector(selector)?.content;
+    return {
+      ogCount: document.querySelectorAll('meta[property="og:image"]').length,
+      twitterCount: document.querySelectorAll('meta[name="twitter:image"]').length,
+      width: content('meta[property="og:image:width"]'),
+      height: content('meta[property="og:image:height"]'),
+      type: content('meta[property="og:image:type"]'),
+      card: content('meta[name="twitter:card"]'),
+      alt: content('meta[property="og:image:alt"]'),
+      twitterAlt: content('meta[name="twitter:image:alt"]'),
+    };
+  })()`);
+  assert.equal(metadata.ogCount, 1);
+  assert.equal(metadata.twitterCount, 1);
+  assert.equal(metadata.width, "1200");
+  assert.equal(metadata.height, "630");
+  assert.equal(metadata.type, "image/png");
+  assert.equal(metadata.card, "summary_large_image");
+  assert.ok(metadata.alt.includes(locale === "en" ? "Bobby Carrot 5 Remake" : "兔子波比5重制版"));
+  assert.equal(metadata.twitterAlt, metadata.alt);
 }

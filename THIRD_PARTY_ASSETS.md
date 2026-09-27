@@ -93,6 +93,21 @@ https://github.com/scfried/soft-type-jersey
 
 Jersey 10 字体文件继续适用其随附的 `OFL.txt`，不属于本项目根目录 `LICENSE` 的授权范围。
 
+## Noto Sans SC
+
+分享图预览工具使用 Noto Sans SC 的 800 字重。字体来自 Google Fonts，
+`tools/seo/fonts/NotoSansSC-Share.woff2` 为按预览固定文案取得的 WOFF2 子集。
+来源与字形范围见 `tools/seo/README.md`。
+
+上游地址：
+
+```text
+https://github.com/google/fonts/tree/main/ofl/notosanssc
+```
+
+字体继续按随附的 `tools/seo/fonts/OFL.txt`（SIL Open Font License 1.1）授权，
+不属于本项目根目录 `LICENSE` 的授权范围。
+
 ## 许可证边界
 
 `LICENSE` 仅授权 Bobby Carrot 5 Remake 项目自身原创的源代码、文档及其他由相应作者有权许可的原创材料。

@@ -11,6 +11,7 @@ import {
 } from "./cases/map-status.mjs";
 import { runEmbedHudSmoke } from "./cases/embed-hud.mjs";
 import { runHomePrerenderSmoke } from "./cases/home-prerender.mjs";
+import { runOgPreviewSmoke } from "./cases/og-preview.mjs";
 import {
   runStandaloneEmbedSmoke,
   startStandaloneEmbedHost,
@@ -72,6 +73,7 @@ try {
   const origin = `http://127.0.0.1:${address.port}`;
   const homeContext = await createBrowserContext(browserRuntime.cdp);
   try {
+    await runOgPreviewSmoke(homeContext.cdp);
     await runHomePrerenderSmoke(homeContext.cdp, origin);
   } finally {
     await homeContext.dispose();
