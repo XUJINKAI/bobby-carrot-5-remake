@@ -2,6 +2,7 @@ import { localRoutePath, mapAssetUrl } from "../app/routes.js";
 import { HOME_ROUTES, homeLocale } from "../app/homeRoutes.js";
 import { siteUrl } from "../services/assets/gameAssets.js";
 import { getWebLocale } from "../i18n/webI18n.js";
+import { shareImage } from "./shareImage.js";
 import {
   ADVENTURE_SPECIAL_SCENES,
   adventureChapterSeoDescriptor,
@@ -18,7 +19,6 @@ import {
 const SITE_ORIGIN = (
   import.meta.env.VITE_SITE_ORIGIN || "https://bc5r.xujinkai.net"
 ).replace(/\/+$/, "");
-const OG_IMAGE = `${SITE_ORIGIN}/assets/art/hd/title.png`;
 
 export function installRuntimeSeo(): () => void {
   const originalPushState = history.pushState.bind(history);
@@ -122,7 +122,10 @@ async function resolveExploreMapSeo(path: string): Promise<SeoDescriptor> {
 }
 
 function applySeo(value: SeoDescriptor): void {
-  const localized = localizedSeoDescriptor(value, getWebLocale());
+  const locale = getWebLocale();
+  const localized = localizedSeoDescriptor(value, locale);
+  const image = shareImage(localized.canonicalPath, locale);
+  const imageUrl = `${SITE_ORIGIN}${image.path}`;
   const canonical = `${SITE_ORIGIN}${localized.canonicalPath === "/" ? "/" : localized.canonicalPath}`;
   document.title = localized.title;
   setMeta("name", "description", localized.description);
@@ -133,11 +136,16 @@ function applySeo(value: SeoDescriptor): void {
   setMeta("property", "og:title", localized.title);
   setMeta("property", "og:description", localized.description);
   setMeta("property", "og:url", canonical);
-  setMeta("property", "og:image", OG_IMAGE);
+  setMeta("property", "og:image", imageUrl);
+  setMeta("property", "og:image:type", "image/png");
+  setMeta("property", "og:image:width", String(image.width));
+  setMeta("property", "og:image:height", String(image.height));
+  setMeta("property", "og:image:alt", image.alt);
   setMeta("name", "twitter:card", "summary_large_image");
   setMeta("name", "twitter:title", localized.title);
   setMeta("name", "twitter:description", localized.description);
-  setMeta("name", "twitter:image", OG_IMAGE);
+  setMeta("name", "twitter:image", imageUrl);
+  setMeta("name", "twitter:image:alt", image.alt);
   applyHomeAlternates(localized.canonicalPath);
 }
 

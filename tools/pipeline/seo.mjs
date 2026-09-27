@@ -12,6 +12,7 @@ import {
   staticSeoDescriptor,
 } from "../../web/src/seo/seoDescriptors.js";
 import { HOME_ROUTES, homeLocale } from "../../web/src/app/homeRoutes.js";
+import { shareImage } from "../../web/src/seo/shareImage.js";
 import { legacyRoutePaths } from "../../web/src/app/routeMigrations.js";
 
 const dist = path.join(root, "dist");
@@ -19,7 +20,6 @@ const assets = path.join(root, "assets");
 const siteOrigin = normalizeOrigin(
   process.env.VITE_SITE_ORIGIN ?? "https://bc5r.xujinkai.net",
 );
-const ogImagePath = "/assets/art/hd/title.png";
 
 export function generateSeoArtifacts() {
   const sourceHtml = fs.readFileSync(path.join(dist, "index.html"), "utf8");
@@ -130,17 +130,24 @@ function writeRouteShell(
     `${siteOrigin}${fallback.canonicalPath === "/" ? "/" : fallback.canonicalPath}`;
   const robots = fallback.index ? "index,follow" : "noindex,follow";
   const locale = homeLocale(fallback.canonicalPath);
+  const image = shareImage(fallback.canonicalPath);
+  const imageUrl = `${siteOrigin}${image.path}`;
   const extraHead = [
     `<meta name="robots" content="${robots}" />`,
     `<link rel="canonical" href="${escapeAttribute(canonical)}" />`,
     `<meta property="og:site_name" content="Bobby Carrot 5 Remake" />`,
     `<meta property="og:type" content="website" />`,
     `<meta property="og:url" content="${escapeAttribute(canonical)}" />`,
-    `<meta property="og:image" content="${escapeAttribute(`${siteOrigin}${ogImagePath}`)}" />`,
+    `<meta property="og:image" content="${escapeAttribute(imageUrl)}" />`,
+    `<meta property="og:image:type" content="image/png" />`,
+    `<meta property="og:image:width" content="${image.width}" />`,
+    `<meta property="og:image:height" content="${image.height}" />`,
+    `<meta property="og:image:alt" content="${escapeAttribute(image.alt)}" />`,
     `<meta name="twitter:card" content="summary_large_image" />`,
     `<meta name="twitter:title" content="${escapeAttribute(fallback.title)}" />`,
     `<meta name="twitter:description" content="${escapeAttribute(fallback.description)}" />`,
-    `<meta name="twitter:image" content="${escapeAttribute(`${siteOrigin}${ogImagePath}`)}" />`,
+    `<meta name="twitter:image" content="${escapeAttribute(imageUrl)}" />`,
+    `<meta name="twitter:image:alt" content="${escapeAttribute(image.alt)}" />`,
     ...(locale ? HOME_ROUTES.map((route) =>
       `<link rel="alternate" hreflang="${route.locale}" href="${escapeAttribute(`${siteOrigin}${route.path}`)}" />`,
     ) : []),
